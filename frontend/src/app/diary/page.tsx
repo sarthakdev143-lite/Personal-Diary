@@ -54,7 +54,7 @@ const Diary3D: React.FC = () => {
                 map: diaryCoverTexture,
                 roughness: 0.7,
                 metalness: 0.2,
-                color: 0x8B4513 // Rich brown leather color
+                color: 0xA0522D,
             });
 
             const coverGeometry = new THREE.BoxGeometry(3.5, 0.17, 5.5);
@@ -82,7 +82,7 @@ const Diary3D: React.FC = () => {
             const pageGroup = new THREE.Group();
 
             for (let i = 0; i < 45; i++) {
-                const pageGeometry = new THREE.PlaneGeometry(3.2, 5);
+                const pageGeometry = new THREE.PlaneGeometry(3.4, 5);
                 const pageMaterial = new THREE.MeshStandardMaterial({
                     map: paperTexture,
                     side: THREE.DoubleSide,
@@ -94,10 +94,10 @@ const Diary3D: React.FC = () => {
 
                 const page = new THREE.Mesh(pageGeometry, pageMaterial);
 
-                page.rotation.x = Math.PI / 2; 
+                page.rotation.x = Math.PI / 2;
                 page.position.set(
                     (Math.random() * 0.2 - 0.1),
-                    -0.01 * i, 
+                    -0.008 * i,  // Distance b/w pages
                     (Math.random() * 0.2 - 0.1)
                 );
 
@@ -109,8 +109,42 @@ const Diary3D: React.FC = () => {
             return pageGroup;
         };
 
+        const createDiarySpine = () => {
+            const diaryCoverTexture = textureLoader.load("/leather-texture.jpg");
+            diaryCoverTexture.wrapS = THREE.RepeatWrapping;
+            diaryCoverTexture.wrapT = THREE.RepeatWrapping;
 
-        // Improved Lighting
+            const spineMaterial = new THREE.MeshStandardMaterial({
+                map: diaryCoverTexture,
+                roughness: 0.7,
+                metalness: 0.2,
+                color: 0xA0522D,
+                side: THREE.DoubleSide,
+            });
+
+            // Create a flat, rectangular prism for the spine
+            const spineGeometry = new THREE.BoxGeometry(0.17, 5.5, 0.38);
+            const spine = new THREE.Mesh(spineGeometry, spineMaterial);
+            spine.castShadow = true;
+            spine.rotation.x = Math.PI / 2;
+            spine.position.set(-1.835, -0.175, 0);
+
+            const topEdge = new THREE.CylinderGeometry(0.13, 0.13, 5.5, 32, 1, false, Math.PI, Math.PI / 2);
+            const topEdgeMesh = new THREE.Mesh(topEdge, spineMaterial);
+            topEdgeMesh.position.set(0.085, 0, -0.19);
+            spine.add(topEdgeMesh);
+
+            const bottomEdge = new THREE.CylinderGeometry(0.13, 0.13, 5.5, 32, 1, false, 0, Math.PI / 2);
+            const bottomEdgeMesh = new THREE.Mesh(bottomEdge, spineMaterial);
+            bottomEdgeMesh.position.set(0.085, 0, 0.19);
+            bottomEdgeMesh.rotation.z = Math.PI;
+            spine.add(bottomEdgeMesh);
+
+            diaryGroup.add(spine);
+
+            return spine;
+        };
+
         const createLighting = () => {
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
             const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
@@ -123,6 +157,7 @@ const Diary3D: React.FC = () => {
         // Initialize Scene
         createDiaryCover();
         createPages();
+        createDiarySpine();
         createLighting();
 
         camera.position.set(0, 3, 7);
@@ -140,7 +175,7 @@ const Diary3D: React.FC = () => {
             const { diaryGroup, controls, renderer, camera, scene } = sceneRef.current;
 
             if (!isOpen) {
-                diaryGroup.rotation.y += 0.002;
+                // diaryGroup.rotation.y += 0.002;
             } else {
                 // Page opening animation
                 diaryGroup.rotation.y = THREE.MathUtils.lerp(
@@ -202,6 +237,7 @@ const Diary3D: React.FC = () => {
             >
                 {isOpen ? "Close Diary" : "Open Diary"}
             </div>
+            <h1 className="text-[30rem] text-black uppercase absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">diary</h1>
         </div>
     );
 };
