@@ -45,12 +45,10 @@ const Diary3D: React.FC = () => {
         const diaryGroup = new THREE.Group();
         scene.add(diaryGroup);
 
-        // Diary Cover
         const createDiaryCover = () => {
             const diaryCoverTexture = textureLoader.load("/leather-texture.jpg");
             diaryCoverTexture.wrapS = THREE.RepeatWrapping;
             diaryCoverTexture.wrapT = THREE.RepeatWrapping;
-            diaryCoverTexture.repeat.set(2, 2);
 
             const coverMaterial = new THREE.MeshStandardMaterial({
                 map: diaryCoverTexture,
@@ -59,16 +57,23 @@ const Diary3D: React.FC = () => {
                 color: 0x8B4513 // Rich brown leather color
             });
 
-            const coverGeometry = new THREE.BoxGeometry(3.5, 0.4, 5.5);
-            const diaryCover = new THREE.Mesh(coverGeometry, coverMaterial);
-            diaryCover.castShadow = true;
-            diaryCover.position.y = 0.2;
-            diaryGroup.add(diaryCover);
+            const coverGeometry = new THREE.BoxGeometry(3.5, 0.17, 5.5);
 
-            return diaryCover;
+            // Front cover
+            const frontCover = new THREE.Mesh(coverGeometry, coverMaterial);
+            frontCover.castShadow = true;
+            frontCover.position.set(0, 0.1, 0); // Place in front of the pages
+
+            // Back cover
+            const backCover = new THREE.Mesh(coverGeometry, coverMaterial);
+            backCover.castShadow = true;
+            backCover.position.set(0, -0.45, 0); // Place behind the pages
+
+            diaryGroup.add(frontCover, backCover);
+
+            return { frontCover, backCover };
         };
 
-        // Improved Page Creation
         const createPages = () => {
             const paperTexture = textureLoader.load("/paper-texture.jpg");
             paperTexture.wrapS = THREE.RepeatWrapping;
@@ -76,7 +81,7 @@ const Diary3D: React.FC = () => {
 
             const pageGroup = new THREE.Group();
 
-            for (let i = 0; i < 15; i++) {
+            for (let i = 0; i < 45; i++) {
                 const pageGeometry = new THREE.PlaneGeometry(3.2, 5);
                 const pageMaterial = new THREE.MeshStandardMaterial({
                     map: paperTexture,
@@ -88,12 +93,14 @@ const Diary3D: React.FC = () => {
                 });
 
                 const page = new THREE.Mesh(pageGeometry, pageMaterial);
-                page.rotation.x = -Math.PI / 2;
+
+                page.rotation.x = Math.PI / 2; 
                 page.position.set(
                     (Math.random() * 0.2 - 0.1),
-                    -0.05 * i,
+                    -0.01 * i, 
                     (Math.random() * 0.2 - 0.1)
                 );
+
                 page.receiveShadow = true;
                 pageGroup.add(page);
             }
@@ -101,6 +108,7 @@ const Diary3D: React.FC = () => {
             diaryGroup.add(pageGroup);
             return pageGroup;
         };
+
 
         // Improved Lighting
         const createLighting = () => {
