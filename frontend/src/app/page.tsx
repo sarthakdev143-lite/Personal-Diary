@@ -1,5 +1,9 @@
+import Diary3D from './diary/page'
+
 export default function Home() {
   return (
-    <div>Home</div>
+    <div>
+      <Diary3D />
+    </div>
   )
 }
