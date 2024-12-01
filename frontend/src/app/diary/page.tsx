@@ -199,7 +199,27 @@ const Diary3D: React.FC = () => {
         createDiarySpine();
         createLighting();
 
-        camera.position.set(0, 3, 7);
+        function updateCameraPosition() {
+            const aspectRatio = window.innerWidth / window.innerHeight;
+            const baseDistance = 8;
+            const widthFactor = Math.min(window.innerWidth / 1000, 1);
+            const heightFactor = Math.min(window.innerHeight / 1000, 1);
+
+            const cameraDistance = aspectRatio > 1
+                ? (aspectRatio > 2
+                    ? baseDistance * widthFactor * 0.8
+                    : baseDistance * widthFactor)
+                : (aspectRatio < 0.75
+                    ? baseDistance * heightFactor * 3
+                    : baseDistance * heightFactor * 1.2);
+
+            camera.position.set(0, 3, cameraDistance);
+        }
+
+        // Call the function on load and resize
+        updateCameraPosition();
+        window.addEventListener('resize', updateCameraPosition);
+
         controls.target.set(0, 0, 0);
 
         // Store references to prevent re-creation
@@ -224,19 +244,9 @@ const Diary3D: React.FC = () => {
         };
         animate();
 
-        // Resize Handler
-        const handleResize = () => {
-            if (!sceneRef.current) return;
-            const { camera, renderer } = sceneRef.current;
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        };
-        window.addEventListener('resize', handleResize);
-
         // Cleanup
         return () => {
-            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('resize', updateCameraPosition);
             if (mountRef.current && sceneRef.current) {
                 mountRef.current.removeChild(sceneRef.current.renderer.domElement);
             }
@@ -245,14 +255,13 @@ const Diary3D: React.FC = () => {
     }, []);
 
     const toggleDiary = () => {
-        console.log(isOpen ? "Closed Diary" : "Opened Diary");
         setIsOpen(!isOpen);
     };
 
     return (
         <>
             <div id="caption">
-                <h1 className="text-[30rem] text-white uppercase absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-0 select-none">diary</h1>
+                <h1 className="text-[27vw] text-white uppercase absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-0 select-none">diary</h1>
             </div>
             <div
                 ref={mountRef}
