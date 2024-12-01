@@ -36,6 +36,8 @@ const Diary3D: React.FC = () => {
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
+        controls.minDistance = 4;
+        controls.maxDistance = 12;
         controls.mouseButtons = {
             LEFT: THREE.MOUSE.ROTATE,
             MIDDLE: THREE.MOUSE.DOLLY,
@@ -100,9 +102,9 @@ const Diary3D: React.FC = () => {
 
                 page.rotation.x = Math.PI / 2;
                 page.position.set(
-                    (Math.random() * 0.2 - 0.1),
+                    (Math.random() * 0.1 - 0.2),
                     -0.007 * i,  // Distance b/w pages
-                    (Math.random() * 0.2 - 0.1)
+                    0
                 );
 
                 page.receiveShadow = true;
