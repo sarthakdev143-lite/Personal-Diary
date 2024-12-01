@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
@@ -13,8 +13,6 @@ const Diary3D: React.FC = () => {
         controls: OrbitControls,
         diaryGroup: THREE.Group
     } | null>(null);
-
-    const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
         // Prevent multiple scene creations
@@ -43,39 +41,6 @@ const Diary3D: React.FC = () => {
             MIDDLE: THREE.MOUSE.DOLLY,
             RIGHT: THREE.MOUSE.PAN
         };
-
-        const handleDragging = () => {
-            const element = mountRef.current;
-            if (!element) return; // Ensure the element exists
-
-            let isDragging = false;
-
-            const handleMouseDown = () => {
-                isDragging = false;
-            };
-
-            const handleMouseMove = () => {
-                isDragging = true;
-            };
-
-            const handleMouseUp = () => {
-                if (isDragging) {
-                    toggleDiary();
-                }
-            };
-
-            element.addEventListener('mousedown', handleMouseDown);
-            element.addEventListener('mousemove', handleMouseMove);
-            element.addEventListener('mouseup', handleMouseUp);
-
-            return () => {
-                element.removeEventListener('mousedown', handleMouseDown);
-                element.removeEventListener('mousemove', handleMouseMove);
-                element.removeEventListener('mouseup', handleMouseUp);
-            }
-        }
-
-        handleDragging();
 
         // Texture Loading
         const textureLoader = new THREE.TextureLoader();
@@ -121,7 +86,7 @@ const Diary3D: React.FC = () => {
             const pageGroup = new THREE.Group();
 
             for (let i = 0; i < 50; i++) {
-                const pageGeometry = new THREE.PlaneGeometry(3.4, 5);
+                const pageGeometry = new THREE.PlaneGeometry(3.2, 5.1);
                 const pageMaterial = new THREE.MeshStandardMaterial({
                     map: paperTexture,
                     side: THREE.DoubleSide,
@@ -233,11 +198,7 @@ const Diary3D: React.FC = () => {
 
             const { diaryGroup, controls, renderer, camera, scene } = sceneRef.current;
 
-            if (!isOpen) {
-                diaryGroup.rotation.y += 0.002;
-            } else {
-                // Page opening animation
-            }
+            diaryGroup.rotation.y += 0.002;
 
             controls.update();
             renderer.render(scene, camera);
@@ -254,8 +215,8 @@ const Diary3D: React.FC = () => {
         };
     }, []);
 
-    const toggleDiary = () => {
-        setIsOpen(!isOpen);
+    const openDiary = () => {
+
     };
 
     return (
@@ -266,13 +227,13 @@ const Diary3D: React.FC = () => {
             <div
                 ref={mountRef}
                 className="w-full h-screen cursor-pointer absolute top-0 left-0 z-10"
-                onClick={toggleDiary}
+                onClick={openDiary}
                 title="Click to interact with the diary"
             >
                 <div
-                    className="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-gray-600 font-sans"
+                    className="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-gray-300 font-sans bg-slate-800 bg-opacity-40 px-4 py-2 rounded-md cursor-pointer"
                 >
-                    <span className="bg-slate-700 bg-opacity-30 text-white px-6 py-4 rounded select-none">{isOpen ? "Close Diary" : "Open Diary"}</span>
+                    Open Diary
                 </div>
             </div>
         </>
