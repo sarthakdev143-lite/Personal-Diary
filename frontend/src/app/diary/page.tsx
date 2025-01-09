@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
@@ -11,14 +11,235 @@ const Diary3D: React.FC = () => {
         camera: THREE.PerspectiveCamera,
         renderer: THREE.WebGLRenderer,
         controls: OrbitControls,
-        diaryGroup: THREE.Group
+        diaryGroup: THREE.Group,
+        frontCover?: THREE.Mesh,
+        backCover?: THREE.Mesh,
+        spine?: THREE.Mesh,
+        pageGroup?: THREE.Group
     } | null>(null);
 
+    const animationRef = useRef<number | null>(null);
+
+    const [isOpened, setIsOpened] = useState(false);
+    const [isAnimating, setIsAnimating] = useState(false); // Add this state
+
+    const easeOutQuart = (x: number): number => {
+        return 1 - Math.pow(1 - x, 4);
+    };
+
+    const openDiary = () => {
+        if (!sceneRef.current || isOpened || isAnimating) return;
+
+        const { frontCover, backCover, pageGroup, spine, diaryGroup } = sceneRef.current;
+        if (!frontCover || !backCover || !pageGroup || !spine) return;
+
+        setIsAnimating(true);
+        setIsOpened(true);
+
+        const startTime = Date.now();
+        const duration = 3500;
+        const startRotationF = frontCover.rotation.z;
+        const startRotationB = backCover.rotation.z;
+        const targetRotationF = Math.PI * 0.944;
+
+        // Store initial positions
+        const initialFrontPos = { x: frontCover.position.x, y: frontCover.position.y };
+        const initialBackPos = { x: backCover.position.x, y: backCover.position.y };
+        const initialSpinePos = { x: spine.position.x, y: spine.position.y };
+        const initialGroupPos = diaryGroup.position.x;
+        const initialPageGroupPosX = pageGroup.position.x;
+
+        // Get half of the pages for animation
+        const pages = pageGroup.children;
+        const halfPageCount = Math.floor(pages.length / 2);
+        const pagesToAnimate = pages.slice(0, halfPageCount);
+
+        // Store initial page positions
+        const initialPagePositions = pagesToAnimate.map(page => ({
+            x: page.position.x,
+            y: page.position.y,
+            z: page.position.z,
+            rotationZ: page.rotation.z
+        }));
+
+        const animate = () => {
+            const currentTime = Date.now();
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const easedProgress = easeOutQuart(progress);
+
+            // Move entire diary group to center
+            diaryGroup.position.x = initialGroupPos + (2.1 * easedProgress);
+
+            // Calculate positions for opened state
+            const openedFrontPos = {
+                x: initialFrontPos.x - 0.665 * easedProgress,
+                y: initialFrontPos.y - 0.725 * Math.sin(easedProgress * Math.PI / 2)
+            };
+
+            const openedBackPos = {
+                x: initialBackPos.x,
+                y: initialBackPos.y - 0.175 * Math.sin(easedProgress * Math.PI / 2)
+            };
+
+            const openedSpinePos = {
+                x: initialSpinePos.x - 0.245 * easedProgress,
+                y: initialSpinePos.y - 0.45 * Math.sin(easedProgress * Math.PI / 2)
+            };
+
+            // Animate covers and spine
+            frontCover.position.x = openedFrontPos.x;
+            frontCover.position.y = openedFrontPos.y;
+            frontCover.rotation.z = startRotationF + (targetRotationF - startRotationF) * easedProgress;
+
+            spine.position.x = openedSpinePos.x;
+            spine.position.y = openedSpinePos.y;
+            spine.rotation.y = Math.PI / 2 * easedProgress;
+
+            backCover.position.y = openedBackPos.y;
+            backCover.rotation.z = startRotationB + (targetRotationF - startRotationF) * easedProgress * 0.05;
+
+            // Animate pages with a cascade effect
+            pagesToAnimate.forEach((page, index) => {
+                const pageDelay = index * 0.005; // Stagger the animation of each page
+                const pageProgress = Math.max(0, Math.min(1, (progress - pageDelay) * 1));
+                const pageEasedProgress = easeOutQuart(pageProgress);
+
+                const initialPos = initialPagePositions[index];
+                const targetRotation = Math.PI * 0.9;
+
+                // Calculate new position and rotation
+                page.position.y = initialPos.y - 0.175 * Math.sin(pageEasedProgress * Math.PI / 2);
+                page.rotation.y = initialPos.rotationZ + targetRotation * pageEasedProgress;
+            });
+
+            // Animate remaining pages group
+            pageGroup.position.x = initialPageGroupPosX - 0.4 * easedProgress;
+            pageGroup.position.y = 0.03 * Math.sin(easedProgress * Math.PI / 2);
+            pageGroup.rotation.z = startRotationB + (targetRotationF - startRotationB) * easedProgress * 0.05;
+
+            if (progress < 1) {
+                animationRef.current = requestAnimationFrame(animate);
+            } else {
+                animationRef.current = null;
+                setIsAnimating(false);
+            }
+        };
+
+        if (animationRef.current) {
+            cancelAnimationFrame(animationRef.current);
+        }
+        animationRef.current = requestAnimationFrame(animate);
+    };
+
+    const closeDiary = () => {
+        if (!sceneRef.current || !isOpened || isAnimating) return;
+
+        const { frontCover, backCover, pageGroup, spine, diaryGroup } = sceneRef.current;
+        if (!frontCover || !backCover || !pageGroup || !spine) return;
+
+        setIsAnimating(true);
+        setIsOpened(false);
+
+        const startTime = Date.now();
+        const duration = 3500;
+        const startRotationF = frontCover.rotation.z;
+        const startRotationB = backCover.rotation.z;
+        const initialGroupPos = diaryGroup.position.x;
+        const initialPageGroupPosX = pageGroup.position.x;
+
+        // Store initial positions (opened state)
+        const startPositions = {
+            front: { x: frontCover.position.x, y: frontCover.position.y },
+            back: { x: backCover.position.x, y: backCover.position.y },
+            spine: { x: spine.position.x, y: spine.position.y }
+        };
+
+        // Target positions (closed state)
+        const targetPositions = {
+            front: { x: -1.75, y: 0.1 },
+            back: { x: -1.75, y: -0.45 },
+            spine: { x: -1.835, y: -0.175 }
+        };
+
+        // Get half of the pages for animation
+        const pages = pageGroup.children;
+        const halfPageCount = Math.floor(pages.length / 2);
+        const pagesToAnimate = pages.slice(0, halfPageCount);
+
+        // Store initial page positions and rotations (opened state)
+        const startPageStates = pagesToAnimate.map(page => ({
+            position: { x: page.position.x, y: page.position.y, z: page.position.z },
+            rotation: { y: page.rotation.y }
+        }));
+
+        // Target page positions (closed state)
+        const targetPageStates = pagesToAnimate.map((_, index) => ({
+            position: {
+                x: -1.68 + (Math.random() * 0.1 - 0.135),
+                y: -0.007 * index,
+                z: 0
+            },
+            rotation: { y: 0 }
+        }));
+
+        const animate = () => {
+            const currentTime = Date.now();
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const easedProgress = easeOutQuart(progress);
+
+            // Move diary group back to original position
+            diaryGroup.position.x = initialGroupPos - (2.1 * easedProgress);
+
+            // Animate covers and spine
+            frontCover.position.x = startPositions.front.x + (targetPositions.front.x - startPositions.front.x) * easedProgress;
+            frontCover.position.y = startPositions.front.y + (targetPositions.front.y - startPositions.front.y) * easedProgress;
+            frontCover.rotation.z = startRotationF * (1 - easedProgress);
+
+            spine.position.x = startPositions.spine.x + (targetPositions.spine.x - startPositions.spine.x) * easedProgress;
+            spine.position.y = startPositions.spine.y + (targetPositions.spine.y - startPositions.spine.y) * easedProgress;
+            spine.rotation.y = (Math.PI / 2) * (1 - easedProgress);
+
+            backCover.position.y = startPositions.back.y + (targetPositions.back.y - startPositions.back.y) * easedProgress;
+            backCover.rotation.z = startRotationB * (1 - easedProgress);
+
+            // Animate pages with cascade effect
+            pagesToAnimate.forEach((page, index) => {
+                const pageDelay = (pagesToAnimate.length - index - 1) * 0.0005; // Reverse cascade
+                const pageProgress = Math.max(0, Math.min(1, (progress - pageDelay) * 1.25));
+                const pageEasedProgress = easeOutQuart(pageProgress);
+
+                const startState = startPageStates[index];
+                const targetState = targetPageStates[index];
+
+                page.position.x = startState.position.x + (targetState.position.x - startState.position.x) * pageEasedProgress;
+                page.position.y = startState.position.y + (targetState.position.y - startState.position.y) * pageEasedProgress;
+                page.rotation.y = startState.rotation.y * (1 - pageEasedProgress);
+            });
+
+            // Animate remaining pages group
+            pageGroup.position.x = initialPageGroupPosX + 0.4 * easedProgress;
+            pageGroup.position.y = 0.09 * Math.sin((1 - easedProgress) * Math.PI / 2);
+            pageGroup.rotation.z = startRotationB * (1 - easedProgress);
+
+            if (progress < 1) {
+                animationRef.current = requestAnimationFrame(animate);
+            } else {
+                animationRef.current = null;
+                setIsAnimating(false);
+            }
+        };
+
+        if (animationRef.current) {
+            cancelAnimationFrame(animationRef.current);
+        }
+        animationRef.current = requestAnimationFrame(animate);
+    };
+
     useEffect(() => {
-        // Prevent multiple scene creations
         if (sceneRef.current) return;
 
-        // Scene setup
         const scene = new THREE.Scene();
         scene.background = null;
 
@@ -26,13 +247,12 @@ const Diary3D: React.FC = () => {
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
-        renderer.setClearColor(0x000000, 0); // Set clear color to transparent
+        renderer.setClearColor(0x000000, 0);
 
         if (mountRef.current) {
             mountRef.current.appendChild(renderer.domElement);
         }
 
-        // Orbit Controls
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
@@ -44,10 +264,7 @@ const Diary3D: React.FC = () => {
             RIGHT: THREE.MOUSE.PAN
         };
 
-        // Texture Loading
         const textureLoader = new THREE.TextureLoader();
-
-        // Diary Components Group
         const diaryGroup = new THREE.Group();
         scene.add(diaryGroup);
 
@@ -64,19 +281,17 @@ const Diary3D: React.FC = () => {
             });
 
             const coverGeometry = new THREE.BoxGeometry(3.5, 0.17, 5.5);
+            coverGeometry.translate(1.75, 0, 0);
 
-            // Front cover
             const frontCover = new THREE.Mesh(coverGeometry, coverMaterial);
             frontCover.castShadow = true;
-            frontCover.position.set(0, 0.1, 0); // Place in front of the pages
+            frontCover.position.set(-1.75, 0.1, 0);
 
-            // Back cover
             const backCover = new THREE.Mesh(coverGeometry, coverMaterial);
             backCover.castShadow = true;
-            backCover.position.set(0, -0.45, 0); // Place behind the pages
+            backCover.position.set(-1.75, -0.45, 0);
 
             diaryGroup.add(frontCover, backCover);
-
             return { frontCover, backCover };
         };
 
@@ -89,6 +304,8 @@ const Diary3D: React.FC = () => {
 
             for (let i = 0; i < 50; i++) {
                 const pageGeometry = new THREE.PlaneGeometry(3.2, 5.1);
+                pageGeometry.translate(1.6, 0, 0);
+
                 const pageMaterial = new THREE.MeshStandardMaterial({
                     map: paperTexture,
                     side: THREE.DoubleSide,
@@ -99,11 +316,10 @@ const Diary3D: React.FC = () => {
                 });
 
                 const page = new THREE.Mesh(pageGeometry, pageMaterial);
-
                 page.rotation.x = Math.PI / 2;
                 page.position.set(
-                    (Math.random() * 0.1 - 0.2),
-                    -0.007 * i,  // Distance b/w pages
+                    -1.68 + (Math.random() * 0.1 - 0.135),
+                    -0.007 * i,
                     0
                 );
 
@@ -128,7 +344,6 @@ const Diary3D: React.FC = () => {
                 side: THREE.DoubleSide,
             });
 
-            // Create a flat, rectangular prism for the spine
             const spineGeometry = new THREE.BoxGeometry(0.17, 5.5, 0.38);
             const spine = new THREE.Mesh(spineGeometry, spineMaterial);
             spine.castShadow = true;
@@ -147,7 +362,6 @@ const Diary3D: React.FC = () => {
             spine.add(bottomEdgeMesh);
 
             diaryGroup.add(spine);
-
             return spine;
         };
 
@@ -159,12 +373,6 @@ const Diary3D: React.FC = () => {
 
             scene.add(ambientLight, directionalLight);
         };
-
-        // Initialize Scene
-        createDiaryCover();
-        createPages();
-        createDiarySpine();
-        createLighting();
 
         function updateCameraPosition() {
             const aspectRatio = window.innerWidth / window.innerHeight;
@@ -183,32 +391,41 @@ const Diary3D: React.FC = () => {
             camera.position.set(0, 3, cameraDistance);
         }
 
-        // Call the function on load and resize
         updateCameraPosition();
         window.addEventListener('resize', updateCameraPosition);
 
+        const { frontCover, backCover } = createDiaryCover();
+        const pageGroup = createPages();
+        const spine = createDiarySpine();
+        createLighting();
+
         controls.target.set(0, 0, 0);
+        sceneRef.current = {
+            scene,
+            camera,
+            renderer,
+            controls,
+            diaryGroup,
+            frontCover,
+            backCover,
+            spine,
+            pageGroup
+        };
 
-        // Store references to prevent re-creation
-        sceneRef.current = { scene, camera, renderer, controls, diaryGroup };
-
-        // Animation Loop
         const animate = () => {
             if (!sceneRef.current) return;
 
             requestAnimationFrame(animate);
-
-            const { diaryGroup, controls, renderer, camera, scene } = sceneRef.current;
-
-            diaryGroup.rotation.y += 0.002;
-
+            const { controls, renderer, camera, scene } = sceneRef.current;
             controls.update();
             renderer.render(scene, camera);
         };
         animate();
 
-        // Cleanup
         return () => {
+            if (animationRef.current) {
+                cancelAnimationFrame(animationRef.current);
+            }
             window.removeEventListener('resize', updateCameraPosition);
             if (mountRef.current && sceneRef.current) {
                 mountRef.current.removeChild(sceneRef.current.renderer.domElement);
@@ -217,10 +434,6 @@ const Diary3D: React.FC = () => {
         };
     }, []);
 
-    const openDiary = () => {
-
-    };
-
     return (
         <>
             <div id="caption">
@@ -228,14 +441,26 @@ const Diary3D: React.FC = () => {
             </div>
             <div
                 ref={mountRef}
-                className="w-full h-screen cursor-pointer absolute top-0 left-0 z-10"
-                onClick={openDiary}
-                title="Click to interact with the diary"
+                className="w-full h-screen absolute top-0 left-0 z-10"
+                title="Drag To Interact With The Diary"
             >
-                <div
-                    className="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-gray-300 font-sans bg-slate-800 bg-opacity-40 px-4 py-2 rounded-md cursor-pointer"
-                >
-                    Open Diary
+                <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 flex gap-4">
+                    <button
+                        onClick={openDiary}
+                        disabled={isAnimating}
+                        className={`text-gray-300 font-sans bg-slate-800 bg-opacity-40 px-4 py-2 rounded-md cursor-pointer transition-opacity duration-300 
+                            ${isOpened || isAnimating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-opacity-50'}`}
+                    >
+                        Open Diary
+                    </button>
+                    <button
+                        onClick={closeDiary}
+                        disabled={isAnimating}
+                        className={`text-gray-300 font-sans bg-slate-800 bg-opacity-40 px-4 py-2 rounded-md cursor-pointer transition-opacity duration-300 
+                            ${!isOpened || isAnimating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-opacity-50'}`}
+                    >
+                        Close Diary
+                    </button>
                 </div>
             </div>
         </>
