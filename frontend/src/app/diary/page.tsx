@@ -21,7 +21,114 @@ const Diary3D: React.FC = () => {
     const animationRef = useRef<number | null>(null);
 
     const [isOpened, setIsOpened] = useState(false);
-    const [isAnimating, setIsAnimating] = useState(false); // Add this state
+    const [isAnimating, setIsAnimating] = useState(false);
+
+    const deviceTypeRef = useRef<'mobile' | 'tablet' | 'desktop'>('desktop');
+    const orientationRef = useRef<'portrait' | 'landscape'>('landscape');
+
+    const getDeviceType = () => {
+        const width = window.innerWidth;
+        if (width < 768) return 'mobile';
+        if (width < 1024) return 'tablet';
+        return 'desktop';
+    };
+
+    const getOrientation = () => {
+        return window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+    };
+
+    const updateCameraAndControls = () => {
+        if (!sceneRef.current) return;
+
+        const { camera, controls } = sceneRef.current;
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        const aspectRatio = width / height;
+
+        // Update device type and orientation
+        deviceTypeRef.current = getDeviceType();
+        orientationRef.current = getOrientation();
+
+        // Base camera settings
+        let cameraDistance = 8;
+        let cameraHeight = 3;
+        let targetY = 0;
+
+        // Adjust camera based on device and orientation
+        switch (deviceTypeRef.current) {
+            case 'mobile':
+                if (orientationRef.current === 'portrait') {
+                    cameraDistance = 12;
+                    cameraHeight = 4;
+                    targetY = -0.5;
+                } else {
+                    cameraDistance = 9;
+                    cameraHeight = 2.5;
+                }
+                break;
+            case 'tablet':
+                if (orientationRef.current === 'portrait') {
+                    cameraDistance = 10;
+                    cameraHeight = 3.5;
+                } else {
+                    cameraDistance = 8;
+                    cameraHeight = 2.8;
+                }
+                break;
+            case 'desktop':
+                // Adjust for ultrawide monitors
+                if (aspectRatio > 2) {
+                    cameraDistance = 7;
+                    cameraHeight = 2.5;
+                }
+                break;
+        }
+
+        // Update camera
+        camera.position.set(0, cameraHeight, cameraDistance);
+        camera.updateProjectionMatrix();
+
+        // Update controls
+        controls.target.set(0, targetY, 0);
+
+        // Adjust control limits based on device
+        controls.minDistance = cameraDistance * 0.5;
+        controls.maxDistance = cameraDistance * 1.5;
+
+        // Limit vertical rotation more on mobile
+        if (deviceTypeRef.current === 'mobile') {
+            controls.minPolarAngle = Math.PI * 0.2; // More restricted top view
+            controls.maxPolarAngle = Math.PI * 0.8; // More restricted bottom view
+        } else {
+            controls.minPolarAngle = Math.PI * 0.1;
+            controls.maxPolarAngle = Math.PI * 0.9;
+        }
+
+        // Adjust damping based on device
+        controls.dampingFactor = deviceTypeRef.current === 'mobile' ? 0.07 : 0.05;
+
+        // Enable/disable features based on device
+        controls.enableZoom = deviceTypeRef.current !== 'mobile';
+        controls.enablePan = deviceTypeRef.current === 'desktop';
+
+        controls.update();
+    };
+
+    // Enhanced resize handler
+    const handleResize = () => {
+        if (!sceneRef.current) return;
+
+        const { renderer, camera } = sceneRef.current;
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Performance optimization
+
+        updateCameraAndControls();
+    };
 
     const easeOutQuart = (x: number): number => {
         return 1 - Math.pow(1 - x, 4);
@@ -374,32 +481,18 @@ const Diary3D: React.FC = () => {
             scene.add(ambientLight, directionalLight);
         };
 
-        function updateCameraPosition() {
-            const aspectRatio = window.innerWidth / window.innerHeight;
-            const baseDistance = 8;
-            const widthFactor = Math.min(window.innerWidth / 1000, 1);
-            const heightFactor = Math.min(window.innerHeight / 1000, 1);
-
-            const cameraDistance = aspectRatio > 1
-                ? (aspectRatio > 2
-                    ? baseDistance * widthFactor * 0.8
-                    : baseDistance * widthFactor)
-                : (aspectRatio < 0.75
-                    ? baseDistance * heightFactor * 3
-                    : baseDistance * heightFactor * 1.2);
-
-            camera.position.set(0, 3, cameraDistance);
-        }
-
-        updateCameraPosition();
-        window.addEventListener('resize', updateCameraPosition);
+        updateCameraAndControls();
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('orientationchange', () => {
+            // Small delay to ensure proper orientation update
+            setTimeout(handleResize, 100);
+        });
 
         const { frontCover, backCover } = createDiaryCover();
         const pageGroup = createPages();
         const spine = createDiarySpine();
         createLighting();
 
-        controls.target.set(0, 0, 0);
         sceneRef.current = {
             scene,
             camera,
@@ -411,6 +504,8 @@ const Diary3D: React.FC = () => {
             spine,
             pageGroup
         };
+
+        handleResize();
 
         const animate = () => {
             if (!sceneRef.current) return;
@@ -426,7 +521,8 @@ const Diary3D: React.FC = () => {
             if (animationRef.current) {
                 cancelAnimationFrame(animationRef.current);
             }
-            window.removeEventListener('resize', updateCameraPosition);
+            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('orientationchange', handleResize);
             if (mountRef.current && sceneRef.current) {
                 mountRef.current.removeChild(sceneRef.current.renderer.domElement);
             }
@@ -434,22 +530,32 @@ const Diary3D: React.FC = () => {
         };
     }, []);
 
+    // Add touch event handlers for mobile
+    const handleTouchStart = (e: React.TouchEvent) => {
+        if (e.touches.length === 2) {
+            e.preventDefault(); // Prevent pinch zoom on mobile browsers
+        }
+    };
+
     return (
         <>
             <div id="caption">
-                <h1 className="text-[27vw] text-white uppercase absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-0 select-none">diary</h1>
+                <h1 className="text-[20vw] md:text-[27vw] text-white uppercase absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-0 select-none">
+                    diary
+                </h1>
             </div>
             <div
                 ref={mountRef}
                 className="w-full h-screen absolute top-0 left-0 z-10"
                 title="Drag To Interact With The Diary"
+                onTouchStart={handleTouchStart}
             >
                 <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 flex gap-4">
                     <button
                         onClick={openDiary}
                         disabled={isAnimating}
                         className={`text-gray-300 font-sans bg-slate-800 bg-opacity-40 px-4 py-2 rounded-md cursor-pointer transition-opacity duration-300 
-                            ${isOpened || isAnimating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-opacity-50'}`}
+                        ${isOpened || isAnimating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-opacity-50'}`}
                     >
                         Open Diary
                     </button>
@@ -457,7 +563,7 @@ const Diary3D: React.FC = () => {
                         onClick={closeDiary}
                         disabled={isAnimating}
                         className={`text-gray-300 font-sans bg-slate-800 bg-opacity-40 px-4 py-2 rounded-md cursor-pointer transition-opacity duration-300 
-                            ${!isOpened || isAnimating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-opacity-50'}`}
+                        ${!isOpened || isAnimating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-opacity-50'}`}
                     >
                         Close Diary
                     </button>
