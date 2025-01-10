@@ -363,6 +363,8 @@ const Diary3D: React.FC = () => {
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.75;
         controls.minDistance = 4;
         controls.maxDistance = 12;
         controls.mouseButtons = {
@@ -511,6 +513,7 @@ const Diary3D: React.FC = () => {
             if (!sceneRef.current) return;
 
             requestAnimationFrame(animate);
+
             const { controls, renderer, camera, scene } = sceneRef.current;
             controls.update();
             renderer.render(scene, camera);
@@ -540,7 +543,7 @@ const Diary3D: React.FC = () => {
     return (
         <>
             <div id="caption">
-                <h1 className="text-[20vw] md:text-[27vw] text-white uppercase absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-0 select-none">
+                <h1 className="text-[27vw] text-white uppercase absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-0 select-none">
                     diary
                 </h1>
             </div>
