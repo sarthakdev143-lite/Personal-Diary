@@ -2,8 +2,8 @@
 
 // import { useState, useEffect, useRef } from 'react';
 import { ArrowBigRightDash } from 'lucide-react';
-import Diary3D from './diary/page';
 import { Button } from '@/components/ui/button';
+import Diary3D from '@/components/Diary3D';
 // import gsap from 'gsap';
 
 export default function Home() {

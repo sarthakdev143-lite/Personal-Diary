@@ -3,8 +3,8 @@
 import React, { useEffect } from "react";
 import * as THREE from "three";
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { useDiaryScene } from "./useDiaryScene";
 import { useDiary } from "@/context/DiaryContext";
+import { useDiaryScene } from "@/context/useDiaryScene";
 
 const Diary3D: React.FC = () => {
     const { isRotating } = useDiary();
