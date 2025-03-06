@@ -1,19 +1,10 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
 import "./globals.css";
 import 'remixicon/fonts/remixicon.css'
 import Head from "next/head";
-
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
+import Navbar from "@/components/Navbar";
+import { DiaryProvider } from "@/context/DiaryContext";
+// import { Providers } from './providers'
 
 export const metadata: Metadata = {
   title: "Diary • Sarthakdev143",
@@ -32,11 +23,16 @@ export default function RootLayout({
         <link rel="icon" type="image/x-icon" href="/favicon.ico" />
       </Head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`antialiased`}
       >
-        <main>
-          {children}
-        </main>
+        <DiaryProvider>
+          {/* <Providers> */}
+          <Navbar />
+          <main>
+            {children}
+          </main>
+          {/* </Providers> */}
+        </DiaryProvider>
       </body>
     </html>
   );

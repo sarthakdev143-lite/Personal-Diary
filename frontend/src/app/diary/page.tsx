@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import * as THREE from "three";
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { useDiaryScene } from "./useDiaryScene";
+import { useDiary } from "@/context/DiaryContext";
 
 const Diary3D: React.FC = () => {
-    const [isRotating, setIsRotating] = useState(true);
+    const { isRotating } = useDiary();
+
     const { sceneRef, isOpened, isAnimating, mountRef,
         animationRef, updateCameraAndControls, handleResize,
         openDiary, handleTouchStart, closeDiary
@@ -211,23 +213,23 @@ const Diary3D: React.FC = () => {
         }
     };
 
-    const toggleRotation = () => {
-        setIsRotating((prev) => !prev);
-        if (sceneRef.current) {
-            sceneRef.current.controls.autoRotate = !isRotating;
-        }
-    };
+    // const toggleRotation = () => {
+    //     setIsRotating((prev) => !prev);
+    //     if (sceneRef.current) {
+    //         sceneRef.current.controls.autoRotate = !isRotating;
+    //     }
+    // };
 
     return (
-        <>
-            <div id="caption">
+        <div className="absolute w-full h-screen z-0">
+            <div id="caption" className="w-full h-screen absolute top-0 left-0 z-0">
                 <h1 className="text-[27vw] text-white uppercase absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-0 select-none">
                     diary
                 </h1>
             </div>
             <div
                 ref={mountRef}
-                className="w-full h-screen absolute top-0 left-0 z-10"
+                className="w-full h-screen absolute top-0 left-0 z-10 overflow-hidden"
                 title="Drag To Interact With The Diary"
                 onTouchStart={handleTouchStart}
             >
@@ -240,15 +242,15 @@ const Diary3D: React.FC = () => {
                     >
                         {isOpened ? 'Close Diary' : 'Open Diary'}
                     </button>
-                    <button
+                    {/* <button
                         onClick={toggleRotation}
                         className="text-gray-300 font-sans bg-slate-800 bg-opacity-40 px-4 py-2 rounded-md cursor-pointer transition-opacity duration-300 hover:bg-opacity-50"
                     >
                         {isRotating ? 'Stop Rotation' : 'Start Rotation'}
-                    </button>
+                    </button> */}
                 </div>
             </div>
-        </>
+        </div>
     );
 };
 
