@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, X } from 'lucide-react';
+import { Menu, X, RotateCcw } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { Button } from './ui/button';
 import { useDiary } from "@/context/DiaryContext";
@@ -33,12 +33,15 @@ const Navbar = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const { isRotating, setIsRotating } = useDiary();
+    const { isRotating, setIsRotating, resetDiaryPosition } = useDiary();
 
     const handleToggle = (type: string) => {
         switch (type) {
             case 'rotation':
                 setIsRotating(!isRotating);
+                break;
+            case 'reset':
+                resetDiaryPosition();
                 break;
             default:
                 break;
@@ -84,6 +87,17 @@ const Navbar = () => {
                                 checked={isRotating}
                                 onCheckedChange={() => handleToggle('rotation')}
                             />
+                        </div>
+
+                        <div className="px-4 py-3 border-t border-gray-700">
+                            <Button
+                                variant="ghost"
+                                className="w-full justify-start text-sm text-white hover:bg-zinc-800 hover:text-white flex items-center gap-2"
+                                onClick={() => handleToggle('reset')}
+                            >
+                                <RotateCcw className="w-4 h-4" />
+                                Reset Position
+                            </Button>
                         </div>
                     </div>
                 )}

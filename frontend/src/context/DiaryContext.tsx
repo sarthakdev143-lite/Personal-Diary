@@ -1,32 +1,42 @@
-"use client"; 
+"use client";
 
-import { createContext, useContext, useState, ReactNode, useEffect} from "react";
+import React, { createContext, useContext, useState, useCallback } from 'react';
 
 type DiaryContextType = {
   isRotating: boolean;
-  setIsRotating: (value: boolean) => void;
+  setIsRotating: React.Dispatch<React.SetStateAction<boolean>>;
+  resetDiaryPosition: () => void;
 };
 
-const DiaryContext = createContext<DiaryContextType | undefined>(undefined);
+// Create a global event system for diary position reset  
+export const DIARY_EVENTS = {
+  RESET_POSITION: 'diary:reset-position',
+};
 
-export function DiaryProvider({ children }: { children: ReactNode }) {
-  const [isRotating, setIsRotating] = useState(false);
+const DiaryContext = createContext<DiaryContextType>({
+  isRotating: true,
+  setIsRotating: () => { },
+  resetDiaryPosition: () => { },
+});
 
-  useEffect(() => {
-    console.log("Rotating Status : ", isRotating);
-  }, [isRotating])
+export const DiaryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isRotating, setIsRotating] = useState<boolean>(true);
+
+  const resetDiaryPosition = useCallback(() => {
+    // Dispatch a custom event that the Diary3D component will listen for
+    const resetEvent = new CustomEvent(DIARY_EVENTS.RESET_POSITION);
+    window.dispatchEvent(resetEvent);
+  }, []);
 
   return (
-    <DiaryContext.Provider value={{ isRotating, setIsRotating }}>
+    <DiaryContext.Provider value={{
+      isRotating,
+      setIsRotating,
+      resetDiaryPosition
+    }}>
       {children}
     </DiaryContext.Provider>
   );
-}
+};
 
-export function useDiary() {
-  const context = useContext(DiaryContext);
-  if (!context) {
-    throw new Error("useDiary must be used within a DiaryProvider");
-  }
-  return context;
-}
+export const useDiary = () => useContext(DiaryContext);

@@ -9,11 +9,12 @@ import { useDiary } from "@/context/DiaryContext";
 const Diary3D: React.FC = () => {
     const { isRotating } = useDiary();
 
-    const { sceneRef, isOpened, isAnimating, mountRef,
-        animationRef, updateCameraAndControls, handleResize,
+    const { sceneRef, isOpened, isAnimating, mountRef, animationRef,
+        updateCameraAndControls, updateRotation, handleResize,
         openDiary, handleTouchStart, closeDiary
-    } = useDiaryScene();
+    } = useDiaryScene(isRotating);
 
+    // Setup scene and diary models
     useEffect(() => {
         if (sceneRef.current) return;
 
@@ -33,7 +34,7 @@ const Diary3D: React.FC = () => {
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.autoRotate = isRotating;
+        controls.autoRotate = isRotating; // Initial auto-rotation state
         controls.autoRotateSpeed = 0.75;
         controls.minDistance = 4;
         controls.maxDistance = 12;
@@ -205,6 +206,11 @@ const Diary3D: React.FC = () => {
         };
     }, []);
 
+    // Effect to update rotation when isRotating changes
+    useEffect(() => {
+        updateRotation();
+    }, [isRotating, updateRotation]);
+
     const toggleDiary = () => {
         if (isOpened) {
             closeDiary();
@@ -212,13 +218,6 @@ const Diary3D: React.FC = () => {
             openDiary();
         }
     };
-
-    // const toggleRotation = () => {
-    //     setIsRotating((prev) => !prev);
-    //     if (sceneRef.current) {
-    //         sceneRef.current.controls.autoRotate = !isRotating;
-    //     }
-    // };
 
     return (
         <div className="absolute w-full h-screen z-0">
@@ -242,12 +241,6 @@ const Diary3D: React.FC = () => {
                     >
                         {isOpened ? 'Close Diary' : 'Open Diary'}
                     </button>
-                    {/* <button
-                        onClick={toggleRotation}
-                        className="text-gray-300 font-sans bg-slate-800 bg-opacity-40 px-4 py-2 rounded-md cursor-pointer transition-opacity duration-300 hover:bg-opacity-50"
-                    >
-                        {isRotating ? 'Stop Rotation' : 'Start Rotation'}
-                    </button> */}
                 </div>
             </div>
         </div>

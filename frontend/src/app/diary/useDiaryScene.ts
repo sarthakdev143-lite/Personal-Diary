@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { DIARY_EVENTS } from '@/context/DiaryContext';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
@@ -30,7 +31,7 @@ interface PageMesh extends THREE.Mesh {
     rotation: THREE.Euler;
 }
 
-export const useDiaryScene = () => {
+export const useDiaryScene = (isRotating: boolean) => {
     const sceneRef = useRef<SceneRefs | null>(null);
     const [isOpened, setIsOpened] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
@@ -63,38 +64,29 @@ export const useDiaryScene = () => {
         orientationRef.current = getOrientation();
 
         let cameraDistance = 8;
-        let cameraHeight = 3;
         let targetY = 0;
 
         switch (deviceTypeRef.current) {
             case 'mobile':
                 if (orientationRef.current === 'portrait') {
                     cameraDistance = 12;
-                    cameraHeight = 4;
                     targetY = -0.5;
-                } else {
+                } else
                     cameraDistance = 9;
-                    cameraHeight = 2.5;
-                }
                 break;
             case 'tablet':
-                if (orientationRef.current === 'portrait') {
+                if (orientationRef.current === 'portrait')
                     cameraDistance = 10;
-                    cameraHeight = 3.5;
-                } else {
+                else
                     cameraDistance = 8;
-                    cameraHeight = 2.8;
-                }
                 break;
             case 'desktop':
-                if (aspectRatio > 2) {
+                if (aspectRatio > 2)
                     cameraDistance = 7;
-                    cameraHeight = 2.5;
-                }
                 break;
         }
 
-        camera.position.set(0, cameraHeight, cameraDistance);
+        camera.position.set(0, cameraDistance - 3, cameraDistance);
         camera.updateProjectionMatrix();
         controls.target.set(0, targetY, 0);
         controls.minDistance = cameraDistance * 0.5;
@@ -181,7 +173,7 @@ export const useDiaryScene = () => {
             const progress = Math.min(elapsed / duration, 1);
             const easedProgress = easeOutQuart(progress);
 
-            
+
             // Move entire diary group to center
             diaryGroup.position.x = initialGroupPos + (2.1 * easedProgress);
 
@@ -369,6 +361,107 @@ export const useDiaryScene = () => {
         animationRef.current = animationFrameId;
     };
 
+    // Update orbit controls rotation based on context
+    const updateRotation = useCallback(() => {
+        if (!sceneRef.current) return;
+
+        sceneRef.current.controls.autoRotate = isRotating;
+    }, [isRotating]);
+
+    const resetPosition = useCallback(() => {
+        if (!sceneRef.current) return;
+    
+        // First close the diary if it's open
+        if (isOpened && !isAnimating) {
+            closeDiary();
+        }
+    
+        // Reset camera and controls to default position
+        const { camera, controls, diaryGroup } = sceneRef.current;
+        
+        // Calculate the target position based on the same logic as updateCameraAndControls
+        deviceTypeRef.current = getDeviceType();
+        orientationRef.current = getOrientation();
+        
+        let cameraDistance = 8;
+        let targetY = 0;
+    
+        switch (deviceTypeRef.current) {
+            case 'mobile':
+                if (orientationRef.current === 'portrait') {
+                    cameraDistance = 12;
+                    targetY = -0.5;
+                } else {
+                    cameraDistance = 9;
+                }
+                break;
+            case 'tablet':
+                if (orientationRef.current === 'portrait')
+                    cameraDistance = 10;
+                else
+                    cameraDistance = 8;
+                break;
+            case 'desktop':
+                const aspectRatio = window.innerWidth / window.innerHeight;
+                if (aspectRatio > 2)
+                    cameraDistance = 7;
+                break;
+        }
+        
+        // Use the same position calculation as updateCameraAndControls
+        const targetPosition = new THREE.Vector3(0, cameraDistance - 3, cameraDistance);
+        const targetControlsTarget = new THREE.Vector3(0, targetY, 0);
+    
+        // Animation for smoother reset
+        const startPosition = camera.position.clone();
+        const startRotation = diaryGroup.rotation.clone();
+        const startTarget = controls.target.clone();
+    
+        const duration = 1000;
+        const startTime = Date.now();
+        const targetRotation = new THREE.Euler(0, 0, 0);
+    
+        const animate = () => {
+            const elapsedTime = Date.now() - startTime;
+            const progress = Math.min(elapsedTime / duration, 1);
+            const easeProgress = 1 - Math.pow(1 - progress, 3);
+    
+            // Interpolate camera position
+            camera.position.lerpVectors(startPosition, targetPosition, easeProgress);
+    
+            // Interpolate diary group rotation
+            diaryGroup.rotation.x = startRotation.x + (targetRotation.x - startRotation.x) * easeProgress;
+            diaryGroup.rotation.y = startRotation.y + (targetRotation.y - startRotation.y) * easeProgress;
+            diaryGroup.rotation.z = startRotation.z + (targetRotation.z - startRotation.z) * easeProgress;
+    
+            // Interpolate controls target
+            controls.target.lerpVectors(startTarget, targetControlsTarget, easeProgress);
+            controls.update();
+    
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                // Reset complete - no need to call updateCameraAndControls again since we've already
+                // calculated and applied the correct values
+            }
+        };
+    
+        requestAnimationFrame(animate);
+    }, [isOpened, isAnimating, getDeviceType, getOrientation]);
+
+    // Listen for reset position events
+    useEffect(() => {
+        const handleResetPosition = () => {
+            resetPosition();
+        };
+
+        window.addEventListener(DIARY_EVENTS.RESET_POSITION, handleResetPosition);
+
+        return () => {
+            window.removeEventListener(DIARY_EVENTS.RESET_POSITION, handleResetPosition);
+        };
+    }, [resetPosition]);
+
     return {
         sceneRef,
         isOpened,
@@ -386,6 +479,7 @@ export const useDiaryScene = () => {
         easeOutQuart,
         openDiary,
         handleTouchStart,
-        closeDiary
+        closeDiary,
+        updateRotation
     };
 };
