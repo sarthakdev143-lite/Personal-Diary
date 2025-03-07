@@ -5,9 +5,11 @@ import * as THREE from "three";
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { useDiary } from "@/context/DiaryContext";
 import { useDiaryScene } from "@/context/useDiaryScene";
+import { usePathname } from "next/navigation";
 
 const Diary3D: React.FC = () => {
     const { isRotating } = useDiary();
+    const pathName = usePathname();
 
     const { sceneRef, isOpened, isAnimating, mountRef, animationRef,
         updateCameraAndControls, updateRotation, handleResize,
@@ -27,9 +29,8 @@ const Diary3D: React.FC = () => {
         renderer.shadowMap.enabled = true;
         renderer.setClearColor(0x000000, 0);
 
-        if (mountRef.current) {
+        if (mountRef.current)
             mountRef.current.appendChild(renderer.domElement);
-        }
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
@@ -212,11 +213,10 @@ const Diary3D: React.FC = () => {
     }, [isRotating, updateRotation]);
 
     const toggleDiary = () => {
-        if (isOpened) {
+        if (isOpened)
             closeDiary();
-        } else {
+        else
             openDiary();
-        }
     };
 
     return (
@@ -232,16 +232,18 @@ const Diary3D: React.FC = () => {
                 title="Drag To Interact With The Diary"
                 onTouchStart={handleTouchStart}
             >
-                <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 flex gap-4">
-                    <button
-                        onClick={toggleDiary}
-                        disabled={isAnimating}
-                        className={`text-gray-300 font-sans bg-slate-800 bg-opacity-40 px-4 py-2 rounded-md cursor-pointer transition-opacity duration-300 
-                    ${isAnimating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-opacity-50'}`}
-                    >
-                        {isOpened ? 'Close Diary' : 'Open Diary'}
-                    </button>
-                </div>
+                {pathName === '/' ?
+                    <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 flex gap-4">
+                        <button
+                            onClick={toggleDiary}
+                            disabled={isAnimating}
+                            className={`select-none text-gray-300 font-sans bg-slate-800 bg-opacity-40 px-4 py-2 rounded-md cursor-pointer transition-opacity duration-300 
+                 ${isAnimating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-opacity-50'}`}
+                        >
+                            {isOpened ? 'Close Diary' : 'Open Diary'}
+                        </button>
+                    </div>
+                    : null}
             </div>
         </div>
     );

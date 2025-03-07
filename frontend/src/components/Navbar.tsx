@@ -1,9 +1,11 @@
 "use client";
 
-import { Menu, X, RotateCcw } from 'lucide-react';
+import { Menu, X, RotateCcw, ArrowBigLeftDash } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { Button } from './ui/button';
 import { useDiary } from "@/context/DiaryContext";
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 const Switch = ({ checked, onCheckedChange }: { checked: boolean, onCheckedChange: () => void }) => {
     return (
@@ -32,6 +34,7 @@ const Switch = ({ checked, onCheckedChange }: { checked: boolean, onCheckedChang
 const Navbar = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const pathName = usePathname();
 
     const { isRotating, setIsRotating, resetDiaryPosition } = useDiary();
 
@@ -64,19 +67,30 @@ const Navbar = () => {
 
     return (
         <header className="absolute z-30 w-full mt-8">
-            <nav className="flex justify-end mx-auto w-11/12 relative" ref={dropdownRef}>
+            <nav className="flex justify-between mx-auto w-11/12 relative" ref={dropdownRef}>
+                {
+                    (pathName !== '/') ? (
+                        <Link href='/'>
+                            <Button size={'icon'} className='p-6 rounded-full shadow-md group overflow-hidden'>
+                                <ArrowBigLeftDash style={{ width: '22px', height: '22px' }} className='w-full h-full relative ml-[2.3rem]' />
+                                <ArrowBigLeftDash style={{ width: '22px', height: '22px' }} className='w-full h-full relative group-hover:mr-[4.7rem] transition-all duration-300' />
+                            </Button>
+                        </Link>
+                    ) : null
+                }
+
                 {/* Dropdown Trigger */}
                 <Button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     variant="ghost"
-                    className="transition-colors duration-500 ease-in-out hover:text-white bg-zinc-900 hover:bg-zinc-800"
+                    className="transition-colors duration-500 ease-in-out hover:text-white bg-zinc-900 hover:bg-zinc-800 ml-auto"
                 >
                     {isDropdownOpen ? <X /> : <Menu />}
                 </Button>
 
                 {/* Dropdown Content */}
                 {isDropdownOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-56 bg-zinc-900 rounded-md shadow-lg">
+                    <div className="absolute top-full right-0 mt-2 w-56 bg-zinc-900 rounded-md shadow-lg selection:bg-slate-700">
                         <div className="px-4 py-2 font-semibold text-base text-white border-b border-gray-700">
                             Settings
                         </div>
