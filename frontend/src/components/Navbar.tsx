@@ -66,16 +66,18 @@ const Navbar = () => {
     }, []);
 
     return (
-        <header className="absolute z-30 w-full mt-8">
+        <header className="fixed z-30 w-full mt-8">
             <nav className="flex justify-between mx-auto w-11/12 relative" ref={dropdownRef}>
                 {
                     (pathName !== '/') ? (
-                        <Link href='/'>
-                            <Button size={'icon'} className='p-6 rounded-full shadow-md group overflow-hidden'>
-                                <ArrowBigLeftDash style={{ width: '22px', height: '22px' }} className='w-full h-full relative ml-[2.3rem]' />
-                                <ArrowBigLeftDash style={{ width: '22px', height: '22px' }} className='w-full h-full relative group-hover:mr-[4.7rem] transition-all duration-300' />
-                            </Button>
-                        </Link>
+                        <Button asChild size={'icon'} className='p-6 rounded-full shadow-md group overflow-hidden'>
+                            <Link href='/'>
+                                <div className="relative flex items-center gap-2">
+                                    <ArrowBigLeftDash style={{ width: '22px', height: '22px' }} className='w-full h-full relative ml-[2.3rem]' />
+                                    <ArrowBigLeftDash style={{ width: '22px', height: '22px' }} className='w-full h-full relative group-hover:mr-[4.7rem] transition-all duration-300' />
+                                </div>
+                            </Link>
+                        </Button>
                     ) : null
                 }
 

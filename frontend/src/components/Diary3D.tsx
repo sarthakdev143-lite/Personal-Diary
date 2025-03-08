@@ -35,8 +35,8 @@ const Diary3D: React.FC = () => {
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.autoRotate = isRotating; // Initial auto-rotation state
-        controls.autoRotateSpeed = 0.75;
+        controls.autoRotate = isRotating;
+        controls.autoRotateSpeed = 1;
         controls.minDistance = 4;
         controls.maxDistance = 12;
         controls.mouseButtons = {
@@ -44,6 +44,10 @@ const Diary3D: React.FC = () => {
             MIDDLE: THREE.MOUSE.DOLLY,
             RIGHT: THREE.MOUSE.PAN
         };
+        
+        // # See x, y, z axes with the model #
+        // const axesHelper = new THREE.AxesHelper(10); 
+        // scene.add(axesHelper);
 
         const textureLoader = new THREE.TextureLoader();
         const diaryGroup = new THREE.Group();
@@ -220,7 +224,7 @@ const Diary3D: React.FC = () => {
     };
 
     return (
-        <div className="absolute w-full h-screen z-0">
+        <div className={`fixed w-full h-screen z-0 ${pathName === '/' ? 'translate-x-[-0.2rem]' : ''}`}>
             <div id="caption" className="w-full h-screen absolute top-0 left-0 z-0">
                 <h1 className="text-[27vw] text-white uppercase absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-0 select-none">
                     diary
@@ -229,7 +233,7 @@ const Diary3D: React.FC = () => {
             <div
                 ref={mountRef}
                 className="w-full h-screen absolute top-0 left-0 z-10 overflow-hidden"
-                title="Drag To Interact With The Diary"
+                title={pathName === `/` ? `Drag To Interact With The Diary` : undefined}
                 onTouchStart={handleTouchStart}
             >
                 {pathName === '/' ?
