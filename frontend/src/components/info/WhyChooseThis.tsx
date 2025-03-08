@@ -24,8 +24,10 @@ interface FeatureCardProps {
 
 const FeatureCard = ({ icon: Icon, title, description }: FeatureCardProps) => {
     return (
-        <div className="feature-card p-6 rounded-xl bg-white/10 border mix-blend-difference border-white/10 shadow-lg flex flex-col items-center text-white/80 max-w-xs">
-            <Icon width={40} height={40} className="text-white/90 mb-3" />
+        <div className="feature-card p-6 rounded-xl bg-slate-100/10 mix-blend-difference backdrop-blur-sm shadow-lg flex flex-col items-center text-white/80 max-w-xs group border border-white/10 hover:border-white/30 transition-[border]">
+            <div className="p-3 rounded-lg bg-white/10 mb-3 group-hover:bg-white/15 transition-[border] border border-white/10 group-hover:border-white/30">
+                <Icon width={35} height={35} className="text-white/90" />
+            </div>
             <h3 className="font-semibold text-lg">{title}</h3>
             <p className="text-[0.9rem] text-white/60 mt-1">{description}</p>
         </div>
