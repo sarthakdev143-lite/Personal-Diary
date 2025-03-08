@@ -1,4 +1,5 @@
 "use client";
+
 import { ComponentType } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
@@ -23,10 +24,8 @@ interface FeatureCardProps {
 
 const FeatureCard = ({ icon: Icon, title, description }: FeatureCardProps) => {
     return (
-        <div className="feature-card p-6 rounded-xl bg-white/10 border mix-blend-difference border-white/10 hover:border-white/30 transition-all group shadow-lg flex flex-col items-center text-white/80 max-w-xs">
-            <div className="p-3 rounded-lg bg-white/10 mb-3 group-hover:bg-white/15 transition-[border] duration-500 border border-white/10 group-hover:border-white/30">
-                <Icon width={36} height={36} className="text-white" />
-            </div>
+        <div className="feature-card p-6 rounded-xl bg-white/10 border mix-blend-difference border-white/10 shadow-lg flex flex-col items-center text-white/80 max-w-xs">
+            <Icon width={40} height={40} className="text-white/90 mb-3" />
             <h3 className="font-semibold text-lg">{title}</h3>
             <p className="text-[0.9rem] text-white/60 mt-1">{description}</p>
         </div>
