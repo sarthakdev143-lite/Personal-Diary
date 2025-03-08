@@ -10,9 +10,11 @@ interface LenisProviderProps {
 const LenisProvider = ({ children }: LenisProviderProps) => {
     useEffect(() => {
         const lenis = new Lenis({
-            duration: 1, 
-            easing: (t: number) => 1 - Math.pow(1 - t, 3), 
-            touchMultiplier: 2, 
+            duration: 1,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            touchMultiplier: 2,
+            smoothWheel: true,
+            syncTouch: true,
         });
 
         function raf(time: number) {
