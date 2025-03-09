@@ -6,6 +6,7 @@ import { Button } from './ui/button';
 import { useDiary } from "@/context/DiaryContext";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { AuthButton } from './AuthButton';
 
 const Switch = ({ checked, onCheckedChange }: { checked: boolean, onCheckedChange: () => void }) => {
     return (
@@ -80,6 +81,8 @@ const Navbar = () => {
                         </Button>
                     ) : null
                 }
+
+                <AuthButton />
 
                 {/* Dropdown Trigger */}
                 <Button

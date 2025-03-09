@@ -5,7 +5,7 @@ import Head from "next/head";
 import Navbar from "@/components/Navbar";
 import Diary3D from '@/components/Diary3D';
 import { DiaryProvider } from "@/context/DiaryContext";
-// import { Providers } from './providers'
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "Diary • Sarthakdev143",
@@ -27,13 +27,13 @@ export default function RootLayout({
         className={`antialiased`}
       >
         <DiaryProvider>
-          {/* <Providers> */}
-          <Navbar />
-          <main>
-            <Diary3D />
-            {children}
-          </main>
-          {/* </Providers> */}
+          <Providers>
+            <Navbar />
+            <main>
+              <Diary3D />
+              {children}
+            </main>
+          </Providers>
         </DiaryProvider>
       </body>
     </html>
