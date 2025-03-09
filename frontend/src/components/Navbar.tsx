@@ -68,10 +68,10 @@ const Navbar = () => {
 
     return (
         <header className="fixed z-30 w-full mt-8">
-            <nav className="flex justify-between mx-auto w-11/12 relative" ref={dropdownRef}>
+            <nav className="flex justify-between mx-auto w-11/12 relative items-center" ref={dropdownRef}>
                 {
                     (pathName !== '/') ? (
-                        <Button asChild size={'icon'} className='p-6 rounded-full shadow-md group overflow-hidden'>
+                        <Button asChild size={'icon'} className='p-6 rounded-full shadow-md group overflow-hidden mr-4'>
                             <Link href='/'>
                                 <div className="relative flex items-center gap-2">
                                     <ArrowBigLeftDash style={{ width: '22px', height: '22px' }} className='w-full h-full relative ml-[2.3rem]' />
@@ -88,7 +88,7 @@ const Navbar = () => {
                 <Button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     variant="ghost"
-                    className="transition-colors duration-500 ease-in-out hover:text-white bg-zinc-900 hover:bg-zinc-800 ml-auto"
+                    className="transition-colors duration-500 ease-in-out py-5 text-white hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-700"
                 >
                     {isDropdownOpen ? <X /> : <Menu />}
                 </Button>
