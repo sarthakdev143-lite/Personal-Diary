@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postbuild": "next-sitemap"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -25,6 +26,7 @@
     "mongodb": "^6.14.2",
     "next": "latest",
     "next-auth": "^4.24.11",
+    "next-sitemap": "^4.2.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "remixicon": "^4.5.0",

@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://sarthakdev-diary.vercel.app
+
+# Sitemaps
+Sitemap: https://sarthakdev-diary.vercel.app/sitemap.xml
