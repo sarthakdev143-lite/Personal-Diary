@@ -21,7 +21,7 @@ const InfoPage = () => {
     return (
         <>
             <LenisProvider>
-                <div id="info-parent" ref={infoParentRef} className="w-full h-auto bg-black/25 absolute backdrop-blur-lg opacity-0 flex flex-col">
+                <div id="info-parent" ref={infoParentRef} className="w-full h-auto bg-black/25 absolute backdrop-blur-lg opacity-0 flex flex-col max-xs:px-2 px-4">
                     <Landing />
                     <WhyChooseThis />
                 </div>

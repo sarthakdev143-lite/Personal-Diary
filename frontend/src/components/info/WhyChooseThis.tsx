@@ -53,7 +53,7 @@ const WhyChooseThis = () => {
     }, []);
 
     return (
-        <section className="w-full h-screen flex flex-col items-center justify-center px-6 text-center">
+        <section className="w-full min-h-screen max-sm:pb-32 flex flex-col items-center justify-center px-6 text-center">
             <h1 className="text-4xl font-bold text-white/80 mix-blend-difference italic">
                 Why Choose This?
             </h1>

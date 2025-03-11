@@ -24,7 +24,7 @@ export function AuthButton() {
         <>
             {
                 session ?
-                    <div className="flex justify-between flex-1 mr-3 gap-3 items-center ">
+                    <div className="flex justify-between flex-1 mr-3 gap-3 items-center">
                         <figure className="flex items-center gap-3 pr-2 py-0.5 bg-zinc-800 hover:bg-zinc-900 transition cursor-pointer rounded-full">
                             <Image
                                 src={session.user?.image || ""}
@@ -33,14 +33,19 @@ export function AuthButton() {
                                 height={45}
                                 className="rounded-full"
                             />
-                            <div className="flex flex-col">
+                            <div className="flex flex-col overflow-hidden">
                                 <figcaption className="capitalize text-base">{session.user?.name}</figcaption>
-                                <figcaption className="text-xs text-zinc-500 max-w-36 truncate" title={`Email: ${session.user?.email ?? "No email available"}`}>{session.user?.email}</figcaption>
+                                <figcaption
+                                    className="text-xs text-zinc-500 max-w-36 truncate overflow-hidden"
+                                    title={`Email: ${session.user?.email ?? "No email available"}`}>
+                                    {session.user?.email}
+                                </figcaption>
                             </div>
                         </figure>
+
                         <button
                             onClick={() => handleOperation("signout")}
-                            className="bg-red-500 text-white px-4 py-[0.3rem] rounded"
+                            className="max-xs:hidden bg-red-500 text-white px-4 py-[0.3rem] rounded"
                         >
                             Sign Out
                         </button>
