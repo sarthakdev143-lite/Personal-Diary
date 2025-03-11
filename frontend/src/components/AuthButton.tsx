@@ -1,42 +1,57 @@
 "use client";
 import { signIn, signOut, useSession } from "next-auth/react";
 import Image from "next/image";
+import { useState } from "react";
 
 export function AuthButton() {
     const { data: session } = useSession();
 
-    if (session) {
-        return (
-            <div className="flex justify-between flex-1 mr-3 gap-3 items-center ">
-                <figure className="flex items-center gap-3 pr-1 py-0.5 bg-zinc-800 hover:bg-zinc-900 transition cursor-pointer rounded-l-full rounded-r-[200rem]">
-                    <Image
-                        src={session.user?.image || ""}
-                        alt={session.user?.name || "User profile picture"}
-                        width={45}
-                        height={45}
-                        className="rounded-full"
-                    />
-                    <div className="flex flex-col">
-                        <figcaption className="capitalize text-base">{session.user?.name}</figcaption>
-                        <figcaption className="text-xs text-zinc-500 max-w-36 truncate" title={'Email : ' + session.user?.email || ''}>{session.user?.email}</figcaption>
-                    </div>
-                </figure>
-                <button
-                    onClick={() => signOut()}
-                    className="bg-red-500 text-white px-4 py-[0.525rem] rounded"
-                >
-                    Sign Out
-                </button>
-            </div>
-        );
+    const [loading, setLoading] = useState(false);
+
+    const handleOperation = async (operation: "signin" | "signout") => {
+        try {
+            setLoading(true);
+            operation === "signin" ? await signIn() : await signOut();
+        } finally {
+            setLoading(false);
+        }
     }
 
     return (
-        <button
-            onClick={() => signIn("google")}
-            className="bg-zinc-900 border border-zinc-700 px-4 py-[0.3rem] text-zinc-300 hover:bg-zinc-800 transition rounded ml-auto mr-3"
-        >
-            Sign in
-        </button>
+        <>
+            {
+                session ?
+                    <div className="flex justify-between flex-1 mr-3 gap-3 items-center ">
+                        <figure className="flex items-center gap-3 pr-2 py-0.5 bg-zinc-800 hover:bg-zinc-900 transition cursor-pointer rounded-full">
+                            <Image
+                                src={session.user?.image || ""}
+                                alt={session.user?.name || "User profile picture"}
+                                width={45}
+                                height={45}
+                                className="rounded-full"
+                            />
+                            <div className="flex flex-col">
+                                <figcaption className="capitalize text-base">{session.user?.name}</figcaption>
+                                <figcaption className="text-xs text-zinc-500 max-w-36 truncate" title={`Email: ${session.user?.email ?? "No email available"}`}>{session.user?.email}</figcaption>
+                            </div>
+                        </figure>
+                        <button
+                            onClick={() => handleOperation("signout")}
+                            className="bg-red-500 text-white px-4 py-[0.3rem] rounded"
+                        >
+                            Sign Out
+                        </button>
+                    </div> : <button
+                        onClick={() => handleOperation("signin")}
+                        className="bg-zinc-900 border border-zinc-700 px-4 py-[0.3rem] text-zinc-300 hover:bg-zinc-800 transition rounded ml-auto mr-3"
+                    >
+                        Sign in
+                    </button>
+            } {
+                loading && <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+                </div>
+            }
+        </>
     );
 }
