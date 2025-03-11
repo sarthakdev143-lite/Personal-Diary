@@ -11,7 +11,10 @@ export function AuthButton() {
     const handleOperation = async (operation: "signin" | "signout") => {
         try {
             setLoading(true);
-            operation === "signin" ? await signIn() : await signOut();
+            if (operation === "signin")
+                await signIn();
+            else
+                await signOut();
         } finally {
             setLoading(false);
         }
