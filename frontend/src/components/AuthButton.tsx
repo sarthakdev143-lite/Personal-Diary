@@ -25,7 +25,7 @@ export function AuthButton() {
             {
                 session ?
                     <div className="flex justify-between flex-1 mr-3 gap-3 items-center">
-                        <figure className="flex items-center gap-3 pr-2 py-0.5 bg-zinc-800 hover:bg-zinc-900 transition cursor-pointer rounded-full">
+                        <figure className="flex items-center gap-3 pr-3.5 py-0.5 bg-zinc-800 hover:bg-zinc-900 transition cursor-pointer rounded-full">
                             <Image
                                 src={session.user?.image || ""}
                                 alt={session.user?.name || "User profile picture"}
