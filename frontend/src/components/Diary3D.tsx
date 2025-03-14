@@ -44,7 +44,7 @@ const Diary3D: React.FC = () => {
             MIDDLE: THREE.MOUSE.DOLLY,
             RIGHT: THREE.MOUSE.PAN
         };
-        
+
         // # See x, y, z axes with the model #
         // const axesHelper = new THREE.AxesHelper(10); 
         // scene.add(axesHelper);
@@ -86,8 +86,58 @@ const Diary3D: React.FC = () => {
             paperTexture.wrapT = THREE.RepeatWrapping;
 
             const pageGroup = new THREE.Group();
+            let middlePage = null; // Placeholder for middle page
 
-            for (let i = 0; i < 50; i++) {
+            // First Page (Left Side) - Pre-Written Content
+            const firstPageGeometry = new THREE.PlaneGeometry(3.2, 5.1);
+            firstPageGeometry.translate(1.6, 0, 0);
+
+            const firstPageCanvas = document.createElement("canvas");
+            firstPageCanvas.width = 512;
+            firstPageCanvas.height = 1024;
+            const ctx = firstPageCanvas.getContext("2d");
+
+            if (ctx) {
+                ctx.fillStyle = "#fdf4e3"; // Light paper color
+                ctx.fillRect(0, 0, firstPageCanvas.width, firstPageCanvas.height);
+
+                ctx.save(); // Save state before flipping
+
+                ctx.translate(firstPageCanvas.width, 0);
+                ctx.scale(-1, 1); // Flip horizontally for left side
+
+                ctx.fillStyle = "#2f2f2f";
+                ctx.font = "28px cursive"; // Handwriting font
+                ctx.fillText("Welcome to Your Digital Diary!", 30, 80);
+                ctx.fillText("📖 Features:", 30, 140);
+                ctx.fillText("- Fully private and encrypted", 50, 190);
+                ctx.fillText("- Add images and audio notes", 50, 240);
+                ctx.fillText("- Offline mode", 50, 290);
+
+                ctx.fillText("👨‍💻 Developer: @sarthakdev143", 30, 370);
+
+                ctx.restore(); // Restore state after flipping
+            }
+
+            const firstPageTexture = new THREE.CanvasTexture(firstPageCanvas);
+            firstPageTexture.flipY = false;
+            firstPageTexture.needsUpdate = true;
+
+            const firstPageMaterial = new THREE.MeshStandardMaterial({
+                map: firstPageTexture,
+                side: THREE.DoubleSide,
+                roughness: 0.9,
+                metalness: 0.1,
+            });
+
+            const firstPage = new THREE.Mesh(firstPageGeometry, firstPageMaterial);
+            firstPage.rotation.x = Math.PI / 2;
+            firstPage.position.set(-1.68, 0, 0);
+
+            pageGroup.add(firstPage);
+
+            // Other Pages (Including Middle Page)
+            for (let i = 1; i < 50; i++) {
                 const pageGeometry = new THREE.PlaneGeometry(3.2, 5.1);
                 pageGeometry.translate(1.6, 0, 0);
 
@@ -97,19 +147,55 @@ const Diary3D: React.FC = () => {
                     roughness: 0.9,
                     metalness: 0.1,
                     transparent: true,
-                    opacity: 0.95
+                    opacity: 0.95,
                 });
 
                 const page = new THREE.Mesh(pageGeometry, pageMaterial);
                 page.rotation.x = Math.PI / 2;
-                page.position.set(
-                    -1.68 + (Math.random() * 0.1 - 0.135),
-                    -0.007 * i,
-                    0
-                );
-
+                page.position.set(-1.68 + (Math.random() * 0.1 - 0.135), -0.007 * i, 0);
                 page.receiveShadow = true;
+
+                if (i === 25) middlePage = page; // Capture middle page
+
                 pageGroup.add(page);
+            }
+
+            // Modify the Middle Page (Right Side) - No Mirroring Needed
+            if (middlePage) {
+                const middlePageCanvas = document.createElement("canvas");
+                middlePageCanvas.width = 512;
+                middlePageCanvas.height = 1024;
+                const ctxMiddle = middlePageCanvas.getContext("2d");
+
+                if (ctxMiddle) {
+                    ctxMiddle.fillStyle = "#fdf4e3"; // Light paper color
+                    ctxMiddle.fillRect(0, 0, middlePageCanvas.width, middlePageCanvas.height);
+
+                    ctxMiddle.fillStyle = "#2f2f2f";
+                    ctxMiddle.font = "28px cursive";
+                    ctxMiddle.fillText("Today's Entry:", 30, 80);
+
+                    // Load and draw an image
+                    const img = new Image();
+                    img.crossOrigin = "anonymous";
+                    img.src = "/look-maxing.jpg";
+
+                    img.onload = () => {
+                        ctxMiddle.drawImage(img, 100, 120, 300, 200);
+                        middlePageTexture.needsUpdate = true; // Ensure texture updates after drawing
+                    };
+
+                    img.onerror = () => {
+                        console.error("Failed to load image");
+                    };
+                }
+
+                const middlePageTexture = new THREE.CanvasTexture(middlePageCanvas);
+                middlePageTexture.flipY = false;
+                middlePageTexture.needsUpdate = true;
+
+                middlePage.material.map = middlePageTexture;
+                middlePage.material.needsUpdate = true;
             }
 
             diaryGroup.add(pageGroup);
@@ -209,7 +295,7 @@ const Diary3D: React.FC = () => {
             }
             sceneRef.current = null;
         };
-    }, []);
+    }, [sceneRef]);
 
     // Effect to update rotation when isRotating changes
     useEffect(() => {
