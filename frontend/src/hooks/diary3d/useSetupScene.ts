@@ -43,7 +43,7 @@ export const useSetupScene = () => {
         const pageGroup = new THREE.Group();
         let middlePage = null; // Placeholder for middle page
 
-        // First Page (Left Side) 
+        // First Page (Left Side) - Introduction Page
         const firstPageGeometry = new THREE.PlaneGeometry(3.2, 5.1);
         firstPageGeometry.translate(1.6, 0, 0);
 
@@ -53,25 +53,55 @@ export const useSetupScene = () => {
         const ctx = firstPageCanvas.getContext("2d");
 
         if (ctx) {
-            ctx.fillStyle = "#fdf4e3"; 
+            ctx.fillStyle = "#fdf4e3";
             ctx.fillRect(0, 0, firstPageCanvas.width, firstPageCanvas.height);
 
-            ctx.save(); // Save state before flipping
-
+            // Save state before flipping
+            ctx.save();
             ctx.translate(firstPageCanvas.width, 0);
-            ctx.scale(-1, 1); // Flip horizontally for left side
+            ctx.scale(-1, 1);
 
+            // Draw text (properly mirrored back to normal)
             ctx.fillStyle = "#2f2f2f";
-            ctx.font = "28px cursive"; // Handwriting font
+            ctx.font = "30px cursive";
             ctx.fillText("Welcome to Your Digital Diary!", 30, 80);
-            ctx.fillText("📖 Features:", 30, 140);
-            ctx.fillText("- Fully private and encrypted", 50, 190);
-            ctx.fillText("- Add images and audio notes", 50, 240);
-            ctx.fillText("- Offline mode", 50, 290);
 
-            ctx.fillText("👨‍💻 Developer: @sarthakdev143", 30, 370);
+            ctx.font = "24px cursive";
+            ctx.fillText("👨‍💻 Developer: @sarthakdev143", 30, 140);
 
-            ctx.restore(); // Restore state after flipping
+            ctx.font = "22px cursive";
+            ctx.fillText("📖 Features:", 30, 180);
+            ctx.fillText("- Fully private & encrypted 🔒", 50, 230);
+            ctx.fillText("- Add images with text 📸", 50, 280);
+            ctx.fillText("- Customizable themes 🎨", 50, 330);
+            ctx.fillText("- Offline mode ☁️", 50, 380);
+            ctx.fillText("- Open source 🔓", 50, 430);
+
+            ctx.font = "italic 22px cursive";
+            ctx.fillText("“Writing is the painting of the voice.”", 50, 520);
+            ctx.fillText("- Voltaire", 200, 550);
+            ctx.fillText("Scan this QR for a cokkie :)", 105, 920);
+
+            ctx.restore(); // Restore normal transformation for images
+
+            const img = new Image();
+            img.src = "/qr-code.png";
+
+            img.onload = () => {
+                // Mirror the image to account for the back face rendering
+                ctx.save();
+                ctx.translate(firstPageCanvas.width, 0); // Move to right edge
+                ctx.scale(-1, 1); // Flip context horizontally
+                ctx.drawImage(img, 130, 600, 240, 275);
+                ctx.restore();
+
+                firstPageTexture.needsUpdate = true;
+            };
+
+            img.onerror = () => {
+                console.error("Failed to load image.");
+            };
+
         }
 
         const firstPageTexture = new THREE.CanvasTexture(firstPageCanvas);
@@ -115,7 +145,7 @@ export const useSetupScene = () => {
             pageGroup.add(page);
         }
 
-        // Modify the Middle Page (Right Side) - No Mirroring Needed
+        // Modify the Middle Page (Right Side) - Sample Diary Entry
         if (middlePage) {
             const middlePageCanvas = document.createElement("canvas");
             middlePageCanvas.width = 512;
@@ -123,26 +153,46 @@ export const useSetupScene = () => {
             const ctxMiddle = middlePageCanvas.getContext("2d");
 
             if (ctxMiddle) {
-                ctxMiddle.fillStyle = "#fdf4e3"; // Light paper color
+                ctxMiddle.fillStyle = "#fdf4e3";
                 ctxMiddle.fillRect(0, 0, middlePageCanvas.width, middlePageCanvas.height);
 
+                // Title & Date
                 ctxMiddle.fillStyle = "#2f2f2f";
-                ctxMiddle.font = "28px cursive";
-                ctxMiddle.fillText("Today's Entry:", 30, 80);
+                ctxMiddle.font = "30px cursive";
+                ctxMiddle.fillText("💔 You Left, But I Stayed 💔", 55, 80);
 
-                // Load and draw an image
-                const img = new Image();
-                img.crossOrigin = "anonymous";
-                img.src = "/look-maxing.jpg";
+                ctxMiddle.font = "22px cursive";
+                ctxMiddle.fillText("- @sarthakdev143", 300, 120);
 
-                img.onload = () => {
-                    ctxMiddle.drawImage(img, 100, 120, 300, 200);
-                    middlePageTexture.needsUpdate = true; // Ensure texture updates after drawing
-                };
+                // Poem Text
+                ctxMiddle.font = "22px cursive";
+                const poemLines = [
+                    "I called your name in the quiet night,",
+                    "but the wind carried it far from sight.",
+                    "I reached for you in the empty air,",
+                    "but found nothing—just silence there.",
+                    "",
+                    "You were the warmth in my coldest days,",
+                    "now I shiver in love’s empty space.",
+                    "Your touch once felt like home to me,",
+                    "now it’s just a ghost I cannot see.",
+                    "",
+                    "You left so easily, without a sound,",
+                    "while I stood there, broken, bound.",
+                    "Did love mean nothing—was it all a lie?",
+                    "Then why does my heart still ask why?",
+                    "",
+                    "I loved you more than words can say,",
+                    "yet you let us fade away.",
+                    "Now all I have is this endless ache,",
+                    "a love that only I still take. 💔"
+                ];
 
-                img.onerror = () => {
-                    console.error("Failed to load image");
-                };
+                let yOffset = 180; // Starting position for text
+                poemLines.forEach((line) => {
+                    ctxMiddle.fillText(line, 55, yOffset);
+                    yOffset += 40; // Adjust line spacing
+                });
             }
 
             const middlePageTexture = new THREE.CanvasTexture(middlePageCanvas);
