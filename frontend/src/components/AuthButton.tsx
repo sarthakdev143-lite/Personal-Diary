@@ -3,7 +3,7 @@ import { signIn, signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import { useState } from "react";
 
-export function AuthButton() {
+export function AuthButton({ pathName }: { pathName: string }) {
     const { data: session } = useSession();
 
     const [loading, setLoading] = useState(false);
@@ -25,7 +25,7 @@ export function AuthButton() {
             {
                 session ?
                     <div className="flex justify-between flex-1 mr-3 gap-3 items-center">
-                        <figure className="flex items-center gap-3 pr-3.5 py-0.5 bg-zinc-800 hover:bg-zinc-900 transition cursor-pointer rounded-full">
+                        <figure className={`flex items-center gap-3 pr-3.5 py-0.5 bg-zinc-800 hover:bg-zinc-900 transition cursor-pointer rounded-full ${pathName === '/info' ? 'max-xxs:ml-auto' : ''}`}>
                             <Image
                                 src={session.user?.image || ""}
                                 alt={session.user?.name || "User profile picture"}
@@ -34,7 +34,7 @@ export function AuthButton() {
                                 className="rounded-full"
                             />
                             <div className="flex flex-col overflow-hidden">
-                                <figcaption className="capitalize text-base">{session.user?.name}</figcaption>
+                                <figcaption className="capitalize text-base truncate">{session.user?.name}</figcaption>
                                 <figcaption
                                     className="text-xs text-zinc-500 max-w-36 truncate overflow-hidden"
                                     title={`Email: ${session.user?.email ?? "No email available"}`}>

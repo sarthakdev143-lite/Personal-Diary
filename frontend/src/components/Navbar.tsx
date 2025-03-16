@@ -80,13 +80,13 @@ const Navbar = () => {
                     </Button>
                 )}
 
-                <AuthButton />
+                <AuthButton pathName={pathName} />
 
                 {/* Dropdown Trigger */}
                 <Button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     variant="ghost"
-                    className="transition-colors duration-500 ease-in-out py-5 text-white hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-700"
+                    className={`transition-colors duration-500 ease-in-out py-5 text-white hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 ${pathName === "/" ? "block" : "max-xxs:hidden"}`}
                 >
                     {isDropdownOpen ? <X /> : <Menu />}
                 </Button>
