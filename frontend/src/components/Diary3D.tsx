@@ -7,6 +7,8 @@ import { useDiary } from "@/context/DiaryContext";
 import { useDiaryScene } from "@/context/useDiaryScene";
 import { usePathname } from "next/navigation";
 import { useSetupScene } from "@/hooks/diary3d/useSetupScene";
+import { Button } from "./ui/button";
+import Link from "next/link";
 
 const Diary3D: React.FC = () => {
     const { isRotating } = useDiary();
@@ -139,6 +141,12 @@ const Diary3D: React.FC = () => {
                         >
                             {isOpened ? 'Close Diary' : 'Open Diary'}
                         </button>
+                        <Button asChild disabled={isAnimating} size={'lg'} className={`select-none text-gray-300 font-sans font-normal tracking-wide bg-slate-800 bg-opacity-40 px-4 py-2 rounded-md cursor-pointer transition-all duration-300 
+                 ${isAnimating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-opacity-50'}`}>
+                            <Link href='/diary'>
+                                Start Writing
+                            </Link>
+                        </Button>
                     </div>
                     : null}
             </div>

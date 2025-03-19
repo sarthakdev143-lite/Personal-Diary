@@ -11,7 +11,8 @@ const InfoPage = () => {
     const infoParentRef = useRef<HTMLDivElement>(null);
 
     useGSAP(() => {
-        gsap.to(infoParentRef.current, {
+        gsap.fromTo(infoParentRef.current,
+            { opacity: 0 }, {
             opacity: 1,
             duration: 1,
             ease: 'power2.out'
@@ -21,7 +22,7 @@ const InfoPage = () => {
     return (
         <>
             <LenisProvider>
-                <div id="info-parent" ref={infoParentRef} className="w-full h-auto bg-black/25 absolute backdrop-blur-lg opacity-0 flex flex-col max-xs:px-2 px-4">
+                <div id="info-parent" ref={infoParentRef} className="w-full h-auto bg-black/25 absolute backdrop-blur-lg flex flex-col max-xs:px-2 px-4">
                     <Landing />
                     <WhyChooseThis />
                 </div>

@@ -1,12 +1,15 @@
 "use client";
+import { useGSAP } from "@gsap/react";
+import gsap from "gsap";
 import { signIn, signOut, useSession } from "next-auth/react";
 import Image from "next/image";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 export function AuthButton({ pathName }: { pathName: string }) {
     const { data: session } = useSession();
 
     const [loading, setLoading] = useState(false);
+    const profileFigureRef = useRef<HTMLUnknownElement>(null);
 
     const handleOperation = async (operation: "signin" | "signout") => {
         try {
@@ -19,13 +22,13 @@ export function AuthButton({ pathName }: { pathName: string }) {
             setLoading(false);
         }
     }
-
+    
     return (
         <>
             {
                 session ?
                     <div className="flex justify-between flex-1 mr-3 gap-3 items-center">
-                        <figure className={`flex items-center gap-3 pr-3.5 py-0.5 bg-zinc-800 hover:bg-zinc-900 transition cursor-pointer rounded-full ${pathName === '/info' ? 'max-xxs:ml-auto' : ''}`}>
+                        <figure ref={profileFigureRef} className={`flex items-center gap-3 pr-3.5 py-0.5 bg-zinc-800 hover:bg-zinc-900 transition cursor-pointer rounded-full ${pathName === '/info' ? 'max-xxs:ml-auto' : ''}`}>
                             <Image
                                 src={session.user?.image || ""}
                                 alt={session.user?.name || "User profile picture"}

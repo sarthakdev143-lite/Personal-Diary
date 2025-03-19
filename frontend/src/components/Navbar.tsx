@@ -42,6 +42,7 @@ const Navbar = () => {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const pathName = usePathname();
     const { isRotating, setIsRotating, resetDiaryPosition } = useDiary();
+    const backButtonRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         const checkScreenSize = () => setIsMobile(window.innerWidth <= 400);
@@ -70,7 +71,7 @@ const Navbar = () => {
         <header className="fixed z-30 w-full mt-8">
             <nav className="flex justify-between mx-auto w-[95%] xs:w-11/12 relative items-center" ref={dropdownRef}>
                 {pathName !== "/" && (
-                    <Button asChild size={"icon"} className="p-6 rounded-full shadow-md group overflow-hidden mr-4">
+                    <Button asChild size={"icon"} className="p-6 rounded-full shadow-md group overflow-hidden mr-4" ref={backButtonRef}>
                         <Link href="/">
                             <div className="relative flex items-center gap-2">
                                 <ArrowBigLeftDash style={{ width: "22px", height: "22px" }} className="w-full h-full relative ml-[2.3rem]" />
@@ -86,7 +87,7 @@ const Navbar = () => {
                 <Button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     variant="ghost"
-                    className={`transition-colors duration-500 ease-in-out py-5 text-white hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 ${pathName === "/" ? "block" : "max-xxs:hidden"}`}
+                    className={`transition-colors duration-500 ease-in-out py-5 text-white hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 ${pathName === "/" ? "" : "max-xxs:hidden"}`}
                 >
                     {isDropdownOpen ? <X /> : <Menu />}
                 </Button>
