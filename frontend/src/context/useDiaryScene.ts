@@ -350,7 +350,7 @@ export const useDiaryScene = (isRotating: boolean) => {
                     cancelAnimationFrame(animationFrameId);
                 }
                 animationRef.current = null;
-                setIsAnimating(false);
+                setTimeout(() => setIsAnimating(false), 1000);
             }
         };
 
@@ -370,22 +370,22 @@ export const useDiaryScene = (isRotating: boolean) => {
 
     const resetPosition = useCallback(() => {
         if (!sceneRef.current) return;
-    
+
         // First close the diary if it's open
         if (isOpened && !isAnimating) {
             closeDiary();
         }
-    
+
         // Reset camera and controls to default position
         const { camera, controls, diaryGroup } = sceneRef.current;
-        
+
         // Calculate the target position based on the same logic as updateCameraAndControls
         deviceTypeRef.current = getDeviceType();
         orientationRef.current = getOrientation();
-        
+
         let cameraDistance = 8;
         let targetY = 0;
-    
+
         switch (deviceTypeRef.current) {
             case 'mobile':
                 if (orientationRef.current === 'portrait') {
@@ -407,37 +407,37 @@ export const useDiaryScene = (isRotating: boolean) => {
                     cameraDistance = 7;
                 break;
         }
-        
+
         // Use the same position calculation as updateCameraAndControls
         const targetPosition = new THREE.Vector3(0, cameraDistance - 3, cameraDistance);
         const targetControlsTarget = new THREE.Vector3(0, targetY, 0);
-    
+
         // Animation for smoother reset
         const startPosition = camera.position.clone();
         const startRotation = diaryGroup.rotation.clone();
         const startTarget = controls.target.clone();
-    
+
         const duration = 1000;
         const startTime = Date.now();
         const targetRotation = new THREE.Euler(0, 0, 0);
-    
+
         const animate = () => {
             const elapsedTime = Date.now() - startTime;
             const progress = Math.min(elapsedTime / duration, 1);
             const easeProgress = 1 - Math.pow(1 - progress, 3);
-    
+
             // Interpolate camera position
             camera.position.lerpVectors(startPosition, targetPosition, easeProgress);
-    
+
             // Interpolate diary group rotation
             diaryGroup.rotation.x = startRotation.x + (targetRotation.x - startRotation.x) * easeProgress;
             diaryGroup.rotation.y = startRotation.y + (targetRotation.y - startRotation.y) * easeProgress;
             diaryGroup.rotation.z = startRotation.z + (targetRotation.z - startRotation.z) * easeProgress;
-    
+
             // Interpolate controls target
             controls.target.lerpVectors(startTarget, targetControlsTarget, easeProgress);
             controls.update();
-    
+
             if (progress < 1) {
                 requestAnimationFrame(animate);
             } else {
@@ -445,7 +445,7 @@ export const useDiaryScene = (isRotating: boolean) => {
                 // calculated and applied the correct values
             }
         };
-    
+
         requestAnimationFrame(animate);
     }, [isOpened, isAnimating, getDeviceType, getOrientation]);
 

@@ -28,6 +28,9 @@ export const authOptions: NextAuthOptions = {
     ],
     adapter: MongoDBAdapter(clientPromise),
     secret: process.env.NEXTAUTH_SECRET,
+    pages: {
+        signIn: "/login", // Custom sign-in page
+    },
     callbacks: {
         async session({ session, user }: { session: Session; user: AdapterUser }): Promise<ExtendedSession> {
             const extendedSession = session as ExtendedSession;

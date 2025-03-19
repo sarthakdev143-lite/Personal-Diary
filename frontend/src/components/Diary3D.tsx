@@ -136,7 +136,7 @@ const Diary3D: React.FC = () => {
                         <button
                             onClick={toggleDiary}
                             disabled={isAnimating}
-                            className={`select-none text-gray-300 font-sans bg-slate-800 bg-opacity-40 px-4 py-2 rounded-md cursor-pointer transition-opacity duration-300 
+                            className={`select-none text-gray-300 font-sans bg-slate-800 bg-opacity-40 px-4 py-2 rounded-md transition-opacity duration-300 
                  ${isAnimating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-opacity-50'}`}
                         >
                             {isOpened ? 'Close Diary' : 'Open Diary'}
