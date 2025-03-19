@@ -1,6 +1,4 @@
 "use client";
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
 import { signIn, signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import { useRef, useState } from "react";
