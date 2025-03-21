@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import LenisProvider from "@/components/LenisProvider";
@@ -10,6 +10,8 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 const DiaryDashboard = () => {
     const infoParentRef = useRef<HTMLDivElement>(null);
+
+    const [diaries, setDiaries] = useState([]);
 
     useGSAP(() => {
         gsap.fromTo(infoParentRef.current,
@@ -32,13 +34,13 @@ const DiaryDashboard = () => {
                         <Input
                             type="text"
                             placeholder="Search Diary and Notes..."
-                            className="w-full max-xs:w-full text-base p-5 py-6 bg-white/10 border border-white/15 focus:border-white/50 outline-none rounded-xl text-white placeholder:text-zinc-400"
+                            className="w-1/2 mx-auto max-xs:w-full text-lg p-6 py-[1.65rem] bg-white/10 border border-white/15 focus:border-white/50 outline-none rounded-xl text-white placeholder:text-zinc-400"
                         />
-                        <Button
-                            className="bg-blue-500 hover:bg-blue-600 text-white text-lg font-medium px-5 py-3 rounded-xl transition-all"
+                        {/* <Button
+                            className="bg-white/80 mix-blend-difference text-black text-lg font-medium p-5 hover:bg-white/75 rounded-md transition-all"
                         >
                             + Add New Diary
-                        </Button>
+                        </Button> */}
                     </div>
                 </div>
             </LenisProvider>

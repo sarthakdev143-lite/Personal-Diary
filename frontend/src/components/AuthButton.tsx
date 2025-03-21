@@ -1,10 +1,12 @@
 "use client";
 import { signIn, signOut, useSession } from "next-auth/react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
 export function AuthButton({ pathName }: { pathName: string }) {
     const { data: session } = useSession();
+    const router = useRouter();
 
     const [loading, setLoading] = useState(false);
     const profileFigureRef = useRef<HTMLUnknownElement>(null);
@@ -14,13 +16,15 @@ export function AuthButton({ pathName }: { pathName: string }) {
             setLoading(true);
             if (operation === "signin")
                 await signIn();
-            else
+            else {
                 await signOut();
+                router.push("/");
+            }
         } finally {
             setLoading(false);
         }
     }
-    
+
     return (
         <>
             {

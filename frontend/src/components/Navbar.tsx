@@ -117,7 +117,7 @@ const Navbar = () => {
                             <div className="px-4 py-3 border-t border-gray-700">
                                 <Button
                                     variant="destructive"
-                                    onClick={() => signOut()}
+                                    onClick={() => signOut({ callbackUrl: "/api/auth/signin" })}
                                     className="text-white px-4 py-[0.3rem] rounded w-full text-center mt-2"
                                 >
                                     Sign Out

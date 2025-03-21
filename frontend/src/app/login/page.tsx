@@ -29,7 +29,7 @@ export default function LoginPage() {
         setIsLoading((prev) => ({ ...prev, [provider]: true }))
 
         try {
-            await signIn(provider, { callbackUrl: "/dashboard" })
+            await signIn(provider, { callbackUrl: "/diary" })
         } catch (error) {
             console.error("Login failed", error)
             toast({
