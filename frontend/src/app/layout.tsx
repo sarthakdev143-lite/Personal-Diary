@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import 'remixicon/fonts/remixicon.css';
+import 'remixicon/fonts/remixicon.css'
 import Head from "next/head";
 import Navbar from "@/components/Navbar";
 import Diary3D from '@/components/Diary3D';

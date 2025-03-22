@@ -89,7 +89,7 @@ const Navbar = () => {
                     variant="ghost"
                     className={`transition-colors duration-500 ease-in-out py-5 text-white hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 ${pathName === "/" ? "" : "max-xxs:hidden"}`}
                 >
-                    {isDropdownOpen ? <X /> : <Menu />}
+                    {isDropdownOpen ? <X size={16}/> : <Menu size={16}/>}
                 </Button>
 
                 {/* Dropdown Content */}
