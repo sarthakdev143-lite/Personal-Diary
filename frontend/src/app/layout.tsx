@@ -41,7 +41,7 @@ export default function RootLayout({
         {/* Favicon */}
         <link rel="icon" type="image/x-icon" href="/favicon.ico" />
       </Head>
-      <body className="antialiased">
+      <body className="antialiased custom-scrollbar">
         <DiaryProvider>
           <Providers>
             <Navbar />

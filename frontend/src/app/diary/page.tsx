@@ -1,17 +1,20 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import LenisProvider from "@/components/LenisProvider";
 import { Input } from "@/components/ui/input";
-// import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"
+import { RiAddCircleLine } from "@remixicon/react";;
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Diaries from "@/components/Diaries";
+import NewDiaryForm from "@/components/NewDiaryForm";
 
 const DiaryDashboard = () => {
     const infoParentRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const [newDiaryFormActive, setNewDiaryFormActive] = useState(false);
 
     useGSAP(() => {
         gsap.fromTo(infoParentRef.current,
@@ -48,7 +51,7 @@ const DiaryDashboard = () => {
                     ref={infoParentRef}
                     className="w-full min-h-screen pt-32 bg-black/25 relative backdrop-blur-lg flex flex-col max-xs:px-3 px-4 text-white text-3xl"
                 >
-                    <div className="mx-auto md:w-[55%] relative xs:w-[80%] w-full flex items-center justify-between gap-3 mb-6">
+                    <div className="mx-auto md:w-[55%] xs:w-[80%] w-full flex items-center justify-between gap-3 mb-6 sticky top-[16%]">
                         <Input
                             ref={searchInputRef} // Assign ref for focusing
                             type="text"
@@ -67,8 +70,15 @@ const DiaryDashboard = () => {
                     </div>
                     <div id="diaries" className="w-full max-w-[85%] mx-auto h-auto min-h-screen flex gap-5">
                         <Diaries />
+                        <Button onClick={() => setNewDiaryFormActive(true)} id="add-new-diary" className="h-36 p-6 rounded-xl bg-zinc-600/10 hover:bg-zinc-700/15 mix-blend-difference shadow-lg flex flex-col items-center text-white/80 max-w-xs group border border-white/10 hover:border-white/30 transition-[border]">
+                            <div className="p-3 rounded-lg bg-white/10 mb-3 group-hover:bg-white/15 transition-[border] border border-white/10 group-hover:border-white/30">
+                                <RiAddCircleLine size={20} />
+                            </div>
+                            <h2 className="font-medium text-lg">+ Add New Diary</h2>
+                        </Button >
                     </div>
                 </div>
+                <NewDiaryForm formActive={newDiaryFormActive} setFormActive={setNewDiaryFormActive} />
             </LenisProvider>
         </ProtectedRoute>
     );

@@ -14,19 +14,22 @@
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-
+.custom-scrollbar {
   &::-webkit-scrollbar {
     width: 0.4rem;
   }
 
   &::-webkit-scrollbar-thumb {
     background: #222;
+    mix-blend-mode: difference;
     border-radius: 2rem;
   }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 @layer base {
