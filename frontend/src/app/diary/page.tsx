@@ -39,8 +39,17 @@ const DiaryDashboard = () => {
             }
         };
 
+        const handleFormClose = (event: KeyboardEvent) => {
+            if (event.key.toLowerCase() === "escape")
+                setNewDiaryFormActive(false);
+        };
+
+        window.addEventListener("keydown", handleFormClose);
         window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
+        return () => {
+            window.removeEventListener("keydown", handleFormClose);
+            window.removeEventListener("keydown", handleKeyDown);
+        };
     }, []);
 
     return (
@@ -58,7 +67,7 @@ const DiaryDashboard = () => {
                             placeholder="Search Diary and Notes..."
                             className="text-lg p-6 py-[1.65rem] bg-white/10 border border-white/15 focus:border-white/50 outline-none rounded-xl text-white placeholder:text-zinc-400"
                         />
-                        <div id="keyboard-key" className="flex gap-1 absolute right-6">
+                        <div id="keyboard-key" className="flex gap-1 absolute right-6 max-md:hidden">
                             <span className="bg-zinc-700/70 rounded-md text-zinc-400/90 text-base px-[0.4rem] font-mono">ctrl</span>
                             <span className="bg-zinc-700/70 rounded-md text-zinc-400/90 text-base px-[0.4rem] font-mono">I</span>
                         </div>
@@ -68,7 +77,7 @@ const DiaryDashboard = () => {
                             + Add New Diary
                         </Button> */}
                     </div>
-                    <div id="diaries" className="w-full max-w-[85%] mx-auto h-auto min-h-screen flex gap-5">
+                    <div id="diaries" className="w-full max-w-[85%] mx-auto h-auto flex flex-wrap gap-5 max-sm:justify-center">
                         <Diaries />
                         <Button onClick={() => setNewDiaryFormActive(true)} id="add-new-diary" className="h-36 p-6 rounded-xl bg-zinc-600/10 hover:bg-zinc-700/15 mix-blend-difference shadow-lg flex flex-col items-center text-white/80 max-w-xs group border border-white/10 hover:border-white/30 transition-[border]">
                             <div className="p-3 rounded-lg bg-white/10 mb-3 group-hover:bg-white/15 transition-[border] border border-white/10 group-hover:border-white/30">
