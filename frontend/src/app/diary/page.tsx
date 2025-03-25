@@ -62,7 +62,7 @@ const DiaryDashboard = () => {
                 >
                     <div className="mx-auto md:w-[55%] xs:w-[80%] w-full flex items-center justify-between gap-3 mb-6 sticky top-[16%]">
                         <Input
-                            ref={searchInputRef} // Assign ref for focusing
+                            ref={searchInputRef} 
                             type="text"
                             placeholder="Search Diary and Notes..."
                             className="text-lg p-6 py-[1.65rem] bg-white/10 border border-white/15 focus:border-white/50 outline-none rounded-xl text-white placeholder:text-zinc-400"
