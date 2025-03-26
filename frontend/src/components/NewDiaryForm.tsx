@@ -71,9 +71,9 @@ const NewDiaryForm = ({ formActive, setFormActive }: { formActive: boolean, setF
             <RiCloseCircleFill
                 size={23}
                 onClick={() => setFormActive(false)}
-                className="absolute top-6 right-6 text-2xl cursor-pointer transition hover:text-red-500"
+                className="absolute top-6 right-6 text-2xl cursor-pointer"
             />
-            <div id="content" className="w-full max-h-[80vh] overflow-y-auto p-4 cursor-grab">
+            <div id="content" className="w-full max-h-[80vh] overflow-y-auto p-4">
                 <h2 className="text-2xl font-bold mb-6">New Diary</h2>
                 <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
                     <div>
