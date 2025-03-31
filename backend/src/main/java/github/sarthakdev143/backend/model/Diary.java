@@ -1,9 +1,11 @@
 package github.sarthakdev143.backend.model;
 
+import java.time.Instant;
 import java.util.List;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import lombok.AllArgsConstructor;
@@ -19,16 +21,19 @@ import lombok.Setter;
 public class Diary {
 
     @Id
-    private String id;  
-    private String userId;  
-    private String title;  
-    private List<Page> pages;  
-    private boolean isPinned;
+    private String id;
+
+    @Indexed
+    private String userId;
+
+    private String title;
+    private List<Page> pages;
+
+    private boolean pinned;  
     private String theme;
     private String coverPictureUrl;
-    private boolean isPublic;
-    
+    private boolean publicDiary;
+
     @CreatedDate
-    private String createdDate;  
-    
+    private Instant createdDate;
 }
