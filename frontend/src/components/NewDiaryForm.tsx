@@ -5,9 +5,8 @@ import { Button } from "./ui/button";
 import { useState, useEffect } from "react";
 
 const NewDiaryForm = ({ formActive, setFormActive }: { formActive: boolean, setFormActive: React.Dispatch<React.SetStateAction<boolean>> }) => {
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
-    const [errors, setErrors] = useState<{ title?: string; }>({});
+    const [formData, setFormData] = useState({ title: "", description: "" });
+    const [errors, setErrors] = useState<{ title?: string }>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useGSAP(() => {
@@ -23,9 +22,9 @@ const NewDiaryForm = ({ formActive, setFormActive }: { formActive: boolean, setF
     const validate = () => {
         let newErrors: { title?: string } = {};
 
-        if (!title.trim()) {
+        if (!formData.title.trim()) {
             newErrors.title = "Title is required.";
-        } else if (title.trim().length < 3) {
+        } else if (formData.title.trim().length < 3) {
             newErrors.title = "Title must be at least 3 characters.";
         }
 
@@ -34,30 +33,21 @@ const NewDiaryForm = ({ formActive, setFormActive }: { formActive: boolean, setF
     };
 
     useEffect(() => {
-        if (title.trim().length >= 3) setErrors({}); // Clear errors when typing valid input
-    }, [title]);
+        if (formData.title.trim().length >= 3) setErrors({}); // Clear errors when typing valid input
+    }, [formData.title]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (validate()) {
             setIsSubmitting(true);
-            console.log("Form submitted:", { title, description });
-
-            // Reset state after animation
-            // gsap.to("#form-parent", {
-            //     duration: 0.4,
-            //     bottom: "-100%",
-            //     scale: 0.75,
-            //     opacity: 0,
-            //     ease: "power2.in",
-            //     onComplete: () => {
-            //         setFormActive(false);
-            //         setTitle("");
-            //         setDescription("");
-            //         setErrors({});
-            //         setIsSubmitting(false);
-            //     },
-            // });
+            console.log("Form submitted:", formData);
+            setFormData({ title: "", description: "" });
+            setIsSubmitting(false);
         }
     };
 
@@ -80,8 +70,9 @@ const NewDiaryForm = ({ formActive, setFormActive }: { formActive: boolean, setF
                         <label className="block text-lg mb-2">Title</label>
                         <input
                             type="text"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
+                            name="title"
+                            value={formData.title}
+                            onChange={handleChange}
                             className="w-full p-2 px-3 rounded-lg bg-zinc-200/20 
                             focus:outline-none focus:ring-1 focus:ring-white/70 
                             placeholder:text-zinc-300 tracking-wide"
@@ -92,8 +83,9 @@ const NewDiaryForm = ({ formActive, setFormActive }: { formActive: boolean, setF
                     <div>
                         <label className="block text-lg mb-2">Description</label>
                         <textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
+                            name="description"
+                            value={formData.description}
+                            onChange={handleChange}
                             className="w-full max-h-40 min-h-16 p-2 px-3 rounded-lg bg-zinc-200/20 
                             focus:outline-none focus:ring-1 focus:ring-white/70 placeholder:text-zinc-300 tracking-wide"
                             placeholder="Describe what you're gonna write..."
