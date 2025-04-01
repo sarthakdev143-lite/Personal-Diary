@@ -1,7 +1,6 @@
 import * as THREE from "three";
 
-export const useSetupScene = () => {
-
+export const useSetupScene = (texture: string) => {
 
     const scene = new THREE.Scene();
     scene.background = null;
@@ -9,7 +8,8 @@ export const useSetupScene = () => {
     const diaryGroup = new THREE.Group();
 
     const createDiaryCover = () => {
-        const diaryCoverTexture = textureLoader.load("/leather-texture.jpg");
+        console.log(texture);
+        const diaryCoverTexture = textureLoader.load(texture);
         diaryCoverTexture.wrapS = THREE.RepeatWrapping;
         diaryCoverTexture.wrapT = THREE.RepeatWrapping;
 

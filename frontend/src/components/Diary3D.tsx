@@ -10,9 +10,14 @@ import { useSetupScene } from "@/hooks/diary3d/useSetupScene";
 import { Button } from "./ui/button";
 import Link from "next/link";
 
-const Diary3D: React.FC = () => {
+interface Diary3DProps {
+    selectedTexture: string | null;
+}
+
+const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
     const { isRotating } = useDiary();
     const pathName = usePathname();
+    const texture = selectedTexture || "/leather-texture.jpg";
 
     const { sceneRef, isOpened, isAnimating, mountRef, animationRef,
         updateCameraAndControls, updateRotation, handleResize,
@@ -20,7 +25,7 @@ const Diary3D: React.FC = () => {
     } = useDiaryScene(isRotating);
 
     const { createDiaryCover, createPages, createDiarySpine, createLighting,
-        scene, diaryGroup } = useSetupScene();
+        scene, diaryGroup } = useSetupScene(texture);
 
     // Setup scene and diary models
     useEffect(() => {
