@@ -46,7 +46,7 @@ export default function RootLayout({
           <Providers>
             <Navbar />
             <main>
-              <Diary3D />
+              <Diary3D selectedTexture={null} />
               {children}
             </main>
           </Providers>

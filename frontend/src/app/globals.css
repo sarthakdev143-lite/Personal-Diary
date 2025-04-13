@@ -98,3 +98,10 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .mask-gradient-blur {
+    -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+  }
+} 

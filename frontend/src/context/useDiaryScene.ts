@@ -101,7 +101,8 @@ export const useDiaryScene = (isRotating: boolean) => {
         }
 
         controls.dampingFactor = deviceTypeRef.current === 'mobile' ? 0.07 : 0.05;
-        controls.enableZoom = deviceTypeRef.current !== 'mobile';
+        // controls.enableZoom = deviceTypeRef.current !== 'mobile';
+        controls.enableZoom = false;
         controls.enablePan = deviceTypeRef.current === 'desktop';
 
         controls.update();

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
+// import { useGSAP } from "@gsap/react";
+// import gsap from "gsap";
 import LenisProvider from "@/components/LenisProvider";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button"
@@ -15,19 +15,20 @@ const DiaryDashboard = () => {
     const infoParentRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const [newDiaryFormActive, setNewDiaryFormActive] = useState(false);
+    const [isFullScreen, setIsFullScreen] = useState(false);
 
-    useGSAP(() => {
-        gsap.fromTo(infoParentRef.current,
-            { opacity: 0 }, {
-            opacity: 1,
-            duration: 0.5,
-            ease: 'power2.out'
-        });
+    // useGSAP(() => {
+    //     gsap.fromTo(infoParentRef.current,
+    //         { opacity: 0 }, {
+    //         opacity: 1,
+    //         duration: 0.5,
+    //         ease: 'power2.out'
+    //     });
 
-        return () => {
-            gsap.killTweensOf(infoParentRef.current);
-        };
-    }, []);
+    //     return () => {
+    //         gsap.killTweensOf(infoParentRef.current);
+    //     };
+    // }, []);
 
     useEffect(() => {
         searchInputRef.current?.focus();
@@ -41,10 +42,13 @@ const DiaryDashboard = () => {
 
         const handleFormClose = (event: KeyboardEvent) => {
             if (event.key.toLowerCase() === "escape")
-                setNewDiaryFormActive(false);
+                if (isFullScreen)
+                    setIsFullScreen(false)
+                else
+                    setNewDiaryFormActive(false);
         };
 
-        window.addEventListener("keydown", handleFormClose);
+        window.addEventListener("keydown", handleFormClose);    
         window.addEventListener("keydown", handleKeyDown);
         return () => {
             window.removeEventListener("keydown", handleFormClose);
@@ -62,7 +66,7 @@ const DiaryDashboard = () => {
                 >
                     <div className="mx-auto md:w-[55%] xs:w-[80%] w-full flex items-center justify-between gap-3 mb-6 sticky top-[16%]">
                         <Input
-                            ref={searchInputRef} 
+                            ref={searchInputRef}
                             type="text"
                             placeholder="Search Diary and Notes..."
                             className="text-lg p-6 py-[1.65rem] bg-white/10 border border-white/15 focus:border-white/50 outline-none rounded-xl text-white placeholder:text-zinc-400"
@@ -87,7 +91,7 @@ const DiaryDashboard = () => {
                         </Button >
                     </div>
                 </div>
-                <NewDiaryForm formActive={newDiaryFormActive} setFormActive={setNewDiaryFormActive} />
+                <NewDiaryForm formActive={newDiaryFormActive} setFormActive={setNewDiaryFormActive} isFullScreen={isFullScreen} setIsFullScreen={setIsFullScreen} />
             </LenisProvider>
         </ProtectedRoute>
     );

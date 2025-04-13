@@ -14,13 +14,13 @@ export const DIARY_EVENTS = {
 };
 
 const DiaryContext = createContext<DiaryContextType>({
-  isRotating: false,
+  isRotating: true,
   setIsRotating: () => { },
   resetDiaryPosition: () => { },
 });
 
 export const DiaryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isRotating, setIsRotating] = useState<boolean>(false);
+  const [isRotating, setIsRotating] = useState<boolean>(true);
 
   const resetDiaryPosition = useCallback(() => {
     // Dispatch a custom event that the Diary3D component will listen for

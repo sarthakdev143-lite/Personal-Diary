@@ -1,35 +1,35 @@
-"use client";
+// "use client";
 
-import { useRef } from "react";
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
-import LenisProvider from "@/components/LenisProvider";
-import Landing from "@/components/info/Landing";
-import WhyChooseThis from "@/components/info/WhyChooseThis";
+// import { useRef } from "react";
+// import { useGSAP } from "@gsap/react";
+// import gsap from "gsap";
+// import LenisProvider from "@/components/LenisProvider";
+// import Landing from "@/components/info/Landing";
+// import WhyChooseThis from "@/components/info/WhyChooseThis";
 
-const InfoPage = () => {
-    const infoParentRef = useRef<HTMLDivElement>(null);
+// const InfoPage = () => {
+//     const infoParentRef = useRef<HTMLDivElement>(null);
 
-    useGSAP(() => {
-        gsap.fromTo(infoParentRef.current,
-            { opacity: 0 }, {
-            opacity: 1,
-            duration: 1,
-            ease: 'power2.out'
-        });
-    }, []);
+//     useGSAP(() => {
+//         gsap.fromTo(infoParentRef.current,
+//             { opacity: 0 }, {
+//             opacity: 1,
+//             duration: 1,
+//             ease: 'power2.out'
+//         });
+//     }, []);
 
-    return (
-        <>
-            <LenisProvider>
-                <div id="info-parent" ref={infoParentRef} className="w-full h-auto bg-black/25 absolute backdrop-blur-lg flex flex-col max-xs:px-2 px-4">
-                    <Landing />
-                    <WhyChooseThis />
-                </div>
-            </LenisProvider>
-        </>
-    );
-};
+//     return (
+//         <>
+//             <LenisProvider>
+//                 <div id="info-parent" ref={infoParentRef} className="w-full h-auto bg-black/25 absolute backdrop-blur-lg flex flex-col max-xs:px-2 px-4">
+//                     <Landing />
+//                     <WhyChooseThis />
+//                 </div>
+//             </LenisProvider>
+//         </>
+//     );
+// };
 
 export default InfoPage;
 

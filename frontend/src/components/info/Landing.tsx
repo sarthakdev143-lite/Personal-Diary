@@ -20,8 +20,11 @@ const Landing = () => {
                                text-md font-semibold rounded-sm hover:-translate-y-1 hover:bg-white/75 hover:shadow-lg 
                                hover:shadow-white/15 hover:text-black/90 hover:rounded-md hover:scale-x-100 scale-x-95"
                     size={'lg'}
+                    asChild
                 >
-                    Start Writing
+                    <Link href='/diary'>
+                        Start Writing
+                    </Link>
                 </Button>
                 <Button
                     className="pointer-events-auto mix-blend-difference border border-white/70 text-white/80 transition-all 

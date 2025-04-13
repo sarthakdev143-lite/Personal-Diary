@@ -4,10 +4,9 @@ import gsap from "gsap";
 import { Button } from "./ui/button";
 import { useState, useEffect } from "react";
 
-const NewDiaryForm = ({ formActive, setFormActive }: { formActive: boolean, setFormActive: React.Dispatch<React.SetStateAction<boolean>> }) => {
+const NewDiaryForm = ({ formActive, setFormActive, isFullScreen, setIsFullScreen }: { formActive: boolean, setFormActive: React.Dispatch<React.SetStateAction<boolean>>, isFullScreen: boolean, setIsFullScreen: React.Dispatch<React.SetStateAction<boolean>> }) => {
     const [formData, setFormData] = useState({ title: "", description: "" });
     const [errors, setErrors] = useState<{ title?: string }>({});
-    const [isFullScreen, setIsFullScreen] = useState(false);
 
     useGSAP(() => {
         gsap.to("#form-parent", {
@@ -89,7 +88,7 @@ const NewDiaryForm = ({ formActive, setFormActive }: { formActive: boolean, setF
         <>
             <div
                 id="form-parent"
-                className="w-full xs:max-w-[29rem] max-w-[95%] bg-zinc-500/30 backdrop-blur-xl fixed z-50 
+                className="w-full xs:max-w-[29rem] max-w-[95%] bg-zinc-500/20 backdrop-blur-xl fixed z-50 
                 -bottom-full transition duration-300 ease-in-out transform left-1/2 -translate-x-1/2 
                 p-3 rounded-3xl shadow-xl"
             >
