@@ -8,7 +8,6 @@ export const useSetupScene = (texture: string) => {
     const diaryGroup = new THREE.Group();
 
     const createDiaryCover = () => {
-        console.log(texture);
         const diaryCoverTexture = textureLoader.load(texture);
         diaryCoverTexture.wrapS = THREE.RepeatWrapping;
         diaryCoverTexture.wrapT = THREE.RepeatWrapping;
@@ -36,7 +35,7 @@ export const useSetupScene = (texture: string) => {
     };
 
     const createPages = () => {
-        const paperTexture = textureLoader.load("/paper-texture.jpg");
+        const paperTexture = textureLoader.load("/textures/paper-texture.jpg");
         paperTexture.wrapS = THREE.RepeatWrapping;
         paperTexture.wrapT = THREE.RepeatWrapping;
 
@@ -208,7 +207,7 @@ export const useSetupScene = (texture: string) => {
     };
 
     const createDiarySpine = () => {
-        const diaryCoverTexture = textureLoader.load("/leather-texture.jpg");
+        const diaryCoverTexture = textureLoader.load("/textures/leather-texture.jpg");
         diaryCoverTexture.wrapS = THREE.RepeatWrapping;
         diaryCoverTexture.wrapT = THREE.RepeatWrapping;
 

@@ -17,7 +17,8 @@ interface Diary3DProps {
 const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
     const { isRotating } = useDiary();
     const pathName = usePathname();
-    const texture = selectedTexture || "/leather-texture.jpg";
+
+    const texture = selectedTexture || "/textures/leather-texture.jpg";
 
     const { sceneRef, isOpened, isAnimating, mountRef, animationRef,
         updateCameraAndControls, updateRotation, handleResize,
@@ -44,7 +45,7 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
         controls.autoRotate = isRotating;
-        controls.autoRotateSpeed = 1;
+        controls.autoRotateSpeed = 0.75;
         controls.minDistance = 4;
         controls.maxDistance = 12;
         controls.mouseButtons = {
@@ -122,6 +123,8 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
         else
             openDiary();
     };
+
+    
 
     return (
         <div className={`fixed w-full h-screen z-0 ${pathName === '/' ? 'translate-x-[-0.2rem]' : ''}`}>

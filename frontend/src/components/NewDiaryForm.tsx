@@ -3,9 +3,34 @@ import { RiCloseCircleFill } from "@remixicon/react";
 import gsap from "gsap";
 import { Button } from "./ui/button";
 import { useState, useEffect } from "react";
+import Image from "next/image";
+
+const themes = [
+    {
+        name: "Leather 1",
+        textureUrl: "/textures/leather-texture.jpg"
+    },
+    {
+        name: "Leather 2",
+        textureUrl: "/textures/leather-bound.webp"
+    },
+    {
+        name: "Wooden Garage Door",
+        textureUrl: "/textures/wooden_garage_door.webp"
+    },
+    {
+        name: "",
+        textureUrl: "/textures/"
+    },
+    {
+        name: "",
+        textureUrl: "/textures/"
+    },
+];
 
 const NewDiaryForm = ({ formActive, setFormActive, isFullScreen, setIsFullScreen }: { formActive: boolean, setFormActive: React.Dispatch<React.SetStateAction<boolean>>, isFullScreen: boolean, setIsFullScreen: React.Dispatch<React.SetStateAction<boolean>> }) => {
-    const [formData, setFormData] = useState({ title: "", description: "" });
+    const [selectedTexture, setSelectedTexture] = useState<string | null>(null);
+    const [formData, setFormData] = useState({ title: "", description: "", theme: selectedTexture || themes[0].textureUrl });
     const [errors, setErrors] = useState<{ title?: string }>({});
 
     useGSAP(() => {
@@ -77,9 +102,13 @@ const NewDiaryForm = ({ formActive, setFormActive, isFullScreen, setIsFullScreen
         setIsFullScreen(false);
     };
 
+    function handleThemeSelect(textureUrl: string) {
+        setSelectedTexture(textureUrl);
+    }
+
     const handleFinishForm = () => {
         // This would be called when theme selection is complete
-        setFormData({ title: "", description: "" });
+        setFormData({ title: "", description: "", theme: selectedTexture || themes[0].textureUrl });
         setIsFullScreen(false);
         setFormActive(false);
     };
@@ -142,25 +171,35 @@ const NewDiaryForm = ({ formActive, setFormActive, isFullScreen, setIsFullScreen
             <div
                 id="theme-selection"
                 className="fixed w-full h-full top-0 left-0 bg-black/50 items-center justify-center 
-                lg:justify-between p-3 lg:p-6 z-[60] hidden"
+                lg:justify-between gap-4 lg:p-6 z-[60] hidden"
             >
+                {/* <div className="w-full h-full bg-red-500"></div> */}
                 <RiCloseCircleFill
                     size={23}
                     onClick={handleCloseThemeSelection}
                     className="absolute top-6 right-6 text-2xl cursor-pointer"
                 />
-                <div className="bg-white/30 w-full lg:w-2/3 h-3/4 lg:h-full p-6 rounded-lg shadow-lg text-center">
-                    <h2 className="text-2xl font-bold mb-6">Choose a Theme</h2>
-                    {/* Theme selection content would go here */}
-                    <div className="flex justify-center mt-8">
-                        <Button
-                            onClick={handleFinishForm}
-                            className="px-11 py-5 border border-zinc-600 
-                            bg-zinc-700 hover:bg-zinc-600 tracking-wider text-base"
-                        >
-                            Create Diary
-                        </Button>
+                <div className="bg-white/30 w-full lg:w-2/3 h-3/4 lg:h-full p-6 rounded-lg shadow-lg text-center relative">
+                    <div className="w-full absolute top-0 left-0 bg-red-500">
                     </div>
+                </div>
+                <div className="w-auto flex-1 flex flex-col items-center h-3/4">
+                    <h2 className="text-2xl font-bold">Choose a Theme</h2>
+                    <div id="themes" className="p-4 grid grid-cols-3 gap-4 justify-center max-w-80 max-h-[48rem] overflow-y-auto my-3">
+                        {themes.map((elem, index) => (
+                            <button onClick={() => handleThemeSelect(elem.textureUrl)} key={index} className="w-20 aspect-square bg-gray-400/30">
+                                <Image src={elem.textureUrl} className="w-full h-full  object-cover" alt={elem.name} width={100} height={100} />
+                                {/* TODO: Add the diary to show the theme and add valorant like character selection theme here for the diary cover */}
+                            </button>
+                        ))}
+                    </div>
+                    <Button
+                        onClick={handleFinishForm}
+                        className="px-11 py-5 border border-zinc-600 
+                            bg-zinc-700 hover:bg-zinc-600 tracking-wider text-base"
+                    >
+                        Create Diary
+                    </Button>
                 </div>
             </div>
         </>

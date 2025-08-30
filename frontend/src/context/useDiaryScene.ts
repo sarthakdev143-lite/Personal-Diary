@@ -40,6 +40,7 @@ export const useDiaryScene = (isRotating: boolean) => {
     const orientationRef = useRef<'portrait' | 'landscape'>('landscape');
     const mountRef = useRef<HTMLDivElement | null>(null);
     const animationRef = useRef<number | null>(null);
+    
 
     const getDeviceType = () => {
         const width = window.innerWidth;

@@ -24,7 +24,7 @@ public class Diary {
     private String id;
 
     @Indexed
-    private String userId;
+    private String userId; // Foreign Key
 
     private String title;
     private List<Page> pages;
