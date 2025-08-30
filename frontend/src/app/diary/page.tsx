@@ -54,7 +54,7 @@ const DiaryDashboard = () => {
             window.removeEventListener("keydown", handleFormClose);
             window.removeEventListener("keydown", handleKeyDown);
         };
-    }, []);
+    }, [isFullScreen]);
 
     return (
         <ProtectedRoute>

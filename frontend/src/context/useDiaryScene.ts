@@ -449,7 +449,7 @@ export const useDiaryScene = (isRotating: boolean) => {
         };
 
         requestAnimationFrame(animate);
-    }, [isOpened, isAnimating, getDeviceType, getOrientation]);
+    }, [isOpened, isAnimating, getDeviceType, getOrientation, closeDiary]);
 
     // Listen for reset position events
     useEffect(() => {

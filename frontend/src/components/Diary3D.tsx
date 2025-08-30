@@ -99,14 +99,16 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
 
         animate();
 
+        const animationId = animationRef.current;
+        const mountEl = mountRef.current;
         return () => {
-            if (animationRef.current) {
-                cancelAnimationFrame(animationRef.current);
+            if (animationId) {
+                cancelAnimationFrame(animationId);
             }
             window.removeEventListener('resize', handleResize);
             window.removeEventListener('orientationchange', handleResize);
-            if (mountRef.current && sceneRef.current) {
-                mountRef.current.removeChild(sceneRef.current.renderer.domElement);
+            if (mountEl && sceneRef.current) {
+                mountEl.removeChild(sceneRef.current.renderer.domElement);
             }
             sceneRef.current = null;
         };

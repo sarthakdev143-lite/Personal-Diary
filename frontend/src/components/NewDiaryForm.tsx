@@ -66,7 +66,7 @@ const NewDiaryForm = ({ formActive, setFormActive, isFullScreen, setIsFullScreen
     }, [isFullScreen]);
 
     const validate = () => {
-        let newErrors: { title?: string } = {};
+        const newErrors: { title?: string } = {};
 
         if (!formData.title.trim()) {
             newErrors.title = "Title is required.";
