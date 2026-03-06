@@ -4,6 +4,7 @@ import gsap from "gsap";
 import { Button } from "./ui/button";
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import DiaryPreview from "./DiaryPreview"; 
 
 const themes = [
     {
@@ -22,14 +23,10 @@ const themes = [
         name: "",
         textureUrl: "/textures/"
     },
-    {
-        name: "",
-        textureUrl: "/textures/"
-    },
 ];
 
 const NewDiaryForm = ({ formActive, setFormActive, isFullScreen, setIsFullScreen }: { formActive: boolean, setFormActive: React.Dispatch<React.SetStateAction<boolean>>, isFullScreen: boolean, setIsFullScreen: React.Dispatch<React.SetStateAction<boolean>> }) => {
-    const [selectedTexture, setSelectedTexture] = useState<string | null>(null);
+    const [selectedTexture, setSelectedTexture] = useState<string | null>(themes[0].textureUrl); // Set default texture
     const [formData, setFormData] = useState({ title: "", description: "", theme: selectedTexture || themes[0].textureUrl });
     const [errors, setErrors] = useState<{ title?: string }>({});
 
@@ -173,26 +170,62 @@ const NewDiaryForm = ({ formActive, setFormActive, isFullScreen, setIsFullScreen
                 className="fixed w-full h-full top-0 left-0 bg-black/50 items-center justify-center 
                 lg:justify-between gap-4 lg:p-6 z-[60] hidden"
             >
-                {/* <div className="w-full h-full bg-red-500"></div> */}
                 <RiCloseCircleFill
                     size={23}
                     onClick={handleCloseThemeSelection}
-                    className="absolute top-6 right-6 text-2xl cursor-pointer"
+                    className="absolute top-6 right-6 text-2xl cursor-pointer z-[70]"
                 />
-                <div className="bg-white/30 w-full lg:w-2/3 h-3/4 lg:h-full p-6 rounded-lg shadow-lg text-center relative">
-                    <div className="w-full absolute top-0 left-0 bg-red-500">
+                
+                {/* 3D Preview Area */}
+                <div className="bg-gradient-to-br from-slate-800/30 to-slate-900/30 backdrop-blur-sm w-full lg:w-2/3 h-3/4 lg:h-full rounded-lg shadow-lg relative overflow-hidden">
+                    <div className="absolute top-4 left-4 z-10 bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2">
+                        <h3 className="text-lg font-semibold text-white">Preview</h3>
+                        <p className="text-sm text-gray-300">{formData.title || "Your Diary"}</p>
                     </div>
+                    
+                    {/* Render the 3D diary with selected texture */}
+                    {selectedTexture && (
+                        <div className="w-full h-full relative">
+                            <DiaryPreview selectedTexture={selectedTexture} />
+                        </div>
+                    )}
                 </div>
-                <div className="w-auto flex-1 flex flex-col items-center h-3/4">
-                    <h2 className="text-2xl font-bold">Choose a Theme</h2>
+
+                {/* Theme Selection Panel */}
+                <div className="w-auto flex-1 flex flex-col items-center h-3/4 min-w-[320px]">
+                    <h2 className="text-2xl font-bold mb-4">Choose a Theme</h2>
                     <div id="themes" className="p-4 grid grid-cols-3 gap-4 justify-center max-w-80 max-h-[48rem] overflow-y-auto my-3">
-                        {themes.map((elem, index) => (
-                            <button onClick={() => handleThemeSelect(elem.textureUrl)} key={index} className="w-20 aspect-square bg-gray-400/30">
-                                <Image src={elem.textureUrl} className="w-full h-full  object-cover" alt={elem.name} width={100} height={100} />
-                                {/* TODO: Add the diary to show the theme and add valorant like character selection theme here for the diary cover */}
+                        {themes.filter(theme => theme.textureUrl).map((elem, index) => (
+                            <button 
+                                onClick={() => handleThemeSelect(elem.textureUrl)} 
+                                key={index} 
+                                className={`w-20 aspect-square bg-gray-400/30 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${
+                                    selectedTexture === elem.textureUrl 
+                                        ? 'border-blue-400 shadow-lg shadow-blue-400/30' 
+                                        : 'border-gray-600 hover:border-gray-400'
+                                }`}
+                            >
+                                <Image 
+                                    src={elem.textureUrl} 
+                                    className="w-full h-full object-cover" 
+                                    alt={elem.name} 
+                                    width={100} 
+                                    height={100} 
+                                />
                             </button>
                         ))}
                     </div>
+                    
+                    {/* Selected theme info */}
+                    {selectedTexture && (
+                        <div className="text-center mb-4">
+                            <p className="text-sm text-gray-300">Selected:</p>
+                            <p className="font-medium">
+                                {themes.find(theme => theme.textureUrl === selectedTexture)?.name || "Custom Theme"}
+                            </p>
+                        </div>
+                    )}
+                    
                     <Button
                         onClick={handleFinishForm}
                         className="px-11 py-5 border border-zinc-600 

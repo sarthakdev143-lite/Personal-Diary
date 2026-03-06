@@ -48,7 +48,7 @@ const DiaryDashboard = () => {
                     setNewDiaryFormActive(false);
         };
 
-        window.addEventListener("keydown", handleFormClose);    
+        window.addEventListener("keydown", handleFormClose);
         window.addEventListener("keydown", handleKeyDown);
         return () => {
             window.removeEventListener("keydown", handleFormClose);
@@ -75,11 +75,6 @@ const DiaryDashboard = () => {
                             <span className="bg-zinc-700/70 rounded-md text-zinc-400/90 text-base px-[0.4rem] font-mono">ctrl</span>
                             <span className="bg-zinc-700/70 rounded-md text-zinc-400/90 text-base px-[0.4rem] font-mono">I</span>
                         </div>
-                        {/* <Button
-                            className="bg-white/80 mix-blend-difference text-black text-lg font-medium p-5 hover:bg-white/75 rounded-md transition-all"
-                        >
-                            + Add New Diary
-                        </Button> */}
                     </div>
                     <div id="diaries" className="w-full max-w-[85%] mx-auto h-auto flex flex-wrap gap-5 max-sm:justify-center">
                         <Diaries />

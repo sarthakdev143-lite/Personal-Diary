@@ -3,9 +3,9 @@ import "./globals.css";
 import 'remixicon/fonts/remixicon.css'
 import Head from "next/head";
 import Navbar from "@/components/Navbar";
-import Diary3D from '@/components/Diary3D';
 import { DiaryProvider } from "@/context/DiaryContext";
 import { Providers } from "./providers";
+import ClientLayout from "@/components/ClientLayout";
 
 export const metadata: Metadata = {
   title: "Diary • Sarthakdev143",
@@ -46,8 +46,9 @@ export default function RootLayout({
           <Providers>
             <Navbar />
             <main>
-              <Diary3D selectedTexture={null} />
-              {children}
+              <ClientLayout>
+                {children}
+              </ClientLayout>
             </main>
           </Providers>
         </DiaryProvider>

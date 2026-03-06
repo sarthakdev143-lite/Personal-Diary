@@ -29,7 +29,7 @@ const FeatureCard = ({ icon: Icon, title, description }: FeatureCardProps) => {
                 <Icon width={35} height={35} className="text-white/90" />
             </div>
             <h3 className="font-semibold text-lg">{title}</h3>
-            <p className="text-[0.9rem] text-white/60 mt-1">{description}</p>
+            <p className="text-[0.9rem] tracking-wider text-white/60 mt-1">{description}</p>
         </div>
     );
 };

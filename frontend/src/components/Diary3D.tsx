@@ -107,9 +107,27 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
             }
             window.removeEventListener('resize', handleResize);
             window.removeEventListener('orientationchange', handleResize);
-            if (mountEl && sceneRef.current) {
-                mountEl.removeChild(sceneRef.current.renderer.domElement);
+
+            // Clean up textures
+            if (sceneRef.current) {
+                const { frontCover, backCover, spine, renderer } = sceneRef.current;
+
+                [frontCover, backCover, spine].forEach(mesh => {
+                    if (mesh && mesh.material) {
+                        const material = mesh.material as THREE.MeshLambertMaterial;
+                        if (material.map) {
+                            material.map.dispose();
+                        }
+                        material.dispose();
+                    }
+                });
+
+                if (mountEl && renderer) {
+                    mountEl.removeChild(renderer.domElement);
+                }
+                renderer?.dispose();
             }
+
             sceneRef.current = null;
         };
     }, [sceneRef]);
@@ -119,6 +137,49 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
         updateRotation();
     }, [isRotating, updateRotation]);
 
+    useEffect(() => {
+        if (sceneRef.current && selectedTexture) {
+            // Load new texture
+            const textureLoader = new THREE.TextureLoader();
+            textureLoader.load(selectedTexture, (texture) => {
+                // Configure texture properties
+                texture.wrapS = THREE.RepeatWrapping;
+                texture.wrapT = THREE.RepeatWrapping;
+                texture.repeat.set(1, 1);
+
+                // Update front cover material
+                if (sceneRef.current?.frontCover) {
+                    const frontCoverMaterial = sceneRef.current.frontCover.material as THREE.MeshLambertMaterial;
+                    if (frontCoverMaterial && frontCoverMaterial.map) {
+                        frontCoverMaterial.map.dispose(); // Clean up old texture
+                    }
+                    frontCoverMaterial.map = texture;
+                    frontCoverMaterial.needsUpdate = true;
+                }
+
+                // Update back cover material
+                if (sceneRef.current?.backCover) {
+                    const backCoverMaterial = sceneRef.current.backCover.material as THREE.MeshLambertMaterial;
+                    if (backCoverMaterial && backCoverMaterial.map) {
+                        backCoverMaterial.map.dispose(); // Clean up old texture
+                    }
+                    backCoverMaterial.map = texture;
+                    backCoverMaterial.needsUpdate = true;
+                }
+
+                // Update spine material if it exists
+                if (sceneRef.current?.spine) {
+                    const spineMaterial = sceneRef.current.spine.material as THREE.MeshLambertMaterial;
+                    if (spineMaterial && spineMaterial.map) {
+                        spineMaterial.map.dispose(); // Clean up old texture
+                    }
+                    spineMaterial.map = texture;
+                    spineMaterial.needsUpdate = true;
+                }
+            });
+        }
+    }, [selectedTexture]); // Dependency on selectedTexture
+
     const toggleDiary = () => {
         if (isOpened)
             closeDiary();
@@ -126,22 +187,24 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
             openDiary();
     };
 
-    
-
-    return (
+    return pathName === '/' && (
         <div className={`fixed w-full h-screen z-0 ${pathName === '/' ? 'translate-x-[-0.2rem]' : ''}`}>
-            <div id="caption" className="w-full h-screen absolute top-0 left-0 z-0">
-                <h1 className="text-[27vw] text-white uppercase absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-0 select-none">
-                    diary
-                </h1>
-            </div>
+            {
+                !selectedTexture &&
+                <div id="caption" className="w-full h-screen absolute top-0 left-0 z-0">
+                    <h1 className="text-[27vw] text-white uppercase absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-0 select-none">
+                        diary
+                    </h1>
+                </div>
+            }
             <div
                 ref={mountRef}
                 className="w-full h-screen absolute top-0 left-0 z-10 overflow-hidden"
                 title={pathName === `/` ? `Drag To Interact With The Diary` : undefined}
                 onTouchStart={handleTouchStart}
             >
-                {pathName === '/' ?
+                {
+                    pathName === '/' &&
                     <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 flex gap-4">
                         <button
                             onClick={toggleDiary}
@@ -158,7 +221,7 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
                             </Link>
                         </Button>
                     </div>
-                    : null}
+                }
             </div>
         </div>
     );

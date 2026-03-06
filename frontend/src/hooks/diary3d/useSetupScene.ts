@@ -79,7 +79,7 @@ export const useSetupScene = (texture: string) => {
             ctx.font = "italic 22px cursive";
             ctx.fillText("“Writing is the painting of the voice.”", 50, 520);
             ctx.fillText("- Voltaire", 200, 550);
-            ctx.fillText("Scan this QR for a cokkie :)", 105, 920);
+            ctx.fillText("Scan this QR for a FREE gift :)", 105, 920);
 
             ctx.restore(); // Restore normal transformation for images
 
@@ -169,7 +169,7 @@ export const useSetupScene = (texture: string) => {
                     "I called your name in the quiet night,",
                     "but the wind carried it far from sight.",
                     "I reached for you in the empty air,",
-                    "but found nothing—just silence there.",
+                    "but found nothing, just silence there.",
                     "",
                     "You were the warmth in my coldest days,",
                     "now I shiver in love’s empty space.",
@@ -178,7 +178,7 @@ export const useSetupScene = (texture: string) => {
                     "",
                     "You left so easily, without a sound,",
                     "while I stood there, broken, bound.",
-                    "Did love mean nothing—was it all a lie?",
+                    "Did love mean nothing, was it all a lie?",
                     "Then why does my heart still ask why?",
                     "",
                     "I loved you more than words can say,",
@@ -207,7 +207,7 @@ export const useSetupScene = (texture: string) => {
     };
 
     const createDiarySpine = () => {
-        const diaryCoverTexture = textureLoader.load("/textures/leather-texture.jpg");
+        const diaryCoverTexture = textureLoader.load(texture);
         diaryCoverTexture.wrapS = THREE.RepeatWrapping;
         diaryCoverTexture.wrapT = THREE.RepeatWrapping;
 
