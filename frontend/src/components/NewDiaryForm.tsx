@@ -19,10 +19,6 @@ const themes = [
         name: "Wooden Garage Door",
         textureUrl: "/textures/wooden_garage_door.webp"
     },
-    {
-        name: "",
-        textureUrl: "/textures/"
-    },
 ];
 
 const NewDiaryForm = ({ formActive, setFormActive, isFullScreen, setIsFullScreen }: { formActive: boolean, setFormActive: React.Dispatch<React.SetStateAction<boolean>>, isFullScreen: boolean, setIsFullScreen: React.Dispatch<React.SetStateAction<boolean>> }) => {
@@ -79,6 +75,10 @@ const NewDiaryForm = ({ formActive, setFormActive, isFullScreen, setIsFullScreen
         if (formData.title.trim().length >= 3) setErrors({}); // Clear errors when typing valid input
     }, [formData.title]);
 
+    useEffect(() => {
+        setFormData((prev) => ({ ...prev, theme: selectedTexture || themes[0].textureUrl }));
+    }, [selectedTexture]);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
@@ -88,7 +88,6 @@ const NewDiaryForm = ({ formActive, setFormActive, isFullScreen, setIsFullScreen
         e.preventDefault();
         if (validate()) {
             setIsFullScreen(true);
-            console.log("Form submitted:", formData);
             // Don't reset form data here - we still need it for the theme selection
             setErrors({});
             // Don't close the form yet - we're showing theme selection
@@ -197,6 +196,7 @@ const NewDiaryForm = ({ formActive, setFormActive, isFullScreen, setIsFullScreen
                     <div id="themes" className="p-4 grid grid-cols-3 gap-4 justify-center max-w-80 max-h-[48rem] overflow-y-auto my-3">
                         {themes.filter(theme => theme.textureUrl).map((elem, index) => (
                             <button 
+                                type="button"
                                 onClick={() => handleThemeSelect(elem.textureUrl)} 
                                 key={index} 
                                 className={`w-20 aspect-square bg-gray-400/30 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${

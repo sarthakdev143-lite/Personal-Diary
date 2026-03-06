@@ -17,13 +17,15 @@ export function AuthButton({ pathName }: { pathName: string }) {
             if (operation === "signin")
                 await signIn();
             else {
-                await signOut();
-                router.push("/");
+                const result = await signOut({ redirect: false, callbackUrl: "/" });
+                router.push(result.url ?? "/");
             }
         } finally {
             setLoading(false);
         }
     }
+
+    const profileImage = session?.user?.image || "/favicon.ico";
 
     return (
         <>
@@ -32,7 +34,7 @@ export function AuthButton({ pathName }: { pathName: string }) {
                     <div className="flex justify-between flex-1 mr-3 gap-3 items-center">
                         <figure ref={profileFigureRef} className={`flex items-center gap-3 pr-3.5 py-0.5 bg-zinc-800 hover:bg-zinc-900 transition cursor-pointer rounded-full ${pathName === '/info' ? 'max-xxs:ml-auto' : ''}`}>
                             <Image
-                                src={session.user?.image || ""}
+                                src={profileImage}
                                 alt={session.user?.name || "User profile picture"}
                                 width={45}
                                 height={45}

@@ -1,95 +1,15 @@
-"use client";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 
-import { useEffect, useRef, useState } from "react";
-// import { useGSAP } from "@gsap/react";
-// import gsap from "gsap";
-import LenisProvider from "@/components/LenisProvider";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button"
-import { RiAddCircleLine } from "@remixicon/react";;
-import ProtectedRoute from "@/components/ProtectedRoute";
-import Diaries from "@/components/Diaries";
-import NewDiaryForm from "@/components/NewDiaryForm";
+import DiaryDashboardClient from "@/components/DiaryDashboardClient";
+import { authOptions } from "@/lib/auth";
 
-const DiaryDashboard = () => {
-    const infoParentRef = useRef<HTMLDivElement>(null);
-    const searchInputRef = useRef<HTMLInputElement>(null);
-    const [newDiaryFormActive, setNewDiaryFormActive] = useState(false);
-    const [isFullScreen, setIsFullScreen] = useState(false);
+export default async function DiaryPage() {
+    const session = await getServerSession(authOptions);
 
-    // useGSAP(() => {
-    //     gsap.fromTo(infoParentRef.current,
-    //         { opacity: 0 }, {
-    //         opacity: 1,
-    //         duration: 0.5,
-    //         ease: 'power2.out'
-    //     });
+    if (!session) {
+        redirect("/login");
+    }
 
-    //     return () => {
-    //         gsap.killTweensOf(infoParentRef.current);
-    //     };
-    // }, []);
-
-    useEffect(() => {
-        searchInputRef.current?.focus();
-
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.ctrlKey && event.key.toLowerCase() === "i") {
-                event.preventDefault();
-                searchInputRef.current?.focus();
-            }
-        };
-
-        const handleFormClose = (event: KeyboardEvent) => {
-            if (event.key.toLowerCase() === "escape")
-                if (isFullScreen)
-                    setIsFullScreen(false)
-                else
-                    setNewDiaryFormActive(false);
-        };
-
-        window.addEventListener("keydown", handleFormClose);
-        window.addEventListener("keydown", handleKeyDown);
-        return () => {
-            window.removeEventListener("keydown", handleFormClose);
-            window.removeEventListener("keydown", handleKeyDown);
-        };
-    }, [isFullScreen]);
-
-    return (
-        <ProtectedRoute>
-            <LenisProvider>
-                <div
-                    id="info-parent"
-                    ref={infoParentRef}
-                    className="w-full min-h-screen pt-32 bg-black/25 relative backdrop-blur-lg flex flex-col max-xs:px-3 px-4 text-white text-3xl"
-                >
-                    <div className="mx-auto md:w-[55%] xs:w-[80%] w-full flex items-center justify-between gap-3 mb-6 sticky top-[16%]">
-                        <Input
-                            ref={searchInputRef}
-                            type="text"
-                            placeholder="Search Diary and Notes..."
-                            className="text-lg p-6 py-[1.65rem] bg-white/10 border border-white/15 focus:border-white/50 outline-none rounded-xl text-white placeholder:text-zinc-400"
-                        />
-                        <div id="keyboard-key" className="flex gap-1 absolute right-6 max-md:hidden">
-                            <span className="bg-zinc-700/70 rounded-md text-zinc-400/90 text-base px-[0.4rem] font-mono">ctrl</span>
-                            <span className="bg-zinc-700/70 rounded-md text-zinc-400/90 text-base px-[0.4rem] font-mono">I</span>
-                        </div>
-                    </div>
-                    <div id="diaries" className="w-full max-w-[85%] mx-auto h-auto flex flex-wrap gap-5 max-sm:justify-center">
-                        <Diaries />
-                        <Button onClick={() => setNewDiaryFormActive(true)} id="add-new-diary" className="h-36 p-6 rounded-xl bg-zinc-600/10 hover:bg-zinc-700/15 mix-blend-difference shadow-lg flex flex-col items-center text-white/80 max-w-xs group border border-white/10 hover:border-white/30 transition-[border]">
-                            <div className="p-3 rounded-lg bg-white/10 mb-3 group-hover:bg-white/15 transition-[border] border border-white/10 group-hover:border-white/30">
-                                <RiAddCircleLine size={20} />
-                            </div>
-                            <h2 className="font-medium text-lg">+ Add New Diary</h2>
-                        </Button >
-                    </div>
-                </div>
-                <NewDiaryForm formActive={newDiaryFormActive} setFormActive={setNewDiaryFormActive} isFullScreen={isFullScreen} setIsFullScreen={setIsFullScreen} />
-            </LenisProvider>
-        </ProtectedRoute>
-    );
+    return <DiaryDashboardClient />;
 }
-
-export default DiaryDashboard;

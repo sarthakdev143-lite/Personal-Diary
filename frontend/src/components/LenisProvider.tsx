@@ -11,20 +11,22 @@ const LenisProvider = ({ children }: LenisProviderProps) => {
     useEffect(() => {
         const lenis = new Lenis({
             duration: 1,
-            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            easing: (value) => Math.min(1, 1.001 - Math.pow(2, -10 * value)),
             touchMultiplier: 2,
             smoothWheel: true,
             syncTouch: true,
         });
 
-        function raf(time: number) {
+        let rafId = 0;
+        const onAnimationFrame = (time: number) => {
             lenis.raf(time);
-            requestAnimationFrame(raf);
-        }
+            rafId = window.requestAnimationFrame(onAnimationFrame);
+        };
 
-        requestAnimationFrame(raf);
+        rafId = window.requestAnimationFrame(onAnimationFrame);
 
         return () => {
+            window.cancelAnimationFrame(rafId);
             lenis.destroy();
         };
     }, []);
