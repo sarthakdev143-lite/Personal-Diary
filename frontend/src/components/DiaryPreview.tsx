@@ -25,8 +25,8 @@ const DiaryPreview: React.FC<DiaryPreviewProps> = ({ selectedTexture }) => {
     const initialTextureRef = useRef(selectedTexture);
     const [isLoading, setIsLoading] = useState(true);
 
-    const { createDiaryCover, createDiarySpine, createLighting, createPages, diaryGroup, loadTexture, scene, updateCoverTexture } =
-        useSetupScene();
+    const { createDiaryCover, createDiarySpine, createLighting, createPages, diaryGroup, loadTexture, scene } =
+        useSetupScene(selectedTexture);
 
     useEffect(() => {
         if (!mountRef.current || previewMeshesRef.current) return;
@@ -119,18 +119,6 @@ const DiaryPreview: React.FC<DiaryPreviewProps> = ({ selectedTexture }) => {
         loadTexture,
         scene,
     ]);
-
-    useEffect(() => {
-        if (!previewMeshesRef.current) return;
-
-        setIsLoading(true);
-        updateCoverTexture(selectedTexture, [
-            previewMeshesRef.current.frontCover,
-            previewMeshesRef.current.backCover,
-            previewMeshesRef.current.spine,
-        ]);
-        setIsLoading(false);
-    }, [selectedTexture, updateCoverTexture]);
 
     return (
         <div ref={mountRef} className="relative flex h-full w-full items-center justify-center">

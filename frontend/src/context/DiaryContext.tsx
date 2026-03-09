@@ -5,6 +5,8 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 type DiaryContextType = {
   isRotating: boolean;
   setIsRotating: React.Dispatch<React.SetStateAction<boolean>>;
+  selectedTexture: string | null;
+  setSelectedTexture: React.Dispatch<React.SetStateAction<string | null>>;
   resetDiaryPosition: () => void;
 };
 
@@ -16,11 +18,14 @@ export const DIARY_EVENTS = {
 const DiaryContext = createContext<DiaryContextType>({
   isRotating: true,
   setIsRotating: () => { },
+  selectedTexture: "/textures/leather-texture.jpg",
+  setSelectedTexture: () => { },
   resetDiaryPosition: () => { },
 });
 
 export const DiaryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isRotating, setIsRotating] = useState<boolean>(true);
+  const [selectedTexture, setSelectedTexture] = useState<string | null>("/textures/leather-texture.jpg");
 
   const resetDiaryPosition = useCallback(() => {
     // Dispatch a custom event that the Diary3D component will listen for
@@ -32,6 +37,8 @@ export const DiaryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <DiaryContext.Provider value={{
       isRotating,
       setIsRotating,
+      selectedTexture,
+      setSelectedTexture,
       resetDiaryPosition
     }}>
       {children}

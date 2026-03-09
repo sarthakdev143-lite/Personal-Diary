@@ -43,8 +43,7 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
         diaryGroup,
         loadTexture,
         scene,
-        updateCoverTexture,
-    } = useSetupScene();
+    } = useSetupScene(texture);
 
     useEffect(() => {
         if (sceneRef.current || !mountRef.current) return;
@@ -154,16 +153,6 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
         updateRotation();
     }, [updateRotation]);
 
-    useEffect(() => {
-        if (!sceneRef.current || !selectedTexture) return;
-
-        updateCoverTexture(selectedTexture, [
-            sceneRef.current.frontCover,
-            sceneRef.current.backCover,
-            sceneRef.current.spine,
-        ]);
-    }, [sceneRef, selectedTexture, updateCoverTexture]);
-
     const toggleDiary = () => {
         if (isOpened) {
             closeDiary();
@@ -175,13 +164,11 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
 
     return pathName === "/" ? (
         <div className="fixed h-screen w-full translate-x-[-0.2rem] z-0">
-            {!selectedTexture && (
-                <div id="caption" className="absolute left-0 top-0 h-screen w-full z-0">
-                    <h1 className="absolute left-1/2 top-1/2 z-0 select-none -translate-x-1/2 -translate-y-1/2 text-[27vw] uppercase text-white">
-                        diary
-                    </h1>
-                </div>
-            )}
+            <div id="caption" className="absolute left-0 top-0 h-screen w-full z-0">
+                <h1 className="absolute left-1/2 top-1/2 z-0 select-none -translate-x-1/2 -translate-y-1/2 text-[27vw] uppercase text-white">
+                    diary
+                </h1>
+            </div>
             <div
                 ref={mountRef}
                 className="absolute left-0 top-0 h-screen w-full overflow-hidden z-10"

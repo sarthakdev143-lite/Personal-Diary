@@ -11,12 +11,12 @@ import { Providers } from "./providers";
 
 export const metadata: Metadata = {
     metadataBase: new URL("https://sarthakdev-diary.vercel.app"),
-    title: "Diary • Sarthakdev143",
+    title: "Diary • @sarthakdev143",
     description:
         "A web-based, interactive, and immersive diary experience using three.js. Flip through the pages of my diary and write your thoughts and experiences. The app is built using Next.js, three.js, and TypeScript. Your data is completely encrypted and secure, No one, even we can't read it.",
     keywords: ["Diary", "Next.js", "Three.js", "Encrypted Notes", "Secure Diary", "Digital Journal"],
     openGraph: {
-        title: "Diary • Sarthakdev143",
+        title: "Diary • @sarthakdev143",
         description:
             "An immersive and encrypted diary experience built with Next.js and Three.js.",
         url: "https://sarthakdev-diary.vercel.app",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     },
     twitter: {
         card: "summary_large_image",
-        title: "Diary • Sarthakdev143",
+        title: "Diary • @sarthakdev143",
         description:
             "An immersive and encrypted diary experience built with Next.js and Three.js.",
         images: ["/diary.jpg"],

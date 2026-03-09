@@ -3,6 +3,7 @@
 import React from 'react';
 import { usePathname } from 'next/navigation';
 import Diary3D from './Diary3D';
+import { useDiary } from '@/context/DiaryContext';
 
 interface ClientLayoutProps {
     children: React.ReactNode;
@@ -10,11 +11,12 @@ interface ClientLayoutProps {
 
 const ClientLayout: React.FC<ClientLayoutProps> = ({ children }) => {
     const pathname = usePathname();
+    const { selectedTexture } = useDiary();
 
     return (
         <>
             {/* Conditionally render Diary3D only on home page */}
-            {pathname === '/' && <Diary3D selectedTexture={null} />}
+            {pathname === '/' && <Diary3D selectedTexture={selectedTexture} />}
 
             {/* Show the background text "DIARY" on all pages except home */}
             {pathname !== '/' && (
