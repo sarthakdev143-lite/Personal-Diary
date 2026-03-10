@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const [diary, setDiary] = useState<Diary | null>(null);
     const [entries, setEntries] = useState<Entry[]>([]);
     const [newEntryContent, setNewEntryContent] = useState("");
+    const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -101,6 +103,20 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     }, [diaryId]);
 
     const canSave = useMemo(() => newEntryContent.trim().length > 0, [newEntryContent]);
+    const wordCount = useMemo(() => {
+        const trimmed = newEntryContent.trim();
+        if (!trimmed) return 0;
+        return trimmed.split(/\s+/).length;
+    }, [newEntryContent]);
+
+    const handleEntrySelect = (entry: Entry) => {
+        setSelectedEntryId(entry._id);
+        setNewEntryContent(entry.content);
+    };
+
+    const handleContentChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+        setNewEntryContent(event.target.value);
+    };
 
     const handleSaveEntry = async () => {
         if (!canSave || isSaving) return;
@@ -131,6 +147,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
             setEntries((prev) => [data, ...prev]);
             setNewEntryContent("");
+            setSelectedEntryId(null);
         } catch (saveError) {
             toast({
                 title: "Unable to save entry",
@@ -145,7 +162,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     if (isLoading) {
         return (
             <>
-                <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center px-4 pt-24 text-white">
+                <div className="relative z-10 flex min-h-screen w-full items-center justify-center bg-black/60 text-white backdrop-blur-xl">
                     Loading diary...
                 </div>
                 <Toaster />
@@ -156,7 +173,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     if (error) {
         return (
             <>
-                <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-center gap-4 px-4 pt-24 text-white">
+                <div className="relative z-10 flex min-h-screen w-full flex-col items-center justify-center gap-4 bg-black/60 px-6 text-white backdrop-blur-xl">
                     <p>{error}</p>
                     <Button onClick={() => router.push("/diary")} className="bg-zinc-700 hover:bg-zinc-600">
                         Back
@@ -169,47 +186,100 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
     return (
         <>
-            <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-4 pb-10 pt-24 text-white">
-                <div className="flex items-center justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl font-semibold">{diary?.title || "Diary"}</h1>
-                        <p className="text-sm text-zinc-300">{diary?.description || "No description"}</p>
-                    </div>
-                    <Button onClick={() => router.push("/diary")} className="bg-zinc-700 hover:bg-zinc-600">
-                        Back
-                    </Button>
-                </div>
-
-                <div className="grid flex-1 gap-4 rounded-2xl border border-white/10 bg-zinc-900/50 p-4 md:grid-cols-[340px_1fr]">
-                    <aside className="space-y-3 overflow-y-auto border-b border-white/10 pb-4 md:border-b-0 md:border-r md:pb-0 md:pr-4">
-                        <h2 className="text-lg font-medium">Past entries</h2>
-                        {!entries.length && <p className="text-sm text-zinc-400">No entries yet.</p>}
-                        {entries.map((entry) => (
-                            <article key={entry._id} className="rounded-lg border border-white/10 bg-zinc-800/40 p-3">
-                                <p className="text-xs text-zinc-400">{formattedDate(entry.createdAt)}</p>
-                                <p className="mt-2 text-sm text-zinc-200">{contentPreview(entry.content)}</p>
-                            </article>
-                        ))}
-                    </aside>
-
-                    <section className="flex flex-col gap-3">
-                        <h2 className="text-lg font-medium">Write a new entry</h2>
-                        <Textarea
-                            value={newEntryContent}
-                            onChange={(event) => setNewEntryContent(event.target.value)}
-                            placeholder="Write your thoughts..."
-                            className="min-h-64 border-white/15 bg-zinc-800/40 text-white placeholder:text-zinc-500"
-                        />
-                        <div>
-                            <Button
-                                onClick={handleSaveEntry}
-                                disabled={!canSave || isSaving}
-                                className="bg-zinc-700 hover:bg-zinc-600 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                                {isSaving ? "Saving..." : "Save Entry"}
-                            </Button>
+            <div className="relative z-10 min-h-screen w-full text-white">
+                <header className="sticky top-0 z-20 w-full border-b border-white/10 bg-black/70 backdrop-blur-xl">
+                    <div className="flex w-full items-start gap-4 px-6 py-4">
+                        <Button asChild className="border border-white/20 bg-white/5 hover:bg-white/10">
+                            <Link href="/diary">← Back</Link>
+                        </Button>
+                        <div className="min-w-0">
+                            <h1 className="truncate text-2xl font-semibold tracking-tight">
+                                {diary?.title || "Diary"}
+                            </h1>
+                            <p className="text-sm text-zinc-400">{diary?.description || "No description"}</p>
                         </div>
-                    </section>
+                    </div>
+                </header>
+
+                <div className="w-full bg-black/60 backdrop-blur-xl">
+                    <div className="flex w-full">
+                        <aside className="box-border flex h-[calc(100vh-73px)] w-[35%] flex-col gap-4 overflow-y-auto overflow-x-hidden border-r border-white/10 px-6 py-6">
+                            <h2 className="text-xs font-semibold uppercase tracking-[0.35em] text-zinc-300">
+                                Past Entries
+                            </h2>
+
+                            {!entries.length ? (
+                                <div className="flex flex-1 items-center justify-center text-center text-sm text-zinc-400">
+                                    No entries yet. Start writing.
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {entries.map((entry) => {
+                                        const isSelected = selectedEntryId === entry._id;
+
+                                        return (
+                                            <button
+                                                key={entry._id}
+                                                type="button"
+                                                onClick={() => handleEntrySelect(entry)}
+                                                className={`w-full rounded-xl border px-4 py-3 text-left transition ${
+                                                    isSelected
+                                                        ? "border-white/30 bg-white/10"
+                                                        : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
+                                                }`}
+                                            >
+                                                <p className="text-xs text-zinc-400">{formattedDate(entry.createdAt)}</p>
+                                                <p
+                                                    className="mt-2 text-sm text-zinc-200 line-clamp-2 break-words"
+                                                    style={{
+                                                        display: "-webkit-box",
+                                                        WebkitLineClamp: 2,
+                                                        WebkitBoxOrient: "vertical",
+                                                        overflow: "hidden",
+                                                    }}
+                                                >
+                                                    {contentPreview(entry.content)}
+                                                </p>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </aside>
+
+                        <section className="box-border flex h-[calc(100vh-73px)] w-[65%] flex-col overflow-y-auto px-6 py-6">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-xs font-semibold uppercase tracking-[0.35em] text-zinc-300">
+                                    Editor
+                                </h2>
+                            </div>
+
+                            <div className="mt-4 flex flex-1">
+                                <Textarea
+                                    value={newEntryContent}
+                                    onChange={handleContentChange}
+                                    placeholder="Write your thoughts..."
+                                    className="h-full min-h-[70vh] w-full resize-none bg-transparent p-6 text-base leading-relaxed text-white/90 placeholder:text-zinc-500 focus:outline-none break-words whitespace-pre-wrap"
+                                />
+                            </div>
+
+                            <div className="mt-4 flex items-center justify-between">
+                                <p className="text-xs text-zinc-400">
+                                    {wordCount} {wordCount === 1 ? "word" : "words"}
+                                </p>
+                                <Button
+                                    onClick={handleSaveEntry}
+                                    disabled={!canSave || isSaving}
+                                    className="inline-flex items-center gap-2 rounded-lg border border-zinc-600 bg-zinc-700 px-6 py-2 tracking-wide hover:bg-zinc-600 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    {isSaving && (
+                                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/60 border-t-transparent" />
+                                    )}
+                                    <span>{isSaving ? "Saving..." : "Save Entry"}</span>
+                                </Button>
+                            </div>
+                        </section>
+                    </div>
                 </div>
             </div>
             <Toaster />
