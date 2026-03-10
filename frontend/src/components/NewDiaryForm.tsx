@@ -7,6 +7,7 @@ import Image from "next/image";
 import DiaryPreview from "./DiaryPreview";
 
 import { useDiary } from "@/context/DiaryContext";
+import { useToast } from "@/hooks/use-toast";
 
 const themes = [
     {
@@ -23,21 +24,36 @@ const themes = [
     },
 ];
 
-const NewDiaryForm = ({ formActive, setFormActive, isFullScreen, setIsFullScreen }: { formActive: boolean, setFormActive: React.Dispatch<React.SetStateAction<boolean>>, isFullScreen: boolean, setIsFullScreen: React.Dispatch<React.SetStateAction<boolean>> }) => {
+const NewDiaryForm = ({
+    formActive,
+    setFormActive,
+    isFullScreen,
+    setIsFullScreen,
+    onDiaryCreated,
+}: {
+    formActive: boolean;
+    setFormActive: React.Dispatch<React.SetStateAction<boolean>>;
+    isFullScreen: boolean;
+    setIsFullScreen: React.Dispatch<React.SetStateAction<boolean>>;
+    onDiaryCreated?: () => void;
+}) => {
     const { selectedTexture, setSelectedTexture } = useDiary();
+    const { toast } = useToast();
     const [formData, setFormData] = useState({
         title: "",
         description: "",
         theme: selectedTexture || themes[0].textureUrl,
     });
     const [errors, setErrors] = useState<{ title?: string }>({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const selectedTheme = themes.find((theme) => theme.textureUrl === selectedTexture);
 
     useGSAP(() => {
         gsap.to("#form-parent", {
             duration: 0.5,
             ease: "power2.out",
-            bottom: formActive ? "30%" : "-100%",
+            x: "-50%",
+            y: formActive ? "0%" : "100%",
             scale: formActive ? 1 : 0.75,
             opacity: formActive ? 1 : 0,
         });
@@ -109,11 +125,43 @@ const NewDiaryForm = ({ formActive, setFormActive, isFullScreen, setIsFullScreen
         setSelectedTexture(textureUrl);
     }
 
-    const handleFinishForm = () => {
-        // This would be called when theme selection is complete
-        setFormData({ title: "", description: "", theme: selectedTexture || themes[0].textureUrl });
-        setIsFullScreen(false);
-        setFormActive(false);
+    const handleFinishForm = async () => {
+        if (isSubmitting) return;
+
+        setIsSubmitting(true);
+
+        try {
+            const response = await fetch("/api/diaries", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    title: formData.title,
+                    description: formData.description,
+                    theme: selectedTexture || themes[0].textureUrl,
+                }),
+            });
+
+            const data = await response.json().catch(() => null) as { error?: string } | null;
+
+            if (!response.ok) {
+                throw new Error(data?.error || "Failed to create diary.");
+            }
+
+            setFormData({ title: "", description: "", theme: selectedTexture || themes[0].textureUrl });
+            setIsFullScreen(false);
+            setFormActive(false);
+            onDiaryCreated?.();
+        } catch (error) {
+            toast({
+                title: "Unable to create diary",
+                description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -121,8 +169,9 @@ const NewDiaryForm = ({ formActive, setFormActive, isFullScreen, setIsFullScreen
             <div
                 id="form-parent"
                 className="w-full xs:max-w-[29rem] max-w-[95%] bg-zinc-500/20 backdrop-blur-xl fixed z-50 
-                -bottom-full transition duration-300 ease-in-out transform left-1/2 -translate-x-1/2 
+                transition duration-300 ease-in-out left-1/2 
                 p-3 rounded-3xl shadow-xl"
+                style={{ bottom: 0, transform: "translate(-50%, 100%)", opacity: 0 }}
             >
                 <RiCloseCircleFill
                     size={23}
@@ -240,10 +289,11 @@ const NewDiaryForm = ({ formActive, setFormActive, isFullScreen, setIsFullScreen
                     
                     <Button
                         onClick={handleFinishForm}
+                        disabled={isSubmitting}
                         className="px-11 py-5 border border-zinc-600 
                             bg-zinc-700 hover:bg-zinc-600 tracking-wider text-base"
                     >
-                        Create Diary
+                        {isSubmitting ? "Creating..." : "Create Diary"}
                     </Button>
                 </div>
             </div>

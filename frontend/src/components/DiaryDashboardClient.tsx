@@ -8,12 +8,14 @@ import Diaries from "@/components/Diaries";
 import NewDiaryForm from "@/components/NewDiaryForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Toaster } from "@/components/ui/toaster";
 
 const DiaryDashboardClient = () => {
     const infoParentRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const [newDiaryFormActive, setNewDiaryFormActive] = useState(false);
     const [isFullScreen, setIsFullScreen] = useState(false);
+    const [refetchTrigger, setRefetchTrigger] = useState(0);
 
     useEffect(() => {
         searchInputRef.current?.focus();
@@ -65,7 +67,7 @@ const DiaryDashboardClient = () => {
                     </div>
                 </div>
                 <div id="diaries" className="mx-auto flex h-auto w-full max-w-[85%] flex-wrap gap-5 max-sm:justify-center">
-                    <Diaries />
+                    <Diaries refetchTrigger={refetchTrigger} />
                     <Button
                         onClick={() => setNewDiaryFormActive(true)}
                         id="add-new-diary"
@@ -83,7 +85,9 @@ const DiaryDashboardClient = () => {
                 setFormActive={setNewDiaryFormActive}
                 isFullScreen={isFullScreen}
                 setIsFullScreen={setIsFullScreen}
+                onDiaryCreated={() => setRefetchTrigger((prev) => prev + 1)}
             />
+            <Toaster />
         </LenisProvider>
     );
 };

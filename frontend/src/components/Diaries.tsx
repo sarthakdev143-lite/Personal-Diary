@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 
@@ -18,7 +19,18 @@ const truncateDescription = (description: string, maxLength = 110) => {
     return `${description.slice(0, maxLength).trimEnd()}...`;
 };
 
-const Diaries = () => {
+const formatDiaryDate = (dateValue: string) => {
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return "Unknown date";
+
+    return new Intl.DateTimeFormat("en-US", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+    }).format(date);
+};
+
+const Diaries = ({ refetchTrigger = 0 }: { refetchTrigger?: number }) => {
     const { data: session, status } = useSession();
     const [diaries, setDiaries] = useState<Diary[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -65,7 +77,7 @@ const Diaries = () => {
         return () => {
             isMounted = false;
         };
-    }, [session, status]);
+    }, [session, status, refetchTrigger]);
 
     if (isLoading) {
         return (
@@ -87,8 +99,9 @@ const Diaries = () => {
     return (
         <>
             {diaries.map((diary) => (
-                <article
+                <Link
                     key={diary._id}
+                    href={`/diary/${diary._id}`}
                     className="flex h-36 w-full max-w-xs flex-col justify-between rounded-xl border border-white/10 bg-zinc-600/10 p-6 text-white/80 shadow-lg"
                 >
                     <div className="space-y-2 overflow-hidden">
@@ -97,7 +110,10 @@ const Diaries = () => {
                             {truncateDescription(diary.description || "No description")}
                         </p>
                     </div>
-                </article>
+                    <p className="text-xs tracking-wide text-zinc-400">
+                        {formatDiaryDate(diary.createdAt)}
+                    </p>
+                </Link>
             ))}
         </>
     );
