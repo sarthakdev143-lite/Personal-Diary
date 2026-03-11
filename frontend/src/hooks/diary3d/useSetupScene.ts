@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import * as THREE from "three";
+import { DEFAULT_DIARY_THEME } from "@/config/diaryThemes";
 
 type DiaryMesh = THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
 type PageMesh = DiaryMesh & {
@@ -177,31 +178,40 @@ export const disposeThreeObject = (root: THREE.Object3D) => {
     geometries.forEach((geometry) => geometry.dispose());
 };
 
-export const useSetupScene = (texture: string | null = null) => {
-    const sceneRef = useRef<THREE.Scene>(null!);
-    const textureLoaderRef = useRef<THREE.TextureLoader>(null!);
-    const diaryGroupRef = useRef<THREE.Group>(null!);
+export const useSetupScene = (texture: string = DEFAULT_DIARY_THEME) => {
+    const sceneRef = useRef<THREE.Scene | null>(null);
+    const textureLoaderRef = useRef<THREE.TextureLoader | null>(null);
+    const diaryGroupRef = useRef<THREE.Group | null>(null);
     const frontCoverRef = useRef<DiaryMesh | null>(null);
     const backCoverRef = useRef<DiaryMesh | null>(null);
     const spineRef = useRef<DiaryMesh | null>(null);
 
-    if (!sceneRef.current) {
-        const nextScene = new THREE.Scene();
-        nextScene.background = null;
-        sceneRef.current = nextScene;
-    }
+    const getScene = useCallback(() => {
+        if (!sceneRef.current) {
+            const nextScene = new THREE.Scene();
+            nextScene.background = null;
+            sceneRef.current = nextScene;
+        }
+        return sceneRef.current;
+    }, []);
 
-    if (!textureLoaderRef.current) {
-        textureLoaderRef.current = new THREE.TextureLoader();
-    }
+    const getTextureLoader = useCallback(() => {
+        if (!textureLoaderRef.current) {
+            textureLoaderRef.current = new THREE.TextureLoader();
+        }
+        return textureLoaderRef.current;
+    }, []);
 
-    if (!diaryGroupRef.current) {
-        diaryGroupRef.current = new THREE.Group();
-    }
+    const getDiaryGroup = useCallback(() => {
+        if (!diaryGroupRef.current) {
+            diaryGroupRef.current = new THREE.Group();
+        }
+        return diaryGroupRef.current;
+    }, []);
 
     const loadTexture = useCallback(
-        (textureUrl: string) => configureTexture(textureLoaderRef.current.load(textureUrl)),
-        []
+        (textureUrl: string) => configureTexture(getTextureLoader().load(textureUrl)),
+        [getTextureLoader]
     );
 
     const createDiaryCover = useCallback(
@@ -235,10 +245,10 @@ export const useSetupScene = (texture: string | null = null) => {
             backCover.position.set(-1.75, -0.45, 0);
             backCoverRef.current = backCover;
 
-            diaryGroupRef.current.add(frontCover, backCover);
+            getDiaryGroup().add(frontCover, backCover);
             return { frontCover, backCover };
         },
-        []
+        [getDiaryGroup]
     );
 
     const createPages = useCallback(
@@ -290,10 +300,10 @@ export const useSetupScene = (texture: string | null = null) => {
                 pageGroup.add(page);
             }
 
-            diaryGroupRef.current.add(pageGroup);
+            getDiaryGroup().add(pageGroup);
             return pageGroup;
         },
-        [loadTexture]
+        [getDiaryGroup, loadTexture]
     );
 
     const createDiarySpine = useCallback(
@@ -324,14 +334,15 @@ export const useSetupScene = (texture: string | null = null) => {
             bottomEdgeMesh.rotation.z = Math.PI;
             spine.add(bottomEdgeMesh);
 
-            diaryGroupRef.current.add(spine);
+            getDiaryGroup().add(spine);
             return spine;
         },
-        []
+        [getDiaryGroup]
     );
 
     const createLighting = useCallback(() => {
-        if (sceneRef.current.getObjectByName("diary-ambient-light")) return;
+        const scene = getScene();
+        if (scene.getObjectByName("diary-ambient-light")) return;
 
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
         ambientLight.name = "diary-ambient-light";
@@ -343,13 +354,13 @@ export const useSetupScene = (texture: string | null = null) => {
         directionalLight.shadow.mapSize.width = 1024;
         directionalLight.shadow.mapSize.height = 1024;
 
-        sceneRef.current.add(ambientLight, directionalLight);
-    }, []);
+        scene.add(ambientLight, directionalLight);
+    }, [getScene]);
 
     useEffect(() => {
         if (!texture || !frontCoverRef.current || !backCoverRef.current) return;
 
-        const nextTexture = configureTexture(textureLoaderRef.current.load(texture));
+        const nextTexture = configureTexture(getTextureLoader().load(texture));
         const oldTextures = new Set<THREE.Texture>();
 
         [frontCoverRef.current, backCoverRef.current, spineRef.current].forEach((mesh) => {
@@ -368,7 +379,7 @@ export const useSetupScene = (texture: string | null = null) => {
                 oldTexture.dispose();
             }
         });
-    }, [texture]);
+    }, [getTextureLoader, texture]);
 
     const updateCoverTexture = useCallback(
         (textureUrl: string, meshes: Array<THREE.Mesh | undefined>) => {
@@ -408,9 +419,9 @@ export const useSetupScene = (texture: string | null = null) => {
         createDiarySpine,
         createLighting,
         createPages,
-        diaryGroup: diaryGroupRef.current,
+        diaryGroup: getDiaryGroup(),
         loadTexture,
-        scene: sceneRef.current,
+        scene: getScene(),
         updateCoverTexture,
     };
 };

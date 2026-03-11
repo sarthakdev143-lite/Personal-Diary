@@ -43,15 +43,17 @@ const Navbar = () => {
     const pathName = usePathname();
     const { isRotating, setIsRotating, resetDiaryPosition } = useDiary();
     const backButtonRef = useRef<HTMLButtonElement>(null);
-    const isDiaryDetailPage = /^\/diary\/.+/.test(pathName);
+    const hideNavbar =
+        pathName === "/login" ||
+        (pathName.startsWith("/diary/") && pathName.length > "/diary/".length);
 
     useEffect(() => {
-        if (isDiaryDetailPage) return;
+        if (hideNavbar) return;
         const checkScreenSize = () => setIsMobile(window.innerWidth <= 400);
         checkScreenSize();
         window.addEventListener("resize", checkScreenSize);
         return () => window.removeEventListener("resize", checkScreenSize);
-    }, [isDiaryDetailPage]);
+    }, [hideNavbar]);
 
     const handleToggle = (type: "rotation" | "reset") => {
         if (type === "rotation") setIsRotating(!isRotating);
@@ -59,7 +61,7 @@ const Navbar = () => {
     };
 
     useEffect(() => {
-        if (isDiaryDetailPage) return;
+        if (hideNavbar) return;
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setIsDropdownOpen(false);
@@ -68,9 +70,9 @@ const Navbar = () => {
 
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [isDiaryDetailPage]);
+    }, [hideNavbar]);
 
-    if (isDiaryDetailPage) {
+    if (hideNavbar) {
         return null;
     }
 

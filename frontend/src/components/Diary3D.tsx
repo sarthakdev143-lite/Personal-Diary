@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { OrbitControls } from "three-stdlib";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -13,13 +13,13 @@ import { disposeThreeObject, useSetupScene } from "@/hooks/diary3d/useSetupScene
 import { Button } from "./ui/button";
 
 interface Diary3DProps {
-    selectedTexture: string | null;
+    selectedTexture: string;
 }
 
 const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
     const { isRotating } = useDiary();
     const pathName = usePathname();
-    const texture = selectedTexture || "/textures/leather-texture.jpg";
+    const texture = selectedTexture;
     const initialTextureRef = useRef(texture);
 
     const {

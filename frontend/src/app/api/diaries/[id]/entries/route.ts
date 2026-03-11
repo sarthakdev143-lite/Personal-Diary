@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 
 import {
+    consumeRateLimit,
     DiaryDocument,
     EntryDocument,
     EntryWithId,
     getDatabase,
     getSessionUserId,
+    hasTrustedOrigin,
+    logApiError,
     serializeEntry,
     toObjectId,
 } from "../../_shared";
@@ -17,6 +20,12 @@ type RouteContext = {
 type CreateEntryPayload = {
     content?: unknown;
     createdAt?: unknown;
+};
+
+const MAX_CONTENT_BYTES = 500 * 1024;
+const CREATE_ENTRY_RATE_LIMIT = {
+    max: 20,
+    windowMs: 60 * 1000,
 };
 
 export async function GET(_: Request, context: RouteContext) {
@@ -47,13 +56,17 @@ export async function GET(_: Request, context: RouteContext) {
         const entries = await entriesCollection.find({ diaryId, userId }).sort({ createdAt: -1 }).toArray();
         return NextResponse.json((entries as EntryWithId[]).map(serializeEntry));
     } catch (error) {
-        console.error("Failed to fetch entries", error);
+        logApiError("Failed to fetch entries", error);
         return NextResponse.json({ error: "Failed to fetch entries" }, { status: 500 });
     }
 }
 
 export async function POST(request: Request, context: RouteContext) {
     try {
+        if (!hasTrustedOrigin(request)) {
+            return NextResponse.json({ error: "Forbidden request origin." }, { status: 403 });
+        }
+
         const userId = await getSessionUserId();
 
         if (!userId) {
@@ -72,6 +85,13 @@ export async function POST(request: Request, context: RouteContext) {
 
         if (!content.length) {
             return NextResponse.json({ error: "Content is required." }, { status: 400 });
+        }
+
+        if (Buffer.byteLength(content, "utf8") > MAX_CONTENT_BYTES) {
+            return NextResponse.json(
+                { error: "Entry content exceeds 500KB limit." },
+                { status: 413 }
+            );
         }
 
         let createdAt = new Date();
@@ -97,6 +117,24 @@ export async function POST(request: Request, context: RouteContext) {
             return NextResponse.json({ error: "Diary not found" }, { status: 404 });
         }
 
+        const rateLimit = consumeRateLimit({
+            key: `entries:create:${userId}:${diaryId.toString()}`,
+            max: CREATE_ENTRY_RATE_LIMIT.max,
+            windowMs: CREATE_ENTRY_RATE_LIMIT.windowMs,
+        });
+
+        if (!rateLimit.allowed) {
+            return NextResponse.json(
+                { error: "Too many requests. Please wait before creating another entry." },
+                {
+                    status: 429,
+                    headers: {
+                        "Retry-After": String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)),
+                    },
+                }
+            );
+        }
+
         const entry: EntryDocument = {
             diaryId,
             userId,
@@ -115,7 +153,7 @@ export async function POST(request: Request, context: RouteContext) {
             { status: 201 }
         );
     } catch (error) {
-        console.error("Failed to create entry", error);
+        logApiError("Failed to create entry", error);
         return NextResponse.json({ error: "Failed to create entry" }, { status: 500 });
     }
 }

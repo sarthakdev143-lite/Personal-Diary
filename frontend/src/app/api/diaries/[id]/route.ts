@@ -7,6 +7,8 @@ import {
     EntryWithId,
     getDatabase,
     getSessionUserId,
+    hasTrustedOrigin,
+    logApiError,
     serializeDiary,
     serializeEntry,
     toObjectId,
@@ -54,13 +56,17 @@ export async function GET(_: Request, context: RouteContext) {
             entries: (entries as EntryWithId[]).map(serializeEntry),
         });
     } catch (error) {
-        console.error("Failed to fetch diary", error);
+        logApiError("Failed to fetch diary", error);
         return NextResponse.json({ error: "Failed to fetch diary" }, { status: 500 });
     }
 }
 
 export async function PUT(request: Request, context: RouteContext) {
     try {
+        if (!hasTrustedOrigin(request)) {
+            return NextResponse.json({ error: "Forbidden request origin." }, { status: 403 });
+        }
+
         const userId = await getSessionUserId();
 
         if (!userId) {
@@ -81,12 +87,18 @@ export async function PUT(request: Request, context: RouteContext) {
             if (typeof payload.title !== "string" || payload.title.trim().length < 3) {
                 return NextResponse.json({ error: "Title must be at least 3 characters." }, { status: 400 });
             }
+            if (payload.title.trim().length > 120) {
+                return NextResponse.json({ error: "Title must be 120 characters or fewer." }, { status: 400 });
+            }
             updates.title = payload.title.trim();
         }
 
         if (payload.description !== undefined) {
             if (typeof payload.description !== "string") {
                 return NextResponse.json({ error: "Description must be a string." }, { status: 400 });
+            }
+            if (payload.description.trim().length > 600) {
+                return NextResponse.json({ error: "Description must be 600 characters or fewer." }, { status: 400 });
             }
             updates.description = payload.description.trim();
         }
@@ -124,13 +136,17 @@ export async function PUT(request: Request, context: RouteContext) {
 
         return NextResponse.json(serializeDiary(updatedDiary as DiaryWithId));
     } catch (error) {
-        console.error("Failed to update diary", error);
+        logApiError("Failed to update diary", error);
         return NextResponse.json({ error: "Failed to update diary" }, { status: 500 });
     }
 }
 
-export async function DELETE(_: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext) {
     try {
+        if (!hasTrustedOrigin(request)) {
+            return NextResponse.json({ error: "Forbidden request origin." }, { status: 403 });
+        }
+
         const userId = await getSessionUserId();
 
         if (!userId) {
@@ -158,7 +174,7 @@ export async function DELETE(_: Request, context: RouteContext) {
 
         return NextResponse.json({ success: true });
     } catch (error) {
-        console.error("Failed to delete diary", error);
+        logApiError("Failed to delete diary", error);
         return NextResponse.json({ error: "Failed to delete diary" }, { status: 500 });
     }
 }

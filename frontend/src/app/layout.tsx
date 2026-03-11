@@ -47,14 +47,14 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body className="custom-scrollbar antialiased">
-                <DiaryProvider>
-                    <Providers>
+                <Providers>
+                    <DiaryProvider>
                         <Navbar />
                         <main>
                             <ClientLayout>{children}</ClientLayout>
                         </main>
-                    </Providers>
-                </DiaryProvider>
+                    </DiaryProvider>
+                </Providers>
             </body>
         </html>
     );

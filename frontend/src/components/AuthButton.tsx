@@ -2,14 +2,13 @@
 import { signIn, signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 export function AuthButton({ pathName }: { pathName: string }) {
     const { data: session } = useSession();
     const router = useRouter();
 
     const [loading, setLoading] = useState(false);
-    const profileFigureRef = useRef<HTMLUnknownElement>(null);
 
     const handleOperation = async (operation: "signin" | "signout") => {
         try {
@@ -32,7 +31,7 @@ export function AuthButton({ pathName }: { pathName: string }) {
             {
                 session ?
                     <div className="flex justify-between flex-1 mr-3 gap-3 items-center">
-                        <figure ref={profileFigureRef} className={`flex items-center gap-3 pr-3.5 py-0.5 bg-zinc-800 hover:bg-zinc-900 transition cursor-pointer rounded-full ${pathName === '/info' ? 'max-xxs:ml-auto' : ''}`}>
+                        <figure className={`flex items-center gap-3 pr-3.5 py-0.5 bg-zinc-800 hover:bg-zinc-900 transition cursor-pointer rounded-full min-w-0 ${pathName === '/info' ? 'max-xxs:ml-auto' : ''}`}>
                             <Image
                                 src={profileImage}
                                 alt={session.user?.name || "User profile picture"}
@@ -40,10 +39,10 @@ export function AuthButton({ pathName }: { pathName: string }) {
                                 height={45}
                                 className="rounded-full"
                             />
-                            <div className="flex flex-col overflow-hidden">
+                            <div className="flex flex-col overflow-hidden min-w-0 max-w-[9rem] xs:max-w-[14rem]">
                                 <figcaption className="capitalize text-base truncate">{session.user?.name}</figcaption>
                                 <figcaption
-                                    className="text-xs text-zinc-500 max-w-36 truncate overflow-hidden"
+                                    className="text-xs text-zinc-500 truncate overflow-hidden"
                                     title={`Email: ${session.user?.email ?? "No email available"}`}>
                                     {session.user?.email}
                                 </figcaption>

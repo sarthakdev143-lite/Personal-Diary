@@ -5,6 +5,8 @@ import {
     EntryWithId,
     getDatabase,
     getSessionUserId,
+    hasTrustedOrigin,
+    logApiError,
     serializeEntry,
     toObjectId,
 } from "../../../_shared";
@@ -18,8 +20,14 @@ type UpdateEntryPayload = {
     createdAt?: unknown;
 };
 
+const MAX_CONTENT_BYTES = 500 * 1024;
+
 export async function PUT(request: Request, context: RouteContext) {
     try {
+        if (!hasTrustedOrigin(request)) {
+            return NextResponse.json({ error: "Forbidden request origin." }, { status: 403 });
+        }
+
         const userId = await getSessionUserId();
 
         if (!userId) {
@@ -41,7 +49,12 @@ export async function PUT(request: Request, context: RouteContext) {
             if (typeof payload.content !== "string" || !payload.content.trim().length) {
                 return NextResponse.json({ error: "Content must be a non-empty string." }, { status: 400 });
             }
-            updates.content = payload.content.trim();
+            const sanitizedContent = payload.content.trim();
+            if (Buffer.byteLength(sanitizedContent, "utf8") > MAX_CONTENT_BYTES) {
+                return NextResponse.json({ error: "Entry content exceeds 500KB limit." }, { status: 413 });
+            }
+
+            updates.content = sanitizedContent;
         }
 
         if (payload.createdAt !== undefined) {
@@ -82,13 +95,17 @@ export async function PUT(request: Request, context: RouteContext) {
 
         return NextResponse.json(serializeEntry(updatedEntry as EntryWithId));
     } catch (error) {
-        console.error("Failed to update entry", error);
+        logApiError("Failed to update entry", error);
         return NextResponse.json({ error: "Failed to update entry" }, { status: 500 });
     }
 }
 
-export async function DELETE(_: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext) {
     try {
+        if (!hasTrustedOrigin(request)) {
+            return NextResponse.json({ error: "Forbidden request origin." }, { status: 403 });
+        }
+
         const userId = await getSessionUserId();
 
         if (!userId) {
@@ -114,7 +131,7 @@ export async function DELETE(_: Request, context: RouteContext) {
 
         return NextResponse.json({ success: true });
     } catch (error) {
-        console.error("Failed to delete entry", error);
+        logApiError("Failed to delete entry", error);
         return NextResponse.json({ error: "Failed to delete entry" }, { status: 500 });
     }
 }

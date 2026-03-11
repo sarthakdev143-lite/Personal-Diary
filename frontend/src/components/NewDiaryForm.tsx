@@ -8,21 +8,7 @@ import DiaryPreview from "./DiaryPreview";
 
 import { useDiary } from "@/context/DiaryContext";
 import { useToast } from "@/hooks/use-toast";
-
-const themes = [
-    {
-        name: "Leather 1",
-        textureUrl: "/textures/leather-texture.jpg"
-    },
-    {
-        name: "Leather 2",
-        textureUrl: "/textures/leather-bound.webp"
-    },
-    {
-        name: "Wooden Garage Door",
-        textureUrl: "/textures/wooden_garage_door.webp"
-    },
-];
+import { DIARY_THEMES } from "@/config/diaryThemes";
 
 const NewDiaryForm = ({
     formActive,
@@ -42,11 +28,12 @@ const NewDiaryForm = ({
     const [formData, setFormData] = useState({
         title: "",
         description: "",
-        theme: selectedTexture || themes[0].textureUrl,
+        theme: selectedTexture,
     });
     const [errors, setErrors] = useState<{ title?: string }>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const selectedTheme = themes.find((theme) => theme.textureUrl === selectedTexture);
+    const [hasInitializedPreview, setHasInitializedPreview] = useState(false);
+    const selectedTheme = DIARY_THEMES.find((theme) => theme.textureUrl === selectedTexture);
 
     useGSAP(() => {
         gsap.to("#form-parent", {
@@ -99,8 +86,14 @@ const NewDiaryForm = ({
     }, [formData.title]);
 
     useEffect(() => {
-        setFormData((prev) => ({ ...prev, theme: selectedTexture || themes[0].textureUrl }));
+        setFormData((prev) => ({ ...prev, theme: selectedTexture }));
     }, [selectedTexture]);
+
+    useEffect(() => {
+        if (isFullScreen && !hasInitializedPreview) {
+            setHasInitializedPreview(true);
+        }
+    }, [hasInitializedPreview, isFullScreen]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -139,7 +132,7 @@ const NewDiaryForm = ({
                 body: JSON.stringify({
                     title: formData.title,
                     description: formData.description,
-                    theme: selectedTexture || themes[0].textureUrl,
+                    theme: selectedTexture,
                 }),
             });
 
@@ -149,7 +142,7 @@ const NewDiaryForm = ({
                 throw new Error(data?.error || "Failed to create diary.");
             }
 
-            setFormData({ title: "", description: "", theme: selectedTexture || themes[0].textureUrl });
+            setFormData({ title: "", description: "", theme: selectedTexture });
             setIsFullScreen(false);
             setFormActive(false);
             onDiaryCreated?.();
@@ -170,8 +163,8 @@ const NewDiaryForm = ({
                 id="form-parent"
                 className="w-full xs:max-w-[29rem] max-w-[95%] bg-zinc-500/20 backdrop-blur-xl fixed z-50 
                 transition duration-300 ease-in-out left-1/2 
-                p-3 rounded-3xl shadow-xl"
-                style={{ bottom: 0, transform: "translate(-50%, 100%)", opacity: 0 }}
+                p-3 rounded-3xl shadow-xl bottom-0 translate-y-full opacity-0"
+                style={{ transform: "translate(-50%, 100%)" }}
             >
                 <RiCloseCircleFill
                     size={23}
@@ -238,12 +231,12 @@ const NewDiaryForm = ({
                         <p className="text-sm text-gray-300">{formData.title || "Your Diary"}</p>
                     </div>
                     
-                    {selectedTexture && (
+                    {hasInitializedPreview && (
                         <div className="w-full h-full relative">
                             <DiaryPreview selectedTexture={selectedTexture} />
                         </div>
                     )}
-                    {!selectedTexture && (
+                    {!hasInitializedPreview && (
                         <div className="flex h-full flex-col items-center justify-center text-center text-white">
                             <p className="text-xl font-semibold">Preview</p>
                             <p className="mt-2 text-sm text-white/75">{selectedTheme?.name || "No theme selected"}</p>
@@ -255,7 +248,7 @@ const NewDiaryForm = ({
                 <div className="w-auto flex-1 flex flex-col items-center h-3/4 min-w-[320px]">
                     <h2 className="text-2xl font-bold mb-4">Choose a Theme</h2>
                     <div id="themes" className="p-4 grid grid-cols-3 gap-4 justify-center max-w-80 max-h-[48rem] overflow-y-auto my-3">
-                        {themes.map((elem, index) => (
+                        {DIARY_THEMES.map((elem, index) => (
                             <button 
                                 type="button"
                                 onClick={() => handleThemeSelect(elem.textureUrl)} 
@@ -278,14 +271,12 @@ const NewDiaryForm = ({
                     </div>
                     
                     {/* Selected theme info */}
-                    {selectedTexture && (
-                        <div className="text-center mb-4">
-                            <p className="text-sm text-gray-300">Selected:</p>
-                            <p className="font-medium">
-                                {selectedTheme?.name || "Custom Theme"}
-                            </p>
-                        </div>
-                    )}
+                    <div className="text-center mb-4">
+                        <p className="text-sm text-gray-300">Selected:</p>
+                        <p className="font-medium">
+                            {selectedTheme?.name || "Custom Theme"}
+                        </p>
+                    </div>
                     
                     <Button
                         onClick={handleFinishForm}

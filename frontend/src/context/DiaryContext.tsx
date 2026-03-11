@@ -1,12 +1,13 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import { DEFAULT_DIARY_THEME } from "@/config/diaryThemes";
 
 type DiaryContextType = {
   isRotating: boolean;
   setIsRotating: React.Dispatch<React.SetStateAction<boolean>>;
-  selectedTexture: string | null;
-  setSelectedTexture: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedTexture: string;
+  setSelectedTexture: React.Dispatch<React.SetStateAction<string>>;
   resetDiaryPosition: () => void;
 };
 
@@ -18,14 +19,14 @@ export const DIARY_EVENTS = {
 const DiaryContext = createContext<DiaryContextType>({
   isRotating: true,
   setIsRotating: () => { },
-  selectedTexture: "/textures/leather-texture.jpg",
+  selectedTexture: DEFAULT_DIARY_THEME,
   setSelectedTexture: () => { },
   resetDiaryPosition: () => { },
 });
 
 export const DiaryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isRotating, setIsRotating] = useState<boolean>(true);
-  const [selectedTexture, setSelectedTexture] = useState<string | null>("/textures/leather-texture.jpg");
+  const [selectedTexture, setSelectedTexture] = useState<string>(DEFAULT_DIARY_THEME);
 
   const resetDiaryPosition = useCallback(() => {
     // Dispatch a custom event that the Diary3D component will listen for

@@ -8,27 +8,27 @@ import { ShieldCheck, PaintBucket, Bell, Mic, Clock, Brain } from "lucide-react"
 import Link from "next/link";
 
 const features = [
-    { icon: ShieldCheck, title: "Privacy First", description: "AES encryption keeps your entries secure and private." },
-    { icon: Clock, title: "Offline Mode", description: "Write your thoughts offline and sync them when you're back online." },
-    { icon: Brain, title: "AI Sentiment Analysis", description: "Get insights into your emotions based on your writing." },
-    { icon: PaintBucket, title: "Custom Themes", description: "Personalize your diary with customizable themes to match your style." },
-    { icon: Bell, title: "Reminders & Notifications", description: "Get timely reminders to maintain your journaling habit." },
-    { icon: Mic, title: "Voice-to-Text Entries", description: "Dictate your thoughts instead of typing for a faster experience." },
+    { icon: ShieldCheck, title: "Privacy First", description: "AES encryption keeps your entries secure and private.", comingSoon: true },
+    { icon: Clock, title: "Offline Mode", description: "Write your thoughts offline and sync them when you're back online.", comingSoon: true },
+    { icon: Brain, title: "AI Sentiment Analysis", description: "Get insights into your emotions based on your writing.", comingSoon: true },
+    { icon: PaintBucket, title: "Custom Themes", description: "Personalize your diary with customizable themes to match your style.", comingSoon: true },
+    { icon: Bell, title: "Reminders & Notifications", description: "Get timely reminders to maintain your journaling habit.", comingSoon: true },
+    { icon: Mic, title: "Voice-to-Text Entries", description: "Dictate your thoughts instead of typing for a faster experience.", comingSoon: true },
 ];
 
 interface FeatureCardProps {
     icon: ComponentType<React.SVGProps<SVGSVGElement>>;
     title: string;
     description: string;
+    comingSoon?: boolean;
 }
 
-const FeatureCard = ({ icon: Icon, title, description }: FeatureCardProps) => {
+const FeatureCard = ({ icon: Icon, title, description, comingSoon }: FeatureCardProps) => {
     return (
-        <div className="feature-card p-6 rounded-xl bg-slate-100/5 mix-blend-difference shadow-lg flex flex-col items-center text-white/80 max-w-xs group border border-white/10 hover:border-white/30 transition-[border]">
-            <div className="p-3 rounded-lg bg-white/10 mb-3 group-hover:bg-white/15 transition-[border] border border-white/10 group-hover:border-white/30">
+        <div className="feature-card p-6 rounded-xl bg-slate-100/5 shadow-lg flex flex-col items-center text-white/80 max-w-xs group border border-white/10 transition-[border]">
+            <div className="p-3 rounded-lg bg-white/10 mb-3 border border-white/10 ">
                 <Icon width={35} height={35} className="text-white/90" />
             </div>
-            <h3 className="font-semibold text-lg">{title}</h3>
             <p className="text-[0.9rem] tracking-wider text-white/60 mt-1">{description}</p>
         </div>
     );

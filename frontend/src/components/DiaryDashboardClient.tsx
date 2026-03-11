@@ -16,6 +16,7 @@ const DiaryDashboardClient = () => {
     const [newDiaryFormActive, setNewDiaryFormActive] = useState(false);
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [refetchTrigger, setRefetchTrigger] = useState(0);
+    const [searchQuery, setSearchQuery] = useState("");
 
     useEffect(() => {
         searchInputRef.current?.focus();
@@ -58,6 +59,8 @@ const DiaryDashboardClient = () => {
                     <Input
                         ref={searchInputRef}
                         type="text"
+                        value={searchQuery}
+                        onChange={(event) => setSearchQuery(event.target.value)}
                         placeholder="Search diary and notes..."
                         className="rounded-xl border border-white/15 bg-white/10 p-6 py-[1.65rem] text-lg text-white outline-none placeholder:text-zinc-400 focus:border-white/50"
                     />
@@ -67,11 +70,15 @@ const DiaryDashboardClient = () => {
                     </div>
                 </div>
                 <div id="diaries" className="mx-auto flex h-auto w-full max-w-[85%] flex-wrap gap-5 max-sm:justify-center">
-                    <Diaries refetchTrigger={refetchTrigger} />
+                    <Diaries
+                        refetchTrigger={refetchTrigger}
+                        searchQuery={searchQuery}
+                        onCreateRequest={() => setNewDiaryFormActive(true)}
+                    />
                     <Button
                         onClick={() => setNewDiaryFormActive(true)}
                         id="add-new-diary"
-                        className="group h-36 max-w-xs flex-col items-center rounded-xl border border-white/10 bg-zinc-600/10 p-6 text-white/80 shadow-lg mix-blend-difference transition-[border] hover:border-white/30 hover:bg-zinc-700/15"
+                        className="group min-h-40 w-full max-w-sm flex-col items-center justify-center rounded-xl border border-white/10 bg-zinc-600/10 p-6 text-white/80 shadow-lg transition-[border] hover:border-white/30 hover:bg-zinc-700/15"
                     >
                         <div className="mb-3 rounded-lg border border-white/10 bg-white/10 p-3 transition-[border] group-hover:border-white/30 group-hover:bg-white/15">
                             <RiAddCircleLine size={20} />

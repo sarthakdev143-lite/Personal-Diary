@@ -4,6 +4,7 @@ import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { Loader2, LogIn, Mail } from "lucide-react"
 import { motion } from "framer-motion"
+import Link from "next/link"
 
 import Google from './Google.png'
 import Github from './Github.png'
@@ -128,13 +129,13 @@ export default function LoginPage() {
                     <CardFooter className="flex flex-col space-y-2">
                         <div className="text-center text-sm text-muted-foreground/70">
                             By continuing, you agree to our{" "}
-                            <a href="#" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4">
+                            <Link href="/terms" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4">
                                 Terms of Service
-                            </a>{" "}
+                            </Link>{" "}
                             and{" "}
-                            <a href="#" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4">
+                            <Link href="/privacy" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4">
                                 Privacy Policy
-                            </a>
+                            </Link>
                             .
                         </div>
                     </CardFooter>
