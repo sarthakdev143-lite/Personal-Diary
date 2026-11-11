@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 
 import DiaryDashboardClient from "@/components/DiaryDashboardClient";
+import VaultGate from "@/components/VaultGate";
 import { authOptions } from "@/lib/auth";
 
 export default async function DiaryPage() {
@@ -11,5 +12,9 @@ export default async function DiaryPage() {
         redirect("/login");
     }
 
-    return <DiaryDashboardClient />;
+    return (
+        <VaultGate>
+            <DiaryDashboardClient />
+        </VaultGate>
+    );
 }

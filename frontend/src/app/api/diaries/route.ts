@@ -1,79 +1,61 @@
 import { NextResponse } from "next/server";
 
-import { DiaryDocument, DiaryWithId, getDatabase, getSessionUserId, serializeDiary } from "./_shared";
-
-type CreateDiaryPayload = {
-    title?: unknown;
-    description?: unknown;
-    theme?: unknown;
-};
-
-const DEFAULT_THEME = "/textures/leather-texture.jpg";
+import { DiaryDocument, serializeDiary } from "./_shared";
+import { currentUser } from "@/lib/current-user";
+import { apiError, readJson } from "@/lib/http";
+import { getDatabase } from "@/lib/mongodb";
+import { ciphertextLimit, limits, planOf, themeProblem } from "@/lib/plans";
+import { parseSealed } from "@/lib/sealed";
 
 export async function GET() {
-    try {
-        const userId = await getSessionUserId();
+    const user = await currentUser();
+    if (!user) return apiError("Unauthorized", 401);
 
-        if (!userId) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+    const db = await getDatabase();
+    const diaries = await db.collection<DiaryDocument>("diaries")
+        .find({ userId: user._id.toString() })
+        .sort({ pinned: -1, updatedAt: -1 })
+        .toArray();
 
-        const db = await getDatabase();
-        const diaries = await db
-            .collection<DiaryDocument>("diaries")
-            .find({ userId })
-            .sort({ createdAt: -1 })
-            .toArray();
-
-        return NextResponse.json((diaries as DiaryWithId[]).map(serializeDiary));
-    } catch (error) {
-        console.error("Failed to fetch diaries", error);
-        return NextResponse.json({ error: "Failed to fetch diaries" }, { status: 500 });
-    }
+    return NextResponse.json(diaries.flatMap((diary) => (diary._id ? [serializeDiary({ ...diary, _id: diary._id })] : [])));
 }
 
 export async function POST(request: Request) {
-    try {
-        const userId = await getSessionUserId();
+    const user = await currentUser();
+    if (!user) return apiError("Unauthorized", 401);
 
-        if (!userId) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+    const payload = await readJson(request) as { title?: unknown; description?: unknown; theme?: unknown } | undefined;
+    if (!payload) return apiError("Invalid JSON.", 400);
 
-        const payload = (await request.json()) as CreateDiaryPayload;
-        const title = typeof payload.title === "string" ? payload.title.trim() : "";
-        const description = typeof payload.description === "string" ? payload.description.trim() : "";
-        const theme = typeof payload.theme === "string" && payload.theme.trim().length > 0
-            ? payload.theme.trim()
-            : DEFAULT_THEME;
+    const plan = planOf(user.plan);
+    const maxCipher = ciphertextLimit(plan);
+    const title = parseSealed(payload.title, maxCipher);
+    const description = parseSealed(payload.description, maxCipher);
+    const theme = typeof payload.theme === "string" ? payload.theme : "";
 
-        if (title.length < 3) {
-            return NextResponse.json({ error: "Title must be at least 3 characters." }, { status: 400 });
-        }
+    if (!title || !description) return apiError("Title and description must be encrypted.", 400);
+    const themeCheck = themeProblem(plan, theme);
+    if (themeCheck === "unknown") return apiError("Unknown cover.", 400);
+    if (themeCheck === "upgrade") return apiError("That cover is part of Pro.", 402, "upgrade");
 
-        const now = new Date();
-        const diary: DiaryDocument = {
-            userId,
-            title,
-            description,
-            theme,
-            createdAt: now,
-            updatedAt: now,
-        };
-
-        const db = await getDatabase();
-        const diariesCollection = db.collection<DiaryDocument>("diaries");
-        const result = await diariesCollection.insertOne(diary);
-
-        return NextResponse.json(
-            serializeDiary({
-                ...diary,
-                _id: result.insertedId,
-            }),
-            { status: 201 }
-        );
-    } catch (error) {
-        console.error("Failed to create diary", error);
-        return NextResponse.json({ error: "Failed to create diary" }, { status: 500 });
+    const db = await getDatabase();
+    const userId = user._id.toString();
+    const count = await db.collection<DiaryDocument>("diaries").countDocuments({ userId });
+    if (count >= limits(plan).diaries) {
+        return apiError("You've used every diary on this plan.", 402, "upgrade");
     }
+
+    const now = new Date();
+    const diary: DiaryDocument = {
+        userId,
+        title,
+        description,
+        theme,
+        pinned: false,
+        createdAt: now,
+        updatedAt: now,
+    };
+    const result = await db.collection<DiaryDocument>("diaries").insertOne(diary);
+
+    return NextResponse.json(serializeDiary({ ...diary, _id: result.insertedId }), { status: 201 });
 }

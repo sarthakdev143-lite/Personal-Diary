@@ -18,109 +18,6 @@ const configureTexture = (texture: THREE.Texture) => {
     return texture;
 };
 
-const createCanvasTexture = (
-    draw: (ctx: CanvasRenderingContext2D, texture: THREE.CanvasTexture, canvas: HTMLCanvasElement) => void
-) => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 512;
-    canvas.height = 1024;
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.flipY = false;
-
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-        draw(ctx, texture, canvas);
-    }
-
-    texture.needsUpdate = true;
-    return texture;
-};
-
-const createIntroPageTexture = () =>
-    createCanvasTexture((ctx, texture, canvas) => {
-        ctx.fillStyle = "#fdf4e3";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        ctx.save();
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
-
-        ctx.fillStyle = "#2f2f2f";
-        ctx.font = "30px cursive";
-        ctx.fillText("Welcome to Your Digital Diary!", 30, 80);
-
-        ctx.font = "24px cursive";
-        ctx.fillText("👨‍💻 Developer: @sarthakdev143", 30, 140);
-
-        ctx.font = "22px cursive";
-        [
-            "📖 Features:",
-            "- Fully private & encrypted 🔒",
-            "- Add images with text 📸",
-            "- Customizable themes 🎨",
-            "- Offline mode ☁️",
-            "- Open source 🔓",
-        ].forEach((line, index) => {
-            ctx.fillText(line, index === 0 ? 30 : 50, 180 + index * 50);
-        });
-
-        ctx.font = "italic 22px cursive";
-        ctx.fillText("“Writing is the painting of the voice.”", 50, 520);
-        ctx.fillText("- Voltaire", 200, 550);
-        ctx.fillText("Scan this QR for a FREE gift :)", 105, 920);
-
-        ctx.restore();
-
-        const image = new Image();
-        image.src = "/qr-code.png";
-        image.onload = () => {
-            ctx.save();
-            ctx.translate(canvas.width, 0);
-            ctx.scale(-1, 1);
-            ctx.drawImage(image, 130, 620, 240, 240);
-            ctx.restore();
-            texture.needsUpdate = true;
-        };
-    });
-
-const createMiddlePageTexture = () =>
-    createCanvasTexture((ctx, _texture, canvas) => {
-        ctx.fillStyle = "#fdf4e3";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        ctx.fillStyle = "#2f2f2f";
-        ctx.font = "30px cursive";
-        ctx.fillText("💔 You Left, But I Stayed 💔", 55, 80);
-
-        ctx.font = "22px cursive";
-        ctx.fillText("- @sarthakdev143", 300, 120);
-
-        ctx.font = "22px cursive";
-        [
-            "I called your name in the quiet night,",
-            "but the wind carried it far from sight.",
-            "I reached for you in the empty air,",
-            "but found nothing, just silence there.",
-            "",
-            "You were the warmth in my coldest days,",
-            "now I shiver in love’s empty space.",
-            "Your touch once felt like home to me,",
-            "now it’s just a ghost I cannot see.",
-            "",
-            "You left so easily, without a sound,",
-            "while I stood there, broken, bound.",
-            "Did love mean nothing, was it all a lie?",
-            "Then why does my heart still ask why?",
-            "",
-            "I loved you more than words can say,",
-            "yet you let us fade away.",
-            "Now all I have is this endless ache,",
-            "a love that only I still take. 💔",
-        ].forEach((line, index) => {
-            ctx.fillText(line, 55, 180 + index * 40);
-        });
-    });
 
 const storeClosedState = (page: PageMesh) => {
     page.userData.closedState = {
@@ -213,9 +110,9 @@ export const useSetupScene = (texture: string | null = null) => {
                 coverGeometry,
                 new THREE.MeshStandardMaterial({
                     map: coverTexture,
-                    roughness: 0.8,
-                    metalness: 0.5,
-                    color: 0xb5794f,
+                    roughness: 0.92,
+                    metalness: 0.04,
+                    color: 0x8d5c3b,
                 })
             );
             frontCover.castShadow = true;
@@ -226,9 +123,9 @@ export const useSetupScene = (texture: string | null = null) => {
                 coverGeometry,
                 new THREE.MeshStandardMaterial({
                     map: coverTexture,
-                    roughness: 0.8,
-                    metalness: 0.5,
-                    color: 0xb5794f,
+                    roughness: 0.92,
+                    metalness: 0.04,
+                    color: 0x8d5c3b,
                 })
             );
             backCover.castShadow = true;
@@ -243,49 +140,31 @@ export const useSetupScene = (texture: string | null = null) => {
 
     const createPages = useCallback(
         ({
-            pageCount = 50,
-            includeContentPages = true,
-            pageSpread = 0.1,
+            pageCount = 36,
         }: {
             pageCount?: number;
             includeContentPages?: boolean;
             pageSpread?: number;
         } = {}) => {
-            const paperTexture = loadTexture("/textures/paper-texture.jpg");
             const pageGroup = new THREE.Group();
             const pageGeometry = new THREE.PlaneGeometry(3.2, 5.1);
             pageGeometry.translate(1.6, 0, 0);
+            const paperTexture = loadTexture("/textures/paper-texture.jpg");
 
-            const firstPageMaterial = new THREE.MeshStandardMaterial({
-                map: includeContentPages ? createIntroPageTexture() : paperTexture,
-                side: THREE.DoubleSide,
-                roughness: 0.9,
-                metalness: 0.1,
-            });
-
-            const firstPage = new THREE.Mesh(pageGeometry, firstPageMaterial) as PageMesh;
-            firstPage.rotation.x = Math.PI / 2;
-            firstPage.position.set(-1.68, 0, 0);
-            storeClosedState(firstPage);
-            pageGroup.add(firstPage);
-
-            const middlePageIndex = Math.floor(pageCount / 2);
-
-            for (let index = 1; index < pageCount; index += 1) {
+            for (let index = 0; index < pageCount; index += 1) {
                 const pageMaterial = new THREE.MeshStandardMaterial({
-                    map: includeContentPages && index === middlePageIndex ? createMiddlePageTexture() : paperTexture,
+                    map: paperTexture,
                     side: THREE.DoubleSide,
-                    roughness: 0.9,
-                    metalness: 0.1,
+                    roughness: 0.95,
+                    metalness: 0,
                     transparent: true,
-                    opacity: 0.95,
+                    opacity: 0.96,
                 });
 
                 const page = new THREE.Mesh(pageGeometry, pageMaterial) as PageMesh;
                 page.rotation.x = Math.PI / 2;
-                page.position.set(-1.68 + (Math.random() * pageSpread - 0.135), -0.007 * index, 0);
+                page.position.set(-1.68, -0.007 * index, 0);
                 page.receiveShadow = true;
-
                 storeClosedState(page);
                 pageGroup.add(page);
             }
@@ -300,8 +179,8 @@ export const useSetupScene = (texture: string | null = null) => {
         (coverTexture: THREE.Texture) => {
             const spineMaterial = new THREE.MeshStandardMaterial({
                 map: coverTexture,
-                roughness: 0.7,
-                metalness: 0.2,
+                roughness: 0.88,
+                metalness: 0.04,
                 color: 0xa0522d,
                 side: THREE.DoubleSide,
             });
@@ -333,10 +212,10 @@ export const useSetupScene = (texture: string | null = null) => {
     const createLighting = useCallback(() => {
         if (sceneRef.current.getObjectByName("diary-ambient-light")) return;
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        const ambientLight = new THREE.AmbientLight(0xfff4e8, 0.45);
         ambientLight.name = "diary-ambient-light";
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        const directionalLight = new THREE.DirectionalLight(0xffe2c0, 1.6);
         directionalLight.name = "diary-directional-light";
         directionalLight.position.set(5, 10, 7);
         directionalLight.castShadow = true;

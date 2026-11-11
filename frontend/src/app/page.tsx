@@ -1,22 +1,5 @@
-"use client";
-
-import { useRef } from "react";
-import LenisProvider from "@/components/LenisProvider";
-import Landing from "@/components/info/Landing";
-import WhyChooseThis from "@/components/info/WhyChooseThis";
+import HomeStory from "@/components/HomeStory";
 
 export default function Home() {
-  const infoParentRef = useRef<HTMLDivElement>(null);
-
-  return (
-    <>
-      <LenisProvider>
-        <div id="info-parent" ref={infoParentRef} className="w-full h-auto backdrop-blur-lg bg-black/55 flex flex-col max-xs:px-2 px-4">
-          <Landing />
-          <WhyChooseThis />
-        </div>
-        <div className="h-screen w-full pointer-events-none"></div>
-      </LenisProvider>
-    </>
-  );
-};
+    return <HomeStory />;
+}

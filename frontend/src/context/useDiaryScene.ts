@@ -49,6 +49,15 @@ export const useDiaryScene = (isRotating: boolean) => {
     const orientationRef = useRef<"portrait" | "landscape">("landscape");
     const mountRef = useRef<HTMLDivElement | null>(null);
     const animationRef = useRef<number | null>(null);
+    const closedPose = useRef<{
+        groupX: number;
+        front: { x: number; y: number; z: number };
+        back: { y: number; z: number };
+        spine: { x: number; y: number; rotY: number };
+        pageGroupX: number;
+        pageGroupRotZ: number;
+        pages: { mesh: PageMesh; y: number; rotY: number }[];
+    } | null>(null);
 
     const getDeviceType = useCallback(() => {
         const width = window.innerWidth;
@@ -111,8 +120,9 @@ export const useDiaryScene = (isRotating: boolean) => {
         if (!sceneRef.current) return;
 
         const { renderer, camera } = sceneRef.current;
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+        const mount = mountRef.current;
+        const width = mount?.clientWidth || window.innerWidth;
+        const height = mount?.clientHeight || window.innerHeight;
 
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
@@ -397,16 +407,88 @@ export const useDiaryScene = (isRotating: boolean) => {
         window.requestAnimationFrame(animate);
     }, [closeDiary, getDeviceType, getOrientation, isAnimating, isOpened]);
 
+    const rememberClosed = useCallback(() => {
+        const current = sceneRef.current;
+        if (!current?.frontCover || !current.backCover || !current.pageGroup || !current.spine) return;
+        const pages = current.pageGroup.children as PageMesh[];
+        closedPose.current = {
+            groupX: current.diaryGroup.position.x,
+            front: {
+                x: current.frontCover.position.x,
+                y: current.frontCover.position.y,
+                z: current.frontCover.rotation.z,
+            },
+            back: {
+                y: current.backCover.position.y,
+                z: current.backCover.rotation.z,
+            },
+            spine: {
+                x: current.spine.position.x,
+                y: current.spine.position.y,
+                rotY: current.spine.rotation.y,
+            },
+            pageGroupX: current.pageGroup.position.x,
+            pageGroupRotZ: current.pageGroup.rotation.z,
+            pages: pages.slice(0, Math.floor(pages.length / 2)).map((mesh) => ({
+                mesh,
+                y: mesh.position.y,
+                rotY: mesh.rotation.y,
+            })),
+        };
+    }, []);
+
+    const setOpenAmount = useCallback((amount: number) => {
+        const pose = closedPose.current;
+        const current = sceneRef.current;
+        if (!pose || !current?.frontCover || !current.backCover || !current.pageGroup || !current.spine) return;
+
+        const progress = easeOutQuart(Math.min(1, Math.max(0, amount)));
+        const targetRotation = Math.PI * 0.944;
+        current.diaryGroup.position.x = pose.groupX;
+        current.frontCover.position.x = pose.front.x - 0.62 * progress;
+        current.frontCover.position.y = pose.front.y - 0.7 * Math.sin((progress * Math.PI) / 2);
+        current.frontCover.rotation.z = pose.front.z + (targetRotation - pose.front.z) * progress;
+        current.spine.position.x = pose.spine.x - 0.22 * progress;
+        current.spine.position.y = pose.spine.y - 0.42 * Math.sin((progress * Math.PI) / 2);
+        current.spine.rotation.y = pose.spine.rotY + (Math.PI / 2) * progress;
+        current.backCover.position.y = pose.back.y - 0.16 * Math.sin((progress * Math.PI) / 2);
+        current.backCover.rotation.z = pose.back.z + (targetRotation - pose.back.z) * progress * 0.05;
+
+        pose.pages.forEach((page, index) => {
+            const start = index * 0.01;
+            const span = Math.max(0.2, 1 - start);
+            const pageProgress = easeOutQuart(Math.min(1, Math.max(0, (progress - start) / span)));
+            page.mesh.position.y = page.y - 0.16 * Math.sin((pageProgress * Math.PI) / 2);
+            page.mesh.rotation.y = page.rotY + Math.PI * 0.88 * pageProgress;
+        });
+
+        current.pageGroup.position.x = pose.pageGroupX - 0.35 * progress;
+        current.pageGroup.position.y = 0.03 * Math.sin((progress * Math.PI) / 2);
+        current.pageGroup.rotation.z = pose.pageGroupRotZ + (targetRotation - pose.pageGroupRotZ) * progress * 0.05;
+        setIsOpened(amount > 0.97);
+    }, []);
+
     useEffect(() => {
         const handleResetPosition = () => {
             resetPosition();
         };
 
+        const handlePose = (event: Event) => {
+            const amount = (event as CustomEvent<number>).detail;
+            if (typeof amount === "number") setOpenAmount(amount);
+        };
+
         window.addEventListener(DIARY_EVENTS.RESET_POSITION, handleResetPosition);
+        window.addEventListener(DIARY_EVENTS.OPEN, openDiary);
+        window.addEventListener(DIARY_EVENTS.CLOSE, closeDiary);
+        window.addEventListener(DIARY_EVENTS.POSE, handlePose);
         return () => {
             window.removeEventListener(DIARY_EVENTS.RESET_POSITION, handleResetPosition);
+            window.removeEventListener(DIARY_EVENTS.OPEN, openDiary);
+            window.removeEventListener(DIARY_EVENTS.CLOSE, closeDiary);
+            window.removeEventListener(DIARY_EVENTS.POSE, handlePose);
         };
-    }, [resetPosition]);
+    }, [closeDiary, openDiary, resetPosition, setOpenAmount]);
 
     return {
         sceneRef,
@@ -426,5 +508,6 @@ export const useDiaryScene = (isRotating: boolean) => {
         handleTouchStart,
         closeDiary,
         updateRotation,
+        rememberClosed,
     };
 };

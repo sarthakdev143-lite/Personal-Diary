@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
+import DiaryDetails from "@/components/DiaryDetails";
+import { useVault } from "@/context/VaultContext";
+import type { DiaryRecord, EntryRecord } from "@/lib/records";
+import { revealText } from "@/lib/reveal";
 
-type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
-type Entry = { _id: string; diaryId: string; userId: string; content: string; createdAt: string; updatedAt: string; };
-type DiaryResponse = { diary: Diary; entries: Entry[]; };
+type Diary = { _id: string; title: string; description: string; theme: string; pinned: boolean; createdAt: string; updatedAt: string; };
+type Entry = { _id: string; diaryId: string; content: string; createdAt: string; updatedAt: string; };
 
 const fmtShort = (v: string) => {
     const d = new Date(v);
@@ -32,7 +35,6 @@ const wordCount = (html: string) => {
     return text ? text.split(/\s+/).filter(Boolean).length : 0;
 };
 
-// Toolbar button definition
 type ToolBtn = { icon: string; title: string; action: () => void; active?: boolean };
 
 const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
@@ -45,22 +47,35 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const [entries, setEntries] = useState<Entry[]>([]);
     const [htmlContent, setHtmlContent] = useState("");
     const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
-    const [isViewingOld, setIsViewingOld] = useState(false);
+    const [entryQuery, setEntryQuery] = useState("");
+    const [confirmDelete, setConfirmDelete] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
+    const { seal, open, account, refresh } = useVault();
 
     useEffect(() => {
         let mounted = true;
         (async () => {
             try {
                 const res = await fetch(`/api/diaries/${diaryId}`, { cache: "no-store" });
-                const data = await res.json() as Partial<DiaryResponse> & { error?: string };
-                if (!res.ok) throw new Error(data.error || "Failed to load.");
+                const data = await res.json() as { diary?: DiaryRecord; entries?: EntryRecord[]; error?: string };
+                if (!res.ok || !data.diary || !data.entries) throw new Error(data.error || "Failed to load.");
+                const [title, description, openedEntries] = await Promise.all([
+                    revealText(data.diary.title, open),
+                    revealText(data.diary.description, open),
+                    Promise.all(data.entries.map(async (entry) => ({
+                        _id: entry._id,
+                        diaryId: entry.diaryId,
+                        content: await revealText(entry.content, open),
+                        createdAt: entry.createdAt,
+                        updatedAt: entry.updatedAt,
+                    }))),
+                ]);
                 if (!mounted) return;
-                setDiary(data.diary!);
-                setEntries(data.entries!);
+                setDiary({ ...data.diary, title, description });
+                setEntries(openedEntries);
             } catch (e) {
                 if (mounted) setError(e instanceof Error ? e.message : "Failed to load.");
             } finally {
@@ -68,9 +83,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             }
         })();
         return () => { mounted = false; };
-    }, [diaryId]);
+    }, [diaryId, open]);
 
-    // Track active formats for toolbar highlight
     const updateActiveFormats = useCallback(() => {
         const selection = document.getSelection();
         if (!editorRef.current || !selection || selection.rangeCount === 0) return;
@@ -93,13 +107,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         setActiveFormats(fmt);
     }, []);
 
-    // Sync editor DOM -> htmlContent state
     const onInput = useCallback(() => {
         if (editorRef.current) setHtmlContent(editorRef.current.innerHTML);
         updateActiveFormats();
     }, [updateActiveFormats]);
 
-    // Track active formats for toolbar highlight
     const onSelectionChange = useCallback(() => {
         updateActiveFormats();
     }, [updateActiveFormats]);
@@ -137,7 +149,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
     const handleNewEntry = () => {
         setSelectedEntryId(null);
-        setIsViewingOld(false);
+        setConfirmDelete(false);
         const html = todayHeader();
         setHtmlContent(html);
         if (editorRef.current) {
@@ -152,37 +164,77 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     };
 
     const handleEntrySelect = (entry: Entry) => {
+        setConfirmDelete(false);
         if (selectedEntryId === entry._id) {
             setSelectedEntryId(null);
-            setIsViewingOld(false);
             setHtmlContent("");
             if (editorRef.current) editorRef.current.innerHTML = "";
             return;
         }
         setSelectedEntryId(entry._id);
-        setIsViewingOld(true);
         setHtmlContent(entry.content);
         if (editorRef.current) editorRef.current.innerHTML = entry.content;
     };
 
+    const handleDeleteEntry = async () => {
+        if (!selectedEntryId) return;
+        if (!confirmDelete) {
+            setConfirmDelete(true);
+            return;
+        }
+        try {
+            const res = await fetch(`/api/diaries/${diaryId}/entries/${selectedEntryId}`, { method: "DELETE" });
+            const data = await res.json() as { error?: string };
+            if (!res.ok) throw new Error(data.error || "Could not delete the entry.");
+            setEntries((prev) => prev.filter((entry) => entry._id !== selectedEntryId));
+            setSelectedEntryId(null);
+            setConfirmDelete(false);
+            setHtmlContent("");
+            if (editorRef.current) editorRef.current.innerHTML = "";
+            await refresh();
+        } catch (e) {
+            toast({ title: "Not deleted", description: e instanceof Error ? e.message : "Error", variant: "destructive" });
+        }
+    };
+
     const handleSave = async () => {
-        const trimmed = htmlContent.replace(/<[^>]*>/g, "").trim();
-        if (!trimmed || isSaving || isViewingOld) return;
+        const trimmed = htmlContent.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+        const maxChars = account?.limits.maxPlaintextChars ?? 8000;
+        if (!trimmed || isSaving) return;
+        if (htmlContent.length > maxChars) {
+            toast({ title: "Too long", description: `This plan allows ${maxChars.toLocaleString()} characters per entry.`, variant: "destructive" });
+            return;
+        }
+        if (!selectedEntryId && entries.length >= (account?.limits.entriesPerDiary ?? 25)) {
+            toast({ title: "This diary is full", description: "Upgrade to Pro for more entries.", variant: "destructive" });
+            return;
+        }
         setIsSaving(true);
         try {
-            const res = await fetch(`/api/diaries/${diaryId}/entries`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content: htmlContent, createdAt: new Date().toISOString() }),
-            });
+            const content = await seal(htmlContent);
+            const editing = selectedEntryId !== null;
+            const res = await fetch(
+                editing ? `/api/diaries/${diaryId}/entries/${selectedEntryId}` : `/api/diaries/${diaryId}/entries`,
+                {
+                    method: editing ? "PUT" : "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ content }),
+                }
+            );
             const data = await res.json() as Entry & { error?: string };
             if (!res.ok) throw new Error(data.error || "Failed to save.");
-            setEntries(prev => [data, ...prev]);
-            setHtmlContent("");
-            setSelectedEntryId(null);
-            setIsViewingOld(false);
-            if (editorRef.current) editorRef.current.innerHTML = "";
-            toast({ title: "Saved", description: fmtLong(data.createdAt) });
+            const savedAt = data.updatedAt || new Date().toISOString();
+            const createdAt = data.createdAt || new Date().toISOString();
+            if (editing) {
+                setEntries((prev) => prev.map((entry) => entry._id === selectedEntryId ? { ...entry, content: htmlContent, updatedAt: savedAt } : entry));
+            } else {
+                setEntries((prev) => [{ _id: data._id, diaryId, content: htmlContent, createdAt, updatedAt: savedAt }, ...prev]);
+                setHtmlContent("");
+                setSelectedEntryId(null);
+                if (editorRef.current) editorRef.current.innerHTML = "";
+            }
+            await refresh();
+            toast({ title: editing ? "Updated" : "Saved", description: fmtLong(createdAt) });
         } catch (e) {
             toast({ title: "Not saved", description: e instanceof Error ? e.message : "Error", variant: "destructive" });
         } finally {
@@ -194,7 +246,6 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if ((e.ctrlKey || e.metaKey) && e.key === "s") { e.preventDefault(); handleSave(); }
     };
 
-    // Build toolbar buttons
     const toolbarGroups: ToolBtn[][] = [
         [
             { icon: "H1", title: "Heading 1", action: () => exec("formatBlock", "h1"), active: activeFormats.has("h1") },
@@ -208,24 +259,29 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             { icon: "S̶", title: "Strikethrough", action: () => exec("strikeThrough"), active: activeFormats.has("strikethrough") },
         ],
         [
-            { icon: "≡", title: "Bullet list", action: () => exec("insertUnorderedList"), active: activeFormats.has("ul") },
+            { icon: "List", title: "Bullet list", action: () => exec("insertUnorderedList"), active: activeFormats.has("ul") },
             { icon: "1.", title: "Numbered list", action: () => exec("insertOrderedList"), active: activeFormats.has("ol") },
-            { icon: "❝", title: "Blockquote", action: () => exec("formatBlock", "blockquote"), active: activeFormats.has("blockquote") },
-            { icon: "—", title: "Divider", action: () => insertHTML("<hr/><p><br></p>") },
+            { icon: "Quote", title: "Blockquote", action: () => exec("formatBlock", "blockquote"), active: activeFormats.has("blockquote") },
+            { icon: "Rule", title: "Divider", action: () => insertHTML("<hr/><p><br></p>") },
         ],
         [
-            { icon: "🖼", title: "Insert image", action: () => fileInputRef.current?.click() },
-            { icon: "⬛", title: "Code block", action: () => insertHTML('<pre><code>code here</code></pre><p><br></p>') },
-            { icon: "🔗", title: "Insert link", action: () => { const url = prompt("URL:"); if (url) exec("createLink", url); } },
+            { icon: "Image", title: "Insert image", action: () => fileInputRef.current?.click() },
+            { icon: "Code", title: "Code block", action: () => insertHTML("<pre><code></code></pre><p><br></p>") },
+            { icon: "Link", title: "Insert link", action: () => { const url = prompt("URL:"); if (url) exec("createLink", url); } },
         ],
         [
-            { icon: "⟵", title: "Undo", action: () => exec("undo") },
-            { icon: "⟶", title: "Redo", action: () => exec("redo") },
+            { icon: "Undo", title: "Undo", action: () => exec("undo") },
+            { icon: "Redo", title: "Redo", action: () => exec("redo") },
         ],
     ];
 
     const wc = wordCount(htmlContent);
-    const canSave = htmlContent.replace(/<[^>]*>/g, "").trim().length > 0 && !isViewingOld;
+    const canSave = htmlContent.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim().length > 0;
+    const visibleEntries = useMemo(() => {
+        const needle = entryQuery.trim().toLowerCase();
+        if (!needle) return entries;
+        return entries.filter((entry) => entry.content.replace(/<[^>]*>/g, " ").toLowerCase().includes(needle));
+    }, [entries, entryQuery]);
 
     if (isLoading) return (
         <div style={{ position: "fixed", inset: 0, zIndex: 10, background: "#0d0b09", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -259,12 +315,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 }
                 .de-mono{font-family:'JetBrains Mono','Courier New',monospace;}
 
-                /* Left panel scrollbar */
                 .de-left::-webkit-scrollbar{width:3px;}
                 .de-left::-webkit-scrollbar-track{background:transparent;}
                 .de-left::-webkit-scrollbar-thumb{background:#2a2520;border-radius:99px;}
 
-                /* Header */
                 .de-header{
                     flex-shrink:0;
                     display:flex;align-items:center;justify-content:space-between;
@@ -273,7 +327,6 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     border-bottom:1px solid #1e1c18;
                 }
 
-                /* Toolbar */
                 .de-toolbar{
                     flex-shrink:0;
                     display:flex;align-items:center;gap:2px;flex-wrap:wrap;
@@ -289,20 +342,17 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     background:transparent;
                     border:1px solid transparent;
                     border-radius:3px;
-                    padding:3px 7px;
+                    padding:4px 8px;
                     cursor:pointer;
-                    transition:all 0.15s;
-                    min-width:28px;
+                    min-width:0;
                     text-align:center;
                     line-height:1.4;
                 }
                 .de-tbtn:hover{color:#d4c8b4;background:#1e1c18;border-color:#2a2520;}
                 .de-tbtn.on{color:#c4a882;background:#2a2010;border-color:#3a3020;}
 
-                /* Body */
                 .de-body{flex:1;min-height:0;display:flex;}
 
-                /* Left panel */
                 .de-left{
                     width:268px;flex-shrink:0;
                     display:flex;flex-direction:column;
@@ -322,14 +372,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 .de-entry-card:hover{background:#131109;}
                 .de-entry-card.active{background:#161208;border-left-color:#c4a882;}
 
-                /* Right panel */
                 .de-right{
                     flex:1;min-width:0;min-height:0;
                     display:flex;flex-direction:column;
                     position:relative;
                 }
 
-                /* Editor content area */
                 .de-editor-wrap{flex:1;overflow-y:auto;position:relative;}
                 .de-editor-wrap::-webkit-scrollbar{width:4px;}
                 .de-editor-wrap::-webkit-scrollbar-track{background:transparent;}
@@ -348,7 +396,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     word-break:break-word;
                 }
                 #de-editor:empty::before{
-                    content:"How was your day?...";
+                    content:"";
                     color:#9b9286;
                     font-style:italic;
                     pointer-events:none;
@@ -356,7 +404,6 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 #de-editor::selection,
                 #de-editor *::selection{background:#3a3020;color:#ede5d8;}
 
-                /* Typography inside editor */
                 #de-editor h1{font-size:26px;font-weight:500;color:#ede5d8;margin:24px 0 12px;letter-spacing:-0.01em;line-height:1.3;}
                 #de-editor h2{font-size:20px;font-weight:500;color:#e0d8cc;margin:20px 0 10px;line-height:1.4;}
                 #de-editor h3{font-size:16px;font-weight:500;color:#d4ccc0;margin:16px 0 8px;text-transform:uppercase;letter-spacing:0.08em;font-family:'JetBrains Mono',monospace;font-size:12px;}
@@ -390,10 +437,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 #de-editor a{color:#c4a882;text-decoration:underline;text-underline-offset:3px;}
                 #de-editor img{max-width:100%;border-radius:6px;margin:12px 0;display:block;}
 
-                /* Read-only overlay */
                 #de-editor[contenteditable="false"]{opacity:0.75;cursor:default;}
 
-                /* Footer */
                 .de-footer{
                     flex-shrink:0;
                     display:flex;align-items:center;justify-content:space-between;
@@ -402,7 +447,6 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     border-top:1px solid #1a1814;
                 }
 
-                /* Buttons */
                 .de-save-btn{
                     font-family:'JetBrains Mono',monospace;
                     font-size:10px;letter-spacing:0.2em;text-transform:uppercase;
@@ -423,7 +467,6 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 }
                 .de-ghost-btn:hover{color:#e0d6c8;border-color:#6a5a48;}
 
-                /* Back link */
                 .de-back{
                     font-family:'JetBrains Mono',monospace;
                     font-size:10px;letter-spacing:0.25em;text-transform:uppercase;
@@ -445,7 +488,6 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
             <div className="de-root" onKeyDown={handleKeyDown}>
 
-                {/* HEADER */}
                 <header className="de-header">
                     <div style={{ display: "flex", alignItems: "center", gap: 18, minWidth: 0 }}>
                         <Link href="/diary" className="de-back">← back</Link>
@@ -461,17 +503,22 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             )}
                         </div>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
                         <span className="de-mono" style={{ fontSize: 10, color: "#8f8679", letterSpacing: "0.15em" }}>
                             {entries.length} {entries.length === 1 ? "entry" : "entries"}
                         </span>
+                        {diary && (
+                            <DiaryDetails
+                                diary={diary}
+                                entries={entries.map((entry) => ({ content: entry.content, createdAt: entry.createdAt }))}
+                                onUpdated={setDiary}
+                            />
+                        )}
                         <button onClick={handleNewEntry} className="de-ghost-btn">+ new entry</button>
                     </div>
                 </header>
 
-                {/* TOOLBAR — only when not viewing old */}
-                {!isViewingOld && (
-                    <div className="de-toolbar">
+                <div className="de-toolbar">
                         {toolbarGroups.map((group, gi) => (
                             <div key={gi} style={{ display: "flex", alignItems: "center", gap: 1 }}>
                                 {gi > 0 && <div className="de-toolbar-sep" />}
@@ -482,7 +529,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                         title={btn.title}
                                         onClick={btn.action}
                                         className={`de-tbtn${btn.active ? " on" : ""}`}
-                                        onMouseDown={e => e.preventDefault()} // prevent focus loss
+                                        onMouseDown={e => e.preventDefault()}
                                     >
                                         {btn.icon}
                                     </button>
@@ -490,24 +537,33 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             </div>
                         ))}
                     </div>
-                )}
 
-                {/* BODY */}
                 <div className="de-body">
 
-                    {/* LEFT */}
                     <aside className="de-left">
                         <div className="de-mono" style={{ padding: "16px 16px 10px", fontSize: 9, letterSpacing: "0.35em", textTransform: "uppercase", color: "#a79f93" }}>
                             Past Entries
                         </div>
+                        <input
+                            value={entryQuery}
+                            onChange={(event) => setEntryQuery(event.target.value)}
+                            placeholder="Search entries"
+                            aria-label="Search entries"
+                            className="de-mono"
+                            style={{ margin: "0 16px 12px", padding: "8px 10px", background: "#161410", color: "#d8d0c4", border: "1px solid #2a2520", borderRadius: 4, fontSize: 12 }}
+                        />
                         {entries.length === 0 ? (
                             <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 20px 48px" }}>
                                 <p style={{ fontFamily: "'Lora',Georgia,serif", fontStyle: "italic", color: "#a79f93", fontSize: 13, textAlign: "center", lineHeight: 1.8 }}>
                                     Nothing written yet.
                                 </p>
                             </div>
+                        ) : visibleEntries.length === 0 ? (
+                            <p style={{ padding: "0 16px", fontFamily: "'Lora',Georgia,serif", fontStyle: "italic", color: "#a79f93", fontSize: 13 }}>
+                                No entries match that search.
+                            </p>
                         ) : (
-                            entries.map((entry, i) => {
+                            visibleEntries.map((entry, i) => {
                                 const active = selectedEntryId === entry._id;
                                 const preview = entry.content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 90);
                                 return (
@@ -533,19 +589,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         )}
                     </aside>
 
-                    {/* RIGHT */}
                     <section className="de-right">
-                        {isViewingOld && (
-                            <div className="de-viewing-badge de-fade">
-                                viewing · {fmtShort(entries.find(e => e._id === selectedEntryId)?.createdAt || "")}
-                            </div>
-                        )}
-
                         <div className="de-editor-wrap">
                             <div
                                 id="de-editor"
                                 ref={editorRef}
-                                contentEditable={!isViewingOld}
+                                contentEditable
                                 suppressContentEditableWarning
                                 onInput={onInput}
                                 onFocus={updateActiveFormats}
@@ -558,43 +607,33 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             />
                         </div>
 
-                        {/* Footer */}
                         <div className="de-footer">
                             <div className="de-mono" style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 10, color: "#8f8679", letterSpacing: "0.1em" }}>
                                 <span>{wc} words</span>
                                 <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
                                 <span>{htmlContent.replace(/<[^>]*>/g, "").length} chars</span>
-                                {!isViewingOld && (
-                                    <>
-                                        <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
-                                        <span style={{ color: "#8f8679" }}>ctrl+s to save</span>
-                                    </>
-                                )}
-                                {isViewingOld && (
-                                    <><span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
-                                        <span style={{ color: "#9b8b78", fontStyle: "italic" }}>read only</span>
-                                    </>
-                                )}
+                                <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
+                                <span style={{ color: "#8f8679" }}>ctrl+s to save</span>
                             </div>
 
-                            {!isViewingOld ? (
+                            <div style={{ display: "flex", gap: 8 }}>
+                                {selectedEntryId && (
+                                    <button type="button" onClick={handleDeleteEntry} className="de-ghost-btn">
+                                        {confirmDelete ? "confirm delete" : "delete"}
+                                    </button>
+                                )}
                                 <button onClick={handleSave} disabled={!canSave || isSaving} className="de-save-btn">
                                     {isSaving
                                         ? <><span style={{ width: 10, height: 10, borderRadius: "50%", border: "1px solid #c4a882", borderTopColor: "transparent", animation: "spin 1s linear infinite", display: "inline-block" }} />saving</>
-                                        : "save entry"
+                                        : selectedEntryId ? "update entry" : "save entry"
                                     }
                                 </button>
-                            ) : (
-                                <button onClick={() => { setSelectedEntryId(null); setIsViewingOld(false); setHtmlContent(""); if (editorRef.current) editorRef.current.innerHTML = ""; }} className="de-ghost-btn">
-                                    ✕ close
-                                </button>
-                            )}
+                            </div>
                         </div>
                     </section>
                 </div>
             </div>
 
-            {/* Hidden file input for image upload */}
             <input
                 ref={fileInputRef}
                 type="file"

@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 
 import DiaryEditorClient from "@/components/DiaryEditorClient";
+import VaultGate from "@/components/VaultGate";
 import { authOptions } from "@/lib/auth";
 
 type DiaryEditorPageProps = {
@@ -17,5 +18,9 @@ export default async function DiaryEditorPage({ params }: DiaryEditorPageProps) 
 
     const { id } = await params;
 
-    return <DiaryEditorClient diaryId={id} />;
+    return (
+        <VaultGate>
+            <DiaryEditorClient diaryId={id} />
+        </VaultGate>
+    );
 }

@@ -1,146 +1,231 @@
 "use client"
 
-import { useState } from "react"
+import { FormEvent, useEffect, useState } from "react"
 import { signIn } from "next-auth/react"
-import { Loader2, LogIn, Mail } from "lucide-react"
-import { motion } from "framer-motion"
-
-import Google from './Google.png'
-import Github from './Github.png'
-
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { useToast } from "@/hooks/use-toast"
-import { Toaster } from "@/components/ui/toaster"
-import { ToastAction } from "@/components/ui/toast"
 import Image from "next/image"
 
+import Google from "./Google.png"
+import Github from "./Github.png"
+import { useToast } from "@/hooks/use-toast"
+import { Toaster } from "@/components/ui/toaster"
+import { normalizeEmail } from "@/lib/email"
+import { createVault, openVault, passwordError } from "@/lib/vault"
+import { forgetRawKey, rememberRawKey } from "@/lib/vault-session"
+
+const fieldClass = "w-full border border-[#3a342c] bg-transparent px-3 py-2 text-sm text-[#d5cdc0] placeholder:text-[#8f877c] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[#f3ecdf]"
+const primaryClass = "w-full bg-[#f3ecdf] px-4 py-2 text-sm text-[#161410] disabled:opacity-50"
+const quietClass = "flex w-full items-center justify-center gap-3 border border-[#3a342c] px-4 py-2 text-sm text-[#d5cdc0] disabled:opacity-50"
+
 export default function LoginPage() {
-    const [isLoading, setIsLoading] = useState<{
-        google: boolean
-        github: boolean
-    }>({
-        google: false,
-        github: false,
-    })
     const { toast } = useToast()
+    const [mode, setMode] = useState<"signin" | "signup">("signup")
+    const [name, setName] = useState("")
+    const [email, setEmail] = useState("")
+    const [password, setPassword] = useState("")
+    const [pending, setPending] = useState(false)
+    const [oauth, setOauth] = useState<{ google: boolean; github: boolean }>({ google: false, github: false })
+    const [oauthLoading, setOauthLoading] = useState<"google" | "github" | null>(null)
 
-    const handleLogin = async (provider: "google" | "github") => {
-        setIsLoading((prev) => ({ ...prev, [provider]: true }))
+    useEffect(() => {
+        fetch("/api/auth/providers")
+            .then((response) => response.json())
+            .then((data: { google?: unknown; github?: unknown }) => {
+                setOauth({ google: Boolean(data.google), github: Boolean(data.github) })
+            })
+            .catch(() => setOauth({ google: false, github: false }))
+    }, [])
 
+    async function submit(event: FormEvent) {
+        event.preventDefault()
+        const problem = passwordError(password)
+        const normalized = normalizeEmail(email)
+        if (!normalized) {
+            toast({ title: "Check the email", description: "Enter a valid email.", variant: "destructive" })
+            return
+        }
+        if (problem) {
+            toast({ title: "Check the password", description: problem, variant: "destructive" })
+            return
+        }
+        if (mode === "signup" && (name.trim().length < 1 || name.trim().length > 80)) {
+            toast({ title: "Check the name", description: "Enter a name up to 80 characters.", variant: "destructive" })
+            return
+        }
+
+        setPending(true)
+        try {
+            if (mode === "signup") {
+                const created = await createVault(password)
+                const response = await fetch("/api/auth/signup", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        email: normalized,
+                        name: name.trim(),
+                        authVerifier: created.authVerifier,
+                        kdfSalt: created.kdfSalt,
+                        wrappedDataKey: created.wrappedDataKey,
+                        wrapIv: created.wrapIv,
+                    }),
+                })
+                const data = await response.json().catch(() => null) as { error?: string } | null
+                if (!response.ok) throw new Error(data?.error || "Could not create the account.")
+                rememberRawKey(created.rawKey)
+                const result = await signIn("credentials", {
+                    email: normalized,
+                    verifier: created.authVerifier,
+                    redirect: false,
+                })
+                if (result?.error) {
+                    forgetRawKey()
+                    throw new Error("Account created, but sign-in failed. Try signing in.")
+                }
+            } else {
+                const materialResponse = await fetch("/api/auth/material", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: normalized }),
+                })
+                const material = await materialResponse.json().catch(() => null) as {
+                    error?: string
+                    kdfSalt?: string
+                    wrappedDataKey?: string
+                    wrapIv?: string
+                } | null
+                if (!materialResponse.ok || !material?.kdfSalt || !material.wrappedDataKey || !material.wrapIv) {
+                    throw new Error(material?.error || "Email or password is incorrect.")
+                }
+                const opened = await openVault(password, {
+                    kdfSalt: material.kdfSalt,
+                    wrappedDataKey: material.wrappedDataKey,
+                    wrapIv: material.wrapIv,
+                })
+                rememberRawKey(opened.rawKey)
+                const result = await signIn("credentials", {
+                    email: normalized,
+                    verifier: opened.authVerifier,
+                    redirect: false,
+                })
+                if (result?.error) {
+                    forgetRawKey()
+                    throw new Error("Email or password is incorrect.")
+                }
+            }
+            window.location.assign("/diary")
+        } catch (error) {
+            toast({
+                title: mode === "signup" ? "Could not create the account" : "Could not sign in",
+                description: error instanceof Error ? error.message : "Try again.",
+                variant: "destructive",
+            })
+        } finally {
+            setPending(false)
+        }
+    }
+
+    async function oauthSignIn(provider: "google" | "github") {
+        setOauthLoading(provider)
         try {
             await signIn(provider, { callbackUrl: "/diary" })
         } catch (error) {
             console.error("Login failed", error)
-            toast({
-                title: "Authentication failed",
-                description: "There was a problem signing you in. Please try again.",
-                variant: "destructive",
-            })
-        } finally {
-            setIsLoading((prev) => ({ ...prev, [provider]: false }))
+            toast({ title: "Authentication failed", description: "There was a problem signing you in. Please try again.", variant: "destructive" })
+            setOauthLoading(null)
         }
     }
 
+    const showOauth = oauth.google || oauth.github
+
     return (
-        <div className="flex min-h-screen overflow-hidden items-center justify-center bg-black/25 dark p-4 backdrop-blur-md">
-            <div className="absolute inset-0 bg-[url('/placeholder.svg?height=50&width=50')] opacity-[0.02] pointer-events-none" />
-            <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/10 via-transparent to-purple-500/5 pointer-events-none" />
+        <div className="flex min-h-screen items-center justify-center bg-[#12110f] px-4 pt-16">
             <Toaster />
+            <div className="w-full max-w-md">
+                <h1 className="story-serif text-4xl leading-none text-[#f3ecdf]">
+                    {mode === "signup" ? "Create account" : "Sign in"}
+                </h1>
+                <p className="mt-3 text-sm leading-6 text-[#d5cdc0]">
+                    The password encrypts the diary in this browser. If you forget it, the entries cannot be recovered.
+                </p>
+                <form onSubmit={submit} className="mt-8 space-y-3">
+                    {mode === "signup" && (
+                        <input
+                            value={name}
+                            onChange={(event) => setName(event.target.value)}
+                            placeholder="Name"
+                            autoComplete="name"
+                            className={fieldClass}
+                            required
+                        />
+                    )}
+                    <input
+                        type="email"
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        placeholder="Email"
+                        autoComplete="email"
+                        className={fieldClass}
+                        required
+                    />
+                    <input
+                        type="password"
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        placeholder="Password"
+                        autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                        className={fieldClass}
+                        minLength={10}
+                        required
+                    />
+                    <button type="submit" disabled={pending} className={primaryClass}>
+                        {mode === "signup" ? "Create account" : "Sign in"}
+                    </button>
+                </form>
+                <button
+                    type="button"
+                    className="mt-4 text-sm text-[#8f877c] underline"
+                    onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
+                >
+                    {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
+                </button>
 
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="w-full max-w-md relative z-10"
-            >
-                <Card className="border-border/30 bg-card/80 backdrop-blur-xl shadow-2xl">
-                    <CardHeader className="space-y-1">
-                        <div className="flex justify-center mb-2">
-                            <div className="rounded-full bg-indigo-500/10 p-3 ring-1 ring-indigo-500/20">
-                                <LogIn className="h-6 w-6 text-indigo-400" />
-                            </div>
+                {showOauth && (
+                    <div className="mt-8 space-y-3">
+                        <div className="flex items-center gap-3 text-xs text-[#8f877c]">
+                            <span className="h-px flex-1 bg-[#3a342c]" />
+                            Or
+                            <span className="h-px flex-1 bg-[#3a342c]" />
                         </div>
-                        <CardTitle className="text-2xl font-bold text-center">Welcome!</CardTitle>
-                        <CardDescription className="text-center text-muted-foreground/80">
-                            Please Signin / Signup to Continue
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4 pt-2">
-                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                            <Button
-                                variant="outline"
-                                className="relative text-base tracking-[0.02em] py-5 w-full bg-background/50 hover:bg-background/80 border border-border/30 text-foreground"
-                                onClick={() => handleLogin("google")}
-                                disabled={isLoading.google || isLoading.github}
+                        {oauth.google && (
+                            <button
+                                type="button"
+                                className={quietClass}
+                                onClick={() => oauthSignIn("google")}
+                                disabled={oauthLoading !== null}
                             >
-                                {isLoading.google ? (
-                                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                                ) : (
-                                    <Image src={Google} alt="Google" width={20} height={20} className="bg-white rounded-full p-[0.2rem]" />
-                                )}
+                                <Image src={Google} alt="" width={16} height={16} />
                                 Continue with Google
-                            </Button>
-                        </motion.div>
-
-                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                            <Button
-                                variant="outline"
-                                className="relative w-full text-base tracking-[0.02em] py-5 bg-background/50 hover:bg-background/80 border border-border/30 text-foreground"
-                                onClick={() => handleLogin("github")}
-                                disabled={isLoading.google || isLoading.github}
+                            </button>
+                        )}
+                        {oauth.github && (
+                            <button
+                                type="button"
+                                className={quietClass}
+                                onClick={() => oauthSignIn("github")}
+                                disabled={oauthLoading !== null}
                             >
-                                {isLoading.github ? (
-                                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                                ) : (
-                                    <Image src={Github} alt="Github" width={20} height={20} className="bg-white rounded-full p-[0.2rem]" />
-                                )}
+                                <Image src={Github} alt="" width={16} height={16} />
                                 Continue with GitHub
-                            </Button>
-                        </motion.div>
-
-                        <div className="relative">
-                            <div className="absolute inset-0 flex items-center">
-                                <span className="w-full border-t border-border/20" />
-                            </div>
-                            <div className="relative flex justify-center text-xs uppercase">
-                                <span className="px-2 text-muted-foreground/70">Or continue with</span>
-                            </div>
-                        </div>
-
-                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                            <Button
-                                variant="default"
-                                className="relative w-full bg-indigo-600 hover:bg-indigo-700 text-white"
-                                onClick={() => {
-                                    toast({
-                                        title: "Coming soon",
-                                        description: "Email login will be available soon.",
-                                        action: <ToastAction altText="Acknowledgment button">Got it</ToastAction>,
-                                    })
-                                }}
-                            >
-                                <Mail className="mr-2 h-4 w-4" />
-                                Continue with Email
-                            </Button>
-                        </motion.div>
-                    </CardContent>
-                    <CardFooter className="flex flex-col space-y-2">
-                        <div className="text-center text-sm text-muted-foreground/70">
-                            By continuing, you agree to our{" "}
-                            <a href="#" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4">
-                                Terms of Service
-                            </a>{" "}
-                            and{" "}
-                            <a href="#" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4">
-                                Privacy Policy
-                            </a>
-                            .
-                        </div>
-                    </CardFooter>
-                </Card>
-            </motion.div>
+                            </button>
+                        )}
+                    </div>
+                )}
+                <p className="mt-8 text-sm text-[#8f877c]">
+                    By continuing, you agree to our{" "}
+                    <a href="/terms" className="text-[#d5cdc0] underline">Terms</a>
+                    {" "}and{" "}
+                    <a href="/privacy" className="text-[#d5cdc0] underline">Privacy</a>.
+                </p>
+            </div>
         </div>
     )
 }
-
