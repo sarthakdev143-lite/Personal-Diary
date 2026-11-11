@@ -11,15 +11,10 @@
     "postbuild": "next-sitemap"
   },
   "dependencies": {
-    "@gsap/react": "^2.1.2",
     "@radix-ui/react-slot": "^1.1.1",
     "@radix-ui/react-toast": "^1.2.6",
-    "@remixicon/react": "^4.6.0",
-    "@studio-freight/lenis": "^1.0.42",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "framer-motion": "^12.5.0",
-    "gsap": "^3.12.7",
     "lucide-react": "^0.473.0",
     "mongodb": "^5.9.2",
     "next": "16.1.6",
@@ -27,17 +22,14 @@
     "next-sitemap": "^4.2.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "remixicon": "^4.6.0",
     "stripe": "^23.1.0",
     "tailwind-merge": "^2.6.0",
-    "tailwindcss-animate": "^1.0.7",
-    "three": "^0.170.0"
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "@types/three": "^0.170.0",
     "eslint": "^8",
     "eslint-config-next": "16.1.6",
     "postcss": "^8",

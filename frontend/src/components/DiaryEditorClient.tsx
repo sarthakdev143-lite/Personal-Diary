@@ -259,19 +259,19 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             { icon: "S̶", title: "Strikethrough", action: () => exec("strikeThrough"), active: activeFormats.has("strikethrough") },
         ],
         [
-            { icon: "≡", title: "Bullet list", action: () => exec("insertUnorderedList"), active: activeFormats.has("ul") },
+            { icon: "List", title: "Bullet list", action: () => exec("insertUnorderedList"), active: activeFormats.has("ul") },
             { icon: "1.", title: "Numbered list", action: () => exec("insertOrderedList"), active: activeFormats.has("ol") },
-            { icon: "❝", title: "Blockquote", action: () => exec("formatBlock", "blockquote"), active: activeFormats.has("blockquote") },
-            { icon: "—", title: "Divider", action: () => insertHTML("<hr/><p><br></p>") },
+            { icon: "Quote", title: "Blockquote", action: () => exec("formatBlock", "blockquote"), active: activeFormats.has("blockquote") },
+            { icon: "Rule", title: "Divider", action: () => insertHTML("<hr/><p><br></p>") },
         ],
         [
-            { icon: "🖼", title: "Insert image", action: () => fileInputRef.current?.click() },
-            { icon: "⬛", title: "Code block", action: () => insertHTML('<pre><code>code here</code></pre><p><br></p>') },
-            { icon: "🔗", title: "Insert link", action: () => { const url = prompt("URL:"); if (url) exec("createLink", url); } },
+            { icon: "Image", title: "Insert image", action: () => fileInputRef.current?.click() },
+            { icon: "Code", title: "Code block", action: () => insertHTML("<pre><code></code></pre><p><br></p>") },
+            { icon: "Link", title: "Insert link", action: () => { const url = prompt("URL:"); if (url) exec("createLink", url); } },
         ],
         [
-            { icon: "⟵", title: "Undo", action: () => exec("undo") },
-            { icon: "⟶", title: "Redo", action: () => exec("redo") },
+            { icon: "Undo", title: "Undo", action: () => exec("undo") },
+            { icon: "Redo", title: "Redo", action: () => exec("redo") },
         ],
     ];
 
@@ -342,10 +342,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     background:transparent;
                     border:1px solid transparent;
                     border-radius:3px;
-                    padding:3px 7px;
+                    padding:4px 8px;
                     cursor:pointer;
-                    transition:all 0.15s;
-                    min-width:28px;
+                    min-width:0;
                     text-align:center;
                     line-height:1.4;
                 }
@@ -397,7 +396,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     word-break:break-word;
                 }
                 #de-editor:empty::before{
-                    content:"How was your day?...";
+                    content:"";
                     color:#9b9286;
                     font-style:italic;
                     pointer-events:none;

@@ -121,27 +121,14 @@ export async function upsertOAuthUser(input: {
     });
 }
 
-export async function accountFacts(userId: string): Promise<{ diaries: number; entries: number; entryDates: string[] }> {
+export async function accountFacts(userId: string): Promise<{ diaries: number; entries: number }> {
     const db = await getDatabase();
-    const since = new Date();
-    since.setDate(since.getDate() - 800);
-
-    const [diaries, entries, dates] = await Promise.all([
+    const [diaries, entries] = await Promise.all([
         db.collection("diaries").countDocuments({ userId }),
         db.collection("entries").countDocuments({ userId }),
-        db.collection("entries")
-            .find({ userId, createdAt: { $gte: since } }, { projection: { createdAt: 1 } })
-            .toArray(),
     ]);
 
-    return {
-        diaries,
-        entries,
-        entryDates: dates
-            .map((row) => row.createdAt)
-            .filter((value): value is Date => value instanceof Date)
-            .map((value) => value.toISOString()),
-    };
+    return { diaries, entries };
 }
 
 export async function deleteUserCascade(user: UserDocument): Promise<void> {

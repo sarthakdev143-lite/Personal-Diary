@@ -10,9 +10,11 @@ describe("plans", () => {
     });
 
     it("gates covers and subscription statuses", () => {
+        expect(themeAllowed("free", "paper")).toBe(true);
+        expect(themeAllowed("free", "ink")).toBe(false);
+        expect(themeAllowed("pro", "night")).toBe(true);
         expect(themeAllowed("free", "/textures/leather-texture.jpg")).toBe(true);
-        expect(themeAllowed("free", "/textures/leather-bound.webp")).toBe(false);
-        expect(themeAllowed("pro", "/textures/wooden_garage_door.webp")).toBe(true);
+        expect(themeAllowed("free", "/textures/wooden_garage_door.webp")).toBe(false);
         expect(themeAllowed("pro", "/textures/missing.jpg")).toBe(false);
         expect(isProStatus("active")).toBe(true);
         expect(isProStatus("past_due")).toBe(true);

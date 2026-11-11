@@ -45,10 +45,10 @@ export default function Pricing() {
     }
 
     return (
-        <section className="pointer-events-auto mx-auto flex w-full max-w-5xl flex-col items-center px-4 py-20 text-white">
-            <h2 className="text-center text-4xl font-bold italic text-white/85">Pricing</h2>
-            <p className="mt-3 max-w-2xl text-center text-white/60">
-                Free keeps one diary. Pro raises the limits. Export stays on both plans, because the words are yours.
+        <section className="mx-auto flex w-full max-w-5xl flex-col px-0 py-16">
+            <h2 id="pricing" className="text-2xl font-normal">Pricing</h2>
+            <p className="mt-3 max-w-2xl text-[#b7b0a4]">
+                Free is one diary. Pro raises the limits. Export is included on both plans.
             </p>
             <div className="mt-8 grid w-full gap-4 md:grid-cols-3">
                 <PlanCard
@@ -59,7 +59,7 @@ export default function Pricing() {
                         `${freeLimits.diaries} diary`,
                         `${freeLimits.entriesPerDiary} entries in that diary`,
                         `${freeLimits.maxPlaintextChars.toLocaleString()} characters per entry`,
-                        "Leather cover",
+                        "Paper cover",
                         "Markdown export",
                     ]}
                     action={
@@ -97,7 +97,7 @@ function proPoints(proLimits: ReturnType<typeof limits>) {
         `${proLimits.diaries} diaries`,
         `${proLimits.entriesPerDiary.toLocaleString()} entries per diary`,
         `${proLimits.maxPlaintextChars.toLocaleString()} characters per entry`,
-        "All three covers",
+        "All covers",
         "Pin diaries",
         "Markdown export",
     ];
@@ -117,7 +117,7 @@ function PlanCard({
     action: React.ReactNode;
 }) {
     return (
-        <article className="flex flex-col rounded-2xl border border-white/10 bg-black/40 p-6 text-left">
+        <article className="flex flex-col rounded-lg border border-[#2e2a24] bg-[#181612] p-6 text-left">
             <h3 className="text-lg text-white/80">{title}</h3>
             <p className="mt-3 text-3xl font-semibold">{price}</p>
             <p className="text-sm text-white/50">{detail}</p>

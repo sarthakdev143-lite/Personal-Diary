@@ -12,5 +12,4 @@ export type AccountSnapshot = {
     wrapIv: string | null;
     usage: { diaries: number; entries: number };
     limits: { diaries: number; entriesPerDiary: number; maxPlaintextChars: number };
-    entryDates: string[];
 };

@@ -2,8 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react"
 import { signIn } from "next-auth/react"
-import { Loader2, LogIn } from "lucide-react"
-import { motion } from "framer-motion"
+import { Loader2 } from "lucide-react"
 import Image from "next/image"
 
 import Google from "./Google.png"
@@ -138,23 +137,13 @@ export default function LoginPage() {
     const showOauth = oauth.google || oauth.github
 
     return (
-        <div className="flex min-h-screen items-center justify-center overflow-hidden bg-black/25 p-4 backdrop-blur-md dark">
+        <div className="flex min-h-screen items-center justify-center px-4 pt-16">
             <Toaster />
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="relative z-10 w-full max-w-md"
-            >
+            <div className="w-full max-w-md">
                 <Card className="border-border/30 bg-card/80 shadow-2xl backdrop-blur-xl">
                     <CardHeader className="space-y-1">
-                        <div className="mb-2 flex justify-center">
-                            <div className="rounded-full bg-indigo-500/10 p-3 ring-1 ring-indigo-500/20">
-                                <LogIn className="h-6 w-6 text-indigo-400" />
-                            </div>
-                        </div>
-                        <CardTitle className="text-center text-2xl font-bold">
-                            {mode === "signup" ? "Create your diary" : "Welcome back"}
+                        <CardTitle className="text-2xl font-normal">
+                            {mode === "signup" ? "Create account" : "Sign in"}
                         </CardTitle>
                         <CardDescription className="text-center text-muted-foreground/80">
                             The password encrypts the diary in this browser. If you forget it, the entries cannot be recovered.
@@ -248,7 +237,7 @@ export default function LoginPage() {
                         </div>
                     </CardFooter>
                 </Card>
-            </motion.div>
+            </div>
         </div>
     )
 }

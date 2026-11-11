@@ -3,10 +3,16 @@ export const PLAN_IDS = ["free", "pro"] as const;
 export type PlanId = (typeof PLAN_IDS)[number];
 
 export const THEMES = [
-    { name: "Leather", url: "/textures/leather-texture.jpg", pro: false },
-    { name: "Bound leather", url: "/textures/leather-bound.webp", pro: true },
-    { name: "Wood", url: "/textures/wooden_garage_door.webp", pro: true },
+    { name: "Paper", url: "paper", pro: false },
+    { name: "Ink", url: "ink", pro: true },
+    { name: "Night", url: "night", pro: true },
 ] as const;
+
+const LEGACY_FREE = new Set(["/textures/leather-texture.jpg"]);
+const LEGACY_PRO = new Set([
+    "/textures/leather-bound.webp",
+    "/textures/wooden_garage_door.webp",
+]);
 
 export const PRICES = {
     month: { amountCents: 800, interval: "month" as const, label: "$8", period: "month" },
@@ -34,9 +40,10 @@ export function ciphertextLimit(plan: PlanId): number {
 
 export function themeProblem(plan: PlanId, url: string): "ok" | "unknown" | "upgrade" {
     const theme = THEMES.find((item) => item.url === url);
-    if (!theme) return "unknown";
-    if (theme.pro && plan !== "pro") return "upgrade";
-    return "ok";
+    if (theme) return theme.pro && plan !== "pro" ? "upgrade" : "ok";
+    if (LEGACY_FREE.has(url)) return "ok";
+    if (LEGACY_PRO.has(url)) return plan === "pro" ? "ok" : "upgrade";
+    return "unknown";
 }
 
 export function themeAllowed(plan: PlanId, url: string): boolean {

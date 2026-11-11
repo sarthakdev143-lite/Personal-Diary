@@ -1,22 +1,19 @@
 import type { Metadata, Viewport } from "next";
 
-import "remixicon/fonts/remixicon.css";
 import "./globals.css";
 
-import ClientLayout from "@/components/ClientLayout";
 import Navbar from "@/components/Navbar";
-import { DiaryProvider } from "@/context/DiaryContext";
 
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
     metadataBase: new URL("https://sarthakdev-diary.vercel.app"),
-    title: "Diary • @sarthakdev143",
+    title: "Diary",
     description:
         "A private diary. Entries are encrypted in the browser before they are saved.",
-    keywords: ["Diary", "Next.js", "Three.js", "Encrypted Notes", "Secure Diary", "Digital Journal"],
+    keywords: ["Diary", "Encrypted notes", "Private journal"],
     openGraph: {
-        title: "Diary • @sarthakdev143",
+        title: "Diary",
         description:
             "A private diary. Entries are encrypted in the browser before they are saved.",
         url: "https://sarthakdev-diary.vercel.app",
@@ -26,7 +23,7 @@ export const metadata: Metadata = {
     },
     twitter: {
         card: "summary_large_image",
-        title: "Diary • @sarthakdev143",
+        title: "Diary",
         description:
             "A private diary. Entries are encrypted in the browser before they are saved.",
         images: ["/diary.jpg"],
@@ -46,15 +43,11 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
     return (
         <html lang="en">
-            <body className="custom-scrollbar antialiased">
-                <DiaryProvider>
-                    <Providers>
-                        <Navbar />
-                        <main>
-                            <ClientLayout>{children}</ClientLayout>
-                        </main>
-                    </Providers>
-                </DiaryProvider>
+            <body className="dark custom-scrollbar bg-[#12110f] text-[#e8e2d6] antialiased">
+                <Providers>
+                    <Navbar />
+                    <main>{children}</main>
+                </Providers>
             </body>
         </html>
     );

@@ -1,13 +1,12 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useVault } from "@/context/VaultContext";
-import { writingStreak } from "@/lib/streak";
 import { openVault, rewrapVault } from "@/lib/vault";
 import { forgetRawKey, rememberRawKey } from "@/lib/vault-session";
 
@@ -20,10 +19,6 @@ export default function AccountClient({ billing }: { billing: string | null }) {
     const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [pending, setPending] = useState(false);
-    const streak = useMemo(
-        () => writingStreak((account?.entryDates ?? []).map((value) => new Date(value))),
-        [account]
-    );
 
     async function changePassword(event: FormEvent) {
         event.preventDefault();
@@ -126,9 +121,6 @@ export default function AccountClient({ billing }: { billing: string | null }) {
                         <p className="text-sm text-zinc-400">{account.email}</p>
                         <p className="mt-4 text-sm text-zinc-200">
                             {account.plan === "pro" ? "Pro" : "Free"} plan. {account.usage.diaries} of {account.limits.diaries} diaries. {account.usage.entries} entries saved. {account.limits.entriesPerDiary.toLocaleString()} entries per diary on this plan.
-                        </p>
-                        <p className="mt-2 text-sm text-zinc-400">
-                            {streak === 0 ? "No writing streak yet." : `${streak} day streak.`}
                         </p>
                         <div className="mt-4 flex flex-wrap gap-2">
                             {account.plan === "free" && <Button asChild><Link href="/pricing">Upgrade</Link></Button>}

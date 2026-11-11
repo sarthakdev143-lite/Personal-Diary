@@ -59,7 +59,7 @@ export function AuthButton({ pathName }: { pathName: string }) {
 
                         <button
                             onClick={() => handleOperation("signout")}
-                            className="max-xs:hidden bg-red-500 text-white px-4 py-[0.3rem] rounded"
+                            className="bg-red-500 text-white px-4 py-[0.3rem] rounded"
                         >
                             Sign Out
                         </button>

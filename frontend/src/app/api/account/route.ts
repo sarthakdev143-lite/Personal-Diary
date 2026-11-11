@@ -27,7 +27,6 @@ export async function GET() {
         wrapIv: user.wrapIv ?? null,
         usage: { diaries: facts.diaries, entries: facts.entries },
         limits: limits(plan),
-        entryDates: facts.entryDates,
     };
 
     return NextResponse.json(snapshot);
