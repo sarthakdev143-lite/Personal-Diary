@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 import Navbar from "@/components/Navbar";
+import { DiaryProvider } from "@/context/DiaryContext";
 
 import { Providers } from "./providers";
 
@@ -44,10 +45,12 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body className="dark custom-scrollbar bg-[#12110f] text-[#e8e2d6] antialiased">
-                <Providers>
-                    <Navbar />
-                    <main>{children}</main>
-                </Providers>
+                <DiaryProvider>
+                    <Providers>
+                        <Navbar />
+                        <main>{children}</main>
+                    </Providers>
+                </DiaryProvider>
             </body>
         </html>
     );

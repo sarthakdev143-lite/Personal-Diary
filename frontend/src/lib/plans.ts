@@ -15,8 +15,8 @@ const LEGACY_PRO = new Set([
 ]);
 
 export const PRICES = {
-    month: { amountCents: 800, interval: "month" as const, label: "$8", period: "month" },
-    year: { amountCents: 7200, interval: "year" as const, label: "$72", period: "year" },
+    month: { amountCents: 200, interval: "month" as const, label: "$2", period: "month" },
+    year: { amountCents: 1800, interval: "year" as const, label: "$18", period: "year" },
 };
 
 export type BillingInterval = keyof typeof PRICES;
