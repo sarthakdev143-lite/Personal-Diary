@@ -28,8 +28,23 @@
 
 body {
   color: var(--foreground);
-  background: var(--background);
+  background: #12110f;
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.story-serif {
+  font-family: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
+  letter-spacing: -0.025em;
+}
+
+.story-veil {
+  background: linear-gradient(to top, #12110f 0%, rgba(18, 17, 15, 0.92) 34%, rgba(18, 17, 15, 0) 68%);
+}
+
+@media (min-width: 900px) {
+  .story-veil {
+    background: linear-gradient(90deg, #12110f 0%, #12110f 28%, rgba(18, 17, 15, 0.78) 46%, rgba(18, 17, 15, 0) 64%);
+  }
 }
 
 @layer base {

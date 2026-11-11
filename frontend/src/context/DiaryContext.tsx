@@ -14,10 +14,11 @@ export const DIARY_EVENTS = {
   RESET_POSITION: "diary:reset-position",
   OPEN: "diary:open",
   CLOSE: "diary:close",
+  POSE: "diary:pose",
 };
 
 const DiaryContext = createContext<DiaryContextType>({
-  isRotating: true,
+  isRotating: false,
   setIsRotating: () => { },
   selectedTexture: "/textures/leather-texture.jpg",
   setSelectedTexture: () => { },
@@ -25,7 +26,7 @@ const DiaryContext = createContext<DiaryContextType>({
 });
 
 export const DiaryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isRotating, setIsRotating] = useState<boolean>(true);
+  const [isRotating, setIsRotating] = useState<boolean>(false);
   const [selectedTexture, setSelectedTexture] = useState<string | null>("/textures/leather-texture.jpg");
 
   const resetDiaryPosition = useCallback(() => {

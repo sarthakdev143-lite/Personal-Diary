@@ -26,6 +26,7 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
         updateRotation,
         handleResize,
         handleTouchStart,
+        rememberClosed,
     } = useDiaryScene(isRotating);
 
     const {
@@ -93,6 +94,8 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
             pageGroup,
         };
 
+        diaryGroup.position.x = window.innerWidth >= 900 ? 1.65 : 0;
+        rememberClosed();
         handleResize();
 
         const handleOrientationChange = () => {
@@ -150,6 +153,7 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
         mountRef,
         scene,
         sceneRef,
+        rememberClosed,
     ]);
 
     useEffect(() => {
