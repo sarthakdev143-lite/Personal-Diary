@@ -7,22 +7,9 @@ import Image from "next/image";
 import DiaryPreview from "./DiaryPreview";
 
 import { useDiary } from "@/context/DiaryContext";
+import { useVault } from "@/context/VaultContext";
 import { useToast } from "@/hooks/use-toast";
-
-const themes = [
-    {
-        name: "Leather 1",
-        textureUrl: "/textures/leather-texture.jpg"
-    },
-    {
-        name: "Leather 2",
-        textureUrl: "/textures/leather-bound.webp"
-    },
-    {
-        name: "Wooden Garage Door",
-        textureUrl: "/textures/wooden_garage_door.webp"
-    },
-];
+import { THEMES } from "@/lib/plans";
 
 const NewDiaryForm = ({
     formActive,
@@ -38,15 +25,17 @@ const NewDiaryForm = ({
     onDiaryCreated?: () => void;
 }) => {
     const { selectedTexture, setSelectedTexture } = useDiary();
+    const { seal, account, refresh } = useVault();
     const { toast } = useToast();
+    const plan = account?.plan ?? "free";
     const [formData, setFormData] = useState({
         title: "",
         description: "",
-        theme: selectedTexture || themes[0].textureUrl,
+        theme: selectedTexture || THEMES[0].url,
     });
     const [errors, setErrors] = useState<{ title?: string }>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const selectedTheme = themes.find((theme) => theme.textureUrl === selectedTexture);
+    const selectedTheme = THEMES.find((theme) => theme.url === selectedTexture);
 
     useGSAP(() => {
         gsap.to("#form-parent", {
@@ -88,6 +77,12 @@ const NewDiaryForm = ({
             newErrors.title = "Title is required.";
         } else if (formData.title.trim().length < 3) {
             newErrors.title = "Title must be at least 3 characters.";
+        } else if (formData.title.trim().length > 80) {
+            newErrors.title = "Keep the title under 80 characters.";
+        }
+
+        if (formData.description.trim().length > 280) {
+            newErrors.title = "Keep the description under 280 characters.";
         }
 
         setErrors(newErrors);
@@ -95,11 +90,11 @@ const NewDiaryForm = ({
     };
 
     useEffect(() => {
-        if (formData.title.trim().length >= 3) setErrors({}); // Clear errors when typing valid input
+        if (formData.title.trim().length >= 3 && formData.title.trim().length <= 80) setErrors({});
     }, [formData.title]);
 
     useEffect(() => {
-        setFormData((prev) => ({ ...prev, theme: selectedTexture || themes[0].textureUrl }));
+        setFormData((prev) => ({ ...prev, theme: selectedTexture || THEMES[0].url }));
     }, [selectedTexture]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -111,9 +106,7 @@ const NewDiaryForm = ({
         e.preventDefault();
         if (validate()) {
             setIsFullScreen(true);
-            // Don't reset form data here - we still need it for the theme selection
             setErrors({});
-            // Don't close the form yet - we're showing theme selection
         }
     };
 
@@ -122,37 +115,42 @@ const NewDiaryForm = ({
     };
 
     function handleThemeSelect(textureUrl: string) {
+        const theme = THEMES.find((item) => item.url === textureUrl);
+        if (theme?.pro && plan !== "pro") {
+            toast({ title: "Pro cover", description: "Upgrade to use this cover." });
+            return;
+        }
         setSelectedTexture(textureUrl);
     }
 
     const handleFinishForm = async () => {
         if (isSubmitting) return;
+        if (!validate()) return;
 
         setIsSubmitting(true);
 
         try {
             const response = await fetch("/api/diaries", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    title: formData.title,
-                    description: formData.description,
-                    theme: selectedTexture || themes[0].textureUrl,
+                    title: await seal(formData.title.trim()),
+                    description: await seal(formData.description.trim()),
+                    theme: selectedTexture || THEMES[0].url,
                 }),
             });
 
-            const data = await response.json().catch(() => null) as { error?: string } | null;
+            const data = await response.json().catch(() => null) as { error?: string; code?: string } | null;
 
             if (!response.ok) {
                 throw new Error(data?.error || "Failed to create diary.");
             }
 
-            setFormData({ title: "", description: "", theme: selectedTexture || themes[0].textureUrl });
+            setFormData({ title: "", description: "", theme: selectedTexture || THEMES[0].url });
             setIsFullScreen(false);
             setFormActive(false);
             onDiaryCreated?.();
+            await refresh();
         } catch (error) {
             toast({
                 title: "Unable to create diary",
@@ -231,7 +229,6 @@ const NewDiaryForm = ({
                     className="absolute top-6 right-6 text-2xl cursor-pointer z-[70]"
                 />
                 
-                {/* 3D Preview Area */}
                 <div className="relative h-3/4 w-full overflow-hidden rounded-lg bg-white/30 shadow-lg backdrop-blur-sm lg:h-full lg:w-2/3">
                     <div className="absolute top-4 left-4 z-10 bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2">
                         <h3 className="text-lg font-semibold text-white">Preview</h3>
@@ -251,33 +248,34 @@ const NewDiaryForm = ({
                     )}
                 </div>
 
-                {/* Theme Selection Panel */}
                 <div className="w-auto flex-1 flex flex-col items-center h-3/4 min-w-[320px]">
                     <h2 className="text-2xl font-bold mb-4">Choose a Theme</h2>
                     <div id="themes" className="p-4 grid grid-cols-3 gap-4 justify-center max-w-80 max-h-[48rem] overflow-y-auto my-3">
-                        {themes.map((elem, index) => (
+                        {THEMES.map((elem) => (
                             <button 
                                 type="button"
-                                onClick={() => handleThemeSelect(elem.textureUrl)} 
-                                key={index} 
-                                className={`w-20 aspect-square bg-gray-400/30 rounded-lg overflow-hidden border-2 border-gray-600 transition-all duration-200 hover:scale-105 hover:border-gray-400 ${
-                                    selectedTexture === elem.textureUrl 
+                                onClick={() => handleThemeSelect(elem.url)} 
+                                key={elem.url} 
+                                className={`relative w-20 aspect-square bg-gray-400/30 rounded-lg overflow-hidden border-2 border-gray-600 transition-all duration-200 hover:scale-105 hover:border-gray-400 ${
+                                    selectedTexture === elem.url 
                                         ? 'ring-2 ring-white' 
                                         : ''
                                 }`}
                             >
                                 <Image 
-                                    src={elem.textureUrl} 
+                                    src={elem.url} 
                                     className="w-full h-full object-cover" 
                                     alt={elem.name} 
                                     width={100} 
                                     height={100} 
                                 />
+                                {elem.pro && plan !== "pro" && (
+                                    <span className="absolute bottom-1 right-1 rounded bg-black/75 px-1 text-[10px] text-white">Pro</span>
+                                )}
                             </button>
                         ))}
                     </div>
                     
-                    {/* Selected theme info */}
                     {selectedTexture && (
                         <div className="text-center mb-4">
                             <p className="text-sm text-gray-300">Selected:</p>

@@ -1,120 +1,63 @@
 import { NextResponse } from "next/server";
 
-import {
-    EntryDocument,
-    EntryWithId,
-    getDatabase,
-    getSessionUserId,
-    serializeEntry,
-    toObjectId,
-} from "../../../_shared";
+import { DiaryDocument, EntryDocument, serializeEntry, toObjectId } from "../../../_shared";
+import { currentUser } from "@/lib/current-user";
+import { apiError, readJson } from "@/lib/http";
+import { getDatabase } from "@/lib/mongodb";
+import { ciphertextLimit, planOf } from "@/lib/plans";
+import { parseSealed } from "@/lib/sealed";
 
-type RouteContext = {
-    params: Promise<{ id: string; entryId: string }>;
-};
-
-type UpdateEntryPayload = {
-    content?: unknown;
-    createdAt?: unknown;
-};
+type RouteContext = { params: Promise<{ id: string; entryId: string }> };
 
 export async function PUT(request: Request, context: RouteContext) {
-    try {
-        const userId = await getSessionUserId();
+    const user = await currentUser();
+    if (!user) return apiError("Unauthorized", 401);
 
-        if (!userId) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+    const { id, entryId } = await context.params;
+    const diaryId = toObjectId(id);
+    const parsedEntryId = toObjectId(entryId);
+    if (!diaryId || !parsedEntryId) return apiError("Invalid diary or entry id", 400);
 
-        const { id, entryId } = await context.params;
-        const diaryId = toObjectId(id);
-        const parsedEntryId = toObjectId(entryId);
+    const payload = await readJson(request) as { content?: unknown } | undefined;
+    if (!payload) return apiError("Invalid JSON.", 400);
 
-        if (!diaryId || !parsedEntryId) {
-            return NextResponse.json({ error: "Invalid diary or entry id" }, { status: 400 });
-        }
+    const plan = planOf(user.plan);
+    const content = parseSealed(payload.content, ciphertextLimit(plan));
+    if (!content) return apiError("Content must be encrypted.", 400);
 
-        const payload = (await request.json()) as UpdateEntryPayload;
-        const updates: Partial<EntryDocument> = {};
+    const userId = user._id.toString();
+    const now = new Date();
+    const db = await getDatabase();
+    const entries = db.collection<EntryDocument>("entries");
+    const result = await entries.updateOne(
+        { _id: parsedEntryId, diaryId, userId },
+        { $set: { content, updatedAt: now } }
+    );
+    if (!result.matchedCount) return apiError("Entry not found", 404);
 
-        if (payload.content !== undefined) {
-            if (typeof payload.content !== "string" || !payload.content.trim().length) {
-                return NextResponse.json({ error: "Content must be a non-empty string." }, { status: 400 });
-            }
-            updates.content = payload.content.trim();
-        }
-
-        if (payload.createdAt !== undefined) {
-            if (typeof payload.createdAt !== "string") {
-                return NextResponse.json({ error: "createdAt must be an ISO date string." }, { status: 400 });
-            }
-
-            const parsedCreatedAt = new Date(payload.createdAt);
-            if (Number.isNaN(parsedCreatedAt.getTime())) {
-                return NextResponse.json({ error: "Invalid createdAt date." }, { status: 400 });
-            }
-            updates.createdAt = parsedCreatedAt;
-        }
-
-        if (!Object.keys(updates).length) {
-            return NextResponse.json({ error: "No valid fields provided for update." }, { status: 400 });
-        }
-
-        updates.updatedAt = new Date();
-
-        const db = await getDatabase();
-        const entriesCollection = db.collection<EntryDocument>("entries");
-
-        const result = await entriesCollection.updateOne(
-            { _id: parsedEntryId, diaryId, userId },
-            { $set: updates }
-        );
-
-        if (!result.matchedCount) {
-            return NextResponse.json({ error: "Entry not found" }, { status: 404 });
-        }
-
-        const updatedEntry = await entriesCollection.findOne({ _id: parsedEntryId, diaryId, userId });
-
-        if (!updatedEntry) {
-            return NextResponse.json({ error: "Entry not found after update" }, { status: 404 });
-        }
-
-        return NextResponse.json(serializeEntry(updatedEntry as EntryWithId));
-    } catch (error) {
-        console.error("Failed to update entry", error);
-        return NextResponse.json({ error: "Failed to update entry" }, { status: 500 });
-    }
+    await db.collection<DiaryDocument>("diaries").updateOne({ _id: diaryId, userId }, { $set: { updatedAt: now } });
+    const updated = await entries.findOne({ _id: parsedEntryId, diaryId, userId });
+    if (!updated?._id) return apiError("Entry not found", 404);
+    return NextResponse.json(serializeEntry({ ...updated, _id: updated._id }));
 }
 
 export async function DELETE(_: Request, context: RouteContext) {
-    try {
-        const userId = await getSessionUserId();
+    const user = await currentUser();
+    if (!user) return apiError("Unauthorized", 401);
 
-        if (!userId) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+    const { id, entryId } = await context.params;
+    const diaryId = toObjectId(id);
+    const parsedEntryId = toObjectId(entryId);
+    if (!diaryId || !parsedEntryId) return apiError("Invalid diary or entry id", 400);
 
-        const { id, entryId } = await context.params;
-        const diaryId = toObjectId(id);
-        const parsedEntryId = toObjectId(entryId);
+    const userId = user._id.toString();
+    const db = await getDatabase();
+    const result = await db.collection<EntryDocument>("entries").deleteOne({ _id: parsedEntryId, diaryId, userId });
+    if (!result.deletedCount) return apiError("Entry not found", 404);
 
-        if (!diaryId || !parsedEntryId) {
-            return NextResponse.json({ error: "Invalid diary or entry id" }, { status: 400 });
-        }
-
-        const db = await getDatabase();
-        const entriesCollection = db.collection<EntryDocument>("entries");
-
-        const result = await entriesCollection.deleteOne({ _id: parsedEntryId, diaryId, userId });
-
-        if (!result.deletedCount) {
-            return NextResponse.json({ error: "Entry not found" }, { status: 404 });
-        }
-
-        return NextResponse.json({ success: true });
-    } catch (error) {
-        console.error("Failed to delete entry", error);
-        return NextResponse.json({ error: "Failed to delete entry" }, { status: 500 });
-    }
+    await db.collection<DiaryDocument>("diaries").updateOne(
+        { _id: diaryId, userId },
+        { $set: { updatedAt: new Date() } }
+    );
+    return NextResponse.json({ success: true });
 }

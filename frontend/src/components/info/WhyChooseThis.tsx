@@ -4,16 +4,15 @@ import { ComponentType } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
-import { ShieldCheck, PaintBucket, Bell, Mic, Clock, Brain } from "lucide-react";
-import Link from "next/link";
+import { ShieldCheck, PaintBucket, Search, Download, Flame, CreditCard } from "lucide-react";
 
 const features = [
-    { icon: ShieldCheck, title: "Privacy First", description: "AES encryption keeps your entries secure and private." },
-    { icon: Clock, title: "Offline Mode", description: "Write your thoughts offline and sync them when you're back online." },
-    { icon: Brain, title: "AI Sentiment Analysis", description: "Get insights into your emotions based on your writing." },
-    { icon: PaintBucket, title: "Custom Themes", description: "Personalize your diary with customizable themes to match your style." },
-    { icon: Bell, title: "Reminders & Notifications", description: "Get timely reminders to maintain your journaling habit." },
-    { icon: Mic, title: "Voice-to-Text Entries", description: "Dictate your thoughts instead of typing for a faster experience." },
+    { icon: ShieldCheck, title: "Encrypted here", description: "The browser encrypts each entry with AES-GCM before it is saved. The server stores ciphertext." },
+    { icon: Search, title: "Search after unlock", description: "Find a diary or a line in an entry once this tab holds the key." },
+    { icon: PaintBucket, title: "Three covers", description: "Leather is free. The other two covers, and pinning, are part of Pro." },
+    { icon: Download, title: "Export", description: "Download a diary as Markdown on every plan. The words stay yours." },
+    { icon: Flame, title: "A writing streak", description: "The streak counts local days with an entry, including yesterday if you have not written yet today." },
+    { icon: CreditCard, title: "Pro when you need room", description: "Free is one diary. Pro raises the diary, entry, and length limits." },
 ];
 
 interface FeatureCardProps {
@@ -58,7 +57,7 @@ const WhyChooseThis = () => {
                 Why Choose This?
             </h1>
             <p className="text-lg text-white/60 mt-2 max-w-2xl">
-                Turn your reflections into a daily habit in your own private <Link href='https://rb.gy/g4cw65' target='_blank'>journal.</Link>
+                A journal that stays ciphertext on the server, and readable only after you unlock it.
             </p>
 
             <div className="card-parent mt-8 flex flex-wrap justify-center gap-6 w-full max-w-5xl">

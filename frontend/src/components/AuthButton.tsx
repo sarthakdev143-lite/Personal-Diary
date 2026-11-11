@@ -1,12 +1,16 @@
 "use client";
 import { signIn, signOut, useSession } from "next-auth/react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+
+import { useVault } from "@/context/VaultContext";
 
 export function AuthButton({ pathName }: { pathName: string }) {
     const { data: session } = useSession();
     const router = useRouter();
+    const { lock } = useVault();
 
     const [loading, setLoading] = useState(false);
     const profileFigureRef = useRef<HTMLUnknownElement>(null);
@@ -17,6 +21,7 @@ export function AuthButton({ pathName }: { pathName: string }) {
             if (operation === "signin")
                 await signIn();
             else {
+                lock();
                 const result = await signOut({ redirect: false, callbackUrl: "/" });
                 router.push(result.url ?? "/");
             }
@@ -33,6 +38,7 @@ export function AuthButton({ pathName }: { pathName: string }) {
                 session ?
                     <div className="flex justify-between flex-1 mr-3 gap-3 items-center">
                         <figure ref={profileFigureRef} className={`flex items-center gap-3 pr-3.5 py-0.5 bg-zinc-800 hover:bg-zinc-900 transition cursor-pointer rounded-full ${pathName === '/info' ? 'max-xxs:ml-auto' : ''}`}>
+                            <Link href="/account" className="flex items-center gap-3">
                             <Image
                                 src={profileImage}
                                 alt={session.user?.name || "User profile picture"}
@@ -48,6 +54,7 @@ export function AuthButton({ pathName }: { pathName: string }) {
                                     {session.user?.email}
                                 </figcaption>
                             </div>
+                            </Link>
                         </figure>
 
                         <button

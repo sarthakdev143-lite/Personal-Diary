@@ -1,36 +1,17 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Diary
 
-## Getting Started
+A private diary. The browser encrypts entries before they are saved.
 
-First, run the development server:
+## Run
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. Start MongoDB.
+2. Copy `env.example` to `.env.local` and set `MONGODB_URI` and `NEXTAUTH_SECRET`.
+3. Run `npm install`, then `npm run dev`.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Email signup works without OAuth. Google and GitHub appear when their client ids are set. Stripe Checkout starts when `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are set. Point the webhook at `/api/billing/webhook`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+A forgotten password cannot be reset. The server never receives the password, so it cannot recover entries.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Test
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`npm test`

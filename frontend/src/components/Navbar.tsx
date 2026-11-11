@@ -4,6 +4,7 @@ import { Menu, X, RotateCcw, ArrowBigLeftDash } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
 import { useDiary } from "@/context/DiaryContext";
+import { useVault } from "@/context/VaultContext";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AuthButton } from "./AuthButton";
@@ -42,6 +43,7 @@ const Navbar = () => {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const pathName = usePathname();
     const { isRotating, setIsRotating, resetDiaryPosition } = useDiary();
+    const { phase, lock } = useVault();
     const backButtonRef = useRef<HTMLButtonElement>(null);
     const isDiaryDetailPage = /^\/diary\/.+/.test(pathName);
 
@@ -104,6 +106,22 @@ const Navbar = () => {
                     <div className="absolute top-full right-0 mt-2 w-56 bg-zinc-900 rounded-md shadow-lg selection:bg-slate-700">
                         <div className="px-4 py-2 font-semibold text-base text-white border-b border-gray-700">Settings</div>
 
+                        <div className="flex flex-col border-b border-gray-700 py-2">
+                            {phase !== "anonymous" && phase !== "loading" && (
+                                <Link href="/account" className="px-4 py-2 text-sm text-white hover:bg-zinc-800">Account</Link>
+                            )}
+                            <Link href="/pricing" className="px-4 py-2 text-sm text-white hover:bg-zinc-800">Pricing</Link>
+                            {phase === "unlocked" && (
+                                <button
+                                    type="button"
+                                    className="px-4 py-2 text-left text-sm text-white hover:bg-zinc-800"
+                                    onClick={() => { lock(); setIsDropdownOpen(false); }}
+                                >
+                                    Lock diary
+                                </button>
+                            )}
+                        </div>
+
                         <div className="px-4 py-3 flex items-center justify-between">
                             <span className="text-sm text-white">Rotation</span>
                             <Switch checked={isRotating} onCheckedChange={() => handleToggle("rotation")} />
@@ -124,7 +142,7 @@ const Navbar = () => {
                             <div className="px-4 py-3 border-t border-gray-700">
                                 <Button
                                     variant="destructive"
-                                    onClick={() => signOut({ callbackUrl: "/" })}
+                                    onClick={() => { lock(); signOut({ callbackUrl: "/" }); }}
                                     className="text-white px-4 py-[0.3rem] rounded w-full text-center mt-2"
                                 >
                                     Sign Out

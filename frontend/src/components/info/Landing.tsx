@@ -8,7 +8,7 @@ const Landing = () => {
             style={{ textShadow: "0px 4px 12px rgba(0,0,0,0.2)" }}
         >
             <h1 className="text-4xl max-xxs:text-3xl font-bold text-center text-white/80 mix-blend-difference italic">
-                Your Private Digital Diary. Safe, Secure, and <Link href='https://rb.gy/khel8n' target="_blank" rel="noopener noreferrer">Serene</Link>
+                Your private digital diary.
             </h1>
             <p className="text-lg max-xxs:text-base text-center text-white/60 mix-blend-difference mt-2">
                 Scribble your thoughts, ideas, and todos in a clean and minimal interface.
@@ -31,8 +31,9 @@ const Landing = () => {
                                duration-300 text-md font-semibold rounded-sm hover:-translate-y-1 bg-transparent hover:bg-white/15 
                                hover:shadow-lg hover:shadow-white/15 hover:text-white hover:rounded-md hover:scale-x-100 scale-x-95"
                     size={'lg'}
+                    asChild
                 >
-                    Try Demo
+                    <Link href="/pricing">See pricing</Link>
                 </Button>
             </div>
         </section>

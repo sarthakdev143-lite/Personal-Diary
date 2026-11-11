@@ -1,16 +1,15 @@
-import { getServerSession } from "next-auth";
-import type { Session } from "next-auth";
-import { Db, ObjectId } from "mongodb";
+import { ObjectId } from "mongodb";
 
-import { authOptions } from "@/lib/auth";
-import clientPromise from "@/lib/mongodb";
+import type { DiaryRecord, EntryRecord } from "@/lib/records";
+import type { Sealed } from "@/lib/vault";
 
 export type DiaryDocument = {
     _id?: ObjectId;
     userId: string;
-    title: string;
-    description: string;
+    title: Sealed;
+    description: Sealed;
     theme: string;
+    pinned: boolean;
     createdAt: Date;
     updatedAt: Date;
 };
@@ -19,56 +18,34 @@ export type EntryDocument = {
     _id?: ObjectId;
     diaryId: ObjectId;
     userId: string;
-    content: string;
+    content: Sealed;
     createdAt: Date;
     updatedAt: Date;
 };
 
-export type DiaryWithId = DiaryDocument & { _id: ObjectId };
-export type EntryWithId = EntryDocument & { _id: ObjectId };
-
-type SessionWithId = Session & {
-    user?: Session["user"] & { id?: string };
-};
-
-export async function getSessionUserId(): Promise<string | null> {
-    const session = await getServerSession(authOptions);
-    const userId = (session as SessionWithId | null)?.user?.id;
-    return userId ?? null;
-}
-
-export async function getDatabase(): Promise<Db> {
-    const client = await clientPromise;
-    return client.db();
-}
-
 export function toObjectId(value: string): ObjectId | null {
-    if (!ObjectId.isValid(value)) {
-        return null;
-    }
-
+    if (!ObjectId.isValid(value)) return null;
     return new ObjectId(value);
 }
 
-export function serializeDiary(diary: DiaryWithId) {
+export function serializeDiary(diary: DiaryDocument & { _id: ObjectId }): DiaryRecord {
     return {
         _id: diary._id.toString(),
-        userId: diary.userId,
         title: diary.title,
         description: diary.description,
         theme: diary.theme,
-        createdAt: diary.createdAt,
-        updatedAt: diary.updatedAt,
+        pinned: Boolean(diary.pinned),
+        createdAt: diary.createdAt.toISOString(),
+        updatedAt: diary.updatedAt.toISOString(),
     };
 }
 
-export function serializeEntry(entry: EntryWithId) {
+export function serializeEntry(entry: EntryDocument & { _id: ObjectId }): EntryRecord {
     return {
         _id: entry._id.toString(),
         diaryId: entry.diaryId.toString(),
-        userId: entry.userId,
         content: entry.content,
-        createdAt: entry.createdAt,
-        updatedAt: entry.updatedAt,
+        createdAt: entry.createdAt.toISOString(),
+        updatedAt: entry.updatedAt.toISOString(),
     };
 }

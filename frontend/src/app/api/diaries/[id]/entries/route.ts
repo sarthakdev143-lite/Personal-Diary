@@ -1,121 +1,62 @@
 import { NextResponse } from "next/server";
 
-import {
-    DiaryDocument,
-    EntryDocument,
-    EntryWithId,
-    getDatabase,
-    getSessionUserId,
-    serializeEntry,
-    toObjectId,
-} from "../../_shared";
+import { DiaryDocument, EntryDocument, serializeEntry, toObjectId } from "../../_shared";
+import { currentUser } from "@/lib/current-user";
+import { apiError, readJson } from "@/lib/http";
+import { getDatabase } from "@/lib/mongodb";
+import { ciphertextLimit, limits, planOf } from "@/lib/plans";
+import { parseSealed } from "@/lib/sealed";
 
-type RouteContext = {
-    params: Promise<{ id: string }>;
-};
-
-type CreateEntryPayload = {
-    content?: unknown;
-    createdAt?: unknown;
-};
+type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_: Request, context: RouteContext) {
-    try {
-        const userId = await getSessionUserId();
+    const user = await currentUser();
+    if (!user) return apiError("Unauthorized", 401);
 
-        if (!userId) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+    const diaryId = toObjectId((await context.params).id);
+    if (!diaryId) return apiError("Invalid diary id", 400);
 
-        const { id } = await context.params;
-        const diaryId = toObjectId(id);
+    const userId = user._id.toString();
+    const db = await getDatabase();
+    const diary = await db.collection<DiaryDocument>("diaries").findOne({ _id: diaryId, userId });
+    if (!diary) return apiError("Diary not found", 404);
 
-        if (!diaryId) {
-            return NextResponse.json({ error: "Invalid diary id" }, { status: 400 });
-        }
+    const entries = await db.collection<EntryDocument>("entries")
+        .find({ diaryId, userId })
+        .sort({ createdAt: -1 })
+        .toArray();
 
-        const db = await getDatabase();
-        const diariesCollection = db.collection<DiaryDocument>("diaries");
-        const entriesCollection = db.collection<EntryDocument>("entries");
-
-        const diary = await diariesCollection.findOne({ _id: diaryId, userId });
-
-        if (!diary) {
-            return NextResponse.json({ error: "Diary not found" }, { status: 404 });
-        }
-
-        const entries = await entriesCollection.find({ diaryId, userId }).sort({ createdAt: -1 }).toArray();
-        return NextResponse.json((entries as EntryWithId[]).map(serializeEntry));
-    } catch (error) {
-        console.error("Failed to fetch entries", error);
-        return NextResponse.json({ error: "Failed to fetch entries" }, { status: 500 });
-    }
+    return NextResponse.json(entries.flatMap((entry) => (entry._id ? [serializeEntry({ ...entry, _id: entry._id })] : [])));
 }
 
 export async function POST(request: Request, context: RouteContext) {
-    try {
-        const userId = await getSessionUserId();
+    const user = await currentUser();
+    if (!user) return apiError("Unauthorized", 401);
 
-        if (!userId) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+    const diaryId = toObjectId((await context.params).id);
+    if (!diaryId) return apiError("Invalid diary id", 400);
 
-        const { id } = await context.params;
-        const diaryId = toObjectId(id);
+    const payload = await readJson(request) as { content?: unknown } | undefined;
+    if (!payload) return apiError("Invalid JSON.", 400);
 
-        if (!diaryId) {
-            return NextResponse.json({ error: "Invalid diary id" }, { status: 400 });
-        }
+    const plan = planOf(user.plan);
+    const content = parseSealed(payload.content, ciphertextLimit(plan));
+    if (!content) return apiError("Content must be encrypted.", 400);
 
-        const payload = (await request.json()) as CreateEntryPayload;
-        const content = typeof payload.content === "string" ? payload.content.trim() : "";
+    const userId = user._id.toString();
+    const db = await getDatabase();
+    const diary = await db.collection<DiaryDocument>("diaries").findOne({ _id: diaryId, userId });
+    if (!diary) return apiError("Diary not found", 404);
 
-        if (!content.length) {
-            return NextResponse.json({ error: "Content is required." }, { status: 400 });
-        }
-
-        let createdAt = new Date();
-        if (payload.createdAt !== undefined) {
-            if (typeof payload.createdAt !== "string") {
-                return NextResponse.json({ error: "createdAt must be an ISO date string." }, { status: 400 });
-            }
-
-            const parsedCreatedAt = new Date(payload.createdAt);
-            if (Number.isNaN(parsedCreatedAt.getTime())) {
-                return NextResponse.json({ error: "Invalid createdAt date." }, { status: 400 });
-            }
-            createdAt = parsedCreatedAt;
-        }
-
-        const db = await getDatabase();
-        const diariesCollection = db.collection<DiaryDocument>("diaries");
-        const entriesCollection = db.collection<EntryDocument>("entries");
-
-        const diary = await diariesCollection.findOne({ _id: diaryId, userId });
-
-        if (!diary) {
-            return NextResponse.json({ error: "Diary not found" }, { status: 404 });
-        }
-
-        const entry: EntryDocument = {
-            diaryId,
-            userId,
-            content,
-            createdAt,
-            updatedAt: new Date(),
-        };
-
-        const result = await entriesCollection.insertOne(entry);
-
-        return NextResponse.json(
-            serializeEntry({
-                ...entry,
-                _id: result.insertedId,
-            }),
-            { status: 201 }
-        );
-    } catch (error) {
-        console.error("Failed to create entry", error);
-        return NextResponse.json({ error: "Failed to create entry" }, { status: 500 });
+    const count = await db.collection<EntryDocument>("entries").countDocuments({ diaryId, userId });
+    if (count >= limits(plan).entriesPerDiary) {
+        return apiError("This diary has used every entry on this plan.", 402, "upgrade");
     }
+
+    const now = new Date();
+    const entry: EntryDocument = { diaryId, userId, content, createdAt: now, updatedAt: now };
+    const result = await db.collection<EntryDocument>("entries").insertOne(entry);
+    await db.collection<DiaryDocument>("diaries").updateOne({ _id: diaryId, userId }, { $set: { updatedAt: now } });
+
+    return NextResponse.json(serializeEntry({ ...entry, _id: result.insertedId }), { status: 201 });
 }

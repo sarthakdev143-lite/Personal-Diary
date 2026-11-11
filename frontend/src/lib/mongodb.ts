@@ -1,33 +1,53 @@
-import { MongoClient } from "mongodb";
+import { MongoClient, type Db } from "mongodb";
 
-if (!process.env.MONGODB_URI) {
-    throw new Error('Invalid/Missing environment variable: "MONGODB_URI"');
-}
+const globalForMongo = global as typeof globalThis & {
+    _mongoClientPromise?: Promise<MongoClient>;
+};
 
-const uri: string = process.env.MONGODB_URI;
-const options = {};
+let prodPromise: Promise<MongoClient> | undefined;
+let indexesReady: Promise<void> | undefined;
 
-let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
-
-// Extend global without namespace and disable ESLint for var usage
-declare global {
-    // eslint-disable-next-line no-var
-    var _mongoClientPromise: Promise<MongoClient> | undefined;
-}
-
-// Ensure `globalThis` has the correct type
-const globalForMongo = global as typeof globalThis;
-
-if (process.env.NODE_ENV === "development") {
-    if (!globalForMongo._mongoClientPromise) {
-        client = new MongoClient(uri, options);
-        globalForMongo._mongoClientPromise = client.connect();
+function uri(): string {
+    const value = process.env.MONGODB_URI;
+    if (!value) {
+        throw new Error('Invalid/Missing environment variable: "MONGODB_URI"');
     }
-    clientPromise = globalForMongo._mongoClientPromise;
-} else {
-    client = new MongoClient(uri, options);
-    clientPromise = client.connect();
+    return value;
 }
 
-export default clientPromise;
+export function getMongoClient(): Promise<MongoClient> {
+    if (process.env.NODE_ENV === "development") {
+        if (!globalForMongo._mongoClientPromise) {
+            globalForMongo._mongoClientPromise = new MongoClient(uri()).connect();
+        }
+        return globalForMongo._mongoClientPromise;
+    }
+
+    if (!prodPromise) {
+        prodPromise = new MongoClient(uri()).connect();
+    }
+    return prodPromise;
+}
+
+async function ensureIndexes(db: Db): Promise<void> {
+    await Promise.all([
+        db.collection("users").createIndex({ email: 1 }, { unique: true }),
+        db.collection("users").createIndex({ stripeCustomerId: 1 }, { sparse: true }),
+        db.collection("diaries").createIndex({ userId: 1, updatedAt: -1 }),
+        db.collection("entries").createIndex({ diaryId: 1, userId: 1, createdAt: -1 }),
+        db.collection("entries").createIndex({ userId: 1, createdAt: -1 }),
+    ]);
+}
+
+export async function getDatabase(): Promise<Db> {
+    const client = await getMongoClient();
+    const db = client.db();
+    if (!indexesReady) {
+        indexesReady = ensureIndexes(db).catch((error: unknown) => {
+            indexesReady = undefined;
+            throw error;
+        });
+    }
+    await indexesReady;
+    return db;
+}
