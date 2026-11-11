@@ -2,19 +2,19 @@
 
 import { FormEvent, useEffect, useState } from "react"
 import { signIn } from "next-auth/react"
-import { Loader2 } from "lucide-react"
 import Image from "next/image"
 
 import Google from "./Google.png"
 import Github from "./Github.png"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { normalizeEmail } from "@/lib/email"
 import { createVault, openVault, passwordError } from "@/lib/vault"
 import { forgetRawKey, rememberRawKey } from "@/lib/vault-session"
+
+const fieldClass = "w-full border border-[#3a342c] bg-transparent px-3 py-2 text-sm text-[#d5cdc0] placeholder:text-[#8f877c] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[#f3ecdf]"
+const primaryClass = "w-full bg-[#f3ecdf] px-4 py-2 text-sm text-[#161410] disabled:opacity-50"
+const quietClass = "flex w-full items-center justify-center gap-3 border border-[#3a342c] px-4 py-2 text-sm text-[#d5cdc0] disabled:opacity-50"
 
 export default function LoginPage() {
     const { toast } = useToast()
@@ -137,106 +137,94 @@ export default function LoginPage() {
     const showOauth = oauth.google || oauth.github
 
     return (
-        <div className="flex min-h-screen items-center justify-center px-4 pt-16">
+        <div className="flex min-h-screen items-center justify-center bg-[#12110f] px-4 pt-16">
             <Toaster />
             <div className="w-full max-w-md">
-                <Card className="border-border/30 bg-card/80 shadow-2xl backdrop-blur-xl">
-                    <CardHeader className="space-y-1">
-                        <CardTitle className="text-2xl font-normal">
-                            {mode === "signup" ? "Create account" : "Sign in"}
-                        </CardTitle>
-                        <CardDescription className="text-center text-muted-foreground/80">
-                            The password encrypts the diary in this browser. If you forget it, the entries cannot be recovered.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4 pt-2">
-                        <form onSubmit={submit} className="space-y-3">
-                            {mode === "signup" && (
-                                <Input
-                                    value={name}
-                                    onChange={(event) => setName(event.target.value)}
-                                    placeholder="Name"
-                                    autoComplete="name"
-                                    className="border-white/15 text-white"
-                                    required
-                                />
-                            )}
-                            <Input
-                                type="email"
-                                value={email}
-                                onChange={(event) => setEmail(event.target.value)}
-                                placeholder="Email"
-                                autoComplete="email"
-                                className="border-white/15 text-white"
-                                required
-                            />
-                            <Input
-                                type="password"
-                                value={password}
-                                onChange={(event) => setPassword(event.target.value)}
-                                placeholder="Password"
-                                autoComplete={mode === "signup" ? "new-password" : "current-password"}
-                                className="border-white/15 text-white"
-                                minLength={10}
-                                required
-                            />
-                            <Button type="submit" disabled={pending} className="w-full bg-indigo-600 text-white hover:bg-indigo-700">
-                                {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                {mode === "signup" ? "Create account" : "Sign in"}
-                            </Button>
-                        </form>
-                        <button
-                            type="button"
-                            className="w-full text-center text-sm text-indigo-300 underline-offset-4 hover:underline"
-                            onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
-                        >
-                            {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
-                        </button>
+                <h1 className="story-serif text-4xl leading-none text-[#f3ecdf]">
+                    {mode === "signup" ? "Create account" : "Sign in"}
+                </h1>
+                <p className="mt-3 text-sm leading-6 text-[#d5cdc0]">
+                    The password encrypts the diary in this browser. If you forget it, the entries cannot be recovered.
+                </p>
+                <form onSubmit={submit} className="mt-8 space-y-3">
+                    {mode === "signup" && (
+                        <input
+                            value={name}
+                            onChange={(event) => setName(event.target.value)}
+                            placeholder="Name"
+                            autoComplete="name"
+                            className={fieldClass}
+                            required
+                        />
+                    )}
+                    <input
+                        type="email"
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        placeholder="Email"
+                        autoComplete="email"
+                        className={fieldClass}
+                        required
+                    />
+                    <input
+                        type="password"
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        placeholder="Password"
+                        autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                        className={fieldClass}
+                        minLength={10}
+                        required
+                    />
+                    <button type="submit" disabled={pending} className={primaryClass}>
+                        {mode === "signup" ? "Create account" : "Sign in"}
+                    </button>
+                </form>
+                <button
+                    type="button"
+                    className="mt-4 text-sm text-[#8f877c] underline"
+                    onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
+                >
+                    {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
+                </button>
 
-                        {showOauth && (
-                            <>
-                                <div className="relative">
-                                    <div className="absolute inset-0 flex items-center">
-                                        <span className="w-full border-t border-border/20" />
-                                    </div>
-                                    <div className="relative flex justify-center text-xs uppercase">
-                                        <span className="px-2 text-muted-foreground/70">Or</span>
-                                    </div>
-                                </div>
-                                {oauth.google && (
-                                    <Button
-                                        variant="outline"
-                                        className="relative w-full border border-border/30 bg-background/50 py-5 text-base tracking-[0.02em] text-foreground hover:bg-background/80"
-                                        onClick={() => oauthSignIn("google")}
-                                        disabled={oauthLoading !== null}
-                                    >
-                                        {oauthLoading === "google" ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Image src={Google} alt="" width={20} height={20} className="rounded-full bg-white p-[0.2rem]" />}
-                                        Continue with Google
-                                    </Button>
-                                )}
-                                {oauth.github && (
-                                    <Button
-                                        variant="outline"
-                                        className="relative w-full border border-border/30 bg-background/50 py-5 text-base tracking-[0.02em] text-foreground hover:bg-background/80"
-                                        onClick={() => oauthSignIn("github")}
-                                        disabled={oauthLoading !== null}
-                                    >
-                                        {oauthLoading === "github" ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Image src={Github} alt="" width={20} height={20} className="rounded-full bg-white p-[0.2rem]" />}
-                                        Continue with GitHub
-                                    </Button>
-                                )}
-                            </>
-                        )}
-                    </CardContent>
-                    <CardFooter className="flex flex-col space-y-2">
-                        <div className="text-center text-sm text-muted-foreground/70">
-                            By continuing, you agree to our{" "}
-                            <a href="/terms" className="text-indigo-400 underline underline-offset-4 hover:text-indigo-300">Terms</a>
-                            {" "}and{" "}
-                            <a href="/privacy" className="text-indigo-400 underline underline-offset-4 hover:text-indigo-300">Privacy</a>.
+                {showOauth && (
+                    <div className="mt-8 space-y-3">
+                        <div className="flex items-center gap-3 text-xs text-[#8f877c]">
+                            <span className="h-px flex-1 bg-[#3a342c]" />
+                            Or
+                            <span className="h-px flex-1 bg-[#3a342c]" />
                         </div>
-                    </CardFooter>
-                </Card>
+                        {oauth.google && (
+                            <button
+                                type="button"
+                                className={quietClass}
+                                onClick={() => oauthSignIn("google")}
+                                disabled={oauthLoading !== null}
+                            >
+                                <Image src={Google} alt="" width={16} height={16} />
+                                Continue with Google
+                            </button>
+                        )}
+                        {oauth.github && (
+                            <button
+                                type="button"
+                                className={quietClass}
+                                onClick={() => oauthSignIn("github")}
+                                disabled={oauthLoading !== null}
+                            >
+                                <Image src={Github} alt="" width={16} height={16} />
+                                Continue with GitHub
+                            </button>
+                        )}
+                    </div>
+                )}
+                <p className="mt-8 text-sm text-[#8f877c]">
+                    By continuing, you agree to our{" "}
+                    <a href="/terms" className="text-[#d5cdc0] underline">Terms</a>
+                    {" "}and{" "}
+                    <a href="/privacy" className="text-[#d5cdc0] underline">Privacy</a>.
+                </p>
             </div>
         </div>
     )

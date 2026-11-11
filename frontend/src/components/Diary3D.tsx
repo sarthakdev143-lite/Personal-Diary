@@ -49,17 +49,21 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
         if (sceneRef.current || !mountRef.current) return;
         const mountElement = mountRef.current;
         let renderer: THREE.WebGLRenderer;
+        const probe = document.createElement("canvas");
+        if (!probe.getContext("webgl") && !probe.getContext("experimental-webgl")) return;
         try {
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, canvas: probe });
         } catch {
             return;
         }
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        const width = mountElement.clientWidth || window.innerWidth;
+        const height = mountElement.clientHeight || window.innerHeight;
+        renderer.setSize(width, height);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.shadowMap.enabled = true;
         renderer.setClearColor(0x000000, 0);
 
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
         mountElement.appendChild(renderer.domElement);
 
         const controls = new OrbitControls(camera, renderer.domElement);
@@ -94,7 +98,7 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
             pageGroup,
         };
 
-        diaryGroup.position.x = window.innerWidth >= 900 ? 1.65 : 0;
+        diaryGroup.position.x = 0;
         rememberClosed();
         handleResize();
 
@@ -161,7 +165,7 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
     }, [updateRotation]);
 
     return pathName === "/" ? (
-        <div className="pointer-events-none fixed inset-0 z-0">
+        <div className="absolute inset-0">
             <div
                 ref={mountRef}
                 className="absolute inset-0 overflow-hidden"

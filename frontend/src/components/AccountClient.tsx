@@ -4,11 +4,13 @@ import { FormEvent, useState } from "react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useVault } from "@/context/VaultContext";
 import { openVault, rewrapVault } from "@/lib/vault";
 import { forgetRawKey, rememberRawKey } from "@/lib/vault-session";
+
+const fieldClass = "w-full border border-[#3a342c] bg-transparent px-3 py-2 text-sm text-[#d5cdc0] placeholder:text-[#8f877c] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[#f3ecdf]";
+const primaryClass = "mt-4 bg-[#f3ecdf] px-4 py-2 text-sm text-[#161410] disabled:opacity-50";
+const quietClass = "border border-[#3a342c] px-4 py-2 text-sm text-[#d5cdc0]";
 
 export default function AccountClient({ billing }: { billing: string | null }) {
     const { account, refresh, phase } = useVault();
@@ -105,51 +107,51 @@ export default function AccountClient({ billing }: { billing: string | null }) {
     }
 
     return (
-        <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-6 px-4 pb-24 pt-32 text-white">
-            <h1 className="text-3xl font-semibold">Account</h1>
+        <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-6 bg-[#12110f] px-4 pb-24 pt-32 text-[#d5cdc0]">
+            <h1 className="story-serif text-4xl leading-none text-[#f3ecdf]">Account</h1>
             {billing === "success" && (
-                <p className="rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-zinc-200">
+                <p className="border border-[#3a342c] p-4 text-sm text-[#d5cdc0]">
                     Stripe accepted the payment. This page shows Pro after the webhook lands. Refresh if it still says Free.
                 </p>
             )}
             {!account || phase === "loading" ? (
-                <p className="text-zinc-400">Loading account...</p>
+                <p className="text-[#8f877c]">Loading account...</p>
             ) : (
                 <>
-                    <section className="rounded-2xl border border-white/10 bg-black/40 p-5">
-                        <p className="text-lg">{account.name}</p>
-                        <p className="text-sm text-zinc-400">{account.email}</p>
-                        <p className="mt-4 text-sm text-zinc-200">
+                    <section className="border border-[#3a342c] p-5">
+                        <p className="story-serif text-2xl text-[#f3ecdf]">{account.name}</p>
+                        <p className="text-sm text-[#8f877c]">{account.email}</p>
+                        <p className="mt-4 text-sm text-[#d5cdc0]">
                             {account.plan === "pro" ? "Pro" : "Free"} plan. {account.usage.diaries} of {account.limits.diaries} diaries. {account.usage.entries} entries saved. {account.limits.entriesPerDiary.toLocaleString()} entries per diary on this plan.
                         </p>
                         <div className="mt-4 flex flex-wrap gap-2">
-                            {account.plan === "free" && <Button asChild><Link href="/pricing">Upgrade</Link></Button>}
-                            {account.canManageBilling && <Button variant="outline" className="border-white/20 bg-transparent text-white" onClick={manageBilling}>Manage billing</Button>}
+                            {account.plan === "free" && <Link href="/pricing" className="bg-[#f3ecdf] px-4 py-2 text-sm text-[#161410]">Upgrade</Link>}
+                            {account.canManageBilling && <button type="button" className={quietClass} onClick={manageBilling}>Manage billing</button>}
                         </div>
                     </section>
 
                     {account.hasPassword && (
-                        <form onSubmit={changePassword} className="rounded-2xl border border-white/10 bg-black/40 p-5">
-                            <h2 className="text-lg">Change password</h2>
-                            <p className="mt-1 text-sm text-zinc-400">The diary key stays the same. A forgotten password cannot be recovered.</p>
+                        <form onSubmit={changePassword} className="border border-[#3a342c] p-5">
+                            <h2 className="story-serif text-2xl text-[#f3ecdf]">Change password</h2>
+                            <p className="mt-1 text-sm text-[#8f877c]">The diary key stays the same. A forgotten password cannot be recovered.</p>
                             <input type="email" name="email" autoComplete="username" value={account.email} readOnly className="hidden" />
-                            <Input type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} placeholder="Current password" className="mt-4 border-white/15 text-white" required />
-                            <Input type="password" autoComplete="new-password" value={nextPassword} onChange={(event) => setNextPassword(event.target.value)} placeholder="New password" className="mt-3 border-white/15 text-white" minLength={10} required />
-                            <Input type="password" autoComplete="new-password" value={passwordConfirm} onChange={(event) => setPasswordConfirm(event.target.value)} placeholder="Confirm new password" className="mt-3 border-white/15 text-white" minLength={10} required />
-                            <Button type="submit" disabled={pending} className="mt-4">Update password</Button>
+                            <input type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} placeholder="Current password" className={`${fieldClass} mt-4`} required />
+                            <input type="password" autoComplete="new-password" value={nextPassword} onChange={(event) => setNextPassword(event.target.value)} placeholder="New password" className={`${fieldClass} mt-3`} minLength={10} required />
+                            <input type="password" autoComplete="new-password" value={passwordConfirm} onChange={(event) => setPasswordConfirm(event.target.value)} placeholder="Confirm new password" className={`${fieldClass} mt-3`} minLength={10} required />
+                            <button type="submit" disabled={pending} className={primaryClass}>Update password</button>
                         </form>
                     )}
 
-                    <form onSubmit={removeAccount} className="rounded-2xl border border-red-500/30 bg-black/40 p-5">
-                        <h2 className="text-lg">Delete account</h2>
-                        <p className="mt-1 text-sm text-zinc-400">This deletes the diaries stored for this account. An active subscription is canceled first.</p>
-                        <Input value={deletePhrase} onChange={(event) => setDeletePhrase(event.target.value)} placeholder="delete my diary" className="mt-4 border-white/15 text-white" />
-                        <Button type="submit" variant="destructive" disabled={pending} className="mt-4">Delete account</Button>
+                    <form onSubmit={removeAccount} className="border border-[#3a342c] p-5">
+                        <h2 className="story-serif text-2xl text-[#f3ecdf]">Delete account</h2>
+                        <p className="mt-1 text-sm text-[#8f877c]">This deletes the diaries stored for this account. An active subscription is canceled first.</p>
+                        <input value={deletePhrase} onChange={(event) => setDeletePhrase(event.target.value)} placeholder="delete my diary" className={`${fieldClass} mt-4`} />
+                        <button type="submit" disabled={pending} className={`${quietClass} mt-4`}>Delete account</button>
                     </form>
                 </>
             )}
-            {message && <p className="text-sm text-emerald-300">{message}</p>}
-            {error && <p className="text-sm text-red-300">{error}</p>}
+            {message && <p className="text-sm text-[#d5cdc0]">{message}</p>}
+            {error && <p className="text-sm text-[#d5cdc0]">{error}</p>}
         </div>
     );
 }

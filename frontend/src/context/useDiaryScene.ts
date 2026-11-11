@@ -120,8 +120,9 @@ export const useDiaryScene = (isRotating: boolean) => {
         if (!sceneRef.current) return;
 
         const { renderer, camera } = sceneRef.current;
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+        const mount = mountRef.current;
+        const width = mount?.clientWidth || window.innerWidth;
+        const height = mount?.clientHeight || window.innerHeight;
 
         camera.aspect = width / height;
         camera.updateProjectionMatrix();

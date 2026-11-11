@@ -110,36 +110,36 @@ const Diaries = ({ refetchTrigger = 0, query = "" }: { refetchTrigger?: number; 
         return (
             <>
                 {Array.from({ length: SKELETON_COUNT }).map((_, index) => (
-                    <div key={`diary-skeleton-${index}`} className="h-36 w-full max-w-xs animate-pulse rounded-xl bg-zinc-700/30" />
+                    <div key={`diary-skeleton-${index}`} className="h-36 w-full max-w-xs animate-pulse border border-[#3a342c] bg-[#12110f]" />
                 ))}
             </>
         );
     }
 
-    if (error) return <p className="text-base text-red-300">{error}</p>;
-    if (!visible.length && query.trim()) return <p className="text-base text-zinc-300">No diaries match that search.</p>;
+    if (error) return <p className="text-base text-[#d5cdc0]">{error}</p>;
+    if (!visible.length && query.trim()) return <p className="text-base text-[#8f877c]">No diaries match that search.</p>;
     if (!visible.length) return null;
 
     return (
         <>
             {visible.map((diary) => (
-                <article key={diary._id} className="flex h-44 w-full max-w-xs flex-col justify-between rounded-xl border border-white/10 bg-zinc-600/10 p-6 text-white/80 shadow-lg">
+                <article key={diary._id} className="flex h-44 w-full max-w-xs flex-col justify-between border border-[#3a342c] bg-[#12110f] p-6">
                     <div className="space-y-2 overflow-hidden">
                         <div className="flex items-start justify-between gap-2">
                             <Link href={`/diary/${diary._id}`} className="min-w-0 flex-1">
-                                <h2 className="truncate text-lg font-medium text-white">
+                                <h2 className="story-serif truncate text-lg text-[#f3ecdf]">
                                     {diary.pinned ? "Pinned · " : ""}{diary.title}
                                 </h2>
                             </Link>
-                            <button type="button" onClick={() => remove(diary._id)} className="shrink-0 text-xs text-zinc-400 hover:text-white">
+                            <button type="button" onClick={() => remove(diary._id)} className="shrink-0 text-xs text-[#8f877c] hover:text-[#f3ecdf]">
                                 {confirmId === diary._id ? "Confirm" : "Delete"}
                             </button>
                         </div>
-                        <p className="text-sm leading-6 text-zinc-300">
+                        <p className="text-sm leading-6 text-[#d5cdc0]">
                             {truncateDescription(diary.description || "No description")}
                         </p>
                     </div>
-                    <p className="text-xs tracking-wide text-zinc-400">{formatDiaryDate(diary.createdAt)}</p>
+                    <p className="text-xs text-[#8f877c]">{formatDiaryDate(diary.createdAt)}</p>
                 </article>
             ))}
         </>
