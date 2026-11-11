@@ -10,7 +10,6 @@ type DiaryContextType = {
   resetDiaryPosition: () => void;
 };
 
-// Create a global event system for diary position reset  
 export const DIARY_EVENTS = {
   RESET_POSITION: 'diary:reset-position',
 };
@@ -28,7 +27,6 @@ export const DiaryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [selectedTexture, setSelectedTexture] = useState<string | null>("/textures/leather-texture.jpg");
 
   const resetDiaryPosition = useCallback(() => {
-    // Dispatch a custom event that the Diary3D component will listen for
     const resetEvent = new CustomEvent(DIARY_EVENTS.RESET_POSITION);
     window.dispatchEvent(resetEvent);
   }, []);

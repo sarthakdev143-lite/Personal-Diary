@@ -15,10 +15,8 @@ const ClientLayout: React.FC<ClientLayoutProps> = ({ children }) => {
 
     return (
         <>
-            {/* Conditionally render Diary3D only on home page */}
             {pathname === '/' && <Diary3D selectedTexture={selectedTexture} />}
 
-            {/* Show the background text "DIARY" on all pages except home */}
             {pathname !== '/' && (
                 <div className="fixed w-full h-screen z-0">
                     <div id="caption" className="w-full h-screen absolute top-0 left-0 z-0">

@@ -315,12 +315,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 }
                 .de-mono{font-family:'JetBrains Mono','Courier New',monospace;}
 
-                /* Left panel scrollbar */
                 .de-left::-webkit-scrollbar{width:3px;}
                 .de-left::-webkit-scrollbar-track{background:transparent;}
                 .de-left::-webkit-scrollbar-thumb{background:#2a2520;border-radius:99px;}
 
-                /* Header */
                 .de-header{
                     flex-shrink:0;
                     display:flex;align-items:center;justify-content:space-between;
@@ -329,7 +327,6 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     border-bottom:1px solid #1e1c18;
                 }
 
-                /* Toolbar */
                 .de-toolbar{
                     flex-shrink:0;
                     display:flex;align-items:center;gap:2px;flex-wrap:wrap;
@@ -355,10 +352,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 .de-tbtn:hover{color:#d4c8b4;background:#1e1c18;border-color:#2a2520;}
                 .de-tbtn.on{color:#c4a882;background:#2a2010;border-color:#3a3020;}
 
-                /* Body */
                 .de-body{flex:1;min-height:0;display:flex;}
 
-                /* Left panel */
                 .de-left{
                     width:268px;flex-shrink:0;
                     display:flex;flex-direction:column;
@@ -378,14 +373,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 .de-entry-card:hover{background:#131109;}
                 .de-entry-card.active{background:#161208;border-left-color:#c4a882;}
 
-                /* Right panel */
                 .de-right{
                     flex:1;min-width:0;min-height:0;
                     display:flex;flex-direction:column;
                     position:relative;
                 }
 
-                /* Editor content area */
                 .de-editor-wrap{flex:1;overflow-y:auto;position:relative;}
                 .de-editor-wrap::-webkit-scrollbar{width:4px;}
                 .de-editor-wrap::-webkit-scrollbar-track{background:transparent;}
@@ -412,7 +405,6 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 #de-editor::selection,
                 #de-editor *::selection{background:#3a3020;color:#ede5d8;}
 
-                /* Typography inside editor */
                 #de-editor h1{font-size:26px;font-weight:500;color:#ede5d8;margin:24px 0 12px;letter-spacing:-0.01em;line-height:1.3;}
                 #de-editor h2{font-size:20px;font-weight:500;color:#e0d8cc;margin:20px 0 10px;line-height:1.4;}
                 #de-editor h3{font-size:16px;font-weight:500;color:#d4ccc0;margin:16px 0 8px;text-transform:uppercase;letter-spacing:0.08em;font-family:'JetBrains Mono',monospace;font-size:12px;}
@@ -446,10 +438,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 #de-editor a{color:#c4a882;text-decoration:underline;text-underline-offset:3px;}
                 #de-editor img{max-width:100%;border-radius:6px;margin:12px 0;display:block;}
 
-                /* Read-only overlay */
                 #de-editor[contenteditable="false"]{opacity:0.75;cursor:default;}
 
-                /* Footer */
                 .de-footer{
                     flex-shrink:0;
                     display:flex;align-items:center;justify-content:space-between;
@@ -458,7 +448,6 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     border-top:1px solid #1a1814;
                 }
 
-                /* Buttons */
                 .de-save-btn{
                     font-family:'JetBrains Mono',monospace;
                     font-size:10px;letter-spacing:0.2em;text-transform:uppercase;
@@ -479,7 +468,6 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 }
                 .de-ghost-btn:hover{color:#e0d6c8;border-color:#6a5a48;}
 
-                /* Back link */
                 .de-back{
                     font-family:'JetBrains Mono',monospace;
                     font-size:10px;letter-spacing:0.25em;text-transform:uppercase;
@@ -501,7 +489,6 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
             <div className="de-root" onKeyDown={handleKeyDown}>
 
-                {/* HEADER */}
                 <header className="de-header">
                     <div style={{ display: "flex", alignItems: "center", gap: 18, minWidth: 0 }}>
                         <Link href="/diary" className="de-back">← back</Link>
@@ -552,10 +539,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         ))}
                     </div>
 
-                {/* BODY */}
                 <div className="de-body">
 
-                    {/* LEFT */}
                     <aside className="de-left">
                         <div className="de-mono" style={{ padding: "16px 16px 10px", fontSize: 9, letterSpacing: "0.35em", textTransform: "uppercase", color: "#a79f93" }}>
                             Past Entries
@@ -605,7 +590,6 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         )}
                     </aside>
 
-                    {/* RIGHT */}
                     <section className="de-right">
                         <div className="de-editor-wrap">
                             <div
@@ -651,7 +635,6 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 </div>
             </div>
 
-            {/* Hidden file input for image upload */}
             <input
                 ref={fileInputRef}
                 type="file"

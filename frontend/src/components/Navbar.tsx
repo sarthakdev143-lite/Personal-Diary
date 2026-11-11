@@ -39,7 +39,7 @@ const Switch = ({
 
 const Navbar = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [isMobile, setIsMobile] = useState(false); // Fix for window.innerWidth issue
+    const [isMobile, setIsMobile] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const pathName = usePathname();
     const { isRotating, setIsRotating, resetDiaryPosition } = useDiary();
@@ -92,7 +92,6 @@ const Navbar = () => {
 
                 <AuthButton pathName={pathName} />
 
-                {/* Dropdown Trigger */}
                 <Button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     variant="ghost"
@@ -101,7 +100,6 @@ const Navbar = () => {
                     {isDropdownOpen ? <X size={16}/> : <Menu size={16}/>}
                 </Button>
 
-                {/* Dropdown Content */}
                 {isDropdownOpen && (
                     <div className="absolute top-full right-0 mt-2 w-56 bg-zinc-900 rounded-md shadow-lg selection:bg-slate-700">
                         <div className="px-4 py-2 font-semibold text-base text-white border-b border-gray-700">Settings</div>
