@@ -17,8 +17,6 @@ const Navbar = () => {
         <header className="fixed top-0 z-30 w-full border-b border-[#2a2620] bg-[#12110f]">
             <nav className="mx-auto flex h-14 max-w-5xl items-center gap-5 px-4 text-sm text-[#e8e2d6]">
                 <Link href="/" className="mr-auto">Diary</Link>
-                {pathName !== "/" && <Link href="/">Home</Link>}
-                <Link href="/pricing">Pricing</Link>
                 {phase !== "anonymous" && phase !== "loading" && <Link href="/account">Account</Link>}
                 {phase === "unlocked" && (
                     <button type="button" onClick={lock} className="text-[#b7b0a4]">Lock</button>
