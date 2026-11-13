@@ -4,16 +4,16 @@ import { ComponentType } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
-import { ShieldCheck, PaintBucket, Bell, Mic, Clock, Brain } from "lucide-react";
+import { ShieldCheck, PaintBucket, Search, PenLine, Clock, Code2 } from "lucide-react";
 import Link from "next/link";
 
 const features = [
-    { icon: ShieldCheck, title: "Privacy First", description: "AES encryption keeps your entries secure and private." },
-    { icon: Clock, title: "Offline Mode", description: "Write your thoughts offline and sync them when you're back online." },
-    { icon: Brain, title: "AI Sentiment Analysis", description: "Get insights into your emotions based on your writing." },
-    { icon: PaintBucket, title: "Custom Themes", description: "Personalize your diary with customizable themes to match your style." },
-    { icon: Bell, title: "Reminders & Notifications", description: "Get timely reminders to maintain your journaling habit." },
-    { icon: Mic, title: "Voice-to-Text Entries", description: "Dictate your thoughts instead of typing for a faster experience." },
+    { icon: ShieldCheck, title: "Private to you", description: "Each diary stays on your account. Other people cannot open it." },
+    { icon: PenLine, title: "Rich entries", description: "Write with headings, lists, links, and images, then revise an entry later." },
+    { icon: PaintBucket, title: "Cover themes", description: "Pick a cover when you create a diary." },
+    { icon: Search, title: "Search", description: "Find a diary from its title, description, or the words in an entry." },
+    { icon: Clock, title: "Your history", description: "Past entries stay in the diary so you can reread them." },
+    { icon: Code2, title: "Open source", description: "The project is public. You can read how it works and run it yourself." },
 ];
 
 interface FeatureCardProps {
@@ -53,7 +53,7 @@ const WhyChooseThis = () => {
     }, []);
 
     return (
-        <section className="w-full min-h-screen max-sm:pb-32 flex flex-col items-center justify-center px-6 text-center">
+        <section id="features" className="w-full min-h-screen max-sm:pb-32 flex flex-col items-center justify-center px-6 text-center">
             <h1 className="text-4xl font-bold text-white/80 mix-blend-difference italic">
                 Why Choose This?
             </h1>

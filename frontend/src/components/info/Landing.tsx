@@ -31,8 +31,9 @@ const Landing = () => {
                                duration-300 text-md font-semibold rounded-sm hover:-translate-y-1 bg-transparent hover:bg-white/15 
                                hover:shadow-lg hover:shadow-white/15 hover:text-white hover:rounded-md hover:scale-x-100 scale-x-95"
                     size={'lg'}
+                    asChild
                 >
-                    Try Demo
+                    <a href="#features">See what it does</a>
                 </Button>
             </div>
         </section>

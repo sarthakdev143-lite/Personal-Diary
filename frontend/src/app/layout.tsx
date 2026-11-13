@@ -13,12 +13,12 @@ export const metadata: Metadata = {
     metadataBase: new URL("https://sarthakdev-diary.vercel.app"),
     title: "Diary • @sarthakdev143",
     description:
-        "A web-based, interactive, and immersive diary experience using three.js. Flip through the pages of my diary and write your thoughts and experiences. The app is built using Next.js, three.js, and TypeScript. Your data is completely encrypted and secure, No one, even we can't read it.",
-    keywords: ["Diary", "Next.js", "Three.js", "Encrypted Notes", "Secure Diary", "Digital Journal"],
+        "A private diary you can write in the browser. Entries stay on your account, with rich text, images, and a choice of covers. Built with Next.js and Three.js.",
+    keywords: ["Diary", "Next.js", "Three.js", "Private Journal", "Digital Journal"],
     openGraph: {
         title: "Diary • @sarthakdev143",
         description:
-            "An immersive and encrypted diary experience built with Next.js and Three.js.",
+            "A private diary with rich text, images, and cover themes, built with Next.js and Three.js.",
         url: "https://sarthakdev-diary.vercel.app",
         siteName: "Diary",
         images: [{ url: "/diary.jpg" }],
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
         card: "summary_large_image",
         title: "Diary • @sarthakdev143",
         description:
-            "An immersive and encrypted diary experience built with Next.js and Three.js.",
+            "A private diary with rich text, images, and cover themes, built with Next.js and Three.js.",
         images: ["/diary.jpg"],
     },
     icons: {

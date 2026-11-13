@@ -44,7 +44,6 @@ export default function LoginPage() {
 
     return (
         <div className="flex min-h-screen overflow-hidden items-center justify-center bg-black/25 dark p-4 backdrop-blur-md">
-            <div className="absolute inset-0 bg-[url('/placeholder.svg?height=50&width=50')] opacity-[0.02] pointer-events-none" />
             <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/10 via-transparent to-purple-500/5 pointer-events-none" />
             <Toaster />
 
@@ -126,17 +125,9 @@ export default function LoginPage() {
                         </motion.div>
                     </CardContent>
                     <CardFooter className="flex flex-col space-y-2">
-                        <div className="text-center text-sm text-muted-foreground/70">
-                            By continuing, you agree to our{" "}
-                            <a href="#" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4">
-                                Terms of Service
-                            </a>{" "}
-                            and{" "}
-                            <a href="#" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-4">
-                                Privacy Policy
-                            </a>
-                            .
-                        </div>
+                        <p className="text-center text-sm text-muted-foreground/70">
+                            Google and GitHub are the ways to sign in. Entries are saved to your account.
+                        </p>
                     </CardFooter>
                 </Card>
             </motion.div>
