@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 
+import { formatDiaryDate } from "@/lib/diary/text";
+
 type Diary = {
     _id: string;
     title: string;
@@ -19,65 +21,68 @@ const truncateDescription = (description: string, maxLength = 110) => {
     return `${description.slice(0, maxLength).trimEnd()}...`;
 };
 
-const formatDiaryDate = (dateValue: string) => {
-    const date = new Date(dateValue);
-    if (Number.isNaN(date.getTime())) return "Unknown date";
-
-    return new Intl.DateTimeFormat("en-US", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-    }).format(date);
-};
-
-const Diaries = ({ refetchTrigger = 0 }: { refetchTrigger?: number }) => {
-    const { data: session, status } = useSession();
-    const [diaries, setDiaries] = useState<Diary[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+const Diaries = ({ query = "", refetchTrigger = 0 }: { query?: string; refetchTrigger?: number }) => {
+    const { status } = useSession();
+    const [attempt, setAttempt] = useState(0);
+    const [result, setResult] = useState<{
+        key: string;
+        diaries: Diary[];
+        error: string | null;
+    } | null>(null);
+    const requestKey = `${status}:${query}:${refetchTrigger}:${attempt}`;
 
     useEffect(() => {
-        if (status === "loading") return;
+        if (status !== "authenticated") return;
 
-        if (!session) {
-            setIsLoading(false);
-            return;
-        }
+        const controller = new AbortController();
+        let active = true;
 
-        let isMounted = true;
-
-        const fetchDiaries = async () => {
-            setIsLoading(true);
-
+        const loadDiaries = async () => {
             try {
-                const response = await fetch("/api/diaries", {
+                const params = query ? `?q=${encodeURIComponent(query)}` : "";
+                const response = await fetch(`/api/diaries${params}`, {
                     method: "GET",
                     cache: "no-store",
+                    signal: controller.signal,
                 });
 
+                const data: unknown = await response.json().catch(() => null);
+
                 if (!response.ok) {
-                    throw new Error(`Failed to fetch diaries: ${response.status}`);
+                    const message = data && typeof data === "object" && "error" in data && typeof data.error === "string"
+                        ? data.error
+                        : "Could not load diaries.";
+                    throw new Error(message);
                 }
 
-                const data: unknown = await response.json();
-
-                if (!isMounted) return;
-                setDiaries(Array.isArray(data) ? (data as Diary[]) : []);
-            } catch {
-                if (!isMounted) return;
-                setDiaries([]);
-            } finally {
-                if (isMounted) {
-                    setIsLoading(false);
-                }
+                if (!active) return;
+                setResult({
+                    key: requestKey,
+                    diaries: Array.isArray(data) ? (data as Diary[]) : [],
+                    error: null,
+                });
+            } catch (fetchError) {
+                if (!active || controller.signal.aborted) return;
+                setResult({
+                    key: requestKey,
+                    diaries: [],
+                    error: fetchError instanceof Error ? fetchError.message : "Could not load diaries.",
+                });
             }
         };
 
-        fetchDiaries();
+        void loadDiaries();
 
         return () => {
-            isMounted = false;
+            active = false;
+            controller.abort();
         };
-    }, [session, status, refetchTrigger]);
+    }, [status, query, refetchTrigger, attempt, requestKey]);
+
+    const isCurrent = result?.key === requestKey;
+    const diaries = isCurrent ? result.diaries : [];
+    const error = isCurrent ? result.error : null;
+    const isLoading = status === "loading" || (status === "authenticated" && !isCurrent);
 
     if (isLoading) {
         return (
@@ -89,6 +94,29 @@ const Diaries = ({ refetchTrigger = 0 }: { refetchTrigger?: number }) => {
                     />
                 ))}
             </>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex h-36 w-full max-w-xs flex-col justify-between rounded-xl border border-red-400/30 bg-red-950/20 p-6 text-white/80">
+                <p className="text-sm leading-6">{error}</p>
+                <button
+                    type="button"
+                    onClick={() => setAttempt((value) => value + 1)}
+                    className="w-fit text-sm text-white underline underline-offset-4"
+                >
+                    Try again
+                </button>
+            </div>
+        );
+    }
+
+    if (!diaries.length && query) {
+        return (
+            <p className="w-full max-w-xs rounded-xl border border-white/10 bg-zinc-600/10 p-6 text-base text-zinc-300" role="status">
+                No diaries match “{query}”.
+            </p>
         );
     }
 

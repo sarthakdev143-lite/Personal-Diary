@@ -5,35 +5,70 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
+import { DESCRIPTION_MAX, MAX_IMAGE_BYTES, TITLE_MAX } from "@/lib/diary/constants";
+import { entryPlainText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, wordCount } from "@/lib/diary/text";
+import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
-type Entry = { _id: string; diaryId: string; userId: string; content: string; createdAt: string; updatedAt: string; };
+type Entry = { _id: string; diaryId: string; content: string; plainText?: string; createdAt: string; updatedAt: string; };
 type DiaryResponse = { diary: Diary; entries: Entry[]; };
+type EditorMode = "compose" | "view" | "edit";
 
-const fmtShort = (v: string) => {
-    const d = new Date(v);
-    if (isNaN(d.getTime())) return "—";
-    return new Intl.DateTimeFormat("en-US", { day: "numeric", month: "short", year: "numeric" }).format(d);
-};
-const fmtTime = (v: string) => {
-    const d = new Date(v);
-    if (isNaN(d.getTime())) return "";
-    return new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit" }).format(d);
-};
-const fmtLong = (v: string) => {
-    const d = new Date(v);
-    if (isNaN(d.getTime())) return "—";
-    return new Intl.DateTimeFormat("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(d);
-};
+const fmtShort = formatDiaryDate;
+const fmtTime = formatEntryTime;
+const fmtLong = formatEntryLong;
 const todayHeader = () => `<h2>${fmtLong(new Date().toISOString())}</h2><p><br></p>`;
 
-const wordCount = (html: string) => {
-    const text = html.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").trim();
-    return text ? text.split(/\s+/).filter(Boolean).length : 0;
+const entryPreview = (entry: Entry) => {
+    const text = entry.plainText?.trim() || entryPlainText(entry.content);
+    return text.slice(0, 90);
+};
+
+const wasEdited = (entry: Entry) => {
+    const created = new Date(entry.createdAt).getTime();
+    const updated = new Date(entry.updatedAt).getTime();
+    return Number.isFinite(created) && Number.isFinite(updated) && updated - created > 2000;
 };
 
 // Toolbar button definition
-type ToolBtn = { icon: string; title: string; action: () => void; active?: boolean };
+type ToolButton = {
+    icon: string;
+    title: string;
+    format?: string;
+    command?: string;
+    value?: string;
+    html?: string;
+    kind?: "image" | "link";
+};
+
+const TOOLBAR: ToolButton[][] = [
+    [
+        { icon: "H1", title: "Heading 1", command: "formatBlock", value: "h1", format: "h1" },
+        { icon: "H2", title: "Heading 2", command: "formatBlock", value: "h2", format: "h2" },
+        { icon: "H3", title: "Heading 3", command: "formatBlock", value: "h3", format: "h3" },
+    ],
+    [
+        { icon: "B", title: "Bold (Ctrl+B)", command: "bold", format: "bold" },
+        { icon: "I", title: "Italic (Ctrl+I)", command: "italic", format: "italic" },
+        { icon: "U", title: "Underline (Ctrl+U)", command: "underline", format: "underline" },
+        { icon: "S̶", title: "Strikethrough", command: "strikeThrough", format: "strikethrough" },
+    ],
+    [
+        { icon: "≡", title: "Bullet list", command: "insertUnorderedList", format: "ul" },
+        { icon: "1.", title: "Numbered list", command: "insertOrderedList", format: "ol" },
+        { icon: "❝", title: "Blockquote", command: "formatBlock", value: "blockquote", format: "blockquote" },
+        { icon: "—", title: "Divider", html: "<hr/><p><br></p>" },
+    ],
+    [
+        { icon: "🖼", title: "Insert image", kind: "image" },
+        { icon: "⬛", title: "Code block", html: "<pre><code>code here</code></pre><p><br></p>" },
+        { icon: "🔗", title: "Insert link", kind: "link" },
+    ],
+    [
+        { icon: "⟵", title: "Undo", command: "undo" },
+        { icon: "⟶", title: "Redo", command: "redo" },
+    ],
+];
 
 const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const router = useRouter();
@@ -45,11 +80,16 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const [entries, setEntries] = useState<Entry[]>([]);
     const [htmlContent, setHtmlContent] = useState("");
     const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
-    const [isViewingOld, setIsViewingOld] = useState(false);
+    const [mode, setMode] = useState<EditorMode>("compose");
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isSavingDiary, setIsSavingDiary] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
+    const [detailsOpen, setDetailsOpen] = useState(false);
+    const [diaryDraft, setDiaryDraft] = useState({ title: "", description: "" });
+    const [confirmDelete, setConfirmDelete] = useState<"entry" | "diary" | null>(null);
+    const [baseline, setBaseline] = useState("");
 
     useEffect(() => {
         let mounted = true;
@@ -61,6 +101,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 if (!mounted) return;
                 setDiary(data.diary!);
                 setEntries(data.entries!);
+                setDiaryDraft({
+                    title: data.diary?.title ?? "",
+                    description: data.diary?.description ?? "",
+                });
             } catch (e) {
                 if (mounted) setError(e instanceof Error ? e.message : "Failed to load.");
             } finally {
@@ -125,24 +169,53 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
     const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
+        e.target.value = "";
         if (!file) return;
+        if (!file.type.startsWith("image/")) {
+            toast({ title: "Not an image", description: "Choose a PNG, JPEG, GIF, or WebP image.", variant: "destructive" });
+            return;
+        }
+        if (file.size > MAX_IMAGE_BYTES) {
+            toast({ title: "Image is too large", description: "Choose an image under 150 KB.", variant: "destructive" });
+            return;
+        }
         const reader = new FileReader();
         reader.onload = (ev) => {
             const src = ev.target?.result as string;
-            insertHTML(`<img src="${src}" style="max-width:100%;border-radius:6px;margin:12px 0;" /><p><br></p>`);
+            insertHTML(`<img src="${src}" alt="" /><p><br></p>`);
         };
         reader.readAsDataURL(file);
-        e.target.value = "";
-    }, [insertHTML]);
+    }, [insertHTML, toast]);
+
+    const writeEditor = useCallback((html: string) => {
+        setBaseline(html);
+        setHtmlContent(html);
+        if (editorRef.current) editorRef.current.innerHTML = html;
+    }, []);
+
+    const isDirty = mode !== "view" && htmlContent !== baseline;
+
+    const discardIfDirty = () => {
+        if (!isDirty) return true;
+        return window.confirm("Discard unsaved changes?");
+    };
+
+    const resetComposer = () => {
+        setSelectedEntryId(null);
+        setMode("compose");
+        setConfirmDelete(null);
+        writeEditor("");
+    };
 
     const handleNewEntry = () => {
-        setSelectedEntryId(null);
-        setIsViewingOld(false);
+        if (!discardIfDirty()) return;
         const html = todayHeader();
-        setHtmlContent(html);
+        setSelectedEntryId(null);
+        setMode("compose");
+        setConfirmDelete(null);
+        writeEditor(html);
+        editorRef.current?.focus();
         if (editorRef.current) {
-            editorRef.current.innerHTML = html;
-            editorRef.current.focus();
             const range = document.createRange();
             range.selectNodeContents(editorRef.current);
             range.collapse(false);
@@ -152,37 +225,47 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     };
 
     const handleEntrySelect = (entry: Entry) => {
-        if (selectedEntryId === entry._id) {
-            setSelectedEntryId(null);
-            setIsViewingOld(false);
-            setHtmlContent("");
-            if (editorRef.current) editorRef.current.innerHTML = "";
+        if (selectedEntryId === entry._id && mode !== "compose") {
+            if (!discardIfDirty()) return;
+            resetComposer();
             return;
         }
+        if (!discardIfDirty()) return;
         setSelectedEntryId(entry._id);
-        setIsViewingOld(true);
-        setHtmlContent(entry.content);
-        if (editorRef.current) editorRef.current.innerHTML = entry.content;
+        setMode("view");
+        setConfirmDelete(null);
+        writeEditor(entry.content);
     };
 
     const handleSave = async () => {
-        const trimmed = htmlContent.replace(/<[^>]*>/g, "").trim();
-        if (!trimmed || isSaving || isViewingOld) return;
+        if (!hasEntryContent(htmlContent) || isSaving || mode === "view") return;
         setIsSaving(true);
+        const editing = mode === "edit" && selectedEntryId;
         try {
-            const res = await fetch(`/api/diaries/${diaryId}/entries`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content: htmlContent, createdAt: new Date().toISOString() }),
-            });
+            const res = await fetch(
+                editing ? `/api/diaries/${diaryId}/entries/${selectedEntryId}` : `/api/diaries/${diaryId}/entries`,
+                {
+                    method: editing ? "PUT" : "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(
+                        editing
+                            ? { content: htmlContent }
+                            : { content: htmlContent, createdAt: new Date().toISOString() }
+                    ),
+                }
+            );
             const data = await res.json() as Entry & { error?: string };
             if (!res.ok) throw new Error(data.error || "Failed to save.");
-            setEntries(prev => [data, ...prev]);
-            setHtmlContent("");
-            setSelectedEntryId(null);
-            setIsViewingOld(false);
-            if (editorRef.current) editorRef.current.innerHTML = "";
-            toast({ title: "Saved", description: fmtLong(data.createdAt) });
+            if (editing) {
+                setEntries((prev) => prev.map((entry) => entry._id === data._id ? data : entry));
+                setMode("view");
+                writeEditor(data.content);
+                toast({ title: "Updated", description: fmtLong(data.createdAt) });
+            } else {
+                setEntries((prev) => [data, ...prev]);
+                resetComposer();
+                toast({ title: "Saved", description: fmtLong(data.createdAt) });
+            }
         } catch (e) {
             toast({ title: "Not saved", description: e instanceof Error ? e.message : "Error", variant: "destructive" });
         } finally {
@@ -190,42 +273,107 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
     };
 
+    const handleDeleteEntry = async () => {
+        if (!selectedEntryId || isSaving) return;
+        setIsSaving(true);
+        try {
+            const res = await fetch(`/api/diaries/${diaryId}/entries/${selectedEntryId}`, { method: "DELETE" });
+            const data = await res.json().catch(() => null) as { error?: string } | null;
+            if (!res.ok) throw new Error(data?.error || "Failed to delete entry.");
+            setEntries((prev) => prev.filter((entry) => entry._id !== selectedEntryId));
+            resetComposer();
+            toast({ title: "Entry deleted" });
+        } catch (e) {
+            toast({ title: "Not deleted", description: e instanceof Error ? e.message : "Error", variant: "destructive" });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleSaveDiary = async () => {
+        const title = normalizeTitle(diaryDraft.title);
+        if (!title.ok) {
+            toast({ title: "Check the title", description: title.error, variant: "destructive" });
+            return;
+        }
+        const description = normalizeDescription(diaryDraft.description);
+        if (!description.ok) {
+            toast({ title: "Check the description", description: description.error, variant: "destructive" });
+            return;
+        }
+        setIsSavingDiary(true);
+        try {
+            const res = await fetch(`/api/diaries/${diaryId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title: title.value, description: description.value }),
+            });
+            const data = await res.json() as Diary & { error?: string };
+            if (!res.ok) throw new Error(data.error || "Failed to update diary.");
+            setDiary(data);
+            setDiaryDraft({ title: data.title, description: data.description });
+            setDetailsOpen(false);
+            toast({ title: "Diary updated" });
+        } catch (e) {
+            toast({ title: "Not updated", description: e instanceof Error ? e.message : "Error", variant: "destructive" });
+        } finally {
+            setIsSavingDiary(false);
+        }
+    };
+
+    const handleDeleteDiary = async () => {
+        setIsSavingDiary(true);
+        try {
+            const res = await fetch(`/api/diaries/${diaryId}`, { method: "DELETE" });
+            const data = await res.json().catch(() => null) as { error?: string } | null;
+            if (!res.ok) throw new Error(data?.error || "Failed to delete diary.");
+            router.push("/diary");
+        } catch (e) {
+            toast({ title: "Not deleted", description: e instanceof Error ? e.message : "Error", variant: "destructive" });
+            setIsSavingDiary(false);
+        }
+    };
+
+    const insertLink = () => {
+        const url = window.prompt("Link URL");
+        if (!url) return;
+        let parsed: URL;
+        try {
+            parsed = new URL(url);
+        } catch {
+            toast({ title: "Link not added", description: "Enter a full http, https, or mailto URL.", variant: "destructive" });
+            return;
+        }
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:" && parsed.protocol !== "mailto:") {
+            toast({ title: "Link not added", description: "Use an http, https, or mailto link.", variant: "destructive" });
+            return;
+        }
+        exec("createLink", parsed.href);
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if ((e.ctrlKey || e.metaKey) && e.key === "s") { e.preventDefault(); handleSave(); }
     };
 
-    // Build toolbar buttons
-    const toolbarGroups: ToolBtn[][] = [
-        [
-            { icon: "H1", title: "Heading 1", action: () => exec("formatBlock", "h1"), active: activeFormats.has("h1") },
-            { icon: "H2", title: "Heading 2", action: () => exec("formatBlock", "h2"), active: activeFormats.has("h2") },
-            { icon: "H3", title: "Heading 3", action: () => exec("formatBlock", "h3"), active: activeFormats.has("h3") },
-        ],
-        [
-            { icon: "B", title: "Bold (Ctrl+B)", action: () => exec("bold"), active: activeFormats.has("bold") },
-            { icon: "I", title: "Italic (Ctrl+I)", action: () => exec("italic"), active: activeFormats.has("italic") },
-            { icon: "U", title: "Underline (Ctrl+U)", action: () => exec("underline"), active: activeFormats.has("underline") },
-            { icon: "S̶", title: "Strikethrough", action: () => exec("strikeThrough"), active: activeFormats.has("strikethrough") },
-        ],
-        [
-            { icon: "≡", title: "Bullet list", action: () => exec("insertUnorderedList"), active: activeFormats.has("ul") },
-            { icon: "1.", title: "Numbered list", action: () => exec("insertOrderedList"), active: activeFormats.has("ol") },
-            { icon: "❝", title: "Blockquote", action: () => exec("formatBlock", "blockquote"), active: activeFormats.has("blockquote") },
-            { icon: "—", title: "Divider", action: () => insertHTML("<hr/><p><br></p>") },
-        ],
-        [
-            { icon: "🖼", title: "Insert image", action: () => fileInputRef.current?.click() },
-            { icon: "⬛", title: "Code block", action: () => insertHTML('<pre><code>code here</code></pre><p><br></p>') },
-            { icon: "🔗", title: "Insert link", action: () => { const url = prompt("URL:"); if (url) exec("createLink", url); } },
-        ],
-        [
-            { icon: "⟵", title: "Undo", action: () => exec("undo") },
-            { icon: "⟶", title: "Redo", action: () => exec("redo") },
-        ],
-    ];
+    const runTool = (tool: ToolButton) => {
+        if (tool.kind === "image") {
+            fileInputRef.current?.click();
+            return;
+        }
+        if (tool.kind === "link") {
+            insertLink();
+            return;
+        }
+        if (tool.html) {
+            insertHTML(tool.html);
+            return;
+        }
+        if (tool.command) exec(tool.command, tool.value);
+    };
 
     const wc = wordCount(htmlContent);
-    const canSave = htmlContent.replace(/<[^>]*>/g, "").trim().length > 0 && !isViewingOld;
+    const canSave = hasEntryContent(htmlContent) && mode !== "view";
+    const selectedEntry = entries.find((entry) => entry._id === selectedEntryId);
 
     if (isLoading) return (
         <div style={{ position: "fixed", inset: 0, zIndex: 10, background: "#0d0b09", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -422,6 +570,32 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     cursor:pointer;transition:all 0.15s;
                 }
                 .de-ghost-btn:hover{color:#e0d6c8;border-color:#6a5a48;}
+                .de-danger-btn{
+                    font-family:'JetBrains Mono',monospace;
+                    font-size:9px;letter-spacing:0.18em;text-transform:uppercase;
+                    color:#e7b2a4;border:1px solid #6a3a32;
+                    padding:6px 14px;border-radius:2px;background:transparent;
+                    cursor:pointer;
+                }
+                .de-danger-btn:hover{color:#1a0d0b;background:#e7b2a4;border-color:#e7b2a4;}
+                .de-danger-btn:disabled{opacity:0.4;cursor:not-allowed;}
+                .de-details{
+                    flex-shrink:0;display:grid;gap:10px;
+                    grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);
+                    padding:12px 24px;background:#14110e;border-bottom:1px solid #1e1c18;
+                }
+                .de-details label{
+                    display:flex;flex-direction:column;gap:6px;
+                    font-family:'JetBrains Mono',monospace;font-size:9px;
+                    letter-spacing:0.18em;text-transform:uppercase;color:#a79f93;
+                }
+                .de-details input,.de-details textarea{
+                    font-family:'Lora',Georgia,serif;font-size:14px;letter-spacing:0;
+                    text-transform:none;color:#ede5d8;background:#0d0b09;
+                    border:1px solid #2a2520;border-radius:3px;padding:8px 10px;resize:vertical;
+                }
+                .de-details-actions{grid-column:1 / -1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;color:#a79f93;font-size:12px;}
+                @media (max-width:720px){.de-details{grid-template-columns:1fr;}}
 
                 /* Back link */
                 .de-back{
@@ -448,7 +622,15 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 {/* HEADER */}
                 <header className="de-header">
                     <div style={{ display: "flex", alignItems: "center", gap: 18, minWidth: 0 }}>
-                        <Link href="/diary" className="de-back">← back</Link>
+                        <Link
+                            href="/diary"
+                            className="de-back"
+                            onClick={(event) => {
+                                if (!discardIfDirty()) event.preventDefault();
+                            }}
+                        >
+                            ← back
+                        </Link>
                         <div style={{ width: 1, height: 14, background: "#252018", flexShrink: 0 }} />
                         <div style={{ minWidth: 0 }}>
                             <h1 style={{ fontFamily: "'Lora',Georgia,serif", fontSize: 15, fontWeight: 500, color: "#ede5d8", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "0.01em" }}>
@@ -465,28 +647,82 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         <span className="de-mono" style={{ fontSize: 10, color: "#8f8679", letterSpacing: "0.15em" }}>
                             {entries.length} {entries.length === 1 ? "entry" : "entries"}
                         </span>
-                        <button onClick={handleNewEntry} className="de-ghost-btn">+ new entry</button>
+                        <button type="button" onClick={() => setDetailsOpen((open) => !open)} className="de-ghost-btn">
+                            {detailsOpen ? "close details" : "details"}
+                        </button>
+                        <button type="button" onClick={handleNewEntry} className="de-ghost-btn">+ new entry</button>
                     </div>
                 </header>
 
-                {/* TOOLBAR — only when not viewing old */}
-                {!isViewingOld && (
+                {detailsOpen && (
+                    <form
+                        className="de-details"
+                        onSubmit={(event) => {
+                            event.preventDefault();
+                            void handleSaveDiary();
+                        }}
+                    >
+                        <label>
+                            Title
+                            <input
+                                value={diaryDraft.title}
+                                maxLength={TITLE_MAX}
+                                onChange={(event) => setDiaryDraft((draft) => ({ ...draft, title: event.target.value }))}
+                            />
+                        </label>
+                        <label>
+                            Description
+                            <textarea
+                                value={diaryDraft.description}
+                                maxLength={DESCRIPTION_MAX}
+                                rows={2}
+                                onChange={(event) => setDiaryDraft((draft) => ({ ...draft, description: event.target.value }))}
+                            />
+                        </label>
+                        <div className="de-details-actions">
+                            <button type="submit" className="de-save-btn" disabled={isSavingDiary}>
+                                {isSavingDiary ? "saving" : "save details"}
+                            </button>
+                            {confirmDelete === "diary" ? (
+                                <>
+                                    <span>Delete this diary and every entry?</span>
+                                    <button type="button" className="de-danger-btn" onClick={() => void handleDeleteDiary()} disabled={isSavingDiary}>
+                                        delete diary
+                                    </button>
+                                    <button type="button" className="de-ghost-btn" onClick={() => setConfirmDelete(null)}>cancel</button>
+                                </>
+                            ) : (
+                                <button type="button" className="de-danger-btn" onClick={() => setConfirmDelete("diary")}>
+                                    delete diary
+                                </button>
+                            )}
+                        </div>
+                    </form>
+                )}
+
+                {/* TOOLBAR — hidden while reading a saved entry */}
+                {mode !== "view" && (
                     <div className="de-toolbar">
-                        {toolbarGroups.map((group, gi) => (
+                        {TOOLBAR.map((group, gi) => (
                             <div key={gi} style={{ display: "flex", alignItems: "center", gap: 1 }}>
                                 {gi > 0 && <div className="de-toolbar-sep" />}
-                                {group.map((btn, bi) => (
+                                {group.map((btn) => {
+                                    const active = btn.format ? activeFormats.has(btn.format) : false;
+                                    return (
                                     <button
-                                        key={bi}
+                                        key={btn.title}
                                         type="button"
                                         title={btn.title}
-                                        onClick={btn.action}
-                                        className={`de-tbtn${btn.active ? " on" : ""}`}
-                                        onMouseDown={e => e.preventDefault()} // prevent focus loss
+                                        onClick={() => runTool(btn)}
+                                        aria-label={btn.title}
+                                        {...(btn.format ? { "aria-pressed": active } : {})}
+                                        className={`de-tbtn${active ? " on" : ""}`}
+                                        onMouseDown={e => e.preventDefault()}
                                     >
                                         {btn.icon}
                                     </button>
-                                ))}
+                                    );
+                                })}
                             </div>
                         ))}
                     </div>
@@ -509,7 +745,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         ) : (
                             entries.map((entry, i) => {
                                 const active = selectedEntryId === entry._id;
-                                const preview = entry.content.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 90);
+                                const preview = entryPreview(entry);
                                 return (
                                     <button
                                         key={entry._id}
@@ -522,7 +758,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                             <span style={{ fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: active ? "#d5c3a6" : "#9b9286" }}>
                                                 {fmtShort(entry.createdAt)}
                                             </span>
-                                            <span style={{ fontSize: 9, color: "#7d746a", flexShrink: 0 }}>{fmtTime(entry.createdAt)}</span>
+                                            <span style={{ fontSize: 9, color: "#7d746a", flexShrink: 0 }}>
+                                                {wasEdited(entry) ? "edited" : fmtTime(entry.createdAt)}
+                                            </span>
                                         </div>
                                         <p style={{ fontFamily: "'Lora',Georgia,serif", fontStyle: "italic", fontSize: 12, lineHeight: 1.65, color: active ? "#e0d6c8" : "#bfb6aa", margin: 0, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>
                                             {preview || "—"}
@@ -535,9 +773,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
                     {/* RIGHT */}
                     <section className="de-right">
-                        {isViewingOld && (
+                        {mode !== "compose" && selectedEntry && (
                             <div className="de-viewing-badge de-fade">
-                                viewing · {fmtShort(entries.find(e => e._id === selectedEntryId)?.createdAt || "")}
+                                {mode === "edit" ? "editing" : "viewing"} · {fmtShort(selectedEntry.createdAt)}
                             </div>
                         )}
 
@@ -545,7 +783,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             <div
                                 id="de-editor"
                                 ref={editorRef}
-                                contentEditable={!isViewingOld}
+                                contentEditable={mode !== "view"}
+                                aria-label="Diary entry"
                                 suppressContentEditableWarning
                                 onInput={onInput}
                                 onFocus={updateActiveFormats}
@@ -564,29 +803,41 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 <span>{wc} words</span>
                                 <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
                                 <span>{htmlContent.replace(/<[^>]*>/g, "").length} chars</span>
-                                {!isViewingOld && (
+                                {mode !== "view" && (
                                     <>
                                         <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
                                         <span style={{ color: "#8f8679" }}>ctrl+s to save</span>
                                     </>
                                 )}
-                                {isViewingOld && (
+                                {mode === "view" && (
                                     <><span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
                                         <span style={{ color: "#9b8b78", fontStyle: "italic" }}>read only</span>
                                     </>
                                 )}
                             </div>
 
-                            {!isViewingOld ? (
-                                <button onClick={handleSave} disabled={!canSave || isSaving} className="de-save-btn">
+                            {mode === "view" ? (
+                                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                                    {confirmDelete === "entry" ? (
+                                        <>
+                                            <span className="de-mono" style={{ fontSize: 10, color: "#c4a882" }}>Delete this entry?</span>
+                                            <button type="button" className="de-danger-btn" onClick={() => void handleDeleteEntry()} disabled={isSaving}>delete</button>
+                                            <button type="button" className="de-ghost-btn" onClick={() => setConfirmDelete(null)}>cancel</button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <button type="button" className="de-ghost-btn" onClick={() => { setMode("edit"); setConfirmDelete(null); setBaseline(htmlContent); }}>edit</button>
+                                            <button type="button" className="de-danger-btn" onClick={() => setConfirmDelete("entry")}>delete</button>
+                                            <button type="button" className="de-ghost-btn" onClick={() => { if (discardIfDirty()) resetComposer(); }}>✕ close</button>
+                                        </>
+                                    )}
+                                </div>
+                            ) : (
+                                <button type="button" onClick={handleSave} disabled={!canSave || isSaving} className="de-save-btn">
                                     {isSaving
                                         ? <><span style={{ width: 10, height: 10, borderRadius: "50%", border: "1px solid #c4a882", borderTopColor: "transparent", animation: "spin 1s linear infinite", display: "inline-block" }} />saving</>
-                                        : "save entry"
+                                        : mode === "edit" ? "update entry" : "save entry"
                                     }
-                                </button>
-                            ) : (
-                                <button onClick={() => { setSelectedEntryId(null); setIsViewingOld(false); setHtmlContent(""); if (editorRef.current) editorRef.current.innerHTML = ""; }} className="de-ghost-btn">
-                                    ✕ close
                                 </button>
                             )}
                         </div>

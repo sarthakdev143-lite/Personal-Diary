@@ -2,27 +2,16 @@ import { useGSAP } from "@gsap/react";
 import { RiCloseCircleFill } from "@remixicon/react";
 import gsap from "gsap";
 import { Button } from "./ui/button";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import DiaryPreview from "./DiaryPreview";
 
 import { useDiary } from "@/context/DiaryContext";
 import { useToast } from "@/hooks/use-toast";
+import { DESCRIPTION_MAX, DIARY_THEMES, TITLE_MAX } from "@/lib/diary/constants";
+import { normalizeTitle } from "@/lib/diary/validation";
 
-const themes = [
-    {
-        name: "Leather 1",
-        textureUrl: "/textures/leather-texture.jpg"
-    },
-    {
-        name: "Leather 2",
-        textureUrl: "/textures/leather-bound.webp"
-    },
-    {
-        name: "Wooden Garage Door",
-        textureUrl: "/textures/wooden_garage_door.webp"
-    },
-];
+const themes = DIARY_THEMES;
 
 const NewDiaryForm = ({
     formActive,
@@ -42,7 +31,6 @@ const NewDiaryForm = ({
     const [formData, setFormData] = useState({
         title: "",
         description: "",
-        theme: selectedTexture || themes[0].textureUrl,
     });
     const [errors, setErrors] = useState<{ title?: string }>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,29 +70,18 @@ const NewDiaryForm = ({
     }, [isFullScreen]);
 
     const validate = () => {
+        const title = normalizeTitle(formData.title);
         const newErrors: { title?: string } = {};
-
-        if (!formData.title.trim()) {
-            newErrors.title = "Title is required.";
-        } else if (formData.title.trim().length < 3) {
-            newErrors.title = "Title must be at least 3 characters.";
-        }
+        if (!title.ok) newErrors.title = title.error;
 
         setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        return title.ok;
     };
-
-    useEffect(() => {
-        if (formData.title.trim().length >= 3) setErrors({}); // Clear errors when typing valid input
-    }, [formData.title]);
-
-    useEffect(() => {
-        setFormData((prev) => ({ ...prev, theme: selectedTexture || themes[0].textureUrl }));
-    }, [selectedTexture]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
+        if (name === "title" && value.trim().length >= 3) setErrors({});
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -149,7 +126,7 @@ const NewDiaryForm = ({
                 throw new Error(data?.error || "Failed to create diary.");
             }
 
-            setFormData({ title: "", description: "", theme: selectedTexture || themes[0].textureUrl });
+            setFormData({ title: "", description: "" });
             setIsFullScreen(false);
             setFormActive(false);
             onDiaryCreated?.();
@@ -173,34 +150,43 @@ const NewDiaryForm = ({
                 p-3 rounded-3xl shadow-xl"
                 style={{ bottom: 0, transform: "translate(-50%, 100%)", opacity: 0 }}
             >
-                <RiCloseCircleFill
-                    size={23}
+                <button
+                    type="button"
+                    aria-label="Close new diary"
                     onClick={() => setFormActive(false)}
-                    className="absolute top-6 right-6 text-2xl cursor-pointer"
-                />
+                    className="absolute top-6 right-6 text-2xl"
+                >
+                    <RiCloseCircleFill size={23} />
+                </button>
                 <div id="content" className="w-full max-h-[80vh] overflow-y-auto p-4">
                     <h2 className="text-2xl font-bold mb-6">New Diary</h2>
                     <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
                         <div>
-                            <label className="block text-lg mb-2">Title</label>
+                            <label htmlFor="diary-title" className="block text-lg mb-2">Title</label>
                             <input
+                                id="diary-title"
                                 type="text"
                                 name="title"
                                 value={formData.title}
                                 onChange={handleChange}
+                                maxLength={TITLE_MAX}
+                                aria-invalid={Boolean(errors.title)}
+                                aria-describedby={errors.title ? "diary-title-error" : undefined}
                                 className="w-full p-2 px-3 rounded-lg bg-zinc-200/20 
                                 focus:outline-none focus:ring-1 focus:ring-white/70 
                                 placeholder:text-zinc-300 tracking-wide"
                                 placeholder="Enter your diary's name..."
                             />
-                            {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
+                            {errors.title && <p id="diary-title-error" className="text-red-500 text-sm mt-1">{errors.title}</p>}
                         </div>
                         <div>
-                            <label className="block text-lg mb-2">Description</label>
+                            <label htmlFor="diary-description" className="block text-lg mb-2">Description</label>
                             <textarea
+                                id="diary-description"
                                 name="description"
                                 value={formData.description}
                                 onChange={handleChange}
+                                maxLength={DESCRIPTION_MAX}
                                 className="w-full max-h-40 min-h-16 p-2 px-3 rounded-lg bg-zinc-200/20 
                                 focus:outline-none focus:ring-1 focus:ring-white/70 
                                 placeholder:text-zinc-300 tracking-wide"
@@ -225,11 +211,14 @@ const NewDiaryForm = ({
                 className="fixed w-full h-full top-0 left-0 bg-black/50 items-center justify-center 
                 lg:justify-between gap-4 lg:p-6 z-[60] hidden"
             >
-                <RiCloseCircleFill
-                    size={23}
+                <button
+                    type="button"
+                    aria-label="Close theme selection"
                     onClick={handleCloseThemeSelection}
-                    className="absolute top-6 right-6 text-2xl cursor-pointer z-[70]"
-                />
+                    className="absolute top-6 right-6 z-[70] text-2xl"
+                >
+                    <RiCloseCircleFill size={23} />
+                </button>
                 
                 {/* 3D Preview Area */}
                 <div className="relative h-3/4 w-full overflow-hidden rounded-lg bg-white/30 shadow-lg backdrop-blur-sm lg:h-full lg:w-2/3">
@@ -260,6 +249,8 @@ const NewDiaryForm = ({
                                 type="button"
                                 onClick={() => handleThemeSelect(elem.textureUrl)} 
                                 key={index} 
+                                aria-label={elem.name}
+                                aria-pressed={selectedTexture === elem.textureUrl}
                                 className={`w-20 aspect-square bg-gray-400/30 rounded-lg overflow-hidden border-2 border-gray-600 transition-all duration-200 hover:scale-105 hover:border-gray-400 ${
                                     selectedTexture === elem.textureUrl 
                                         ? 'ring-2 ring-white' 

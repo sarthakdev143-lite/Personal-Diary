@@ -16,6 +16,18 @@ const DiaryDashboardClient = () => {
     const [newDiaryFormActive, setNewDiaryFormActive] = useState(false);
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [refetchTrigger, setRefetchTrigger] = useState(0);
+    const [query, setQuery] = useState("");
+    const [debouncedQuery, setDebouncedQuery] = useState("");
+    const queryRef = useRef(query);
+
+    useEffect(() => {
+        queryRef.current = query;
+    }, [query]);
+
+    useEffect(() => {
+        const timeout = window.setTimeout(() => setDebouncedQuery(query), 250);
+        return () => window.clearTimeout(timeout);
+    }, [query]);
 
     useEffect(() => {
         searchInputRef.current?.focus();
@@ -32,6 +44,11 @@ const DiaryDashboardClient = () => {
 
             if (isFullScreen) {
                 setIsFullScreen(false);
+                return;
+            }
+
+            if (document.activeElement === searchInputRef.current && queryRef.current) {
+                setQuery("");
                 return;
             }
 
@@ -57,9 +74,14 @@ const DiaryDashboardClient = () => {
                 <div className="sticky top-[16%] mx-auto mb-6 flex w-full items-center justify-between gap-3 xs:w-[80%] md:w-[55%]">
                     <Input
                         ref={searchInputRef}
-                        type="text"
-                        placeholder="Search diary and notes..."
-                        className="rounded-xl border border-white/15 bg-white/10 p-6 py-[1.65rem] text-lg text-white outline-none placeholder:text-zinc-400 focus:border-white/50"
+                        id="diary-search"
+                        type="search"
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder="Search diaries and notes..."
+                        aria-label="Search diaries and notes"
+                        maxLength={80}
+                        className="rounded-xl border border-white/15 bg-white/10 p-6 py-[1.65rem] text-lg text-white outline-none placeholder:text-zinc-400 focus:border-white/50 md:pr-24"
                     />
                     <div id="keyboard-key" className="absolute right-6 flex gap-1 max-md:hidden">
                         <span className="rounded-md bg-zinc-700/70 px-[0.4rem] font-mono text-base text-zinc-400/90">ctrl</span>
@@ -67,7 +89,7 @@ const DiaryDashboardClient = () => {
                     </div>
                 </div>
                 <div id="diaries" className="mx-auto flex h-auto w-full max-w-[85%] flex-wrap gap-5 max-sm:justify-center">
-                    <Diaries refetchTrigger={refetchTrigger} />
+                    <Diaries query={debouncedQuery} refetchTrigger={refetchTrigger} />
                     <Button
                         onClick={() => setNewDiaryFormActive(true)}
                         id="add-new-diary"

@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 
+import { prepareEntryContent } from "@/lib/diary/content";
+import { asRecord, readJsonBody } from "@/lib/diary/json";
+import { parseEntryDate } from "@/lib/diary/validation";
+
 import {
     DiaryDocument,
     EntryDocument,
@@ -8,15 +12,11 @@ import {
     getSessionUserId,
     serializeEntry,
     toObjectId,
+    touchDiary,
 } from "../../_shared";
 
 type RouteContext = {
     params: Promise<{ id: string }>;
-};
-
-type CreateEntryPayload = {
-    content?: unknown;
-    createdAt?: unknown;
 };
 
 export async function GET(_: Request, context: RouteContext) {
@@ -67,24 +67,28 @@ export async function POST(request: Request, context: RouteContext) {
             return NextResponse.json({ error: "Invalid diary id" }, { status: 400 });
         }
 
-        const payload = (await request.json()) as CreateEntryPayload;
-        const content = typeof payload.content === "string" ? payload.content.trim() : "";
+        const body = await readJsonBody(request);
+        if (!body.ok) {
+            return NextResponse.json({ error: body.error }, { status: 400 });
+        }
 
-        if (!content.length) {
-            return NextResponse.json({ error: "Content is required." }, { status: 400 });
+        const payload = asRecord(body.value);
+        if (!payload) {
+            return NextResponse.json({ error: "Request body must be a JSON object." }, { status: 400 });
+        }
+
+        const prepared = prepareEntryContent(payload.content);
+        if (!prepared.ok) {
+            return NextResponse.json({ error: prepared.error }, { status: 400 });
         }
 
         let createdAt = new Date();
         if (payload.createdAt !== undefined) {
-            if (typeof payload.createdAt !== "string") {
-                return NextResponse.json({ error: "createdAt must be an ISO date string." }, { status: 400 });
+            const parsedCreatedAt = parseEntryDate(payload.createdAt);
+            if (!parsedCreatedAt.ok) {
+                return NextResponse.json({ error: parsedCreatedAt.error }, { status: 400 });
             }
-
-            const parsedCreatedAt = new Date(payload.createdAt);
-            if (Number.isNaN(parsedCreatedAt.getTime())) {
-                return NextResponse.json({ error: "Invalid createdAt date." }, { status: 400 });
-            }
-            createdAt = parsedCreatedAt;
+            createdAt = parsedCreatedAt.value;
         }
 
         const db = await getDatabase();
@@ -97,15 +101,18 @@ export async function POST(request: Request, context: RouteContext) {
             return NextResponse.json({ error: "Diary not found" }, { status: 404 });
         }
 
+        const updatedAt = new Date();
         const entry: EntryDocument = {
             diaryId,
             userId,
-            content,
+            content: prepared.content,
+            plainText: prepared.plainText,
             createdAt,
-            updatedAt: new Date(),
+            updatedAt,
         };
 
         const result = await entriesCollection.insertOne(entry);
+        await touchDiary(db, diaryId, userId, updatedAt);
 
         return NextResponse.json(
             serializeEntry({

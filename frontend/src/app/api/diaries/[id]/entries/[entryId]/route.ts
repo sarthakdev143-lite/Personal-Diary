@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 
+import { prepareEntryContent } from "@/lib/diary/content";
+import { asRecord, readJsonBody } from "@/lib/diary/json";
+import { parseEntryDate } from "@/lib/diary/validation";
+
 import {
     EntryDocument,
     EntryWithId,
@@ -7,15 +11,11 @@ import {
     getSessionUserId,
     serializeEntry,
     toObjectId,
+    touchDiary,
 } from "../../../_shared";
 
 type RouteContext = {
     params: Promise<{ id: string; entryId: string }>;
-};
-
-type UpdateEntryPayload = {
-    content?: unknown;
-    createdAt?: unknown;
 };
 
 export async function PUT(request: Request, context: RouteContext) {
@@ -34,26 +34,33 @@ export async function PUT(request: Request, context: RouteContext) {
             return NextResponse.json({ error: "Invalid diary or entry id" }, { status: 400 });
         }
 
-        const payload = (await request.json()) as UpdateEntryPayload;
+        const body = await readJsonBody(request);
+        if (!body.ok) {
+            return NextResponse.json({ error: body.error }, { status: 400 });
+        }
+
+        const payload = asRecord(body.value);
+        if (!payload) {
+            return NextResponse.json({ error: "Request body must be a JSON object." }, { status: 400 });
+        }
+
         const updates: Partial<EntryDocument> = {};
 
         if (payload.content !== undefined) {
-            if (typeof payload.content !== "string" || !payload.content.trim().length) {
-                return NextResponse.json({ error: "Content must be a non-empty string." }, { status: 400 });
+            const prepared = prepareEntryContent(payload.content);
+            if (!prepared.ok) {
+                return NextResponse.json({ error: prepared.error }, { status: 400 });
             }
-            updates.content = payload.content.trim();
+            updates.content = prepared.content;
+            updates.plainText = prepared.plainText;
         }
 
         if (payload.createdAt !== undefined) {
-            if (typeof payload.createdAt !== "string") {
-                return NextResponse.json({ error: "createdAt must be an ISO date string." }, { status: 400 });
+            const parsedCreatedAt = parseEntryDate(payload.createdAt);
+            if (!parsedCreatedAt.ok) {
+                return NextResponse.json({ error: parsedCreatedAt.error }, { status: 400 });
             }
-
-            const parsedCreatedAt = new Date(payload.createdAt);
-            if (Number.isNaN(parsedCreatedAt.getTime())) {
-                return NextResponse.json({ error: "Invalid createdAt date." }, { status: 400 });
-            }
-            updates.createdAt = parsedCreatedAt;
+            updates.createdAt = parsedCreatedAt.value;
         }
 
         if (!Object.keys(updates).length) {
@@ -73,6 +80,8 @@ export async function PUT(request: Request, context: RouteContext) {
         if (!result.matchedCount) {
             return NextResponse.json({ error: "Entry not found" }, { status: 404 });
         }
+
+        await touchDiary(db, diaryId, userId, updates.updatedAt);
 
         const updatedEntry = await entriesCollection.findOne({ _id: parsedEntryId, diaryId, userId });
 
@@ -111,6 +120,8 @@ export async function DELETE(_: Request, context: RouteContext) {
         if (!result.deletedCount) {
             return NextResponse.json({ error: "Entry not found" }, { status: 404 });
         }
+
+        await touchDiary(db, diaryId, userId);
 
         return NextResponse.json({ success: true });
     } catch (error) {

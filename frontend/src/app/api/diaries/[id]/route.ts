@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+import { asRecord, readJsonBody } from "@/lib/diary/json";
+import { normalizeDescription, normalizeThemeUpdate, normalizeTitle } from "@/lib/diary/validation";
+
 import {
     DiaryDocument,
     DiaryWithId,
@@ -14,12 +17,6 @@ import {
 
 type RouteContext = {
     params: Promise<{ id: string }>;
-};
-
-type UpdateDiaryPayload = {
-    title?: unknown;
-    description?: unknown;
-    theme?: unknown;
 };
 
 export async function GET(_: Request, context: RouteContext) {
@@ -74,28 +71,40 @@ export async function PUT(request: Request, context: RouteContext) {
             return NextResponse.json({ error: "Invalid diary id" }, { status: 400 });
         }
 
-        const payload = (await request.json()) as UpdateDiaryPayload;
+        const body = await readJsonBody(request);
+        if (!body.ok) {
+            return NextResponse.json({ error: body.error }, { status: 400 });
+        }
+
+        const payload = asRecord(body.value);
+        if (!payload) {
+            return NextResponse.json({ error: "Request body must be a JSON object." }, { status: 400 });
+        }
+
         const updates: Partial<DiaryDocument> = {};
 
         if (payload.title !== undefined) {
-            if (typeof payload.title !== "string" || payload.title.trim().length < 3) {
-                return NextResponse.json({ error: "Title must be at least 3 characters." }, { status: 400 });
+            const title = normalizeTitle(payload.title);
+            if (!title.ok) {
+                return NextResponse.json({ error: title.error }, { status: 400 });
             }
-            updates.title = payload.title.trim();
+            updates.title = title.value;
         }
 
         if (payload.description !== undefined) {
-            if (typeof payload.description !== "string") {
-                return NextResponse.json({ error: "Description must be a string." }, { status: 400 });
+            const description = normalizeDescription(payload.description);
+            if (!description.ok) {
+                return NextResponse.json({ error: description.error }, { status: 400 });
             }
-            updates.description = payload.description.trim();
+            updates.description = description.value;
         }
 
         if (payload.theme !== undefined) {
-            if (typeof payload.theme !== "string" || payload.theme.trim().length === 0) {
-                return NextResponse.json({ error: "Theme must be a non-empty string." }, { status: 400 });
+            const theme = normalizeThemeUpdate(payload.theme);
+            if (!theme.ok) {
+                return NextResponse.json({ error: theme.error }, { status: 400 });
             }
-            updates.theme = payload.theme.trim();
+            updates.theme = theme.value;
         }
 
         if (!Object.keys(updates).length) {
@@ -148,13 +157,14 @@ export async function DELETE(_: Request, context: RouteContext) {
         const diariesCollection = db.collection<DiaryDocument>("diaries");
         const entriesCollection = db.collection<EntryDocument>("entries");
 
-        const deleteDiaryResult = await diariesCollection.deleteOne({ _id: diaryId, userId });
+        const diary = await diariesCollection.findOne({ _id: diaryId, userId });
 
-        if (!deleteDiaryResult.deletedCount) {
+        if (!diary) {
             return NextResponse.json({ error: "Diary not found" }, { status: 404 });
         }
 
         await entriesCollection.deleteMany({ diaryId, userId });
+        await diariesCollection.deleteOne({ _id: diaryId, userId });
 
         return NextResponse.json({ success: true });
     } catch (error) {

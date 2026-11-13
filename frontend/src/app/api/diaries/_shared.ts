@@ -3,6 +3,8 @@ import type { Session } from "next-auth";
 import { Db, ObjectId } from "mongodb";
 
 import { authOptions } from "@/lib/auth";
+import { isObjectId } from "@/lib/diary/ids";
+import { entryPlainText } from "@/lib/diary/text";
 import clientPromise from "@/lib/mongodb";
 
 export type DiaryDocument = {
@@ -20,6 +22,7 @@ export type EntryDocument = {
     diaryId: ObjectId;
     userId: string;
     content: string;
+    plainText?: string;
     createdAt: Date;
     updatedAt: Date;
 };
@@ -37,13 +40,38 @@ export async function getSessionUserId(): Promise<string | null> {
     return userId ?? null;
 }
 
+let indexPromise: Promise<void> | null = null;
+
 export async function getDatabase(): Promise<Db> {
     const client = await clientPromise;
-    return client.db();
+    const db = client.db();
+    await ensureIndexes(db);
+    return db;
+}
+
+function ensureIndexes(db: Db): Promise<void> {
+    if (!indexPromise) {
+        indexPromise = Promise.all([
+            db.collection("diaries").createIndex({ userId: 1, updatedAt: -1 }),
+            db.collection("entries").createIndex({ diaryId: 1, userId: 1, createdAt: -1 }),
+        ]).then(() => undefined).catch((error: unknown) => {
+            indexPromise = null;
+            throw error;
+        });
+    }
+
+    return indexPromise;
+}
+
+export async function touchDiary(db: Db, diaryId: ObjectId, userId: string, updatedAt = new Date()) {
+    await db.collection<DiaryDocument>("diaries").updateOne(
+        { _id: diaryId, userId },
+        { $set: { updatedAt } }
+    );
 }
 
 export function toObjectId(value: string): ObjectId | null {
-    if (!ObjectId.isValid(value)) {
+    if (!isObjectId(value)) {
         return null;
     }
 
@@ -68,6 +96,7 @@ export function serializeEntry(entry: EntryWithId) {
         diaryId: entry.diaryId.toString(),
         userId: entry.userId,
         content: entry.content,
+        plainText: entry.plainText ?? entryPlainText(entry.content),
         createdAt: entry.createdAt,
         updatedAt: entry.updatedAt,
     };
