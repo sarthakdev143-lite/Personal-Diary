@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, escapeRegExp, normalizeSearchQuery } from "./search";
-import { entryPlainText, wordCount } from "./text";
+import { entryPlainText, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
     normalizeTheme,
@@ -128,6 +128,25 @@ describe("entry html", () => {
         const result = prepareEntryContent(huge);
         assert.equal(result.ok, true);
         if (result.ok) assert.doesNotMatch(result.content, /data:image/);
+    });
+
+    it("keeps a stored plain text and fills one in when it is missing", () => {
+        assert.deepEqual(storedPlainText({ content: "<p>old</p>", plainText: "kept" }), {
+            plainText: "kept",
+            needsWrite: false,
+        });
+        assert.deepEqual(storedPlainText({ content: "<p>old</p>", plainText: "" }), {
+            plainText: "",
+            needsWrite: false,
+        });
+        assert.deepEqual(storedPlainText({ content: "<p>Hello <strong>there</strong></p>" }), {
+            plainText: "Hello there",
+            needsWrite: true,
+        });
+        assert.deepEqual(storedPlainText({ content: '<img src="https://example.com/a.png" alt="">' }), {
+            plainText: "Image",
+            needsWrite: true,
+        });
     });
 
     it("counts words from visible text", () => {

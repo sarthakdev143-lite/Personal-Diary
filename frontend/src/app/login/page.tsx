@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { signIn } from "next-auth/react"
-import { Loader2, LogIn, Mail } from "lucide-react"
+import { Loader2, LogIn } from "lucide-react"
 import { motion } from "framer-motion"
 
 import Google from './Google.png'
@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { Toaster } from "@/components/ui/toaster"
-import { ToastAction } from "@/components/ui/toast"
 import Image from "next/image"
 
 export default function LoginPage() {
@@ -95,32 +94,6 @@ export default function LoginPage() {
                                     <Image src={Github} alt="Github" width={20} height={20} className="bg-white rounded-full p-[0.2rem]" />
                                 )}
                                 Continue with GitHub
-                            </Button>
-                        </motion.div>
-
-                        <div className="relative">
-                            <div className="absolute inset-0 flex items-center">
-                                <span className="w-full border-t border-border/20" />
-                            </div>
-                            <div className="relative flex justify-center text-xs uppercase">
-                                <span className="px-2 text-muted-foreground/70">Or continue with</span>
-                            </div>
-                        </div>
-
-                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                            <Button
-                                variant="default"
-                                className="relative w-full bg-indigo-600 hover:bg-indigo-700 text-white"
-                                onClick={() => {
-                                    toast({
-                                        title: "Coming soon",
-                                        description: "Email login will be available soon.",
-                                        action: <ToastAction altText="Acknowledgment button">Got it</ToastAction>,
-                                    })
-                                }}
-                            >
-                                <Mail className="mr-2 h-4 w-4" />
-                                Continue with Email
                             </Button>
                         </motion.div>
                     </CardContent>

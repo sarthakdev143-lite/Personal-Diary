@@ -8,6 +8,7 @@ import {
     DiaryWithId,
     EntryDocument,
     EntryWithId,
+    backfillPlainText,
     getDatabase,
     getSessionUserId,
     serializeDiary,
@@ -44,6 +45,9 @@ export async function GET(_: Request, context: RouteContext) {
             return NextResponse.json({ error: "Diary not found" }, { status: 404 });
         }
 
+        await backfillPlainText(db, userId, diaryId).catch((backfillError: unknown) => {
+            console.error("Failed to backfill entry text", backfillError);
+        });
         const entries = await entriesCollection.find({ diaryId, userId }).sort({ createdAt: -1 }).toArray();
 
         return NextResponse.json({

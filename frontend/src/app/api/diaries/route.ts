@@ -4,7 +4,7 @@ import { asRecord, readJsonBody } from "@/lib/diary/json";
 import { buildEntrySearchFilter, diaryFieldsMatch, normalizeSearchQuery } from "@/lib/diary/search";
 import { normalizeDescription, normalizeTheme, normalizeTitle } from "@/lib/diary/validation";
 
-import { DiaryDocument, DiaryWithId, EntryDocument, getDatabase, getSessionUserId, serializeDiary } from "./_shared";
+import { backfillPlainText, DiaryDocument, DiaryWithId, EntryDocument, getDatabase, getSessionUserId, serializeDiary } from "./_shared";
 
 export async function GET(request: Request) {
     try {
@@ -16,6 +16,9 @@ export async function GET(request: Request) {
 
         const query = normalizeSearchQuery(new URL(request.url).searchParams.get("q") ?? "");
         const db = await getDatabase();
+        await backfillPlainText(db, userId).catch((backfillError: unknown) => {
+            console.error("Failed to backfill entry text", backfillError);
+        });
         const diaries = await db
             .collection<DiaryDocument>("diaries")
             .find({ userId })

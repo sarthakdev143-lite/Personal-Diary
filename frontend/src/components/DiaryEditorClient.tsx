@@ -195,6 +195,18 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
     const isDirty = mode !== "view" && htmlContent !== baseline;
 
+    useEffect(() => {
+        if (!isDirty) return;
+
+        const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+            event.preventDefault();
+            event.returnValue = "";
+        };
+
+        window.addEventListener("beforeunload", warnBeforeLeaving);
+        return () => window.removeEventListener("beforeunload", warnBeforeLeaving);
+    }, [isDirty]);
+
     const discardIfDirty = () => {
         if (!isDirty) return true;
         return window.confirm("Discard unsaved changes?");

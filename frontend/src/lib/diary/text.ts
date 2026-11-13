@@ -20,6 +20,20 @@ export function hasEntryContent(html: string): boolean {
     return /<img\b[^>]*\bsrc\s*=\s*["'][^"']+/i.test(html);
 }
 
+export function storedPlainText(entry: { content: string; plainText?: string | null }): {
+    plainText: string;
+    needsWrite: boolean;
+} {
+    if (typeof entry.plainText === "string") {
+        return { plainText: entry.plainText, needsWrite: false };
+    }
+
+    const plainText = entryPlainText(entry.content);
+    if (plainText) return { plainText, needsWrite: true };
+    if (hasEntryContent(entry.content)) return { plainText: "Image", needsWrite: true };
+    return { plainText: "", needsWrite: true };
+}
+
 export function wordCount(html: string): number {
     const text = entryPlainText(html);
     return text ? text.split(/\s+/).filter(Boolean).length : 0;
