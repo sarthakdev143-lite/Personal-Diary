@@ -79,7 +79,7 @@ export function separateGluedDateHeading(html: string): string {
     return `${heading}<p>${escaped}</p>${rest}`;
 }
 
-export type LineJoin = "join" | "clear" | "pass";
+export type LineJoin = "join" | "clear" | "drop" | "pass";
 
 export function lineJoinKey(input: {
     key: string;
@@ -96,7 +96,10 @@ export function lineJoinKey(input: {
 }): LineJoin {
     if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey || !input.collapsed) return "pass";
     if (input.neighbor !== "text") return "pass";
-    if (input.key === "Backspace" && input.atStart) return input.neighborEmpty ? "clear" : "join";
+    if (input.key === "Backspace" && input.atStart) {
+        if (input.blockEmpty) return "drop";
+        return input.neighborEmpty ? "clear" : "join";
+    }
     if (input.key === "Delete" && input.atEnd) return input.blockEmpty ? "clear" : "join";
     return "pass";
 }

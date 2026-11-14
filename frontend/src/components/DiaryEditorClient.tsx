@@ -2494,17 +2494,17 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         });
         if (action === "pass" || !neighbor) return false;
         e.preventDefault();
+        const before = editor.innerHTML;
+        const path = childPath(editor, action === "join" && !backward ? neighbor : block);
         if (action === "clear") {
-            const before = editor.innerHTML;
-            const path = childPath(editor, block);
             removeJoined(backward ? neighbor : block);
             placeCaretAtStart(backward ? block : neighbor);
-            blankLine.current = { before, after: editor.innerHTML, path };
-            setHtmlContent(editor.innerHTML);
-            return true;
-        }
-        if (backward) joinBlock(neighbor, block);
+        } else if (action === "drop") {
+            removeJoined(block);
+            placeCaretAtEnd(neighbor);
+        } else if (backward) joinBlock(neighbor, block);
         else joinBlock(block, neighbor);
+        blankLine.current = { before, after: editor.innerHTML, path };
         setHtmlContent(editor.innerHTML);
         return true;
     };

@@ -229,6 +229,9 @@ describe("code block", () => {
         assert.equal(lineJoinKey({ ...join, shiftKey: true }), "pass");
         assert.equal(lineJoinKey({ ...join, ctrlKey: true }), "pass");
         assert.equal(lineJoinKey({ ...join, neighborEmpty: true }), "clear");
+        assert.equal(lineJoinKey({ ...join, blockEmpty: true }), "drop");
+        assert.equal(lineJoinKey({ ...join, blockEmpty: true, neighborEmpty: true }), "drop");
+        assert.equal(headingSplitUndo({ saved: { before: "<p>Harbor</p><p>rain</p>", after: "<p>Harbor rain</p>" }, current: "<p>Harbor rain</p>" }), "restore");
         assert.equal(lineJoinKey({ ...join, key: "Delete", atStart: true, atEnd: true, blockEmpty: true }), "clear");
         assert.equal(lineJoinKey({ ...join, key: "Delete", atStart: false, atEnd: true, neighborEmpty: true }), "join");
         assert.equal(joinNeedsSpace("Harbor", "rain"), true);
