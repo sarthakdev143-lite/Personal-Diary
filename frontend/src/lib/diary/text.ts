@@ -94,8 +94,10 @@ export function lineJoinKey(input: {
     blockEmpty?: boolean;
     neighborEmpty?: boolean;
 }): LineJoin {
-    if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey || !input.collapsed) return "pass";
+    if (input.shiftKey || input.altKey || !input.collapsed) return "pass";
     if (input.neighbor !== "text") return "pass";
+    const atEdge = (input.key === "Backspace" && input.atStart) || (input.key === "Delete" && input.atEnd);
+    if ((input.ctrlKey || input.metaKey) && !atEdge) return "pass";
     if (input.key === "Backspace" && input.atStart) {
         if (input.blockEmpty) return "drop";
         return input.neighborEmpty ? "clear" : "join";
