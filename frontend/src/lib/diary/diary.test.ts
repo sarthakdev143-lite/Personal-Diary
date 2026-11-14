@@ -450,6 +450,21 @@ describe("export", () => {
         );
     });
 
+    it("does not repeat the date already stored on the entry", () => {
+        const createdAt = "2026-03-03T15:00:00.000Z";
+        const label = formatEntryLong(createdAt);
+        const copied = entryShareMarkdown({
+            content: `<h2>${label}</h2><p>a <u>quiet</u> rain</p>`,
+            createdAt,
+        });
+        assert.equal(copied, `## ${label}\n\na <u>quiet</u> rain\n`);
+        assert.equal(copied.split(label).length - 1, 1);
+        assert.equal(
+            entryShareMarkdown({ content: "<h2>Dawn</h2><p>Hello</p>", createdAt }),
+            `## ${label}\n\n## Dawn\n\nHello\n`,
+        );
+    });
+
     it("writes the diary in chronological order", () => {
         const markdown = diaryToMarkdown(diary, [newer, older]);
         assert.match(markdown, /^# Morning Pages!\n\nQuiet notes\n\n/);

@@ -1,5 +1,5 @@
 import { sanitizeEntryHtml } from "./sanitize";
-import { formatEntryLong } from "./text";
+import { formatEntryLong, withoutGeneratedDateHeading } from "./text";
 
 export type ExportDiary = {
     title: string;
@@ -192,7 +192,7 @@ function sortedEntries(entries: ExportEntry[]): ExportEntry[] {
 }
 
 export function entryShareMarkdown(entry: { content: string; createdAt: string }): string {
-    const written = htmlToMarkdown(entry.content);
+    const written = htmlToMarkdown(withoutGeneratedDateHeading(entry.content));
     return `## ${formatEntryLong(entry.createdAt)}\n\n${written || "_Empty entry._"}\n`;
 }
 
