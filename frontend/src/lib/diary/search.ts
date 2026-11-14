@@ -35,6 +35,7 @@ export function entryMatchesListQuery(entry: {
 }
 
 type ListedEntry = {
+    id?: string;
     content: string;
     plainText?: string | null;
     createdAt: string;
@@ -64,19 +65,24 @@ export function diaryListMatch(
     diary: { title: string; description?: string | null },
     entries: readonly ListedEntry[],
     rawQuery: string,
-): { matched: boolean; snippet: string | null } {
+): { matched: boolean; snippet: string | null; entryId: string | null } {
     const query = normalizeSearchQuery(rawQuery);
-    if (!query) return { matched: true, snippet: null };
+    if (!query) return { matched: true, snippet: null, entryId: null };
     if (diaryFieldsMatch(diary.title, diary.description ?? "", query)) {
-        return { matched: true, snippet: null };
+        return { matched: true, snippet: null, entryId: null };
     }
 
     const hits = entries
         .filter((entry) => entryMatchesListQuery(entry, query))
         .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
     const newest = hits[0];
-    if (!newest) return { matched: false, snippet: null };
-    return { matched: true, snippet: matchingPiece(newest, query) };
+    if (!newest) return { matched: false, snippet: null, entryId: null };
+    return { matched: true, snippet: matchingPiece(newest, query), entryId: newest.id || null };
+}
+
+export function diaryMatchPath(diaryId: string, entryId: string | null | undefined): string {
+    if (!entryId) return `/diary/${diaryId}`;
+    return `/diary/${diaryId}?entry=${encodeURIComponent(entryId)}`;
 }
 
 export function buildEntrySearchFilter(userId: string, rawQuery: string): EntrySearchFilter | null {

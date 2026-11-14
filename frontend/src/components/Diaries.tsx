@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 
 import { coverForTheme } from "@/lib/diary/constants";
+import { diaryMatchPath } from "@/lib/diary/search";
 import { formatDiaryDate } from "@/lib/diary/text";
 
 type Diary = {
@@ -16,6 +17,7 @@ type Diary = {
     createdAt: string;
     updatedAt?: string;
     match?: string | null;
+    matchEntry?: string | null;
 };
 
 const SKELETON_COUNT = 3;
@@ -135,7 +137,7 @@ const Diaries = ({ query = "", refetchTrigger = 0 }: { query?: string; refetchTr
                 return (
                 <Link
                     key={diary._id}
-                    href={`/diary/${diary._id}`}
+                    href={diaryMatchPath(diary._id, query ? diary.matchEntry : null)}
                     className="flex min-h-36 w-full max-w-xs overflow-hidden rounded-xl border border-white/10 bg-zinc-600/10 text-white/80 shadow-lg"
                 >
                     {cover ? (

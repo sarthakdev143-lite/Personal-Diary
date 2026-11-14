@@ -278,6 +278,17 @@ export function entrySelectionAction(
     return "open";
 }
 
+export function entryToOpenFromLink<T extends { _id: string; createdAt: string }>(
+    entries: readonly T[],
+    requestedId: string | null,
+): T | null {
+    if (requestedId) {
+        const requested = entries.find((entry) => entry._id === requestedId);
+        if (requested) return requested;
+    }
+    return entryToShowOnOpen(entries);
+}
+
 export function entryToShowOnOpen<T extends { createdAt: string }>(entries: readonly T[]): T | null {
     let chosen: T | null = null;
     let chosenTime = Number.NEGATIVE_INFINITY;

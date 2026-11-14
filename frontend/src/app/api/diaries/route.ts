@@ -33,11 +33,12 @@ export async function GET(request: Request) {
             .find({ userId })
             .project({ diaryId: 1, content: 1, plainText: 1, createdAt: 1, updatedAt: 1 })
             .toArray();
-        const byDiary = new Map<string, Array<{ content: string; plainText?: string | null; createdAt: string; updatedAt: string }>>();
+        const byDiary = new Map<string, Array<{ id: string; content: string; plainText?: string | null; createdAt: string; updatedAt: string }>>();
         for (const note of notes) {
             const id = String(note.diaryId);
             const group = byDiary.get(id) ?? [];
             group.push({
+                id: note._id ? String(note._id) : "",
                 content: note.content,
                 plainText: note.plainText,
                 createdAt: note.createdAt.toISOString(),
@@ -53,7 +54,7 @@ export async function GET(request: Request) {
                 query,
             );
             if (!match.matched) return [];
-            return [{ ...serializeDiary(diary), match: match.snippet }];
+            return [{ ...serializeDiary(diary), match: match.snippet, matchEntry: match.entryId }];
         });
 
         return NextResponse.json(visible);

@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
-import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, entryMatchesListQuery, escapeRegExp, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
+import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryMatchesListQuery, escapeRegExp, normalizeSearchQuery } from "./search";
+import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenFromLink, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
     normalizeTheme,
@@ -311,6 +311,41 @@ describe("search", () => {
         assert.equal(miss.snippet, null);
     });
 
+    it("opens the note that made a diary match", () => {
+        const created = new Date(2026, 10, 14, 9, 30).toISOString();
+        const older = new Date(2026, 1, 2, 15, 0).toISOString();
+        const rain = {
+            id: "rain",
+            content: "<p>Quiet rain on the window.</p>",
+            plainText: "Quiet rain on the window.",
+            createdAt: created,
+            updatedAt: created,
+        };
+        const garden = {
+            id: "garden",
+            content: "<p>Garden notes from the path.</p>",
+            plainText: "Garden notes from the path.",
+            createdAt: older,
+            updatedAt: older,
+        };
+        const diary = { title: "Window notes", description: "Two mornings" };
+
+        const fromOlder = diaryListMatch(diary, [rain, garden], "garden");
+        assert.equal(fromOlder.matched, true);
+        assert.equal(fromOlder.entryId, "garden");
+        assert.equal(diaryMatchPath("diary1", fromOlder.entryId), "/diary/diary1?entry=garden");
+
+        const newest = diaryListMatch(diary, [garden, rain], "rain");
+        assert.equal(newest.entryId, "rain");
+
+        const title = diaryListMatch(diary, [rain, garden], "window");
+        assert.equal(title.entryId, null);
+        assert.equal(diaryMatchPath("diary1", title.entryId), "/diary/diary1");
+
+        const blank = diaryListMatch(diary, [garden], " ");
+        assert.equal(blank.entryId, null);
+    });
+
     it("still matches a date search after the writing is saved", () => {
         const created = new Date(2026, 10, 14, 9, 30).toISOString();
         const entry = {
@@ -460,6 +495,16 @@ describe("entry date", () => {
         assert.equal(entryToShowOnOpen([older, newer])?.id, "newer");
         assert.equal(entryToShowOnOpen([newer, older])?.id, "newer");
         assert.equal(entryToShowOnOpen([older, { ...older, id: "same" }])?.id, "older");
+    });
+
+    it("opens a linked entry, or the newest when that link is missing", () => {
+        const older = { _id: "garden", createdAt: new Date(2026, 1, 2, 15).toISOString() };
+        const newer = { _id: "rain", createdAt: new Date(2026, 10, 14, 9, 30).toISOString() };
+        assert.equal(entryToOpenFromLink([newer, older], "garden")?._id, "garden");
+        assert.equal(entryToOpenFromLink([older, newer], "missing")?._id, "rain");
+        assert.equal(entryToOpenFromLink([older, newer], null)?._id, "rain");
+        assert.equal(entryToOpenFromLink([older, newer], "")?._id, "rain");
+        assert.equal(entryToOpenFromLink([], "garden"), null);
     });
 
     it("opens the following entry after a delete, or the one before it when it was last", () => {

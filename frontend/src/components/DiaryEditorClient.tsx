@@ -10,7 +10,7 @@ import { DESCRIPTION_MAX, DIARY_THEMES, TITLE_MAX, coverForTheme, isAllowedTheme
 import { takeImportNotice } from "@/lib/diary/import";
 import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
 import { entryMatchesListQuery } from "@/lib/diary/search";
-import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLinkUrl, entryMonths, entrySelectionAction, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenFromLink, entryToShowAfterDelete, entryToShowByStep, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
@@ -115,7 +115,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 setDiary(data.diary!);
                 const loaded = data.entries ?? [];
                 setEntries(loaded);
-                const latest = entryToShowOnOpen(loaded);
+                const requestedId = new URLSearchParams(window.location.search).get("entry");
+                const latest = entryToOpenFromLink(loaded, requestedId);
                 if (latest) {
                     setSelectedEntryId(latest._id);
                     setMode("view");
@@ -141,6 +142,13 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         })();
         return () => { mounted = false; };
     }, [diaryId]);
+
+    useEffect(() => {
+        if (isLoading) return;
+        const requestedId = new URLSearchParams(window.location.search).get("entry");
+        if (!requestedId || requestedId !== selectedEntryId) return;
+        document.querySelector(".de-entry-card.active")?.scrollIntoView({ block: "nearest" });
+    }, [isLoading, selectedEntryId]);
 
     // Track active formats for toolbar highlight
     const updateActiveFormats = useCallback(() => {
