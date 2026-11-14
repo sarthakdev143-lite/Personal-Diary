@@ -101,18 +101,17 @@ export async function POST(request: Request, context: RouteContext) {
             return NextResponse.json({ error: "Diary not found" }, { status: 404 });
         }
 
-        const updatedAt = new Date();
         const entry: EntryDocument = {
             diaryId,
             userId,
             content: prepared.content,
             plainText: prepared.plainText,
             createdAt,
-            updatedAt,
+            updatedAt: createdAt,
         };
 
         const result = await entriesCollection.insertOne(entry);
-        await touchDiary(db, diaryId, userId, updatedAt);
+        await touchDiary(db, diaryId, userId);
 
         return NextResponse.json(
             serializeEntry({

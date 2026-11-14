@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, escapeRegExp, normalizeSearchQuery } from "./search";
-import { entryPlainText, storedPlainText, wordCount } from "./text";
+import { calendarDate, entryInstant, entryPlainText, retitleEntryDate, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
     normalizeTheme,
@@ -253,6 +253,35 @@ describe("export", () => {
         const empty = buildDiaryExport({ title: "Empty" }, [], "md", "2026-03-01T00:00:00.000Z");
         assert.equal(empty.ok, true);
         if (empty.ok) assert.match(empty.export.body, /_No entries yet\._/);
+    });
+});
+
+describe("entry date", () => {
+    const now = new Date(2026, 2, 14, 15, 8, 0);
+
+    it("keeps today and puts the same clock time on a past day", () => {
+        assert.equal(calendarDate(now), "2026-03-14");
+        assert.equal(entryInstant("2026-03-14", now)?.getTime(), now.getTime());
+
+        const past = entryInstant("2026-02-02", now);
+        assert.equal(past?.getFullYear(), 2026);
+        assert.equal(past?.getMonth(), 1);
+        assert.equal(past?.getDate(), 2);
+        assert.equal(past?.getHours(), 15);
+        assert.equal(past?.getMinutes(), 8);
+    });
+
+    it("rejects a future day, a day that does not exist, and updates only a matching heading", () => {
+        assert.equal(entryInstant("2026-03-15", now), null);
+        assert.equal(entryInstant("2026-02-31", now), null);
+        assert.equal(entryInstant("nope", now), null);
+
+        const html = "<h2>Monday, February 2, 2026</h2><p>Rain</p>";
+        assert.equal(
+            retitleEntryDate(html, "Monday, February 2, 2026", "Tuesday, February 3, 2026"),
+            "<h2>Tuesday, February 3, 2026</h2><p>Rain</p>",
+        );
+        assert.equal(retitleEntryDate("<p>Rain</p>", "Monday, February 2, 2026", "Tuesday, February 3, 2026"), "<p>Rain</p>");
     });
 });
 

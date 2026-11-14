@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { DESCRIPTION_MAX, MAX_IMAGE_BYTES, TITLE_MAX } from "@/lib/diary/constants";
 import { diaryFieldsMatch } from "@/lib/diary/search";
-import { entryPlainText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, wordCount } from "@/lib/diary/text";
+import { calendarDate, entryInstant, entryPlainText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, retitleEntryDate, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
@@ -18,7 +18,7 @@ type EditorMode = "compose" | "view" | "edit";
 const fmtShort = formatDiaryDate;
 const fmtTime = formatEntryTime;
 const fmtLong = formatEntryLong;
-const todayHeader = () => `<h2>${fmtLong(new Date().toISOString())}</h2><p><br></p>`;
+const headingFor = (iso: string) => `<h2>${fmtLong(iso)}</h2><p><br></p>`;
 
 const entryPreview = (entry: Entry) => {
     const text = entry.plainText?.trim() || entryPlainText(entry.content);
@@ -93,6 +93,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const [baseline, setBaseline] = useState("");
     const [entryQuery, setEntryQuery] = useState("");
     const [isExporting, setIsExporting] = useState<"md" | "json" | null>(null);
+    const [entryDate, setEntryDate] = useState(() => calendarDate(new Date()));
+    const [savedDate, setSavedDate] = useState(() => calendarDate(new Date()));
 
     useEffect(() => {
         let mounted = true;
@@ -196,7 +198,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (editorRef.current) editorRef.current.innerHTML = html;
     }, []);
 
-    const isDirty = mode !== "view" && htmlContent !== baseline;
+    const isDirty = mode !== "view" && (htmlContent !== baseline || entryDate !== savedDate);
 
     useEffect(() => {
         if (!isDirty) return;
@@ -215,16 +217,39 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return window.confirm("Discard unsaved changes?");
     };
 
+    const rememberDate = (value: string) => {
+        setEntryDate(value);
+        setSavedDate(value);
+    };
+
+    const changeEntryDate = (next: string) => {
+        const nextInstant = entryInstant(next);
+        if (!nextInstant) {
+            toast({ title: "Check the date", description: "Use today or a past day.", variant: "destructive" });
+            return;
+        }
+        const previousInstant = entryInstant(entryDate);
+        const previousLabel = previousInstant ? fmtLong(previousInstant.toISOString()) : "";
+        const updated = retitleEntryDate(htmlContent, previousLabel, fmtLong(nextInstant.toISOString()));
+        setEntryDate(next);
+        if (updated === htmlContent) return;
+        setHtmlContent(updated);
+        if (editorRef.current) editorRef.current.innerHTML = updated;
+    };
+
     const resetComposer = () => {
         setSelectedEntryId(null);
         setMode("compose");
         setConfirmDelete(null);
+        rememberDate(calendarDate(new Date()));
         writeEditor("");
     };
 
     const handleNewEntry = () => {
         if (!discardIfDirty()) return;
-        const html = todayHeader();
+        const now = new Date();
+        rememberDate(calendarDate(now));
+        const html = headingFor(now.toISOString());
         setSelectedEntryId(null);
         setMode("compose");
         setConfirmDelete(null);
@@ -249,11 +274,17 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         setSelectedEntryId(entry._id);
         setMode("view");
         setConfirmDelete(null);
+        rememberDate(calendarDate(new Date(entry.createdAt)));
         writeEditor(entry.content);
     };
 
     const handleSave = async () => {
         if (!hasEntryContent(htmlContent) || isSaving || mode === "view") return;
+        const instant = entryInstant(entryDate);
+        if (!instant) {
+            toast({ title: "Check the date", description: "Use today or a past day.", variant: "destructive" });
+            return;
+        }
         setIsSaving(true);
         const editing = mode === "edit" && selectedEntryId;
         try {
@@ -262,22 +293,21 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 {
                     method: editing ? "PUT" : "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(
-                        editing
-                            ? { content: htmlContent }
-                            : { content: htmlContent, createdAt: new Date().toISOString() }
-                    ),
+                    body: JSON.stringify({ content: htmlContent, createdAt: instant.toISOString() }),
                 }
             );
             const data = await res.json() as Entry & { error?: string };
             if (!res.ok) throw new Error(data.error || "Failed to save.");
+            rememberDate(calendarDate(new Date(data.createdAt)));
+            const placeEntry = (items: Entry[]) =>
+                [...items].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
             if (editing) {
-                setEntries((prev) => prev.map((entry) => entry._id === data._id ? data : entry));
+                setEntries((prev) => placeEntry(prev.map((entry) => entry._id === data._id ? data : entry)));
                 setMode("view");
                 writeEditor(data.content);
                 toast({ title: "Updated", description: fmtLong(data.createdAt) });
             } else {
-                setEntries((prev) => [data, ...prev]);
+                setEntries((prev) => placeEntry([data, ...prev]));
                 resetComposer();
                 toast({ title: "Saved", description: fmtLong(data.createdAt) });
             }
@@ -665,6 +695,17 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 }
                 .de-back:hover{color:#e0d6c8;}
 
+                .de-date{
+                    display:flex;align-items:center;gap:8px;
+                    font-family:'JetBrains Mono',monospace;font-size:9px;
+                    letter-spacing:0.16em;text-transform:uppercase;color:#a79f93;
+                }
+                .de-date input{
+                    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.04em;
+                    text-transform:none;color:#ede5d8;background:#0d0b09;
+                    border:1px solid #2a2520;border-radius:3px;padding:4px 6px;color-scheme:dark;
+                }
+                .de-date input:focus{outline:none;border-color:#6a5a48;}
                 .de-viewing-badge{
                     font-family:'JetBrains Mono',monospace;
                     font-size:9px;letter-spacing:0.22em;text-transform:uppercase;
@@ -854,7 +895,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
                     {/* RIGHT */}
                     <section className="de-right">
-                        {mode !== "compose" && selectedEntry && (
+                        {mode === "view" && selectedEntry && (
                             <div className="de-viewing-badge de-fade">
                                 {mode === "edit" ? "editing" : "viewing"} · {fmtShort(selectedEntry.createdAt)}
                             </div>
@@ -880,7 +921,20 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
                         {/* Footer */}
                         <div className="de-footer">
-                            <div className="de-mono" style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 10, color: "#8f8679", letterSpacing: "0.1em" }}>
+                            <div className="de-mono" style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 10, color: "#8f8679", letterSpacing: "0.1em", flexWrap: "wrap" }}>
+                                {mode !== "view" && (
+                                    <label className="de-date">
+                                        Date
+                                        <input
+                                            type="date"
+                                            value={entryDate}
+                                            min="1970-01-01"
+                                            max={calendarDate(new Date())}
+                                            aria-label="Entry date"
+                                            onChange={(event) => changeEntryDate(event.target.value)}
+                                        />
+                                    </label>
+                                )}
                                 <span>{wc} words</span>
                                 <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
                                 <span>{htmlContent.replace(/<[^>]*>/g, "").length} chars</span>

@@ -60,6 +60,45 @@ export function formatEntryTime(value: string): string {
     }).format(date);
 }
 
+export function calendarDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
+
+export function entryInstant(value: string, now = new Date()): Date | null {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (!match) return null;
+
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const chosenDay = new Date(year, month - 1, day);
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (
+        chosenDay.getFullYear() !== year
+        || chosenDay.getMonth() !== month - 1
+        || chosenDay.getDate() !== day
+        || chosenDay.getTime() > today.getTime()
+    ) {
+        return null;
+    }
+
+    if (chosenDay.getTime() === today.getTime()) return new Date(now.getTime());
+
+    const chosen = new Date(year, month - 1, day, now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+    if (chosen.getTime() < Date.UTC(1970, 0, 1)) return null;
+    return chosen;
+}
+
+export function retitleEntryDate(html: string, fromLabel: string, toLabel: string): string {
+    if (!fromLabel || !toLabel || fromLabel === toLabel) return html;
+    const prefix = `<h2>${fromLabel}</h2>`;
+    if (!html.startsWith(prefix)) return html;
+    return `<h2>${toLabel}</h2>${html.slice(prefix.length)}`;
+}
+
 export function formatEntryLong(value: string): string {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "—";
