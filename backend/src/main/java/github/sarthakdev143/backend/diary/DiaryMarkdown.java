@@ -267,15 +267,19 @@ public final class DiaryMarkdown {
     }
 
     private static String wrapInline(String inner, String open, String close) {
+        int start = 0;
         int end = inner.length();
-        while (end > 0 && isGap(inner.charAt(end - 1))) {
+        while (start < end && isGap(inner.charAt(start))) {
+            start += 1;
+        }
+        while (end > start && isGap(inner.charAt(end - 1))) {
             end -= 1;
         }
-        String core = inner.substring(0, end);
+        String core = inner.substring(start, end);
         if (core.isBlank()) {
             return inner;
         }
-        return open + core + close + inner.substring(end);
+        return inner.substring(0, start) + open + core + close + inner.substring(end);
     }
 
     private static String renderInline(List<Node> nodes) {

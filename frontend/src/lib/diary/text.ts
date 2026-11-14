@@ -127,9 +127,11 @@ export function plainMarkSpaces(html: string): string {
     let current = html;
     for (let pass = 0; pass < 4; pass += 1) {
         const next = current.replace(MARK_SPACE, (match, _open: string, tag: string, attrs: string, inner: string, offset: number, full: string) => {
-            const trailing = inner.match(/((?:&nbsp;|\u00a0|[ \t])+)$/);
-            if (!trailing) return match;
-            const core = inner.slice(0, -trailing[1].length);
+            const leading = inner.match(/^((?:&nbsp;|\u00a0|[ \t])+)/);
+            const rest = leading ? inner.slice(leading[1].length) : inner;
+            const trailing = rest.match(/((?:&nbsp;|\u00a0|[ \t])+)$/);
+            if (!leading && !trailing) return match;
+            const core = trailing ? rest.slice(0, -trailing[1].length) : rest;
             if (!core.replace(/&nbsp;|\u00a0|\s/g, "")) return match;
             const before = full.slice(0, offset);
             const after = full.slice(offset + match.length);
@@ -137,8 +139,9 @@ export function plainMarkSpaces(html: string): string {
             const blockAfter = after.split(/<\/(?:p|li|h1|h2|h3|blockquote|figcaption)>/i)[0] ?? "";
             const outside = `${blockBefore}${blockAfter}`.replace(/<[^>]+>/g, "").replace(/&nbsp;|\u00a0|\s/g, "");
             if (!outside) return match;
-            const spaces = trailing[1].replace(/&nbsp;|\u00a0/g, " ");
-            return `<${tag}${attrs}>${core}</${tag}>${spaces}`;
+            const lead = leading ? leading[1].replace(/&nbsp;|\u00a0/g, " ") : "";
+            const spaces = trailing ? trailing[1].replace(/&nbsp;|\u00a0/g, " ") : "";
+            return `${lead}<${tag}${attrs}>${core}</${tag}>${spaces}`;
         });
         if (next === current) return current;
         current = next;

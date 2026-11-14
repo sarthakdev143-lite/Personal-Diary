@@ -959,15 +959,43 @@ function spaceMark(selection: Selection): HTMLElement | null {
     return mark;
 }
 
+function writingOutsideMark(mark: HTMLElement): boolean {
+    const block = mark.closest("p, li, h1, h2, h3, blockquote, figcaption");
+    if (!(block instanceof HTMLElement)) return textOutsideMark(mark);
+    const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    while (node) {
+        if (node instanceof Text && !mark.contains(node) && node.data.replace(/[\u200b\u00a0\s]/g, "") !== "") return true;
+        node = walker.nextNode();
+    }
+    return false;
+}
+
 function moveTrailingMarkSpaces(root: HTMLElement) {
     const marks = [...root.querySelectorAll(STYLE_MARK)].reverse();
     for (const mark of marks) {
-        if (!(mark instanceof HTMLElement) || mark.closest("pre") || !textOutsideMark(mark)) continue;
+        if (!(mark instanceof HTMLElement) || mark.closest("pre") || !writingOutsideMark(mark)) continue;
+        const visible = (mark.textContent ?? "").replace(/[\u00a0\s\u200b]/g, "");
+        if (!visible) continue;
+        const first = mark.firstChild;
+        if (first instanceof Text) {
+            const leading = first.data.match(/^[\u00a0\s\u200b]+/);
+            if (leading) {
+                const spaces = leading[0].replace(/\u00a0/g, " ");
+                if (leading[0].length === first.data.length) {
+                    first.data = spaces;
+                    mark.before(first);
+                } else {
+                    first.splitText(leading[0].length);
+                    first.data = spaces;
+                    mark.before(first);
+                }
+            }
+        }
         const last = mark.lastChild;
         if (!(last instanceof Text)) continue;
         const trailing = last.data.match(/[\u00a0\s\u200b]+$/);
         if (!trailing) continue;
-        if (!(mark.textContent ?? "").replace(/[\u00a0\s\u200b]/g, "")) continue;
         const spaces = trailing[0].replace(/\u00a0/g, " ");
         if (trailing[0].length === last.data.length) {
             last.data = spaces;

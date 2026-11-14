@@ -91,10 +91,12 @@ function escapeLinkText(value: string): string {
 }
 
 function wrapInline(inner: string, open: string, close: string): string {
-    const trailing = inner.match(/\s+$/)?.[0] ?? "";
-    const core = trailing ? inner.slice(0, -trailing.length) : inner;
+    const leading = inner.match(/^\s+/)?.[0] ?? "";
+    const rest = inner.slice(leading.length);
+    const trailing = rest.match(/\s+$/)?.[0] ?? "";
+    const core = trailing ? rest.slice(0, -trailing.length) : rest;
     if (!core.trim()) return inner;
-    return `${open}${core}${close}${trailing}`;
+    return `${leading}${open}${core}${close}${trailing}`;
 }
 
 function renderInline(nodes: HtmlNode[]): string {
