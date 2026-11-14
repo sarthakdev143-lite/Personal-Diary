@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, dateHeadingKey, datePaste, formatEntryLong, freshEntryHtml, hasEntryContent, dividerCaret, laterEntryTime, listLeaveKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, dateHeadingKey, datePaste, formatEntryLong, freshEntryHtml, hasEntryContent, dividerCaret, joinNeedsSpace, laterEntryTime, lineJoinKey, listLeaveKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -178,6 +178,24 @@ describe("code block", () => {
         assert.equal(quoteLeaveKey({ ...blank, key: "a" }), "pass");
         assert.equal(quoteLeaveKey({ ...blank, shiftKey: true }), "pass");
         assert.equal(quoteLeaveKey({ ...blank, ctrlKey: true }), "pass");
+    });
+
+    it("keeps a space when two lines join", () => {
+        const join = { key: "Backspace", collapsed: true, atStart: true, atEnd: false, neighbor: "text" as const };
+        assert.equal(lineJoinKey(join), "join");
+        assert.equal(lineJoinKey({ ...join, key: "Delete", atStart: false, atEnd: true }), "join");
+        assert.equal(lineJoinKey({ ...join, atStart: false }), "pass");
+        assert.equal(lineJoinKey({ ...join, key: "Delete", atEnd: false }), "pass");
+        assert.equal(lineJoinKey({ ...join, collapsed: false }), "pass");
+        assert.equal(lineJoinKey({ ...join, neighbor: "none" }), "pass");
+        assert.equal(lineJoinKey({ ...join, shiftKey: true }), "pass");
+        assert.equal(lineJoinKey({ ...join, ctrlKey: true }), "pass");
+        assert.equal(joinNeedsSpace("Harbor", "rain"), true);
+        assert.equal(joinNeedsSpace("Harbor,", "rain"), true);
+        assert.equal(joinNeedsSpace("Harbor ", "rain"), false);
+        assert.equal(joinNeedsSpace("Harbor", " rain"), false);
+        assert.equal(joinNeedsSpace("", "rain"), false);
+        assert.equal(joinNeedsSpace("Harbor", ""), false);
     });
 
     it("keeps the rest of a line with a divider", () => {

@@ -79,6 +79,38 @@ export function separateGluedDateHeading(html: string): string {
     return `${heading}<p>${escaped}</p>${rest}`;
 }
 
+export type LineJoin = "join" | "pass";
+
+export function lineJoinKey(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    atStart: boolean;
+    atEnd: boolean;
+    neighbor: "text" | "none";
+}): LineJoin {
+    if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey || !input.collapsed) return "pass";
+    if (input.neighbor !== "text") return "pass";
+    if (input.key === "Backspace" && input.atStart) return "join";
+    if (input.key === "Delete" && input.atEnd) return "join";
+    return "pass";
+}
+
+export function joinNeedsSpace(previous: string, next: string): boolean {
+    const left = previous.replace(/\u00a0/g, " ");
+    const right = next.replace(/\u00a0/g, " ");
+    if (!left.trim() || !right.trim()) return false;
+    if (/\s$/.test(left) || /^\s/.test(right)) return false;
+    const end = left.trimEnd();
+    const start = right.trimStart();
+    const opens = /[\p{L}\p{N}\p{Pc},.!?;:)\]"']$/u.test(end);
+    const continues = /^[\p{L}\p{N}\p{Pc}(["']/u.test(start);
+    return opens && continues;
+}
+
 export type DividerCaret = "join" | "stay";
 
 export function dividerCaret(input: {

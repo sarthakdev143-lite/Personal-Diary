@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, dateHeadingKey, datePaste, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, dividerCaret, hasEntryContent, listLeaveKey, quoteLeaveKey, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, dateHeadingKey, datePaste, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, dividerCaret, hasEntryContent, joinNeedsSpace, lineJoinKey, listLeaveKey, quoteLeaveKey, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -617,6 +617,111 @@ function selectCodeOffsets(code: HTMLElement, start: number, end: number) {
         filled = next;
         node = walker.nextNode();
     }
+}
+
+const LINE_BLOCK = /^(P|H1|H2|H3|BLOCKQUOTE|LI)$/;
+
+function lineBlock(node: Node | null): HTMLElement | null {
+    const host = node instanceof Element ? node : node?.parentElement ?? null;
+    const block = host?.closest("li, p, h1, h2, h3, blockquote");
+    if (!(block instanceof HTMLElement)) return null;
+    if (block.tagName === "P" && block.parentElement?.tagName === "LI" && !block.previousElementSibling) return block.parentElement;
+    return block;
+}
+
+function adjacentTextBlock(block: HTMLElement, direction: "previous" | "next"): HTMLElement | null {
+    let sibling = direction === "previous" ? block.previousElementSibling : block.nextElementSibling;
+    const parent = block.parentElement;
+    if (!sibling && parent && (parent.tagName === "UL" || parent.tagName === "OL")) {
+        sibling = direction === "previous" ? parent.previousElementSibling : parent.nextElementSibling;
+    }
+    if (!sibling) return null;
+    if (sibling.tagName === "UL" || sibling.tagName === "OL") {
+        const items = [...sibling.children].filter((child) => child.tagName === "LI");
+        const item = direction === "previous" ? items[items.length - 1] : items[0];
+        return item instanceof HTMLElement ? item : null;
+    }
+    if (sibling instanceof HTMLElement && LINE_BLOCK.test(sibling.tagName)) return sibling;
+    return null;
+}
+
+function writingHost(block: HTMLElement): HTMLElement {
+    if (block.tagName !== "BLOCKQUOTE") return block;
+    const nested = [...block.children].reverse().find((child) => child.tagName === "P");
+    return nested instanceof HTMLElement ? nested : block;
+}
+
+function caretEdges(block: HTMLElement, selection: Selection): { collapsed: boolean; atStart: boolean; atEnd: boolean } | null {
+    if (!selection.rangeCount) return null;
+    const range = selection.getRangeAt(0);
+    if (!block.contains(range.startContainer) || !block.contains(range.endContainer)) return null;
+    const before = range.cloneRange();
+    before.selectNodeContents(block);
+    before.setEnd(range.startContainer, range.startOffset);
+    const after = range.cloneRange();
+    after.selectNodeContents(block);
+    after.setStart(range.endContainer, range.endOffset);
+    const clean = (value: string) => value.replace(/\u200b/g, "");
+    return { collapsed: range.collapsed, atStart: clean(before.toString()) === "", atEnd: clean(after.toString()) === "" };
+}
+
+function placeCaretOn(node: Node | null, fallback: HTMLElement) {
+    const selection = window.getSelection();
+    if (!selection) return;
+    const caret = document.createRange();
+    if (node instanceof Text && node.parentNode) caret.setStart(node, 0);
+    else if (node?.parentNode) caret.setStartBefore(node);
+    else {
+        caret.selectNodeContents(fallback);
+        caret.collapse(false);
+    }
+    caret.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(caret);
+}
+
+function removeJoined(source: HTMLElement) {
+    const list = source.parentElement;
+    source.remove();
+    if (list && (list.tagName === "UL" || list.tagName === "OL") && !list.querySelector("li")) list.remove();
+}
+
+function piecesOf(source: HTMLElement): Node[] {
+    if (source.tagName !== "BLOCKQUOTE") return [...source.childNodes];
+    return [...source.childNodes].flatMap((child) => {
+        if (child instanceof HTMLElement && child.tagName === "P") return [...child.childNodes];
+        return [child];
+    });
+}
+
+function joinBlock(target: HTMLElement, source: HTMLElement) {
+    const into = writingHost(target);
+    const after = source.textContent ?? "";
+    const sourceEmpty = !after.replace(/[\u200b\u00a0]/g, "").trim() && !source.querySelector("img");
+    if (sourceEmpty) {
+        removeJoined(source);
+        placeCaretAtEnd(into);
+        return;
+    }
+    if (!(into.textContent ?? "").replace(/[\u200b\u00a0]/g, "").trim()) {
+        for (const child of [...into.childNodes]) {
+            if (child instanceof HTMLBRElement || (child instanceof Text && !child.data.replace(/[\u200b\u00a0]/g, "").trim())) child.remove();
+        }
+    }
+    const pieces = piecesOf(source);
+    const start = pieces.find((node) => {
+        if (node instanceof Text) return node.data.replace(/[\u200b\u00a0]/g, "") !== "";
+        return !(node instanceof HTMLBRElement);
+    }) ?? pieces[0] ?? null;
+    for (const node of pieces) {
+        const incoming = node.textContent ?? "";
+        if (incoming.replace(/[\u200b\u00a0]/g, "").trim() && joinNeedsSpace(into.textContent ?? "", incoming)) {
+            into.appendChild(document.createTextNode(" "));
+        }
+        into.appendChild(node);
+    }
+    removeJoined(source);
+    placeCaretOn(start, into);
 }
 
 function settleDivider(editor: HTMLElement) {
@@ -2027,6 +2132,40 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const joinLines = (e: React.KeyboardEvent) => {
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection?.rangeCount || mode === "view") return false;
+        const block = lineBlock(selection.anchorNode);
+        if (!block || !editor.contains(block) || block.closest("pre") || block.closest("figcaption")) return false;
+        const instant = instantFor(entryDate);
+        const label = instant ? fmtLong(instant.toISOString()) : "";
+        const dateHeading = label ? [...editor.querySelectorAll("h2")].find((heading) => (heading.textContent ?? "").trim() === label) : null;
+        if (block === dateHeading) return false;
+        const edges = caretEdges(block, selection);
+        if (!edges) return false;
+        const backward = e.key === "Backspace";
+        const neighbor = adjacentTextBlock(block, backward ? "previous" : "next");
+        if (neighbor === dateHeading) return false;
+        const action = lineJoinKey({
+            key: e.key,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            collapsed: edges.collapsed,
+            atStart: edges.atStart,
+            atEnd: edges.atEnd,
+            neighbor: neighbor ? "text" : "none",
+        });
+        if (action !== "join" || !neighbor) return false;
+        e.preventDefault();
+        if (backward) joinBlock(neighbor, block);
+        else joinBlock(block, neighbor);
+        setHtmlContent(editor.innerHTML);
+        return true;
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (saveEntryShortcut(e)) {
             e.preventDefault();
@@ -2049,6 +2188,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (editSelectedPicture(e)) return;
         if (keepPictureNameApart(e)) return;
         if (moveAroundPicture(e)) return;
+        if (joinLines(e)) return;
         const editor = editorRef.current;
         const selection = window.getSelection();
         const anchor = selection?.anchorNode;
