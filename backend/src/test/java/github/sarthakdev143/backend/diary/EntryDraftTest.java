@@ -101,6 +101,18 @@ class EntryDraftTest {
     }
 
     @Test
+    void keepsBoldInAPictureName() {
+        EntryDraft draft = EntryDraft.prepare(
+                "<figure><img src=\"https://example.com/sunset.png\" alt=\"old\"><figcaption><b>Harbor</b> rain</figcaption></figure><p>today</p>");
+        EntryDraft.Ready ready = assertInstanceOf(EntryDraft.Ready.class, draft);
+        assertEquals("Harbor rain today", ready.plainText());
+        assertTrue(ready.content().contains("alt=\"Harbor rain\""));
+        assertTrue(ready.content().contains("<b>Harbor</b>"));
+        assertTrue(ready.content().contains("<figcaption>"));
+        assertTrue(ready.content().contains("<p>today</p>") || ready.content().contains("today"));
+    }
+
+    @Test
     void keepsALetterTypedBesideAPicture() {
         EntryDraft draft = EntryDraft.prepare(
                 "<h2>Saturday, November 14, 2026</h2><p>Before</p><figure>x<img src=\"https://example.com/sunset.png\" alt=\"Harbor\"><figcaption>Harbor</figcaption></figure><p>After</p>");

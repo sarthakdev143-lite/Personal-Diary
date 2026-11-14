@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionBreakText, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, joinNeedsSpace, lineJoinKey, listCommand, listEdgeKey, listLeaveKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
@@ -1217,36 +1217,85 @@ function placeCaretAtEnd(node: HTMLElement) {
     selection.addRange(caret);
 }
 
+function dropEmptyMarks(root: HTMLElement) {
+    root.querySelectorAll("b, strong, i, em, u, s, strike, del, a").forEach((node) => {
+        if (!(node.textContent ?? "").replace(/[\u00a0\s]/g, "")) node.remove();
+    });
+}
+
+function inlineChain(node: Node, stop: HTMLElement): HTMLElement[] {
+    const chain: HTMLElement[] = [];
+    let current = node.parentElement;
+    while (current && current !== stop) {
+        if (/^(B|STRONG|I|EM|U|S|STRIKE|DEL|A)$/.test(current.tagName)) chain.push(current);
+        current = current.parentElement;
+    }
+    return chain;
+}
+
+function keepInlineChain(fragment: DocumentFragment, chain: HTMLElement[]) {
+    if (!chain.length || [...fragment.childNodes].some((node) => node instanceof Element)) return;
+    for (const source of chain) {
+        const clone = source.cloneNode(false);
+        if (!(clone instanceof HTMLElement)) return;
+        while (fragment.firstChild) clone.appendChild(fragment.firstChild);
+        fragment.appendChild(clone);
+    }
+}
+
 function continueAfterPicture(caption: HTMLElement) {
     const figure = caption.closest("figure");
     const selection = window.getSelection();
     if (!figure || !selection || !selection.rangeCount) return;
     const range = selection.getRangeAt(0);
-    const before = document.createRange();
-    before.selectNodeContents(caption);
-    before.setEnd(range.startContainer, range.startOffset);
-    const after = document.createRange();
-    after.selectNodeContents(caption);
-    after.setStart(range.endContainer, range.endOffset);
-    const rest = after.toString();
-    const broken = captionBreakText(before.toString(), rest);
-    caption.textContent = broken.name;
+    const nodes = textPieces(caption);
+    const raw = nodes.map((node) => node.data).join("");
+    let offset = caretTextOffset(nodes, range.startContainer, range.startOffset);
+    if (offset === null) {
+        if (!raw || (range.startContainer === caption && range.startOffset === 0)) offset = 0;
+        else if (range.startContainer === caption && range.startOffset >= caption.childNodes.length) offset = raw.length;
+        else return;
+    }
+    const cut = boundarySpaceCut(raw.slice(0, offset), raw.slice(offset));
+    const keepEnd = offset - (cut?.before ?? 0);
+    const restStart = offset + (cut?.after ?? 0);
+    const rest = document.createDocumentFragment();
+    if (restStart < raw.length) {
+        let cursor = 0;
+        let startNode = nodes[0];
+        for (const node of nodes) {
+            if (restStart < cursor + node.data.length) {
+                startNode = node;
+                break;
+            }
+            cursor += node.data.length;
+        }
+        const chain = inlineChain(startNode, caption);
+        selectTextRange(nodes, restStart, raw.length);
+        if (selection.rangeCount && !selection.isCollapsed) {
+            const moved = selection.getRangeAt(0).extractContents();
+            while (moved.firstChild) rest.appendChild(moved.firstChild);
+            keepInlineChain(rest, chain);
+        }
+    }
+    if (cut) {
+        selectTextRange(textPieces(caption), keepEnd, restStart);
+        if (selection.rangeCount && !selection.isCollapsed) selection.getRangeAt(0).deleteContents();
+    }
+    const paragraph = document.createElement("p");
+    while (rest.firstChild) paragraph.appendChild(rest.firstChild);
+    dropEmptyMarks(caption);
+    dropEmptyMarks(paragraph);
+    if (!(paragraph.textContent ?? "").replace(/[\u200b\u00a0\s]/g, "")) paragraph.appendChild(document.createElement("br"));
+    if (!(caption.textContent ?? "").replace(/[\u200b\u00a0\s]/g, "")) caption.replaceChildren(document.createElement("br"));
     const image = figure.querySelector("img");
     if (image instanceof HTMLImageElement) {
-        const alt = imageAltText(broken.name);
+        const alt = imageAltText(caption.textContent ?? "");
         if (alt) image.setAttribute("alt", alt);
         else image.removeAttribute("alt");
     }
-    const paragraph = document.createElement("p");
-    if (broken.next) paragraph.textContent = broken.next;
-    else paragraph.appendChild(document.createElement("br"));
     figure.after(paragraph);
-    const caret = document.createRange();
-    if (broken.next && paragraph.firstChild instanceof Text) caret.setStart(paragraph.firstChild, 0);
-    else caret.setStart(paragraph, 0);
-    caret.collapse(true);
-    selection.removeAllRanges();
-    selection.addRange(caret);
+    placeCaretAtStart(paragraph);
 }
 
 const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {

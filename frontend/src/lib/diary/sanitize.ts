@@ -167,10 +167,17 @@ function alignPictureCaptions(html: string): string {
             ? `${loose(imageEnd, captionAt)} ${loose(captionEnd, contentEnd)}`.trim()
             : loose(imageEnd, contentEnd);
         const picture = name
-            ? `<figure>${image}<figcaption>${name.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;")}</figcaption></figure>`
+            ? `<figure>${image}<figcaption>${captionMarkup(captionMatch[1] ?? "", name)}</figcaption></figure>`
             : image;
         return `${before ? `<p>${escapeText(before)}</p>` : ""}${picture}${after ? `<p>${escapeText(after)}</p>` : ""}`;
     });
+}
+
+function captionMarkup(inner: string, plain: string): string {
+    if (!/<(b|strong|i|em|u|s|strike|del|a)\b/i.test(inner)) {
+        return plain.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+    }
+    return inner;
 }
 
 function escapeText(value: string): string {

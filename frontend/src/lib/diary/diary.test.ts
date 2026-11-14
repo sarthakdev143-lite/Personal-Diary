@@ -673,6 +673,15 @@ describe("entry html", () => {
             assert.equal(renamed.plainText, "Bay");
             assert.equal(wordCount(renamed.content), 1);
         }
+
+        const boldName = prepareEntryContent('<figure><img src="https://example.com/sunset.png" alt="old"><figcaption><b>Harbor</b> rain</figcaption></figure><p>today</p>');
+        assert.equal(boldName.ok, true);
+        if (boldName.ok) {
+            assert.match(boldName.content, /<figcaption><b>Harbor<\/b> rain<\/figcaption>/);
+            assert.match(boldName.content, /alt="Harbor rain"/);
+            assert.match(boldName.content, /<p>today<\/p>/);
+            assert.equal(boldName.plainText, "Harbor rain today");
+        }
     });
 });
 

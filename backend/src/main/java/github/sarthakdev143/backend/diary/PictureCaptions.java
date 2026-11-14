@@ -35,7 +35,9 @@ final class PictureCaptions {
                 continue;
             }
             image.attr("alt", name);
-            caption.text(name);
+            if (caption.select("b, strong, i, em, u, s, strike, del, a").isEmpty()) {
+                caption.text(name);
+            }
             for (Element extra : figure.select("figcaption")) {
                 if (extra != caption) {
                     extra.remove();
