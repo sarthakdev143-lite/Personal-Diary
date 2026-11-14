@@ -2,12 +2,15 @@ package github.sarthakdev143.backend.controller;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,6 +24,7 @@ import github.sarthakdev143.backend.repository.DiaryRepository;
 import github.sarthakdev143.backend.repository.EntryRepository;
 import github.sarthakdev143.backend.service.DiaryMissingException;
 import github.sarthakdev143.backend.service.DiaryRejectedException;
+import github.sarthakdev143.backend.service.EntryMissingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
@@ -63,6 +67,60 @@ public class EntryController {
         diary.setUpdatedAt(now);
         diaries.save(diary);
         return ResponseEntity.status(HttpStatus.CREATED).body(EntryResponse.from(saved));
+    }
+
+    @PutMapping("/api/diaries/{diaryId}/entries/{entryId}")
+    public EntryResponse update(
+            HttpServletRequest request,
+            @PathVariable String diaryId,
+            @PathVariable String entryId,
+            @RequestBody EntryRequest body) {
+        String userId = userId(request);
+        Entry entry = ownedEntry(diaryId, entryId, userId);
+        if (body.content() == null) {
+            throw new DiaryRejectedException("No valid fields provided for update.");
+        }
+        EntryDraft draft = EntryDraft.prepare(body.content());
+        if (draft instanceof EntryDraft.Rejected rejected) {
+            throw new DiaryRejectedException(rejected.error());
+        }
+        EntryDraft.Ready ready = (EntryDraft.Ready) draft;
+        if (!ready.content().equals(entry.getContent())) {
+            Instant now = Instant.now();
+            if (!now.isAfter(entry.getCreatedAt())) {
+                now = entry.getCreatedAt().plusMillis(1);
+            }
+            entry.setContent(ready.content());
+            entry.setPlainText(ready.plainText());
+            entry.setUpdatedAt(now);
+            entries.save(entry);
+            touchDiary(diaryId, userId, now);
+        }
+        return EntryResponse.from(entry);
+    }
+
+    @DeleteMapping("/api/diaries/{diaryId}/entries/{entryId}")
+    public Map<String, Boolean> delete(
+            HttpServletRequest request,
+            @PathVariable String diaryId,
+            @PathVariable String entryId) {
+        String userId = userId(request);
+        Entry entry = ownedEntry(diaryId, entryId, userId);
+        entries.delete(entry);
+        touchDiary(diaryId, userId, Instant.now());
+        return Map.of("success", true);
+    }
+
+    private Entry ownedEntry(String diaryId, String entryId, String userId) {
+        return entries.findByIdAndDiaryIdAndUserId(entryId, diaryId, userId)
+                .orElseThrow(EntryMissingException::new);
+    }
+
+    private void touchDiary(String diaryId, String userId, Instant now) {
+        diaries.findByIdAndUserId(diaryId, userId).ifPresent(diary -> {
+            diary.setUpdatedAt(now);
+            diaries.save(diary);
+        });
     }
 
     private Diary owned(String diaryId, String userId) {

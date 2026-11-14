@@ -19,6 +19,7 @@ import github.sarthakdev143.backend.diary.SessionUserFilter;
 import github.sarthakdev143.backend.model.Diary;
 import github.sarthakdev143.backend.service.DiaryMissingException;
 import github.sarthakdev143.backend.service.DiaryRejectedException;
+import github.sarthakdev143.backend.service.EntryMissingException;
 import github.sarthakdev143.backend.service.DiaryService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -82,5 +83,10 @@ class DiaryErrors {
     @ExceptionHandler(DiaryMissingException.class)
     ResponseEntity<Map<String, String>> missing() {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Diary not found"));
+    }
+
+    @ExceptionHandler(EntryMissingException.class)
+    ResponseEntity<Map<String, String>> missingEntry() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Entry not found"));
     }
 }

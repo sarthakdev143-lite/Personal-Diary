@@ -13,7 +13,7 @@ cd backend
 ./mvnw spring-boot:run
 ```
 
-The API listens on http://localhost:8080. `GET` and `POST /api/diaries` create and list diaries. `GET` and `POST /api/diaries/{id}/entries` add a page to a diary you own. Both require that session cookie. `./mvnw test` runs the diary tests.
+The API listens on http://localhost:8080. `GET` and `POST /api/diaries` create and list diaries. `GET` and `POST /api/diaries/{id}/entries` add a page, `PUT` changes it, and `DELETE` removes it. All of them require that session cookie. `./mvnw test` runs the diary tests.
 
 ## Run the website
 
