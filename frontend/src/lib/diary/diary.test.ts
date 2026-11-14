@@ -173,6 +173,9 @@ describe("entry html", () => {
         assert.equal(entryPlainText("<p>one&nbsp;two &amp; three</p>"), "one two & three");
         assert.equal(wordCount("<p>one two <strong>three</strong></p>"), 3);
         assert.equal(wordCount("<script>secret words</script><p></p>"), 0);
+        assert.equal(entryPlainText('<p>Quiet <a href="https://example.com/glass">window</a>.</p>'), "Quiet window.");
+        assert.equal(wordCount('<p>Quiet <a href="https://example.com/glass">window</a>.</p>'), 2);
+        assert.equal(entryPlainText("<p><strong>Hello</strong>, rain.</p>"), "Hello, rain.");
     });
 
     it("does not treat the inserted date heading as the entry", () => {

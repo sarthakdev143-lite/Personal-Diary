@@ -12,7 +12,7 @@ export function entryPlainText(html: string): string {
         .replace(/&quot;/gi, '"')
         .replace(/&#39;|&apos;/gi, "'");
 
-    return [text, ...alts].join(" ").replace(/\s+/g, " ").trim();
+    return [text, ...alts].join(" ").replace(/\s+([.,;:!?])/g, "$1").replace(/\s+/g, " ").trim();
 }
 
 const MONTH_INDEX = new Map([
