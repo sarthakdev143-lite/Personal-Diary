@@ -217,6 +217,30 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
     return { start, end };
 }
 
+export function wordDeleteGap(text: string, start: number, end: number): "before" | "after" | "none" {
+    if (start >= end) return "none";
+    const widened = wordDeleteSpan(text, start, end);
+    const word = (piece: string | undefined) => Boolean(piece && /[\p{L}\p{N}]/u.test(piece));
+    const space = (piece: string | undefined) => piece === " " || piece === "\u00a0" || piece === "\t";
+    if (widened.end > end && word(text[widened.end])) return "after";
+    if (widened.start < start && word(text[widened.start - 1])) return "before";
+    const selected = text.slice(start, end);
+    if (!/[\u00a0\t ]/.test(selected)) return "none";
+    const removedLeading = space(text[start]);
+    const removedTrailing = space(text[end - 1]);
+    if (removedLeading && !removedTrailing && word(text[start - 1]) && (end >= text.length || space(text[end]))) return "before";
+    if (removedTrailing && !removedLeading && word(text[end]) && (start === 0 || space(text[start - 1]))) return "after";
+    return "none";
+}
+
+export function wordGapInsert(gap: "before" | "after", typed: string): { text: string; caret: number; pull: boolean } | null {
+    if (typed === " " || typed === "\u00a0") return null;
+    if (gap === "after" && /^[,.;:!?]$/.test(typed)) return { text: typed, caret: typed.length, pull: true };
+    if (!/^[\p{L}\p{N}][\p{L}\p{N}'’\-]*$/u.test(typed)) return null;
+    if (gap === "after") return { text: `${typed} `, caret: typed.length, pull: false };
+    return { text: ` ${typed}`, caret: typed.length + 1, pull: false };
+}
+
 export function dragSelectionUndo(input: { collapsed: boolean; inWriting: boolean }): "place" | "pass" {
     if (input.collapsed || !input.inWriting) return "pass";
     return "place";
