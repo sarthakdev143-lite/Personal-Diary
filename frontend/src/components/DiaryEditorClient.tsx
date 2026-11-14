@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { DESCRIPTION_MAX, DIARY_THEMES, MAX_IMAGE_BYTES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
 import { diaryFieldsMatch } from "@/lib/diary/search";
-import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entrySelectionAction, entryToShowOnOpen, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entrySelectionAction, entryToShowOnOpen, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
@@ -24,12 +24,6 @@ const headingFor = (iso: string) => `<h2>${fmtLong(iso)}</h2><p><br></p>`;
 const entryPreview = (entry: Entry) => {
     const text = entry.plainText?.trim() || entryWritingText(entry.content);
     return text.slice(0, 90);
-};
-
-const wasEdited = (entry: Entry) => {
-    const created = new Date(entry.createdAt).getTime();
-    const updated = new Date(entry.updatedAt).getTime();
-    return Number.isFinite(created) && Number.isFinite(updated) && updated - created > 2000;
 };
 
 // Toolbar button definition
@@ -1023,7 +1017,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                                 {fmtShort(entry.createdAt)}
                                             </span>
                                             <span style={{ fontSize: 9, color: "#7d746a", flexShrink: 0 }}>
-                                                {wasEdited(entry) ? "edited" : fmtTime(entry.createdAt)}
+                                                {entryWasRevised(entry.createdAt, entry.updatedAt) ? "edited" : fmtTime(entry.createdAt)}
                                             </span>
                                         </div>
                                         <p style={{ fontFamily: "'Lora',Georgia,serif", fontStyle: "italic", fontSize: 12, lineHeight: 1.65, color: active ? "#e0d6c8" : "#bfb6aa", margin: 0, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>

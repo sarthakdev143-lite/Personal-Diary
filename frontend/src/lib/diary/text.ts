@@ -190,6 +190,48 @@ export function retitleEntryDate(html: string, fromLabel: string, toLabel: strin
     return `<h2>${toLabel}</h2>${html.slice(prefix.length)}`;
 }
 
+const REVISION_GAP_MS = 2000;
+
+export function entryWasRevised(createdAt: string | Date, updatedAt: string | Date): boolean {
+    const created = new Date(createdAt).getTime();
+    const updated = new Date(updatedAt).getTime();
+    return Number.isFinite(created) && Number.isFinite(updated) && updated - created > REVISION_GAP_MS;
+}
+
+export function entryWritingChanged(previousHtml: string, nextHtml: string): boolean {
+    return withoutGeneratedDateHeading(previousHtml) !== withoutGeneratedDateHeading(nextHtml);
+}
+
+export function nextEntryRevision(input: {
+    createdAt: Date;
+    updatedAt: Date;
+    nextCreatedAt?: Date;
+    writingChanged: boolean;
+    now: Date;
+}): { createdAt: Date; updatedAt: Date } {
+    const createdAt = input.nextCreatedAt ?? input.createdAt;
+    const dateChanged = createdAt.getTime() !== input.createdAt.getTime();
+    if (!input.writingChanged && !dateChanged) {
+        return { createdAt: input.createdAt, updatedAt: input.updatedAt };
+    }
+
+    if (input.writingChanged) {
+        const updatedAt = input.now.getTime() - createdAt.getTime() > REVISION_GAP_MS
+            ? input.now
+            : new Date(createdAt.getTime() + REVISION_GAP_MS + 1);
+        return { createdAt, updatedAt };
+    }
+
+    if (!entryWasRevised(input.createdAt, input.updatedAt)) {
+        return { createdAt, updatedAt: createdAt };
+    }
+
+    const updatedAt = input.updatedAt.getTime() - createdAt.getTime() > REVISION_GAP_MS
+        ? input.updatedAt
+        : new Date(createdAt.getTime() + REVISION_GAP_MS + 1);
+    return { createdAt, updatedAt };
+}
+
 export function entrySelectionAction(
     currentId: string | null,
     mode: "compose" | "view" | "edit",

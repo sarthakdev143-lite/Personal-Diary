@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prepareEntryContent } from "@/lib/diary/content";
 import { asRecord, readJsonBody } from "@/lib/diary/json";
+import { entryWritingChanged, nextEntryRevision } from "@/lib/diary/text";
 import { parseEntryDate } from "@/lib/diary/validation";
 
 import {
@@ -44,7 +45,16 @@ export async function PUT(request: Request, context: RouteContext) {
             return NextResponse.json({ error: "Request body must be a JSON object." }, { status: 400 });
         }
 
+        const db = await getDatabase();
+        const entriesCollection = db.collection<EntryDocument>("entries");
+        const existing = await entriesCollection.findOne({ _id: parsedEntryId, diaryId, userId });
+
+        if (!existing) {
+            return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+        }
+
         const updates: Partial<EntryDocument> = {};
+        let writingChanged = false;
 
         if (payload.content !== undefined) {
             const prepared = prepareEntryContent(payload.content);
@@ -53,6 +63,7 @@ export async function PUT(request: Request, context: RouteContext) {
             }
             updates.content = prepared.content;
             updates.plainText = prepared.plainText;
+            writingChanged = entryWritingChanged(existing.content, prepared.content);
         }
 
         if (payload.createdAt !== undefined) {
@@ -67,10 +78,23 @@ export async function PUT(request: Request, context: RouteContext) {
             return NextResponse.json({ error: "No valid fields provided for update." }, { status: 400 });
         }
 
-        updates.updatedAt = new Date();
+        const revision = nextEntryRevision({
+            createdAt: existing.createdAt,
+            updatedAt: existing.updatedAt,
+            nextCreatedAt: updates.createdAt,
+            writingChanged,
+            now: new Date(),
+        });
+        const dateChanged = revision.createdAt.getTime() !== existing.createdAt.getTime();
+        const contentChanged = updates.content !== undefined && updates.content !== existing.content;
+        if (!writingChanged && !dateChanged && !contentChanged) {
+            return NextResponse.json(serializeEntry(existing as EntryWithId));
+        }
 
-        const db = await getDatabase();
-        const entriesCollection = db.collection<EntryDocument>("entries");
+        if (updates.createdAt) updates.createdAt = revision.createdAt;
+        if (revision.updatedAt.getTime() !== existing.updatedAt.getTime()) {
+            updates.updatedAt = revision.updatedAt;
+        }
 
         const result = await entriesCollection.updateOne(
             { _id: parsedEntryId, diaryId, userId },
@@ -81,7 +105,7 @@ export async function PUT(request: Request, context: RouteContext) {
             return NextResponse.json({ error: "Entry not found" }, { status: 404 });
         }
 
-        await touchDiary(db, diaryId, userId, updates.updatedAt);
+        await touchDiary(db, diaryId, userId);
 
         const updatedEntry = await entriesCollection.findOne({ _id: parsedEntryId, diaryId, userId });
 

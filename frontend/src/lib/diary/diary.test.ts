@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, escapeRegExp, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entryPlainText, entrySelectionAction, entryToShowOnOpen, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, retitleEntryDate, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entryPlainText, entrySelectionAction, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
     normalizeTheme,
@@ -348,6 +348,58 @@ describe("entry date", () => {
         assert.equal(entryToShowOnOpen([older, newer])?.id, "newer");
         assert.equal(entryToShowOnOpen([newer, older])?.id, "newer");
         assert.equal(entryToShowOnOpen([older, { ...older, id: "same" }])?.id, "older");
+    });
+
+    it("keeps the clock time when only the date changes and marks a rewrite", () => {
+        const created = new Date("2026-11-14T14:41:00.000Z");
+        const now = new Date("2026-11-14T15:00:00.000Z");
+        const moved = nextEntryRevision({
+            createdAt: created,
+            updatedAt: created,
+            nextCreatedAt: new Date("2026-11-13T14:41:00.000Z"),
+            writingChanged: false,
+            now,
+        });
+        assert.equal(moved.createdAt.toISOString(), "2026-11-13T14:41:00.000Z");
+        assert.equal(moved.updatedAt.toISOString(), "2026-11-13T14:41:00.000Z");
+        assert.equal(entryWasRevised(moved.createdAt, moved.updatedAt), false);
+
+        const same = nextEntryRevision({
+            createdAt: created,
+            updatedAt: created,
+            nextCreatedAt: created,
+            writingChanged: false,
+            now,
+        });
+        assert.equal(same.updatedAt.toISOString(), created.toISOString());
+
+        const rewritten = nextEntryRevision({
+            createdAt: created,
+            updatedAt: created,
+            writingChanged: true,
+            now,
+        });
+        assert.equal(rewritten.updatedAt.toISOString(), now.toISOString());
+        assert.equal(entryWasRevised(rewritten.createdAt, rewritten.updatedAt), true);
+
+        const edited = new Date("2026-11-10T12:00:00.000Z");
+        const kept = nextEntryRevision({
+            createdAt: new Date("2026-11-01T12:00:00.000Z"),
+            updatedAt: edited,
+            nextCreatedAt: new Date("2026-11-12T12:00:00.000Z"),
+            writingChanged: false,
+            now,
+        });
+        assert.equal(entryWasRevised(kept.createdAt, kept.updatedAt), true);
+
+        const previousLabel = formatEntryLong(new Date(2026, 10, 14).toISOString());
+        const nextLabel = formatEntryLong(new Date(2026, 10, 13).toISOString());
+        const previous = `<h2>${previousLabel}</h2><p>Newest snow.</p>`;
+        const retitled = `<h2>${nextLabel}</h2><p>Newest snow.</p>`;
+        const rewrittenHtml = `<h2>${previousLabel}</h2><p>Newest snow. Again.</p>`;
+        assert.equal(entryWritingChanged(previous, retitled), false);
+        assert.equal(entryWritingChanged(previous, rewrittenHtml), true);
+        assert.equal(entryWasRevised("nope", created), false);
     });
 
     it("keeps the open entry open and returns a revision to that entry", () => {
