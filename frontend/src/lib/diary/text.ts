@@ -321,6 +321,24 @@ export function entryToShowAfterDelete<T extends { _id: string }>(
     return entries[index + 1] ?? entries[index - 1] ?? null;
 }
 
+export function entryLayerEscape(event: {
+    key: string;
+    altKey: boolean;
+    ctrlKey: boolean;
+    metaKey: boolean;
+    pendingDiscard: boolean;
+    linkOpen: boolean;
+    confirmDelete: boolean;
+    detailsOpen: boolean;
+}): "discard" | "link" | "delete" | "details" | null {
+    if (event.key !== "Escape" || event.altKey || event.ctrlKey || event.metaKey) return null;
+    if (event.pendingDiscard) return "discard";
+    if (event.linkOpen) return "link";
+    if (event.confirmDelete) return "delete";
+    if (event.detailsOpen) return "details";
+    return null;
+}
+
 export function entryFindKeyAction(event: {
     key: string;
     altKey: boolean;

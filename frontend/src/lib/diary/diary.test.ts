@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryMatchesListQuery, escapeRegExp, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
     normalizeTheme,
@@ -557,6 +557,28 @@ describe("entry date", () => {
         assert.equal(entryFindKeyAction({ ...plain, key: "Escape", searchFocused: true, query: "" }), "close");
         assert.equal(entryFindKeyAction({ ...plain, key: "Escape", query: "rain" }), null);
         assert.equal(entryFindKeyAction({ ...plain, key: "ArrowDown" }), null);
+    });
+
+    it("escape leaves the top layer and leaves a plain editor alone", () => {
+        const closed = {
+            key: "Escape",
+            altKey: false,
+            ctrlKey: false,
+            metaKey: false,
+            pendingDiscard: false,
+            linkOpen: false,
+            confirmDelete: false,
+            detailsOpen: false,
+        };
+        assert.equal(entryLayerEscape(closed), null);
+        assert.equal(entryLayerEscape({ ...closed, detailsOpen: true }), "details");
+        assert.equal(entryLayerEscape({ ...closed, detailsOpen: true, confirmDelete: true }), "delete");
+        assert.equal(entryLayerEscape({ ...closed, confirmDelete: true, linkOpen: true }), "link");
+        assert.equal(entryLayerEscape({ ...closed, linkOpen: true, pendingDiscard: true }), "discard");
+        assert.equal(entryLayerEscape({ ...closed, detailsOpen: true, ctrlKey: true }), null);
+        assert.equal(entryLayerEscape({ ...closed, detailsOpen: true, metaKey: true }), null);
+        assert.equal(entryLayerEscape({ ...closed, detailsOpen: true, altKey: true }), null);
+        assert.equal(entryLayerEscape({ ...closed, key: "Enter", detailsOpen: true }), null);
     });
 
     it("keeps the clock time when only the date changes and marks a rewrite", () => {

@@ -11,7 +11,7 @@ import { takeImportNotice } from "@/lib/diary/import";
 import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
 import { entryMatchesListQuery } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
@@ -569,13 +569,13 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
     };
 
-    const closeLinkField = () => {
+    const closeLinkField = useCallback(() => {
         setLinkOpen(false);
         setLinkDraft("");
         setLinkError(null);
         setLinkHasAnchor(false);
         linkRange.current = null;
-    };
+    }, []);
 
     const editorAnchor = (node: Node | null): HTMLAnchorElement | null => {
         const editor = editorRef.current;
@@ -667,11 +667,6 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === "Escape" && pendingDiscard) {
-            e.preventDefault();
-            setPendingDiscard(null);
-            return;
-        }
         if (saveEntryShortcut(e)) {
             e.preventDefault();
             void handleSave();
@@ -722,9 +717,39 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     });
 
     useEffect(() => {
-        if (mode !== "view" || detailsOpen || linkOpen || confirmDelete || pendingDiscard) return;
-
         const onKey = (event: KeyboardEvent) => {
+            const layer = entryLayerEscape({
+                key: event.key,
+                altKey: event.altKey,
+                ctrlKey: event.ctrlKey,
+                metaKey: event.metaKey,
+                pendingDiscard: Boolean(pendingDiscard),
+                linkOpen,
+                confirmDelete: Boolean(confirmDelete),
+                detailsOpen,
+            });
+            if (layer === "discard") {
+                event.preventDefault();
+                setPendingDiscard(null);
+                return;
+            }
+            if (layer === "link") {
+                event.preventDefault();
+                closeLinkField();
+                return;
+            }
+            if (layer === "delete") {
+                event.preventDefault();
+                setConfirmDelete(null);
+                return;
+            }
+            if (layer === "details") {
+                event.preventDefault();
+                setDetailsOpen(false);
+                return;
+            }
+            if (mode !== "view" || detailsOpen || linkOpen || confirmDelete || pendingDiscard) return;
+
             const target = event.target;
             const inField = target instanceof HTMLElement && (
                 target.tagName === "INPUT"
@@ -775,7 +800,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
-    }, [mode, detailsOpen, linkOpen, confirmDelete, pendingDiscard, visibleEntries, selectedEntryId, entryQuery]);
+    }, [mode, detailsOpen, linkOpen, confirmDelete, pendingDiscard, visibleEntries, selectedEntryId, entryQuery, closeLinkField]);
 
     useEffect(() => {
         if (isLoading || !saveHintRef.current) return;
