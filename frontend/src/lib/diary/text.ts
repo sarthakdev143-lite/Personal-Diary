@@ -155,6 +155,16 @@ export function styleUndoCaret(offset: number | null): number | null {
     return Math.floor(offset);
 }
 
+export function formatUndoCommand(command: string): boolean {
+    return command === "bold"
+        || command === "italic"
+        || command === "underline"
+        || command === "strikeThrough"
+        || command === "formatBlock"
+        || command === "createLink"
+        || command === "unlink";
+}
+
 const MARK_SPACE = /(<(b|strong|i|em|u|s|strike|del|a)\b([^>]*)>)([^<]*)<\/\2>/gi;
 
 export function plainMarkSpaces(html: string): string {
