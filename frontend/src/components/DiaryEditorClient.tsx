@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -859,6 +859,51 @@ function lineBlock(node: Node | null): HTMLElement | null {
     if (!(block instanceof HTMLElement)) return null;
     if (block.tagName === "P" && block.parentElement?.tagName === "LI" && !block.previousElementSibling) return block.parentElement;
     return block;
+}
+
+function textPoint(root: HTMLElement, offset: number): { node: Text; offset: number } | null {
+    let remaining = offset;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    while (node instanceof Text) {
+        if (remaining <= node.data.length) return { node, offset: remaining };
+        remaining -= node.data.length;
+        node = walker.nextNode();
+    }
+    return null;
+}
+
+function selectTextSpan(root: HTMLElement, start: number, end: number): Range | null {
+    const from = textPoint(root, start);
+    const to = textPoint(root, end);
+    if (!from || !to) return null;
+    const range = document.createRange();
+    range.setStart(from.node, from.offset);
+    range.setEnd(to.node, to.offset);
+    return range;
+}
+
+function removeTextSpan(block: HTMLElement, start: number, end: number) {
+    const live = selectTextSpan(block, start, end);
+    if (!live) return false;
+    live.deleteContents();
+    dropEmptyMarks(block);
+    const selection = window.getSelection();
+    if (selection) {
+        selection.removeAllRanges();
+        if (live.startContainer.isConnected) selection.addRange(live);
+        else placeCaretAtStart(block);
+    }
+    relaxBlockSpaces(block);
+    return true;
+}
+
+function wordBlock(node: Node | null): HTMLElement | null {
+    const line = lineBlock(node);
+    if (line) return line;
+    const host = node instanceof Element ? node : node?.parentElement ?? null;
+    const block = host?.closest("figcaption, pre");
+    return block instanceof HTMLElement ? block : null;
 }
 
 function writingSelection(editor: HTMLElement, range: Range): boolean {
@@ -4018,11 +4063,88 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const mark = selectionUndo(editor);
         if (!mark) return false;
         e.preventDefault();
+        const block = wordBlock(range.startContainer);
+        const end = wordBlock(range.endContainer);
+        const instant = instantFor(entryDate);
+        const label = instant ? fmtLong(instant.toISOString()) : "";
+        if (block instanceof HTMLElement && block === end && !selectedDateHeading(editor, selection, label)) {
+            const span = wordDeleteSpan(block.textContent ?? "", textOffsetWithin(block, range.startContainer, range.startOffset), textOffsetWithin(block, range.endContainer, range.endOffset));
+            const widened = selectTextSpan(block, span.start, span.end);
+            if (widened) {
+                selection.removeAllRanges();
+                selection.addRange(widened);
+            }
+        }
         document.execCommand("delete");
+        if (block instanceof HTMLElement) {
+            dropEmptyMarks(block);
+            relaxBlockSpaces(block);
+        }
         keepReplacedSelection(mark);
         setHtmlContent(editor.innerHTML);
         return true;
     };
+
+    const keepWordDelete = (event: { nativeEvent: Event; target: EventTarget | null; preventDefault: () => void }) => {
+        const native = event.nativeEvent;
+        if (!(native instanceof InputEvent) || mode === "view") return;
+        const word = native.inputType === "deleteWordBackward" || native.inputType === "deleteWordForward";
+        const selected = native.inputType === "deleteContentBackward" || native.inputType === "deleteContentForward";
+        if (!word && !selected) return;
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection?.rangeCount || !(event.target instanceof Node) || !editor.contains(event.target)) return;
+        const range = selection.getRangeAt(0);
+        if (word ? !range.collapsed : range.collapsed) return;
+        const instant = instantFor(entryDate);
+        const label = instant ? fmtLong(instant.toISOString()) : "";
+        if (selectedDateHeading(editor, selection, label)) return;
+        const target = word ? native.getTargetRanges()[0] : range;
+        if (!target) return;
+        const block = wordBlock(target.startContainer);
+        const end = wordBlock(target.endContainer);
+        if (!(block instanceof HTMLElement) || block !== end || !editor.contains(block)) {
+            if (!selected || !writingSelection(editor, range)) return;
+            const mark = selectionUndo(editor);
+            if (!mark) return;
+            event.preventDefault();
+            document.execCommand("delete");
+            keepReplacedSelection(mark);
+            setHtmlContent(editor.innerHTML);
+            return;
+        }
+        const span = wordDeleteSpan(
+            block.textContent ?? "",
+            textOffsetWithin(block, target.startContainer, target.startOffset),
+            textOffsetWithin(block, target.endContainer, target.endOffset),
+        );
+        const caret = styleUndoCaret(textOffsetWithin(block, range.endContainer, range.endOffset));
+        if (caret === null || !selectTextSpan(block, span.start, span.end)) return;
+        event.preventDefault();
+        const before = editor.innerHTML;
+        const path = childPath(editor, block);
+        removeTextSpan(block, span.start, span.end);
+        if (editor.innerHTML === before) return;
+        keepBlank({ before, after: editor.innerHTML, path, caret });
+        setHtmlContent(editor.innerHTML);
+    };
+    const keepWordDeleteRef = useRef(keepWordDelete);
+    keepWordDeleteRef.current = keepWordDelete;
+    useEffect(() => {
+        const onBefore = (event: Event) => {
+            const editor = editorRef.current;
+            if (!(event instanceof InputEvent) || !editor || !(event.target instanceof Node) || !editor.contains(event.target)) return;
+            keepWordDeleteRef.current({
+                nativeEvent: event,
+                target: event.target,
+                preventDefault() {
+                    event.preventDefault();
+                },
+            });
+        };
+        document.addEventListener("beforeinput", onBefore, true);
+        return () => document.removeEventListener("beforeinput", onBefore, true);
+    }, []);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (saveEntryShortcut(e)) {

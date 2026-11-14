@@ -199,6 +199,20 @@ export function selectionTypeUndo(input: {
     return "place";
 }
 
+export function wordDeleteSpan(text: string, start: number, end: number): { start: number; end: number } {
+    const space = (index: number) => {
+        const piece = text[index];
+        return piece === " " || piece === "\u00a0" || piece === "\t";
+    };
+    const before = text.slice(0, start).replace(/[\u00a0\s]/g, "");
+    const after = text.slice(end).replace(/[\u00a0\s]/g, "");
+    if (end < text.length && space(end) && (start > 0 && space(start - 1) || before === "")) {
+        return { start, end: end + 1 };
+    }
+    if (start > 0 && space(start - 1) && after === "") return { start: start - 1, end };
+    return { start, end };
+}
+
 export function dragSelectionUndo(input: { collapsed: boolean; inWriting: boolean }): "place" | "pass" {
     if (input.collapsed || !input.inWriting) return "pass";
     return "place";
