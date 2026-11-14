@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { asRecord, readJsonBody } from "@/lib/diary/json";
+import { compareDiaries } from "@/lib/diary/order";
 import { diaryListMatch, normalizeSearchQuery } from "@/lib/diary/search";
 import { normalizeDescription, normalizeTheme, normalizeTitle } from "@/lib/diary/validation";
 
@@ -22,8 +23,8 @@ export async function GET(request: Request) {
         const diaries = await db
             .collection<DiaryDocument>("diaries")
             .find({ userId })
-            .sort({ updatedAt: -1, createdAt: -1 })
             .toArray();
+        diaries.sort(compareDiaries);
 
         if (!query) {
             return NextResponse.json((diaries as DiaryWithId[]).map(serializeDiary));

@@ -4,8 +4,10 @@ import { describe, it } from "node:test";
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, freshEntryHtml, hasEntryContent, laterEntryTime, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { compareDiaries } from "./order";
 import {
     normalizeDescription,
+    normalizePinned,
     normalizeTheme,
     normalizeThemeUpdate,
     normalizeTitle,
@@ -16,6 +18,86 @@ import { codeBlockHtml } from "./markup";
 import { buildDiaryExport, diaryToMarkdown, entryShareMarkdown, exportFilename, htmlToMarkdown } from "./export";
 import { readJsonBody } from "./json";
 import { CONTENT_MAX, DEFAULT_DIARY_THEME, MAX_DATA_IMAGE_LENGTH, coverForTheme } from "./constants";
+
+describe("pinned diaries", () => {
+    it("puts a pinned diary ahead of a newer unpinned diary", () => {
+        const olderPinned = {
+            id: "older",
+            pinned: true,
+            updatedAt: "2026-01-01T00:00:00.000Z",
+            createdAt: "2026-01-01T00:00:00.000Z",
+        };
+        const newerOpen = {
+            id: "newer",
+            pinned: false,
+            updatedAt: "2026-06-01T00:00:00.000Z",
+            createdAt: "2026-06-01T00:00:00.000Z",
+        };
+
+        assert.ok(compareDiaries(olderPinned, newerOpen) < 0);
+        assert.deepEqual(
+            [newerOpen, olderPinned].sort(compareDiaries).map((diary) => diary.id),
+            ["older", "newer"],
+        );
+    });
+
+    it("treats a missing pin as not pinned", () => {
+        const pinned = {
+            id: "pinned",
+            pinned: true,
+            updatedAt: "2026-01-01T00:00:00.000Z",
+            createdAt: "2026-01-01T00:00:00.000Z",
+        };
+        const missing = {
+            id: "missing",
+            updatedAt: "2026-06-01T00:00:00.000Z",
+            createdAt: "2026-06-01T00:00:00.000Z",
+        };
+        const explicit = {
+            id: "open",
+            pinned: false,
+            updatedAt: "2026-03-01T00:00:00.000Z",
+            createdAt: "2026-03-01T00:00:00.000Z",
+        };
+
+        assert.deepEqual(
+            [explicit, missing, pinned].sort(compareDiaries).map((diary) => diary.id),
+            ["pinned", "missing", "open"],
+        );
+    });
+
+    it("keeps the newer update first when neither diary is pinned", () => {
+        const createdEarlier = {
+            id: "earlier",
+            pinned: false,
+            updatedAt: "2026-05-01T00:00:00.000Z",
+            createdAt: "2026-01-01T00:00:00.000Z",
+        };
+        const createdLater = {
+            id: "later",
+            updatedAt: "2026-05-01T00:00:00.000Z",
+            createdAt: "2026-04-01T00:00:00.000Z",
+        };
+        const updatedLater = {
+            id: "updated",
+            updatedAt: "2026-08-01T00:00:00.000Z",
+            createdAt: "2026-01-01T00:00:00.000Z",
+        };
+
+        assert.deepEqual(
+            [createdEarlier, createdLater, updatedLater].sort(compareDiaries).map((diary) => diary.id),
+            ["updated", "later", "earlier"],
+        );
+    });
+
+    it("accepts a boolean pin and rejects anything else", () => {
+        assert.deepEqual(normalizePinned(true), { ok: true, value: true });
+        assert.deepEqual(normalizePinned(false), { ok: true, value: false });
+        assert.equal(normalizePinned("true").ok, false);
+        assert.equal(normalizePinned(1).ok, false);
+        assert.equal(normalizePinned(null).ok, false);
+    });
+});
 
 describe("blank entry", () => {
     it("opens with the date and nothing to save yet", () => {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { asRecord, readJsonBody } from "@/lib/diary/json";
-import { normalizeDescription, normalizeThemeUpdate, normalizeTitle } from "@/lib/diary/validation";
+import { normalizeDescription, normalizePinned, normalizeThemeUpdate, normalizeTitle } from "@/lib/diary/validation";
 
 import {
     DiaryDocument,
@@ -111,11 +111,21 @@ export async function PUT(request: Request, context: RouteContext) {
             updates.theme = theme.value;
         }
 
+        if (payload.pinned !== undefined) {
+            const pinned = normalizePinned(payload.pinned);
+            if (!pinned.ok) {
+                return NextResponse.json({ error: pinned.error }, { status: 400 });
+            }
+            updates.pinned = pinned.value;
+        }
+
         if (!Object.keys(updates).length) {
             return NextResponse.json({ error: "No valid fields provided for update." }, { status: 400 });
         }
 
-        updates.updatedAt = new Date();
+        if (updates.title !== undefined || updates.description !== undefined || updates.theme !== undefined) {
+            updates.updatedAt = new Date();
+        }
 
         const db = await getDatabase();
         const diariesCollection = db.collection<DiaryDocument>("diaries");

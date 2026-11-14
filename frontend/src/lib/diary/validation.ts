@@ -42,6 +42,14 @@ export function normalizeDescription(value: unknown): FieldResult<string> {
     return { ok: true, value: description };
 }
 
+export function normalizePinned(value: unknown): FieldResult<boolean> {
+    if (typeof value !== "boolean") {
+        return { ok: false, error: "Pinned must be true or false." };
+    }
+
+    return { ok: true, value };
+}
+
 export function normalizeTheme(value: unknown): FieldResult<string> {
     if (value === undefined || value === null || value === "") {
         return { ok: true, value: DEFAULT_DIARY_THEME };

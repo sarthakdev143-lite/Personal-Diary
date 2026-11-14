@@ -8,6 +8,7 @@ import { useSession } from "next-auth/react";
 import { MatchedText } from "@/components/MatchedText";
 import { coverForTheme } from "@/lib/diary/constants";
 import { diaryListKeyAction } from "@/lib/diary/keys";
+import { compareDiaries } from "@/lib/diary/order";
 import { diaryMatchPath } from "@/lib/diary/search";
 import { entryToShowByStep, formatDiaryDate } from "@/lib/diary/text";
 
@@ -16,6 +17,7 @@ type Diary = {
     title: string;
     description: string;
     theme: string;
+    pinned?: boolean;
     createdAt: string;
     updatedAt?: string;
     match?: string | null;
@@ -32,6 +34,7 @@ const truncateDescription = (description: string, maxLength = 110) => {
 const Diaries = ({ query = "", refetchTrigger = 0, paused = false }: { query?: string; refetchTrigger?: number; paused?: boolean }) => {
     const { status } = useSession();
     const [attempt, setAttempt] = useState(0);
+    const [pinningId, setPinningId] = useState<string | null>(null);
     const visibleRef = useRef<Diary[]>([]);
     const [result, setResult] = useState<{
         key: string;
@@ -132,6 +135,35 @@ const Diaries = ({ query = "", refetchTrigger = 0, paused = false }: { query?: s
         return () => window.removeEventListener("keydown", onKey);
     }, [paused]);
 
+    const togglePin = async (diary: Diary) => {
+        if (pinningId === diary._id) return;
+        const pinned = diary.pinned !== true;
+        setPinningId(diary._id);
+        try {
+            const response = await fetch(`/api/diaries/${diary._id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ pinned }),
+            });
+            if (!response.ok) return;
+            const saved: unknown = await response.json().catch(() => null);
+            const nextPinned = saved && typeof saved === "object" && "pinned" in saved
+                ? saved.pinned === true
+                : pinned;
+            setResult((current) => {
+                if (!current?.diaries.some((item) => item._id === diary._id)) return current;
+                return {
+                    ...current,
+                    diaries: current.diaries
+                        .map((item) => item._id === diary._id ? { ...item, pinned: nextPinned } : item)
+                        .sort(compareDiaries),
+                };
+            });
+        } finally {
+            setPinningId((current) => current === diary._id ? null : current);
+        }
+    };
+
     const isCurrent = result?.key === requestKey;
     const diaries = isCurrent ? result.diaries : [];
     visibleRef.current = diaries;
@@ -182,44 +214,57 @@ const Diaries = ({ query = "", refetchTrigger = 0, paused = false }: { query?: s
         <>
             {diaries.map((diary) => {
                 const cover = coverForTheme(diary.theme);
+                const pinned = diary.pinned === true;
                 return (
-                <Link
+                <article
                     key={diary._id}
-                    href={diaryMatchPath(diary._id, query ? diary.matchEntry : null)}
-                    data-diary-id={diary._id}
-                    className="flex min-h-36 w-full max-w-xs overflow-hidden rounded-xl border border-white/10 bg-zinc-600/10 text-white/80 shadow-lg focus-visible:border-white/70 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70"
+                    className="flex min-h-36 w-full max-w-xs overflow-hidden rounded-xl border border-white/10 bg-zinc-600/10 text-white/80 shadow-lg"
                 >
-                    {cover ? (
-                        <span className="relative block h-full w-16 shrink-0">
-                            <Image
-                                src={cover.textureUrl}
-                                alt={cover.name}
-                                fill
-                                sizes="64px"
-                                className="object-cover"
-                            />
-                        </span>
-                    ) : (
-                        <span className="h-full w-16 shrink-0 bg-zinc-800" />
-                    )}
-                    <div className="flex min-w-0 flex-1 flex-col justify-between p-4">
-                        <div className="space-y-2 overflow-hidden">
-                            <h2 className="truncate text-lg font-medium text-white">
-                                {query
-                                    ? <MatchedText text={diary.title} query={query} className="rounded-sm bg-amber-950/80 px-0.5 text-amber-100" />
-                                    : diary.title}
-                            </h2>
-                            <p className="line-clamp-2 text-sm leading-6 text-zinc-300">
-                                {query
-                                    ? <MatchedText text={diary.match || truncateDescription(diary.description || "No description")} query={query} className="rounded-sm bg-amber-950/80 px-0.5 text-amber-100" />
-                                    : truncateDescription(diary.description || "No description")}
+                    <Link
+                        href={diaryMatchPath(diary._id, query ? diary.matchEntry : null)}
+                        data-diary-id={diary._id}
+                        className="flex min-w-0 flex-1 focus-visible:border-white/70 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70"
+                    >
+                        {cover ? (
+                            <span className="relative block h-full w-16 shrink-0">
+                                <Image
+                                    src={cover.textureUrl}
+                                    alt={cover.name}
+                                    fill
+                                    sizes="64px"
+                                    className="object-cover"
+                                />
+                            </span>
+                        ) : (
+                            <span className="h-full w-16 shrink-0 bg-zinc-800" />
+                        )}
+                        <div className="flex min-w-0 flex-1 flex-col justify-between p-4">
+                            <div className="space-y-2 overflow-hidden">
+                                <h2 className="truncate text-lg font-medium text-white">
+                                    {query
+                                        ? <MatchedText text={diary.title} query={query} className="rounded-sm bg-amber-950/80 px-0.5 text-amber-100" />
+                                        : diary.title}
+                                </h2>
+                                <p className="line-clamp-2 text-sm leading-6 text-zinc-300">
+                                    {query
+                                        ? <MatchedText text={diary.match || truncateDescription(diary.description || "No description")} query={query} className="rounded-sm bg-amber-950/80 px-0.5 text-amber-100" />
+                                        : truncateDescription(diary.description || "No description")}
+                                </p>
+                            </div>
+                            <p className="text-xs tracking-wide text-zinc-400">
+                                Updated {formatDiaryDate(diary.updatedAt || diary.createdAt)}
                             </p>
                         </div>
-                        <p className="text-xs tracking-wide text-zinc-400">
-                            Updated {formatDiaryDate(diary.updatedAt || diary.createdAt)}
-                        </p>
-                    </div>
-                </Link>
+                    </Link>
+                    <button
+                        type="button"
+                        onClick={() => void togglePin(diary)}
+                        disabled={pinningId === diary._id}
+                        className="mb-4 mr-4 shrink-0 self-end text-xs tracking-wide text-zinc-200 underline decoration-white/30 underline-offset-4 hover:text-white focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70 disabled:opacity-50"
+                    >
+                        {pinned ? "Unpin" : "Pin"}
+                    </button>
+                </article>
                 );
             })}
         </>

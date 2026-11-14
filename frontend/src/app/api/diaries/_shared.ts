@@ -14,6 +14,7 @@ export type DiaryDocument = {
     title: string;
     description: string;
     theme: string;
+    pinned?: boolean;
     createdAt: Date;
     updatedAt: Date;
 };
@@ -104,6 +105,7 @@ export function serializeDiary(diary: DiaryWithId) {
         title: diary.title,
         description: diary.description,
         theme: diary.theme,
+        pinned: diary.pinned === true,
         createdAt: diary.createdAt,
         updatedAt: diary.updatedAt,
     };
