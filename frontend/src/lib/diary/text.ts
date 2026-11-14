@@ -320,6 +320,17 @@ export function entryToOpenForFilter<T extends { _id: string; createdAt: string 
     return entryToOpenWhenHidden(visible, currentId);
 }
 
+export function showOpenEntry<T extends { _id: string }>(
+    visible: readonly T[],
+    currentId: string | null,
+    mode: "compose" | "view" | "edit",
+    confirming = false,
+): boolean {
+    if (mode !== "view" || confirming) return true;
+    if (!currentId) return true;
+    return visible.some((entry) => entry._id === currentId);
+}
+
 export function entryToShowAfterDelete<T extends { _id: string }>(
     entries: readonly T[],
     deletedId: string,

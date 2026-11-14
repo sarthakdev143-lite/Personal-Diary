@@ -11,7 +11,7 @@ import { takeImportNotice } from "@/lib/diary/import";
 import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
 import { entryMatchesListQuery } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
@@ -710,6 +710,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         entryInMonth(entry.createdAt, activeMonth)
         && entryMatchesListQuery(entry, entryQuery)
     );
+    const entryOnScreen = showOpenEntry(visibleEntries, selectedEntryId, mode, Boolean(confirmDelete));
 
     const selectEntryRef = useRef(handleEntrySelect);
     useEffect(() => {
@@ -943,6 +944,13 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
                 /* Editor content area */
                 .de-editor-wrap{flex:1;overflow-y:auto;position:relative;}
+                .de-empty-read{
+                    min-height:100%;
+                    display:flex;align-items:center;justify-content:center;
+                    padding:48px 64px;
+                    font-family:'Lora',Georgia,serif;font-style:italic;
+                    color:#a79f93;font-size:16px;line-height:1.8;text-align:center;
+                }
                 .de-editor-wrap::-webkit-scrollbar{width:4px;}
                 .de-editor-wrap::-webkit-scrollbar-track{background:transparent;}
                 .de-editor-wrap::-webkit-scrollbar-thumb{background:#2a2520;border-radius:99px;}
@@ -1415,16 +1423,22 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
                     {/* RIGHT */}
                     <section className="de-right">
-                        {statusLabel && (
+                        {entryOnScreen && statusLabel && (
                             <div className="de-viewing-badge de-fade">
                                 {statusLabel}
                             </div>
                         )}
 
                         <div className="de-editor-wrap">
+                            {!entryOnScreen && (
+                                <p className="de-empty-read" role="status">
+                                    {emptyEntryListMessage(entryQuery, activeMonth)}
+                                </p>
+                            )}
                             <div
                                 id="de-editor"
                                 ref={editorRef}
+                                hidden={!entryOnScreen}
                                 contentEditable={mode !== "view"}
                                 aria-label="Diary entry"
                                 suppressContentEditableWarning
@@ -1457,6 +1471,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
                         {/* Footer */}
                         <div className="de-footer">
+                            {entryOnScreen && (
+                            <>
                             <div className="de-mono" style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 10, color: "#8f8679", letterSpacing: "0.1em", flexWrap: "wrap" }}>
                                 {mode !== "view" && (
                                     <label className="de-date">
@@ -1537,6 +1553,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                         }
                                     </button>
                                 </div>
+                            )}
+                            </>
                             )}
                         </div>
                     </section>

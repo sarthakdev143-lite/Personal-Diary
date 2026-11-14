@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryMatchesListQuery, escapeRegExp, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
     normalizeTheme,
@@ -504,6 +504,17 @@ describe("entry date", () => {
         assert.equal(entryToOpenForFilter([november, february], "rain"), null);
         assert.equal(entryToOpenForFilter([february], "rain")?._id, "garden");
         assert.equal(entryToOpenForFilter([], "rain"), null);
+    });
+
+    it("hides a viewed entry that the list filtered out and keeps one being written", () => {
+        const rain = { _id: "rain" };
+        const garden = { _id: "garden" };
+        assert.equal(showOpenEntry([rain, garden], "rain", "view"), true);
+        assert.equal(showOpenEntry([garden], "rain", "view"), false);
+        assert.equal(showOpenEntry([], "rain", "view"), false);
+        assert.equal(showOpenEntry([], "rain", "edit"), true);
+        assert.equal(showOpenEntry([], null, "compose"), true);
+        assert.equal(showOpenEntry([garden], "rain", "view", true), true);
     });
 
     it("opens the newest saved entry", () => {
