@@ -503,21 +503,21 @@ describe("code block", () => {
         assert.equal(selectionDeleteUndo({ key: "Backspace", collapsed: true }), "pass");
         assert.equal(selectionDeleteUndo({ key: "Delete", collapsed: false, ctrlKey: true }), "pass");
         assert.equal(selectionDeleteUndo({ key: "Enter", collapsed: false }), "pass");
-        assert.equal(selectionCutUndo({ collapsed: false, singleBlock: true }), "place");
-        assert.equal(selectionCutUndo({ collapsed: true, singleBlock: true }), "pass");
-        assert.equal(selectionCutUndo({ collapsed: false, singleBlock: false }), "pass");
-        assert.equal(selectionTypeUndo({ key: "X", collapsed: false, singleBlock: true }), "place");
-        assert.equal(selectionTypeUndo({ key: " ", collapsed: false, singleBlock: true }), "place");
-        assert.equal(selectionTypeUndo({ key: "X", collapsed: true, singleBlock: true }), "pass");
-        assert.equal(selectionTypeUndo({ key: "X", collapsed: false, singleBlock: false }), "pass");
-        assert.equal(selectionTypeUndo({ key: "X", collapsed: false, singleBlock: true, ctrlKey: true }), "pass");
-        assert.equal(selectionTypeUndo({ key: "Enter", collapsed: false, singleBlock: true }), "pass");
-        assert.equal(selectionTypeUndo({ key: "X", collapsed: false, singleBlock: true, composing: true }), "pass");
-        assert.equal(selectionEnterUndo({ key: "Enter", collapsed: false, singleBlock: true }), "place");
-        assert.equal(selectionEnterUndo({ key: "Enter", collapsed: true, singleBlock: true }), "pass");
-        assert.equal(selectionEnterUndo({ key: "Enter", collapsed: false, singleBlock: false }), "pass");
-        assert.equal(selectionEnterUndo({ key: "Enter", collapsed: false, singleBlock: true, shiftKey: true }), "pass");
-        assert.equal(selectionEnterUndo({ key: "Enter", collapsed: false, singleBlock: true, ctrlKey: true }), "pass");
+        assert.equal(selectionCutUndo({ collapsed: false, inWriting: true }), "place");
+        assert.equal(selectionCutUndo({ collapsed: true, inWriting: true }), "pass");
+        assert.equal(selectionCutUndo({ collapsed: false, inWriting: false }), "pass");
+        assert.equal(selectionTypeUndo({ key: "X", collapsed: false, inWriting: true }), "place");
+        assert.equal(selectionTypeUndo({ key: " ", collapsed: false, inWriting: true }), "place");
+        assert.equal(selectionTypeUndo({ key: "X", collapsed: true, inWriting: true }), "pass");
+        assert.equal(selectionTypeUndo({ key: "X", collapsed: false, inWriting: false }), "pass");
+        assert.equal(selectionTypeUndo({ key: "X", collapsed: false, inWriting: true, ctrlKey: true }), "pass");
+        assert.equal(selectionTypeUndo({ key: "Enter", collapsed: false, inWriting: true }), "pass");
+        assert.equal(selectionTypeUndo({ key: "X", collapsed: false, inWriting: true, composing: true }), "pass");
+        assert.equal(selectionEnterUndo({ key: "Enter", collapsed: false, inWriting: true }), "place");
+        assert.equal(selectionEnterUndo({ key: "Enter", collapsed: true, inWriting: true }), "pass");
+        assert.equal(selectionEnterUndo({ key: "Enter", collapsed: false, inWriting: false }), "pass");
+        assert.equal(selectionEnterUndo({ key: "Enter", collapsed: false, inWriting: true, shiftKey: true }), "pass");
+        assert.equal(selectionEnterUndo({ key: "Enter", collapsed: false, inWriting: true, ctrlKey: true }), "pass");
     });
 
     it("puts the cursor back on the word when a styled space is undone", () => {

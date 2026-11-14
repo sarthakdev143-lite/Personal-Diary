@@ -861,6 +861,17 @@ function lineBlock(node: Node | null): HTMLElement | null {
     return block;
 }
 
+function writingSelection(editor: HTMLElement, range: Range): boolean {
+    const start = lineBlock(range.startContainer);
+    const end = lineBlock(range.endContainer);
+    if (!(start instanceof HTMLElement) || !(end instanceof HTMLElement)) return false;
+    if (!editor.contains(start) || !editor.contains(end)) return false;
+    if (start.closest("figure") || end.closest("figure")) return false;
+    const held = document.createElement("div");
+    held.appendChild(range.cloneContents());
+    return held.querySelector("img, figure, hr") === null;
+}
+
 function adjacentTextBlock(block: HTMLElement, direction: "previous" | "next"): HTMLElement | null {
     let sibling = direction === "previous" ? block.previousElementSibling : block.nextElementSibling;
     const parent = block.parentElement;
@@ -1831,6 +1842,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const blankLine = useRef<{ before: string; after: string; path?: number[]; caret?: number; breakIndex?: number; breakSide?: "before" | "after" } | null>(null);
     const selectionTyping = useRef(false);
     const selectionTypeStart = useRef<number | null>(null);
+    const selectionTypeLine = useRef<HTMLElement | null>(null);
     const styleUndo = useRef<{ before: string; after: string; path: number[]; caret: number } | null>(null);
     const styleRedo = useRef<{ undone: string; redone: string; path: number[]; caret: number } | null>(null);
     const redoPage = useRef<{
@@ -1851,6 +1863,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         blankLine.current = page;
         redoPage.current = null;
         selectionTyping.current = false;
+        selectionTypeLine.current = null;
     };
     const keepSplit = (page: { before: string; after: string; tag: string; text: string; offset: number }) => {
         headingSplit.current = page;
@@ -2020,13 +2033,15 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const split = headingSplit.current;
         if (split && editor.innerHTML !== split.after) headingSplit.current = null;
         const blank = blankLine.current;
-        if (blank && selectionTyping.current && selectionTypeStart.current !== null) {
+        if (blank && selectionTyping.current && (selectionTypeStart.current !== null || selectionTypeLine.current)) {
             const selection = window.getSelection();
             const block = selection?.rangeCount ? lineBlock(selection.anchorNode) : null;
             const savedLine = blank.path ? nodeAtPath(editor, blank.path) : null;
             const anchor = selection?.anchorNode;
             const caret = selection?.rangeCount && block && anchor ? textOffsetWithin(block, anchor, selection.anchorOffset) : null;
-            if (block && block === savedLine && caret !== null && caret >= selectionTypeStart.current) blankLine.current = { ...blank, after: editor.innerHTML };
+            const sameLine = Boolean(block && block === savedLine && caret !== null && selectionTypeStart.current !== null && caret >= selectionTypeStart.current);
+            const continued = Boolean(block && selectionTypeLine.current && block === selectionTypeLine.current);
+            if (sameLine || continued) blankLine.current = { ...blank, after: editor.innerHTML };
             else selectionTyping.current = false;
         }
         if (blankLine.current && editor.innerHTML !== blankLine.current.after) {
@@ -2304,13 +2319,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
         if (!selection.rangeCount) return;
         const range = selection.getRangeAt(0);
-        const block = lineBlock(range.startContainer);
-        const single = block instanceof HTMLElement
-            && block === lineBlock(range.endContainer)
-            && editor.contains(block)
-            && !block.closest("figure")
-            && !block.querySelector("img, figure, hr");
-        if (selectionCutUndo({ collapsed: range.collapsed, singleBlock: single }) !== "place") return;
+        if (selectionCutUndo({ collapsed: range.collapsed, inWriting: writingSelection(editor, range) }) !== "place") return;
         const mark = selectionUndo(editor);
         if (!mark) return;
         const copied = document.execCommand("copy");
@@ -3750,6 +3759,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         blankLine.current = null;
         selectionTyping.current = false;
         selectionTypeStart.current = null;
+        selectionTypeLine.current = null;
         editor.innerHTML = saved.before;
         setHtmlContent(saved.before);
         editor.focus();
@@ -3923,12 +3933,6 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const selection = window.getSelection();
         if (!editor || !selection?.rangeCount || !(e.target instanceof Node) || !editor.contains(e.target)) return false;
         const range = selection.getRangeAt(0);
-        const block = lineBlock(range.startContainer);
-        const single = block instanceof HTMLElement
-            && block === lineBlock(range.endContainer)
-            && editor.contains(block)
-            && !block.closest("figure")
-            && !block.querySelector("img, figure, hr");
         if (selectionEnterUndo({
             key: e.key,
             shiftKey: e.shiftKey,
@@ -3936,7 +3940,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             ctrlKey: e.ctrlKey,
             metaKey: e.metaKey,
             collapsed: range.collapsed,
-            singleBlock: single,
+            inWriting: writingSelection(editor, range),
         }) !== "place") return false;
         const mark = selectionUndo(editor);
         if (!mark) return false;
@@ -3953,11 +3957,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (!editor || !selection?.rangeCount || !(e.target instanceof Node) || !editor.contains(e.target)) return false;
         const range = selection.getRangeAt(0);
         const block = lineBlock(range.startContainer);
-        const single = block instanceof HTMLElement
-            && block === lineBlock(range.endContainer)
-            && editor.contains(block)
-            && !block.closest("figure")
-            && !block.querySelector("img, figure, hr");
+        const end = lineBlock(range.endContainer);
         if (selectionTypeUndo({
             key: e.key,
             altKey: e.altKey,
@@ -3965,16 +3965,18 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             metaKey: e.metaKey,
             composing: e.nativeEvent.isComposing,
             collapsed: range.collapsed,
-            singleBlock: single,
+            inWriting: writingSelection(editor, range),
         }) !== "place") return false;
         const mark = selectionUndo(editor);
         if (!mark || !(block instanceof HTMLElement)) return false;
         e.preventDefault();
         const start = styleUndoCaret(textOffsetWithin(block, range.startContainer, range.startOffset));
+        const crossed = block !== end;
         document.execCommand("insertText", false, e.key);
         keepReplacedSelection(mark);
         selectionTyping.current = start !== null;
         selectionTypeStart.current = start;
+        selectionTypeLine.current = crossed ? lineBlock(window.getSelection()?.anchorNode ?? null) : null;
         setHtmlContent(editor.innerHTML);
         return true;
     };
@@ -3991,10 +3993,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             metaKey: e.metaKey,
             collapsed: range.collapsed,
         }) !== "place") return false;
-        if (!editor.contains(range.startContainer) || !editor.contains(range.endContainer)) return false;
-        const block = lineBlock(range.startContainer);
-        if (!(block instanceof HTMLElement) || block !== lineBlock(range.endContainer) || !editor.contains(block)) return false;
-        if (block.closest("figure") || block.querySelector("img, figure, hr")) return false;
+        if (!writingSelection(editor, range)) return false;
         const mark = selectionUndo(editor);
         if (!mark) return false;
         e.preventDefault();
