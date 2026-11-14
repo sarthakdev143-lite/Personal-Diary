@@ -37,6 +37,9 @@ const NewDiaryForm = ({
     const [errors, setErrors] = useState<{ title?: string }>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const selectedTheme = themes.find((theme) => theme.textureUrl === selectedTexture);
+    const trimmedTitle = formData.title.trim();
+    const liveTitle = trimmedTitle ? normalizeTitle(formData.title) : null;
+    const titleMessage = liveTitle && !liveTitle.ok ? liveTitle.error : errors.title;
 
     useEffect(() => {
         if (!formActive) return;
@@ -184,12 +187,12 @@ const NewDiaryForm = ({
                                 value={formData.title}
                                 onChange={handleChange}
                                 maxLength={TITLE_MAX}
-                                aria-invalid={Boolean(errors.title)}
-                                aria-describedby={errors.title ? "diary-title-error" : undefined}
+                                aria-invalid={Boolean(titleMessage)}
+                                aria-describedby={titleMessage ? "diary-title-error" : undefined}
                                 className="w-full rounded-lg border border-white/15 bg-zinc-900 p-2 px-3 tracking-wide text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/70"
                                 placeholder="Enter your diary's name..."
                             />
-                            {errors.title && <p id="diary-title-error" className="mt-1 text-sm text-red-300">{errors.title}</p>}
+                            {titleMessage && <p id="diary-title-error" className="mt-1 text-sm text-red-300">{titleMessage}</p>}
                         </div>
                         <div>
                             <label htmlFor="diary-description" className="block text-lg mb-2">Description</label>
@@ -206,10 +209,8 @@ const NewDiaryForm = ({
                         </div>
                         <Button
                             type="submit"
-                            disabled={!formData.title.trim() || formData.title.trim().length < 3}
-                            className="px-11 py-5 w-fit mt-4 mx-auto border border-zinc-600 
-                            bg-zinc-700 hover:bg-zinc-600 tracking-wider text-base 
-                            disabled:opacity-50 disabled:cursor-not-allowed transition"
+                            disabled={trimmedTitle.length < 3}
+                            className="mx-auto mt-4 w-fit border border-zinc-200 bg-zinc-100 px-11 py-5 text-base tracking-wider text-zinc-950 hover:bg-white disabled:cursor-not-allowed disabled:border-zinc-700 disabled:bg-zinc-800 disabled:text-zinc-400 disabled:opacity-100"
                         >
                             Next
                         </Button>
