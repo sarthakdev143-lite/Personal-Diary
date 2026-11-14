@@ -12,7 +12,7 @@ import {
     parseEntryDate,
 } from "./validation";
 import { prepareEntryContent, presentEntry } from "./content";
-import { buildDiaryExport, diaryToMarkdown, exportFilename, htmlToMarkdown } from "./export";
+import { buildDiaryExport, diaryToMarkdown, entryShareMarkdown, exportFilename, htmlToMarkdown } from "./export";
 import { readJsonBody } from "./json";
 import { CONTENT_MAX, DEFAULT_DIARY_THEME, MAX_DATA_IMAGE_LENGTH, coverForTheme } from "./constants";
 
@@ -431,6 +431,23 @@ describe("export", () => {
         assert.equal(htmlToMarkdown("<p>a <u>quiet</u> rain</p>"), "a <u>quiet</u> rain");
         assert.equal(htmlToMarkdown("<p>a <u></u> rain</p>"), "a  rain");
         assert.equal(htmlToMarkdown("<p><strong><u>both</u></strong></p>"), "**<u>both</u>**");
+    });
+
+    it("copies one entry as markdown", () => {
+        const entry = {
+            content: "<p>a <u>quiet</u> rain</p><ul><li>one</li></ul>",
+            createdAt: "2026-03-03T15:00:00.000Z",
+        };
+        assert.equal(
+            entryShareMarkdown(entry),
+            `## ${formatEntryLong(entry.createdAt)}\n\n${htmlToMarkdown(entry.content)}\n`,
+        );
+        assert.match(entryShareMarkdown(entry), /<u>quiet<\/u>/);
+        assert.match(entryShareMarkdown(entry), /- one/);
+        assert.equal(
+            entryShareMarkdown({ content: "<p></p>", createdAt: entry.createdAt }),
+            `## ${formatEntryLong(entry.createdAt)}\n\n_Empty entry._\n`,
+        );
     });
 
     it("writes the diary in chronological order", () => {

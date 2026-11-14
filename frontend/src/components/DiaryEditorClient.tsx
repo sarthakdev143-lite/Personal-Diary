@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { ToastAction } from "@/components/ui/toast";
 import { DESCRIPTION_MAX, DIARY_THEMES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
+import { entryShareMarkdown } from "@/lib/diary/export";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
 import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
@@ -720,6 +721,17 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         } catch (e) {
             toast({ title: "Not deleted", description: e instanceof Error ? e.message : "Error", variant: "destructive" });
             setIsSavingDiary(false);
+        }
+    };
+
+    const copyEntryText = async () => {
+        if (!selectedEntry) return;
+        const markdown = entryShareMarkdown(selectedEntry);
+        try {
+            await navigator.clipboard.writeText(markdown);
+            toast({ title: "Text copied" });
+        } catch {
+            toast({ title: "Could not copy the text", variant: "destructive" });
         }
     };
 
@@ -1796,6 +1808,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                             <button type="button" className="de-ghost-btn" onClick={() => { setMode("edit"); setConfirmDelete(null); setBaseline(htmlContent); }}>edit</button>
                                             {selectedEntryId && (
                                                 <button type="button" className="de-ghost-btn" onClick={() => void copyEntryLink()}>copy link</button>
+                                            )}
+                                            {selectedEntry && (
+                                                <button type="button" className="de-ghost-btn" onClick={() => void copyEntryText()}>copy text</button>
                                             )}
                                             <button type="button" className="de-danger-btn" onClick={() => setConfirmDelete("entry")}>delete</button>
                                             <button type="button" className="de-ghost-btn" onClick={() => askToDiscard(resetComposer)}>✕ close</button>

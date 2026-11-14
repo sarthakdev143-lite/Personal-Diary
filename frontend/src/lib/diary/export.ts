@@ -191,16 +191,18 @@ function sortedEntries(entries: ExportEntry[]): ExportEntry[] {
     return [...entries].sort((left, right) => entryTime(left.createdAt) - entryTime(right.createdAt));
 }
 
+export function entryShareMarkdown(entry: { content: string; createdAt: string }): string {
+    const written = htmlToMarkdown(entry.content);
+    return `## ${formatEntryLong(entry.createdAt)}\n\n${written || "_Empty entry._"}\n`;
+}
+
 export function diaryToMarkdown(diary: ExportDiary, entries: ExportEntry[]): string {
     const title = diary.title.trim() || "Diary";
     const parts = [`# ${title}`];
     const description = diary.description?.trim();
     if (description) parts.push(description);
 
-    const body = sortedEntries(entries).map((entry) => {
-        const written = htmlToMarkdown(entry.content);
-        return `## ${formatEntryLong(entry.createdAt)}\n\n${written || "_Empty entry._"}`;
-    });
+    const body = sortedEntries(entries).map((entry) => entryShareMarkdown(entry).slice(0, -1));
 
     parts.push(...(body.length ? body : ["_No entries yet._"]));
     return `${parts.join("\n\n").trim()}\n`;
