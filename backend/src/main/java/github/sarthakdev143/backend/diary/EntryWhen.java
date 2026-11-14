@@ -97,7 +97,7 @@ public final class EntryWhen {
         return !withoutGeneratedDateHeading(previous).equals(withoutGeneratedDateHeading(next));
     }
 
-    private static String withoutGeneratedDateHeading(String html) {
+    public static String withoutGeneratedDateHeading(String html) {
         if (html == null) {
             return "";
         }

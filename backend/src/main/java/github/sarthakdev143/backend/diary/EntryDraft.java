@@ -31,8 +31,10 @@ public sealed interface EntryDraft permits EntryDraft.Ready, EntryDraft.Rejected
             return new Rejected("Entry is too large. Use fewer or smaller images.");
         }
 
-        String plainText = plainText(document);
-        boolean hasImage = !document.select("img[src]").isEmpty();
+        Document writing = Jsoup.parseBodyFragment(EntryWhen.withoutGeneratedDateHeading(content));
+        writing.outputSettings().prettyPrint(false);
+        String plainText = plainText(writing);
+        boolean hasImage = !writing.select("img[src]").isEmpty();
         if (plainText.isEmpty() && !hasImage) {
             return new Rejected("Content is required.");
         }

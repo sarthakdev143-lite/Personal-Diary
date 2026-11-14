@@ -82,6 +82,32 @@ class EntryApiTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    void rejectsAPageThatIsOnlyTheDate() throws Exception {
+        saveSession("token-a", "user-a");
+        MvcResult created = mockMvc.perform(post("/api/diaries")
+                .cookie(cookie("token-a"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"Field notes\"}"))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String diaryId = JsonPath.read(created.getResponse().getContentAsString(), "$._id");
+
+        mockMvc.perform(post("/api/diaries/" + diaryId + "/entries")
+                .cookie(cookie("token-a"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"content\":\"<h2>Saturday, November 14, 2026</h2><p><br></p>\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Content is required."));
+
+        mockMvc.perform(post("/api/diaries/" + diaryId + "/entries")
+                .cookie(cookie("token-a"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"content\":\"<h2>Saturday, November 14, 2026</h2><p>Garden path</p>\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.plainText").value("Garden path"));
+    }
+
     private static Cookie cookie(String token) {
         return new Cookie("next-auth.session-token", token);
     }

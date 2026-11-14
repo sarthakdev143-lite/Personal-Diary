@@ -39,4 +39,22 @@ class EntryDraftTest {
         EntryDraft.Ready unnamed = assertInstanceOf(EntryDraft.Ready.class, withoutAlt);
         assertEquals("Image", unnamed.plainText());
     }
+
+    @Test
+    void ignoresTheGeneratedDateAndRejectsAPageThatIsOnlyThatDate() {
+        EntryDraft dated = EntryDraft.prepare(
+                "<h2>Saturday, November 14, 2026</h2><p>Garden path</p>");
+        EntryDraft.Ready ready = assertInstanceOf(EntryDraft.Ready.class, dated);
+        assertEquals("Garden path", ready.plainText());
+        assertTrue(ready.content().contains("Saturday, November 14, 2026"));
+
+        EntryDraft onlyDate = EntryDraft.prepare(
+                "<h2>Saturday, November 14, 2026</h2><p><br></p>");
+        EntryDraft.Rejected rejected = assertInstanceOf(EntryDraft.Rejected.class, onlyDate);
+        assertEquals("Content is required.", rejected.error());
+
+        EntryDraft ownHeading = EntryDraft.prepare("<h2>Monday, November 14, 2026</h2>");
+        EntryDraft.Ready kept = assertInstanceOf(EntryDraft.Ready.class, ownHeading);
+        assertEquals("Monday, November 14, 2026", kept.plainText());
+    }
 }
