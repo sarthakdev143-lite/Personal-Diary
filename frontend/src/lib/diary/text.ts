@@ -233,6 +233,12 @@ export function wordDeleteGap(text: string, start: number, end: number): "before
     return "none";
 }
 
+export function stickyUndo(input: { sticky: boolean; matches: boolean; sameLine: boolean }): "restore" | "keep" | "clear" {
+    if (input.matches) return "restore";
+    if (input.sticky && input.sameLine) return "keep";
+    return "clear";
+}
+
 export function wordGapInsert(gap: "before" | "after", typed: string): { text: string; caret: number; pull: boolean } | null {
     if (typed === " " || typed === "\u00a0") return null;
     if (gap === "after" && /^[,.;:!?]$/.test(typed)) return { text: typed, caret: typed.length, pull: true };
