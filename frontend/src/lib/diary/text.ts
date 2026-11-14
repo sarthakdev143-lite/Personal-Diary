@@ -171,6 +171,20 @@ export function selectionDeleteUndo(input: {
     return "place";
 }
 
+export function selectionTypeUndo(input: {
+    key: string;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    composing?: boolean;
+    collapsed: boolean;
+    singleBlock: boolean;
+}): "place" | "pass" {
+    if (input.collapsed || !input.singleBlock || input.composing || input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.key.length !== 1) return "pass";
+    return "place";
+}
+
 export function selectionCutUndo(input: { collapsed: boolean; singleBlock: boolean }): "place" | "pass" {
     if (input.collapsed || !input.singleBlock) return "pass";
     return "place";
