@@ -158,6 +158,25 @@ export function listLeaveKey(input: {
     return "leave";
 }
 
+export type CodePull = "pull" | "pass";
+
+export function codePullKey(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    atStart: boolean;
+    atEnd: boolean;
+    neighbor: "text" | "code" | "none";
+}): CodePull {
+    if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey || !input.collapsed) return "pass";
+    if (input.key === "Backspace" && input.atStart && input.neighbor === "text") return "pull";
+    if (input.key === "Delete" && input.atEnd && input.neighbor === "code") return "pull";
+    return "pass";
+}
+
 export type CodeLineKey = "newline" | "leave" | "pass";
 
 export function codeLineKey(input: {

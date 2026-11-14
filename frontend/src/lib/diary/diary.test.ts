@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, dateHeadingKey, datePaste, formatEntryLong, freshEntryHtml, hasEntryContent, dividerCaret, joinNeedsSpace, laterEntryTime, lineJoinKey, listLeaveKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, dateHeadingKey, datePaste, formatEntryLong, freshEntryHtml, hasEntryContent, codePullKey, dividerCaret, joinNeedsSpace, laterEntryTime, lineJoinKey, listLeaveKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -146,6 +146,19 @@ describe("code block", () => {
         const html = codeBlockHtml();
         assert.equal(html.includes("code here"), false);
         assert.match(html, /<pre><code data-fresh="true"><br><\/code><\/pre>/);
+    });
+
+    it("brings the first line of code up to the line above", () => {
+        const start = { key: "Backspace", collapsed: true, atStart: true, atEnd: false, neighbor: "text" as const };
+        assert.equal(codePullKey(start), "pull");
+        assert.equal(codePullKey({ ...start, atStart: false }), "pass");
+        assert.equal(codePullKey({ ...start, neighbor: "none" }), "pass");
+        assert.equal(codePullKey({ ...start, collapsed: false }), "pass");
+        assert.equal(codePullKey({ ...start, shiftKey: true }), "pass");
+        assert.equal(codePullKey({ ...start, ctrlKey: true }), "pass");
+        assert.equal(codePullKey({ key: "Delete", collapsed: true, atStart: false, atEnd: true, neighbor: "code" }), "pull");
+        assert.equal(codePullKey({ key: "Delete", collapsed: true, atStart: false, atEnd: true, neighbor: "text" }), "pass");
+        assert.equal(codePullKey({ key: "Delete", collapsed: true, atStart: false, atEnd: false, neighbor: "code" }), "pass");
     });
 
     it("starts the next line when Enter is pressed in the code", () => {

@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, dateHeadingKey, datePaste, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, dividerCaret, hasEntryContent, joinNeedsSpace, lineJoinKey, listLeaveKey, quoteLeaveKey, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codePullKey, dateHeadingKey, datePaste, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, dividerCaret, hasEntryContent, joinNeedsSpace, lineJoinKey, listLeaveKey, quoteLeaveKey, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -692,6 +692,56 @@ function piecesOf(source: HTMLElement): Node[] {
         if (child instanceof HTMLElement && child.tagName === "P") return [...child.childNodes];
         return [child];
     });
+}
+
+function codeLines(code: HTMLElement): string[] {
+    const lines = [""];
+    const walk = (node: Node) => {
+        if (node instanceof Text) {
+            const parts = node.data.replace(/\u200b/g, "").split("\n");
+            lines[lines.length - 1] += parts[0] ?? "";
+            for (const part of parts.slice(1)) lines.push(part);
+            return;
+        }
+        if (node instanceof HTMLBRElement) {
+            lines.push("");
+            return;
+        }
+        for (const child of node.childNodes) walk(child);
+    };
+    walk(code);
+    return lines.map((line) => line.replace(/\u00a0/g, " "));
+}
+
+function pullFirstCodeLine(into: HTMLElement, pre: HTMLElement) {
+    const code = pre.querySelector("code");
+    const source = code instanceof HTMLElement ? code : pre;
+    const lines = codeLines(source);
+    const line = lines[0] ?? "";
+    const rest = lines.slice(1).join("\n");
+    const host = writingHost(into);
+    if (line.trim()) {
+        if (!(host.textContent ?? "").replace(/[\u200b\u00a0]/g, "").trim()) {
+            for (const child of [...host.childNodes]) {
+                if (child instanceof HTMLBRElement || (child instanceof Text && !child.data.replace(/[\u200b\u00a0]/g, "").trim())) child.remove();
+            }
+        }
+        if (joinNeedsSpace(host.textContent ?? "", line)) host.appendChild(document.createTextNode(" "));
+        const text = document.createTextNode(line);
+        host.appendChild(text);
+        placeCaretOn(text, host);
+    } else {
+        placeCaretAtEnd(host);
+    }
+    if (!rest.trim()) pre.remove();
+    else source.textContent = rest;
+}
+
+function followingCode(block: HTMLElement): HTMLPreElement | null {
+    let next = block.nextElementSibling;
+    const parent = block.parentElement;
+    if (!next && parent && (parent.tagName === "UL" || parent.tagName === "OL")) next = parent.nextElementSibling;
+    return next instanceof HTMLPreElement ? next : null;
 }
 
 function joinBlock(target: HTMLElement, source: HTMLElement) {
@@ -2132,6 +2182,64 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const pullCodeEdge = (e: React.KeyboardEvent) => {
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection?.rangeCount || mode === "view") return false;
+        const instant = instantFor(entryDate);
+        const label = instant ? fmtLong(instant.toISOString()) : "";
+        const dateHeading = label ? [...editor.querySelectorAll("h2")].find((heading) => (heading.textContent ?? "").trim() === label) : null;
+        const anchor = selection.anchorNode;
+        const host = anchor instanceof Element ? anchor : anchor?.parentElement ?? null;
+        const pre = host?.closest("pre");
+        if (pre instanceof HTMLElement && editor.contains(pre)) {
+            const range = selection.getRangeAt(0);
+            if (!pre.contains(range.startContainer) || !pre.contains(range.endContainer)) return false;
+            const code = pre.querySelector("code");
+            const target = code instanceof HTMLElement ? code : pre;
+            const offset = textOffsetWithin(target, range.startContainer, range.startOffset);
+            const atStart = (target.textContent ?? "").slice(0, offset).replace(/[\u200b\u00a0]/g, "") === "";
+            const neighbor = adjacentTextBlock(pre, "previous");
+            const action = codePullKey({
+                key: e.key,
+                shiftKey: e.shiftKey,
+                altKey: e.altKey,
+                ctrlKey: e.ctrlKey,
+                metaKey: e.metaKey,
+                collapsed: selection.isCollapsed,
+                atStart,
+                atEnd: false,
+                neighbor: neighbor && neighbor !== dateHeading ? "text" : "none",
+            });
+            if (action !== "pull" || !neighbor) return false;
+            e.preventDefault();
+            pullFirstCodeLine(neighbor, pre);
+            setHtmlContent(editor.innerHTML);
+            return true;
+        }
+        const block = lineBlock(selection.anchorNode);
+        if (!block || !editor.contains(block) || block.closest("pre") || block.closest("figcaption")) return false;
+        const edges = caretEdges(block, selection);
+        const code = followingCode(block);
+        if (!edges) return false;
+        const action = codePullKey({
+            key: e.key,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            collapsed: edges.collapsed,
+            atStart: edges.atStart,
+            atEnd: edges.atEnd,
+            neighbor: code ? "code" : "none",
+        });
+        if (action !== "pull" || !code) return false;
+        e.preventDefault();
+        pullFirstCodeLine(block, code);
+        setHtmlContent(editor.innerHTML);
+        return true;
+    };
+
     const joinLines = (e: React.KeyboardEvent) => {
         const editor = editorRef.current;
         const selection = window.getSelection();
@@ -2188,6 +2296,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (editSelectedPicture(e)) return;
         if (keepPictureNameApart(e)) return;
         if (moveAroundPicture(e)) return;
+        if (pullCodeEdge(e)) return;
         if (joinLines(e)) return;
         const editor = editorRef.current;
         const selection = window.getSelection();
