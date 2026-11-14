@@ -79,7 +79,7 @@ export function sanitizeEntryHtml(input: string): string {
 function alignPictureCaptions(html: string): string {
     return html.replace(/<figure\b[^>]*>[\s\S]*?<\/figure>/gi, (figure) => {
         const imageMatch = figure.match(/<img\b[^>]*>/i);
-        if (!imageMatch) return figure.replace(/<\/?figure\b[^>]*>/gi, "");
+        if (!imageMatch) return "";
         const captionMatch = figure.match(/<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/i);
         if (!captionMatch) return figure.replace(/<\/?figure\b[^>]*>/gi, "");
         const name = decodeCaption(captionMatch[1] ?? "");

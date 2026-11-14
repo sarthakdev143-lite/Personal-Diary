@@ -359,6 +359,15 @@ describe("entry html", () => {
             assert.equal(pulled.plainText, "Harbor");
         }
 
+        const removedPicture = prepareEntryContent('<h2>Saturday, November 14, 2026</h2><figure><figcaption>Harbor</figcaption></figure><p>After</p>');
+        assert.equal(removedPicture.ok, true);
+        if (removedPicture.ok) {
+            assert.equal(removedPicture.content.includes("Harbor"), false);
+            assert.equal(removedPicture.content.includes("<figure"), false);
+            assert.match(removedPicture.content, /After/);
+            assert.equal(removedPicture.plainText, "After");
+        }
+
         const renamed = prepareEntryContent('<figure><img src="https://example.com/sunset.png" alt="Harbor"><figcaption>Bay</figcaption></figure>');
         assert.equal(renamed.ok, true);
         if (renamed.ok) {

@@ -76,6 +76,17 @@ class EntryDraftTest {
     }
 
     @Test
+    void dropsTheNameWhenThePictureIsGone() {
+        EntryDraft draft = EntryDraft.prepare(
+                "<h2>Saturday, November 14, 2026</h2><figure><figcaption>Harbor</figcaption></figure><p>After</p>");
+        EntryDraft.Ready ready = assertInstanceOf(EntryDraft.Ready.class, draft);
+        assertEquals("After", ready.plainText());
+        assertFalse(ready.content().contains("Harbor"));
+        assertTrue(ready.content().contains("After"));
+        assertTrue(ready.content().contains("Saturday, November 14, 2026"));
+    }
+
+    @Test
     void ignoresTheGeneratedDateAndRejectsAPageThatIsOnlyThatDate() {
         EntryDraft dated = EntryDraft.prepare(
                 "<h2>Saturday, November 14, 2026</h2><p>Garden path</p>");

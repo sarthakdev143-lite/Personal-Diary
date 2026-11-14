@@ -49,6 +49,20 @@ export function lineAfterPictureKey(input: {
     return input.empty ? "remove" : "move";
 }
 
+export type SelectedPictureKey = "remove" | "pass";
+
+export function selectedPictureKey(input: {
+    key: string;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    imageSelected: boolean;
+}): SelectedPictureKey {
+    if (!input.imageSelected || input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.key === "Backspace" || input.key === "Delete") return "remove";
+    return "pass";
+}
+
 export function imageHtml(src: string, alt: string): string {
     const name = imageAltText(alt)
         .replace(/&/g, "&amp;")

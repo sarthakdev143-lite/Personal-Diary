@@ -11,7 +11,7 @@ final class PictureCaptions {
         for (Element figure : document.select("figure")) {
             Element image = figure.selectFirst("img");
             if (image == null) {
-                figure.unwrap();
+                figure.remove();
                 continue;
             }
             Element caption = figure.selectFirst("figcaption");

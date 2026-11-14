@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey } from "@/lib/diary/paste";
+import { decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryUndoBody, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
@@ -145,6 +145,28 @@ function lineAfterPicture(editor: HTMLElement, selection: Selection): { block: H
         atStart: before.toString().length === 0,
         empty: (block.textContent ?? "").replace(/\u00a0/g, " ").trim().length === 0,
     };
+}
+
+function selectedFigure(editor: HTMLElement, selection: Selection): HTMLElement | null {
+    if (!selection.rangeCount || selection.isCollapsed) return null;
+    const range = selection.getRangeAt(0);
+    if (range.startContainer !== range.endContainer || range.startContainer.nodeType !== Node.ELEMENT_NODE) return null;
+    const parent = range.startContainer as HTMLElement;
+    const node = parent.childNodes[range.startOffset];
+    if (!(node instanceof HTMLImageElement) || range.endOffset !== range.startOffset + 1) return null;
+    const figure = node.closest("figure");
+    if (!(figure instanceof HTMLElement) || !editor.contains(figure)) return null;
+    return figure;
+}
+
+function placeCaretAtStart(node: HTMLElement) {
+    const selection = window.getSelection();
+    if (!selection) return;
+    const caret = document.createRange();
+    caret.selectNodeContents(node);
+    caret.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(caret);
 }
 
 function placeCaretAtEnd(node: HTMLElement) {
@@ -1112,6 +1134,34 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         setImageAlt("");
     };
 
+    const removeSelectedPicture = (e: React.KeyboardEvent) => {
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection || mode === "view") return false;
+        const figure = selectedFigure(editor, selection);
+        const action = selectedPictureKey({
+            key: e.key,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            imageSelected: Boolean(figure),
+        });
+        if (action !== "remove" || !figure) return false;
+        e.preventDefault();
+        const next = figure.nextElementSibling;
+        figure.remove();
+        if (next instanceof HTMLElement && editor.contains(next)) {
+            placeCaretAtStart(next);
+        } else {
+            const paragraph = document.createElement("p");
+            paragraph.appendChild(document.createElement("br"));
+            editor.appendChild(paragraph);
+            placeCaretAtStart(paragraph);
+        }
+        setHtmlContent(editor.innerHTML);
+        return true;
+    };
+
     const keepPictureNameApart = (e: React.KeyboardEvent) => {
         const editor = editorRef.current;
         const selection = window.getSelection();
@@ -1142,6 +1192,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             return;
         }
         if (mode === "view") return;
+        if (removeSelectedPicture(e)) return;
         if (keepPictureNameApart(e)) return;
         const editor = editorRef.current;
         const selection = window.getSelection();
