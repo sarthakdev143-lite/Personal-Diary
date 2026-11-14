@@ -299,6 +299,10 @@ export function codeLineKey(input: {
     return "newline";
 }
 
+export function codeLeaveRemoval(text: string): boolean {
+    return text.replace(/[\u200b\u00a0\n]/g, "").trim() === "";
+}
+
 export type DatePaste = "writing" | "replace-writing" | "pass";
 
 export function datePaste(input: { touchesDate: boolean; onlyDate: boolean }): DatePaste {
