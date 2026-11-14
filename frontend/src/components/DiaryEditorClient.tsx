@@ -10,6 +10,7 @@ import { ToastAction } from "@/components/ui/toast";
 import { MatchedText } from "@/components/MatchedText";
 import { DESCRIPTION_MAX, DIARY_THEMES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
 import { entryShareMarkdown } from "@/lib/diary/export";
+import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
 import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
@@ -74,7 +75,7 @@ type ToolButton = {
     command?: string;
     value?: string;
     html?: string;
-    kind?: "image" | "link";
+    kind?: "image" | "link" | "code";
 };
 
 const TOOLBAR: ToolButton[][] = [
@@ -97,7 +98,7 @@ const TOOLBAR: ToolButton[][] = [
     ],
     [
         { icon: "🖼", title: "Insert image", kind: "image" },
-        { icon: "</>", title: "Code block", html: "<pre><code>code here</code></pre><p><br></p>" },
+        { icon: "</>", title: "Code block", kind: "code" },
         { icon: "🔗", title: "Insert link", kind: "link", format: "link" },
     ],
     [
@@ -895,6 +896,33 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             openLinkField();
             return;
         }
+        if (tool.kind === "code") {
+            const editor = editorRef.current;
+            editor?.focus();
+            const selection = window.getSelection();
+            const anchor = selection?.anchorNode ?? null;
+            const host = anchor instanceof Element ? anchor : anchor?.parentElement ?? null;
+            const pre = host?.closest("pre");
+            if (editor && pre && editor.contains(pre) && selection) {
+                const range = document.createRange();
+                range.setStartAfter(pre);
+                range.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+            insertHTML(codeBlockHtml());
+            const fresh = editor?.querySelector("code[data-fresh]");
+            if (fresh) {
+                fresh.removeAttribute("data-fresh");
+                const range = document.createRange();
+                range.selectNodeContents(fresh);
+                const nextSelection = window.getSelection();
+                nextSelection?.removeAllRanges();
+                nextSelection?.addRange(range);
+                setHtmlContent(editor?.innerHTML ?? "");
+            }
+            return;
+        }
         if (tool.html) {
             insertHTML(tool.html);
             return;
@@ -1253,6 +1281,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     color:#a8d8a8;
                     line-height:1.6;
                 }
+                #de-editor pre code{display:block;min-height:1.6em;}
                 #de-editor a{color:#c4a882;text-decoration:underline;text-underline-offset:3px;}
                 #de-editor img{max-width:100%;border-radius:6px;margin:12px 0;display:block;}
 

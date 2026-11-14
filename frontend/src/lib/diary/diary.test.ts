@@ -12,9 +12,18 @@ import {
     parseEntryDate,
 } from "./validation";
 import { prepareEntryContent, presentEntry } from "./content";
+import { codeBlockHtml } from "./markup";
 import { buildDiaryExport, diaryToMarkdown, entryShareMarkdown, exportFilename, htmlToMarkdown } from "./export";
 import { readJsonBody } from "./json";
 import { CONTENT_MAX, DEFAULT_DIARY_THEME, MAX_DATA_IMAGE_LENGTH, coverForTheme } from "./constants";
+
+describe("code block", () => {
+    it("starts empty so the placeholder is not saved", () => {
+        const html = codeBlockHtml();
+        assert.equal(html.includes("code here"), false);
+        assert.match(html, /<pre><code data-fresh="true"><br><\/code><\/pre>/);
+    });
+});
 
 describe("diary ids", () => {
     it("accepts a 24 character hex id", () => {
