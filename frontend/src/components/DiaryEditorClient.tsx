@@ -499,6 +499,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const statusLabel = selectedEntry && statusDate && mode !== "compose"
         ? `${mode === "edit" ? "editing" : "viewing"} · ${fmtShort(statusDate)}`
         : null;
+    const titleCheck = normalizeTitle(diaryDraft.title);
+    const descriptionCheck = normalizeDescription(diaryDraft.description);
+    const detailsTitleMessage = titleCheck.ok ? null : titleCheck.error;
+    const detailsDescriptionMessage = descriptionCheck.ok ? null : descriptionCheck.error;
+    const canSaveDetails = titleCheck.ok && descriptionCheck.ok;
     const cover = coverForTheme(diary?.theme);
     const months = useMemo(() => entryMonths(entries.map((entry) => entry.createdAt)), [entries]);
     const activeMonth = months.some((month) => month.key === entryMonth) ? entryMonth : "";
@@ -733,6 +738,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);
                     padding:12px 24px;background:#14110e;border-bottom:1px solid #1e1c18;
                 }
+                .de-field-error{
+                    margin:0;font-family:'Lora',Georgia,serif;font-size:13px;
+                    letter-spacing:0;text-transform:none;color:#e7b2a4;
+                }
                 .de-details label{
                     display:flex;flex-direction:column;gap:6px;
                     font-family:'JetBrains Mono',monospace;font-size:9px;
@@ -743,6 +752,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     text-transform:none;color:#ede5d8;background:#0d0b09;
                     border:1px solid #2a2520;border-radius:3px;padding:8px 10px;resize:vertical;
                 }
+                .de-details input[aria-invalid="true"],.de-details textarea[aria-invalid="true"]{border-color:#6a3a32;}
                 .de-covers{grid-column:1 / -1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
                 .de-covers button{
                     width:52px;height:64px;padding:0;border:1px solid #3a362e;border-radius:3px;
@@ -856,22 +866,36 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             void handleSaveDiary();
                         }}
                     >
-                        <label>
-                            Title
+                        <label htmlFor="diary-details-title">
+                            <span id="diary-details-title-label">Title</span>
                             <input
+                                id="diary-details-title"
                                 value={diaryDraft.title}
                                 maxLength={TITLE_MAX}
+                                aria-labelledby="diary-details-title-label"
+                                aria-invalid={Boolean(detailsTitleMessage)}
+                                aria-describedby={detailsTitleMessage ? "diary-details-title-error" : undefined}
                                 onChange={(event) => setDiaryDraft((draft) => ({ ...draft, title: event.target.value }))}
                             />
+                            {detailsTitleMessage && (
+                                <p id="diary-details-title-error" className="de-field-error">{detailsTitleMessage}</p>
+                            )}
                         </label>
-                        <label>
-                            Description
+                        <label htmlFor="diary-details-description">
+                            <span id="diary-details-description-label">Description</span>
                             <textarea
+                                id="diary-details-description"
                                 value={diaryDraft.description}
                                 maxLength={DESCRIPTION_MAX}
                                 rows={2}
+                                aria-labelledby="diary-details-description-label"
+                                aria-invalid={Boolean(detailsDescriptionMessage)}
+                                aria-describedby={detailsDescriptionMessage ? "diary-details-description-error" : undefined}
                                 onChange={(event) => setDiaryDraft((draft) => ({ ...draft, description: event.target.value }))}
                             />
+                            {detailsDescriptionMessage && (
+                                <p id="diary-details-description-error" className="de-field-error">{detailsDescriptionMessage}</p>
+                            )}
                         </label>
                         <div className="de-covers" role="group" aria-label="Cover">
                             {DIARY_THEMES.map((theme) => (
@@ -887,7 +911,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             ))}
                         </div>
                         <div className="de-details-actions">
-                            <button type="submit" className="de-save-btn" disabled={isSavingDiary}>
+                            <button type="submit" className="de-save-btn" disabled={!canSaveDetails || isSavingDiary}>
                                 {isSavingDiary ? "saving" : "save details"}
                             </button>
                             <button type="button" className="de-ghost-btn" onClick={() => void downloadExport("json")} disabled={isExporting !== null}>
