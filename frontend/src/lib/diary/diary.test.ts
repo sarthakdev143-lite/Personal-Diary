@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, escapeRegExp, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entryPlainText, entryToShowOnOpen, monthForSavedEntry, monthKey, monthLabel, retitleEntryDate, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entryPlainText, entryToShowOnOpen, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, retitleEntryDate, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
     normalizeTheme,
@@ -173,6 +173,35 @@ describe("entry html", () => {
         assert.equal(entryPlainText("<p>one&nbsp;two &amp; three</p>"), "one two & three");
         assert.equal(wordCount("<p>one two <strong>three</strong></p>"), 3);
         assert.equal(wordCount("<script>secret words</script><p></p>"), 0);
+    });
+
+    it("does not treat the inserted date heading as the entry", () => {
+        const label = formatEntryLong(new Date(2026, 10, 14).toISOString());
+        const blank = `<h2>${label}</h2><p><br></p>`;
+        const note = `<h2>${label}</h2><p>Newest snow.</p>`;
+
+        assert.equal(entryWritingText(blank), "");
+        assert.equal(wordCount(blank), 0);
+        assert.equal(entryWritingText(note), "Newest snow.");
+        assert.equal(wordCount(note), 2);
+        assert.deepEqual(prepareEntryContent(blank), { ok: false, error: "Content is required." });
+
+        const saved = prepareEntryContent(note);
+        assert.equal(saved.ok, true);
+        if (!saved.ok) return;
+        assert.match(saved.content, new RegExp(`<h2>${label}</h2>`));
+        assert.equal(saved.plainText, "Newest snow.");
+
+        const shown = presentEntry({ content: note, plainText: `${label} Newest snow.` });
+        assert.equal(shown.plainText, "Newest snow.");
+
+        const ownHeading = prepareEntryContent("<h2>Notaday, November 14, 2026</h2><p>Kept</p>");
+        assert.equal(ownHeading.ok, true);
+        if (ownHeading.ok) assert.equal(ownHeading.plainText, "Notaday, November 14, 2026 Kept");
+
+        const picture = prepareEntryContent(`<h2>${label}</h2><img src="https://example.com/sunset.png" alt="sunset">`);
+        assert.equal(picture.ok, true);
+        if (picture.ok) assert.equal(picture.plainText, "sunset");
     });
 });
 

@@ -1,6 +1,6 @@
 import { CONTENT_MAX } from "./constants";
 import { sanitizeEntryHtml } from "./sanitize";
-import { entryPlainText, hasEntryContent } from "./text";
+import { entryWritingText, hasEntryContent } from "./text";
 
 export type PreparedEntryResult =
     | { ok: true; content: string; plainText: string }
@@ -19,7 +19,7 @@ export function prepareEntryContent(input: unknown): PreparedEntryResult {
         return { ok: false, error: "Entry is too large. Use fewer or smaller images." };
     }
 
-    const plainText = entryPlainText(content);
+    const plainText = entryWritingText(content);
     if (!hasEntryContent(content)) {
         return { ok: false, error: "Content is required." };
     }
@@ -29,6 +29,6 @@ export function prepareEntryContent(input: unknown): PreparedEntryResult {
 
 export function presentEntry(entry: { content: string; plainText?: string | null }): { content: string; plainText: string } {
     const content = sanitizeEntryHtml(typeof entry.content === "string" ? entry.content : "");
-    const plainText = entryPlainText(content);
+    const plainText = entryWritingText(content);
     return { content, plainText: plainText || (hasEntryContent(content) ? "Image" : "") };
 }

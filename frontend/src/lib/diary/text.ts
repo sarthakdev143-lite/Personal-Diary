@@ -15,9 +15,49 @@ export function entryPlainText(html: string): string {
     return [text, ...alts].join(" ").replace(/\s+/g, " ").trim();
 }
 
+const MONTH_INDEX = new Map([
+    ["January", 0],
+    ["February", 1],
+    ["March", 2],
+    ["April", 3],
+    ["May", 4],
+    ["June", 5],
+    ["July", 6],
+    ["August", 7],
+    ["September", 8],
+    ["October", 9],
+    ["November", 10],
+    ["December", 11],
+]);
+
+export function withoutGeneratedDateHeading(html: string): string {
+    const match = /^<h2>([A-Za-z]+, [A-Za-z]+ \d{1,2}, \d{4})<\/h2>/.exec(html);
+    if (!match) return html;
+
+    const label = match[1];
+    const parts = /^[A-Za-z]+, ([A-Za-z]+) (\d{1,2}), (\d{4})$/.exec(label);
+    if (!parts) return html;
+
+    const month = MONTH_INDEX.get(parts[1]);
+    if (month === undefined) return html;
+
+    const day = Number(parts[2]);
+    const year = Number(parts[3]);
+    const local = new Date(year, month, day);
+    if (local.getFullYear() !== year || local.getMonth() !== month || local.getDate() !== day) return html;
+    if (formatEntryLong(local.toISOString()) !== label) return html;
+
+    return html.slice(match[0].length);
+}
+
+export function entryWritingText(html: string): string {
+    return entryPlainText(withoutGeneratedDateHeading(html));
+}
+
 export function hasEntryContent(html: string): boolean {
-    if (entryPlainText(html).length > 0) return true;
-    return /<img\b[^>]*\bsrc\s*=\s*["'][^"']+/i.test(html);
+    const writing = withoutGeneratedDateHeading(html);
+    if (entryPlainText(writing).length > 0) return true;
+    return /<img\b[^>]*\bsrc\s*=\s*["'][^"']+/i.test(writing);
 }
 
 export function storedPlainText(entry: { content: string; plainText?: string | null }): {
@@ -28,14 +68,14 @@ export function storedPlainText(entry: { content: string; plainText?: string | n
         return { plainText: entry.plainText, needsWrite: false };
     }
 
-    const plainText = entryPlainText(entry.content);
+    const plainText = entryWritingText(entry.content);
     if (plainText) return { plainText, needsWrite: true };
     if (hasEntryContent(entry.content)) return { plainText: "Image", needsWrite: true };
     return { plainText: "", needsWrite: true };
 }
 
 export function wordCount(html: string): number {
-    const text = entryPlainText(html);
+    const text = entryWritingText(html);
     return text ? text.split(/\s+/).filter(Boolean).length : 0;
 }
 

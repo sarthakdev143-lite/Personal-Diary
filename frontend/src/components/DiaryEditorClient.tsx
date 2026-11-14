@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { DESCRIPTION_MAX, DIARY_THEMES, MAX_IMAGE_BYTES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
 import { diaryFieldsMatch } from "@/lib/diary/search";
-import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entryPlainText, entryToShowOnOpen, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entryToShowOnOpen, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
@@ -22,7 +22,7 @@ const fmtLong = formatEntryLong;
 const headingFor = (iso: string) => `<h2>${fmtLong(iso)}</h2><p><br></p>`;
 
 const entryPreview = (entry: Entry) => {
-    const text = entry.plainText?.trim() || entryPlainText(entry.content);
+    const text = entry.plainText?.trim() || entryWritingText(entry.content);
     return text.slice(0, 90);
 };
 
@@ -327,7 +327,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 setEntries((prev) => placeEntry([data, ...prev]));
             }
             setEntryMonth(monthForSavedEntry(data.createdAt, entryMonth));
-            const savedText = data.plainText || entryPlainText(data.content);
+            const savedText = data.plainText || entryWritingText(data.content);
             if (!diaryFieldsMatch(savedText, "", entryQuery)) setEntryQuery("");
             setSelectedEntryId(data._id);
             setMode("view");
@@ -494,7 +494,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const activeMonth = months.some((month) => month.key === entryMonth) ? entryMonth : "";
     const visibleEntries = entries.filter((entry) =>
         entryInMonth(entry.createdAt, activeMonth)
-        && diaryFieldsMatch(entry.plainText || entryPlainText(entry.content), "", entryQuery)
+        && diaryFieldsMatch(entry.plainText || entryWritingText(entry.content), "", entryQuery)
     );
 
     if (isLoading) return (
@@ -1045,7 +1045,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 )}
                                 <span>{wc} words</span>
                                 <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
-                                <span>{htmlContent.replace(/<[^>]*>/g, "").length} chars</span>
+                                <span>{entryWritingText(htmlContent).length} chars</span>
                                 {mode !== "view" && (
                                     <>
                                         <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
