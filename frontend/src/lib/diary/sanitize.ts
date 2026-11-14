@@ -27,10 +27,12 @@ const ALLOWED_TAGS = [
     "code",
     "a",
     "img",
+    "figure",
+    "figcaption",
 ];
 
 export function sanitizeEntryHtml(input: string): string {
-    return sanitizeHtml(input, {
+    const clean = sanitizeHtml(input, {
         allowedTags: ALLOWED_TAGS,
         allowedAttributes: {
             a: ["href", "target", "rel"],
@@ -70,5 +72,40 @@ export function sanitizeEntryHtml(input: string): string {
             },
         },
         exclusiveFilter: (frame) => frame.tag === "img" && !frame.attribs.src,
-    }).trim();
+    });
+    return alignPictureCaptions(clean).trim();
+}
+
+function alignPictureCaptions(html: string): string {
+    return html.replace(/<figure\b[^>]*>[\s\S]*?<\/figure>/gi, (figure) => {
+        const imageMatch = figure.match(/<img\b[^>]*>/i);
+        if (!imageMatch) return figure.replace(/<\/?figure\b[^>]*>/gi, "");
+        const captionMatch = figure.match(/<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/i);
+        const name = decodeCaption(captionMatch?.[1] ?? "");
+        const image = imageWithAlt(imageMatch[0], name);
+        if (!name) return image;
+        const escaped = name.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+        return `<figure>${image}<figcaption>${escaped}</figcaption></figure>`;
+    });
+}
+
+function decodeCaption(value: string): string {
+    return value
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&nbsp;/gi, " ")
+        .replace(/&amp;/gi, "&")
+        .replace(/&lt;/gi, "<")
+        .replace(/&gt;/gi, ">")
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;|&apos;/gi, "'")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 180);
+}
+
+function imageWithAlt(image: string, name: string): string {
+    const withoutAlt = image.replace(/\s+alt\s*=\s*("[^"]*"|'[^']*')/gi, "");
+    if (!name) return withoutAlt;
+    const escaped = name.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+    return withoutAlt.replace(/<img\b/i, `<img alt="${escaped}"`);
 }

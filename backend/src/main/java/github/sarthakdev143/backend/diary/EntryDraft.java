@@ -28,6 +28,7 @@ public sealed interface EntryDraft permits EntryDraft.Ready, EntryDraft.Rejected
         Document document = Jsoup.parseBodyFragment(Jsoup.clean(input, safelist()));
         document.outputSettings().prettyPrint(false);
         document.select("img").forEach(EntryDraft::keepSafeImage);
+        PictureCaptions.align(document);
         String content = document.body().html().trim();
         if (content.length() > CONTENT_MAX) {
             return new Rejected("Entry is too large. Use fewer or smaller images.");
@@ -78,7 +79,7 @@ public sealed interface EntryDraft permits EntryDraft.Ready, EntryDraft.Rejected
     private static Safelist safelist() {
         return Safelist.none()
                 .addTags("h1", "h2", "h3", "p", "br", "strong", "b", "em", "i", "u", "s", "strike", "del",
-                        "ul", "ol", "li", "blockquote", "hr", "pre", "code", "a", "img")
+                        "ul", "ol", "li", "blockquote", "hr", "pre", "code", "a", "img", "figure", "figcaption")
                 .addAttributes("a", "href")
                 .addAttributes("img", "src", "alt")
                 .addProtocols("a", "href", "http", "https", "mailto");

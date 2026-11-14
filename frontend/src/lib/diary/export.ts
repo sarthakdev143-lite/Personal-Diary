@@ -172,6 +172,14 @@ function renderBlocks(nodes: HtmlNode[]): string {
             continue;
         }
 
+        if (node.tag === "figure") {
+            const image = node.children.find((child): child is ElementNode => child.kind === "el" && child.tag === "img");
+            if (image) {
+                parts.push(renderInline([image]));
+                continue;
+            }
+        }
+
         const text = renderInline([node]).trim();
         if (text) parts.push(text);
     }

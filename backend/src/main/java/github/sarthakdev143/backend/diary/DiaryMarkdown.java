@@ -44,6 +44,7 @@ public final class DiaryMarkdown {
         document.select("script, style").remove();
         document.select("img").forEach(DiaryMarkdown::keepSafeImage);
         document.select("a").forEach(DiaryMarkdown::keepSafeLink);
+        PictureCaptions.align(document);
         return renderBlocks(document.body().childNodes()).trim();
     }
 
@@ -199,6 +200,13 @@ public final class DiaryMarkdown {
             if (tag.equals("img")) {
                 parts.add(renderInline(List.of(element)));
                 continue;
+            }
+            if (tag.equals("figure")) {
+                Element image = element.selectFirst("img");
+                if (image != null) {
+                    parts.add(renderInline(List.of(image)));
+                    continue;
+                }
             }
             String text = renderInline(List.of(element)).trim();
             if (!text.isEmpty()) {

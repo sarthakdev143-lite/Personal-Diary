@@ -65,6 +65,17 @@ class EntryDraftTest {
     }
 
     @Test
+    void usesTheCaptionWhenAPictureIsRenamed() {
+        EntryDraft renamed = EntryDraft.prepare(
+                "<figure><img src=\"https://example.com/sunset.png\" alt=\"Harbor\"><figcaption>Bay</figcaption></figure>");
+        EntryDraft.Ready ready = assertInstanceOf(EntryDraft.Ready.class, renamed);
+        assertEquals("Bay", ready.plainText());
+        assertTrue(ready.content().contains("alt=\"Bay\""));
+        assertTrue(ready.content().contains("<figcaption>Bay</figcaption>"));
+        assertFalse(ready.content().contains("Harbor"));
+    }
+
+    @Test
     void ignoresTheGeneratedDateAndRejectsAPageThatIsOnlyThatDate() {
         EntryDraft dated = EntryDraft.prepare(
                 "<h2>Saturday, November 14, 2026</h2><p>Garden path</p>");

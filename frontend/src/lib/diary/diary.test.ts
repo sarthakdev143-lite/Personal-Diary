@@ -341,6 +341,23 @@ describe("entry html", () => {
         assert.equal(named.ok, true);
         if (named.ok) assert.equal(named.plainText, "sunset");
         assert.equal(wordCount(`<img src="https://example.com/sunset.png" alt="sunset"><p>sunset</p>`), 1);
+        assert.equal(
+            entryPlainText('<figure><img src="https://example.com/sunset.png" alt="Harbor"><figcaption>Bay</figcaption></figure>'),
+            "Bay",
+        );
+        assert.equal(
+            wordCount('<figure><img src="https://example.com/sunset.png" alt="Harbor"><figcaption>Bay</figcaption></figure>'),
+            1,
+        );
+
+        const renamed = prepareEntryContent('<figure><img src="https://example.com/sunset.png" alt="Harbor"><figcaption>Bay</figcaption></figure>');
+        assert.equal(renamed.ok, true);
+        if (renamed.ok) {
+            assert.match(renamed.content, /alt="Bay"/);
+            assert.equal(renamed.content.includes("Harbor"), false);
+            assert.equal(renamed.plainText, "Bay");
+            assert.equal(wordCount(renamed.content), 1);
+        }
     });
 });
 
@@ -560,6 +577,10 @@ describe("export", () => {
         assert.match(markdown, /!\[sketch\]\(image\)/);
         assert.equal(markdown.includes("script"), false);
         assert.equal(markdown.includes("alert"), false);
+        assert.equal(
+            htmlToMarkdown('<figure><img src="data:image/png;base64,aaaa" alt="Harbor"><figcaption>Bay</figcaption></figure>'),
+            "![Bay](image)",
+        );
     });
 
     it("keeps an underline in the markdown", () => {

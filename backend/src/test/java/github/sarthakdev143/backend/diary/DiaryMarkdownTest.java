@@ -33,6 +33,13 @@ class DiaryMarkdownTest {
     }
 
     @Test
+    void exportsARenamedPictureOnce() {
+        String markdown = DiaryMarkdown.htmlToMarkdown(
+                "<figure><img src=\"data:image/png;base64,aaaa\" alt=\"Harbor\"><figcaption>Bay</figcaption></figure>");
+        assertEquals("![Bay](image)", markdown);
+    }
+
+    @Test
     void keepsAnUnderline() {
         assertEquals("a <u>quiet</u> rain", DiaryMarkdown.htmlToMarkdown("<p>a <u>quiet</u> rain</p>"));
         assertEquals("a  rain", DiaryMarkdown.htmlToMarkdown("<p>a <u></u> rain</p>"));

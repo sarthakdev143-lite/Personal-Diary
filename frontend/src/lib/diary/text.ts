@@ -9,8 +9,6 @@ function decodeEntryText(value: string): string {
 }
 
 export function entryPlainText(html: string): string {
-    const alts = [...html.matchAll(/\balt\s*=\s*["']([^"']*)["']/gi)].map((match) => decodeEntryText(match[1] ?? "").trim());
-
     const text = decodeEntryText(
         html
             .replace(/<script[\s\S]*?<\/script>/gi, " ")
@@ -19,7 +17,10 @@ export function entryPlainText(html: string): string {
     );
 
     const visible = text.toLowerCase();
-    const extra = alts.filter((alt) => alt && !visible.includes(alt.toLowerCase()));
+    const captioned = html.replace(/<figure\b[^>]*>[\s\S]*?<\/figure>/gi, " ");
+    const extra = [...captioned.matchAll(/\balt\s*=\s*["']([^"']*)["']/gi)]
+        .map((match) => decodeEntryText(match[1] ?? "").trim())
+        .filter((alt) => alt && !visible.includes(alt.toLowerCase()));
     return [text, ...extra].join(" ").replace(/\s+([.,;:!?])/g, "$1").replace(/\s+/g, " ").trim();
 }
 
