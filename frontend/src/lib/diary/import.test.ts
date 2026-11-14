@@ -48,6 +48,20 @@ describe("import backup", () => {
         assert.equal(parsed.diary.entries[0].plainText, "Hello there");
         assert.equal(parsed.diary.entries[0].createdAt.toISOString(), "2026-01-01T12:00:00.000Z");
         assert.equal(parsed.diary.entries[0].updatedAt.toISOString(), "2026-01-02T12:00:00.000Z");
+        assert.equal(parsed.diary.pinned, false);
+    });
+
+    it("keeps a pin from the backup and ignores a pin that is not true or false", () => {
+        const pinned = diaryToBackup({ ...diary, pinned: true }, [entry], "2026-03-01T00:00:00.000Z");
+        const restored = parseDiaryBackup(pinned, now);
+        assert.equal(restored.ok, true);
+        if (restored.ok) assert.equal(restored.diary.pinned, true);
+
+        const loose = diaryToBackup(diary, [], "2026-03-01T00:00:00.000Z");
+        (loose.diary as { pinned: unknown }).pinned = "yes";
+        const ignored = parseDiaryBackup(loose, now);
+        assert.equal(ignored.ok, true);
+        if (ignored.ok) assert.equal(ignored.diary.pinned, false);
     });
 
     it("uses the default cover when a backup names an unknown one", () => {

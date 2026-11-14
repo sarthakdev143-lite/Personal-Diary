@@ -16,6 +16,7 @@ export type ImportedDiary = {
     title: string;
     description: string;
     theme: string;
+    pinned: boolean;
     entries: ImportedEntry[];
     skipped: number;
 };
@@ -142,6 +143,7 @@ export function parseDiaryBackup(
             title: title.value,
             description: description.value,
             theme,
+            pinned: diary.pinned === true,
             entries,
             skipped,
         },

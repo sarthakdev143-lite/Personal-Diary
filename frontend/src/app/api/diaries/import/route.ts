@@ -37,6 +37,7 @@ export async function POST(request: Request) {
             title: parsed.diary.title,
             description: parsed.diary.description,
             theme: parsed.diary.theme,
+            pinned: parsed.diary.pinned,
             createdAt: now,
             updatedAt: now,
         };

@@ -5,6 +5,7 @@ export type ExportDiary = {
     title: string;
     description?: string | null;
     theme?: string | null;
+    pinned?: boolean | null;
 };
 
 export type ExportEntry = {
@@ -217,6 +218,7 @@ export function diaryToBackup(diary: ExportDiary, entries: ExportEntry[], export
             title: diary.title.trim() || "Diary",
             description: diary.description?.trim() ?? "",
             theme: diary.theme ?? "",
+            pinned: diary.pinned === true,
         },
         entries: sortedEntries(entries).map((entry) => {
             const content = sanitizeEntryHtml(entry.content);

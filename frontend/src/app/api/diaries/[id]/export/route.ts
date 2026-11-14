@@ -47,6 +47,7 @@ export async function GET(request: Request, context: RouteContext) {
                 title: diary.title,
                 description: diary.description,
                 theme: diary.theme,
+                pinned: diary.pinned === true,
             },
             entries.map((entry) => ({
                 content: entry.content,
