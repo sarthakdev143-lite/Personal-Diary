@@ -171,6 +171,11 @@ export function selectionDeleteUndo(input: {
     return "place";
 }
 
+export function selectionCutUndo(input: { collapsed: boolean; singleBlock: boolean }): "place" | "pass" {
+    if (input.collapsed || !input.singleBlock) return "pass";
+    return "place";
+}
+
 export function pasteSelectionUndo(input: { collapsed: boolean; action: "default" | "plain" | "html" | "image" | "reject" | "ignore" }): "place" | "keep" {
     if (input.action !== "default" && input.action !== "plain" && input.action !== "html") return "keep";
     return replacedSelectionUndo({ collapsed: input.collapsed });
