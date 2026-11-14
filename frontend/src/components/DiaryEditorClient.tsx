@@ -781,7 +781,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     border-right:1px solid #1a1814;
                 }
                 .de-entry-card{
-                    display:block;width:100%;text-align:left;
+                    display:block;width:100%;text-align:left;color:inherit;
                     padding:14px 16px;
                     border:none;
                     border-bottom:1px solid #141210;
@@ -803,6 +803,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 }
                 .de-entry-card:hover{background:#131109;}
                 .de-entry-card.active{background:#161208;border-left-color:#c4a882;}
+                .de-entry-card:focus-visible{outline:1px solid #c4a882;outline-offset:-2px;}
 
                 /* Right panel */
                 .de-right{
