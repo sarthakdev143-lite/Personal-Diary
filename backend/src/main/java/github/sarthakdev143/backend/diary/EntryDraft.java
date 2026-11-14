@@ -31,6 +31,7 @@ public sealed interface EntryDraft permits EntryDraft.Ready, EntryDraft.Rejected
         Document document = Jsoup.parseBodyFragment(Jsoup.clean(source.body().html(), safelist()));
         document.outputSettings().prettyPrint(false);
         document.select("img").forEach(EntryDraft::keepSafeImage);
+        document.select("ol").forEach(EntryDraft::keepListStart);
         PictureCaptions.align(document);
         CodeLines.join(document);
         String content = EntryWhen.separateGluedDateHeading(document.body().html().trim());
@@ -67,6 +68,19 @@ public sealed interface EntryDraft permits EntryDraft.Ready, EntryDraft.Rejected
         }
     }
 
+    private static void keepListStart(Element list) {
+        String start = list.attr("start").trim();
+        if (!start.matches("-?\\d{1,9}")) {
+            list.removeAttr("start");
+            return;
+        }
+        try {
+            Integer.parseInt(start);
+        } catch (NumberFormatException error) {
+            list.removeAttr("start");
+        }
+    }
+
     private static String plainText(Document document) {
         String text = document.text().replaceAll("\\s+", " ").trim();
         String alts = document.select("img[alt]").eachAttr("alt").stream()
@@ -86,6 +100,7 @@ public sealed interface EntryDraft permits EntryDraft.Ready, EntryDraft.Rejected
                         "ul", "ol", "li", "blockquote", "hr", "pre", "code", "a", "img", "figure", "figcaption")
                 .addAttributes("a", "href")
                 .addAttributes("img", "src", "alt")
+                .addAttributes("ol", "start")
                 .addProtocols("a", "href", "http", "https", "mailto");
     }
 }

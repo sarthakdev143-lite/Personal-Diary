@@ -10,6 +10,18 @@ import org.junit.jupiter.api.Test;
 class EntryDraftTest {
 
     @Test
+    void keepsTheNumberWhereAListContinues() {
+        EntryDraft.Ready ready = assertInstanceOf(
+                EntryDraft.Ready.class,
+                EntryDraft.prepare("<ol start=\"2\"><li>Harbor</li><li>today</li></ol>"));
+        assertTrue(ready.content().contains("start=\"2\""));
+        EntryDraft dropped = EntryDraft.prepare("<ol start=\"nope\"><li>Harbor</li></ol>");
+        EntryDraft.Ready kept = assertInstanceOf(EntryDraft.Ready.class, dropped);
+        assertFalse(kept.content().contains("nope"));
+        assertFalse(kept.content().contains("start"));
+    }
+
+    @Test
     void keepsTheWritingAndDropsAScript() {
         EntryDraft draft = EntryDraft.prepare("<p>Hello <strong>there</strong></p><script>alert(1)</script>");
 

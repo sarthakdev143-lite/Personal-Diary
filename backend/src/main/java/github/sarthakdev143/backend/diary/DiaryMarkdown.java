@@ -134,6 +134,32 @@ public final class DiaryMarkdown {
         }
     }
 
+    private static int orderedItemNumber(Element list, List<Element> items, int index) {
+        int number = wholeNumber(list.attr("start"), 1);
+        int last = Math.max(0, index);
+        for (int i = 0; i <= last && i < items.size(); i += 1) {
+            String raw = items.get(i).attr("value").trim();
+            if (raw.matches("-?\\d{1,9}")) {
+                number = wholeNumber(raw, number);
+            } else if (i > 0) {
+                number += 1;
+            }
+        }
+        return number;
+    }
+
+    private static int wholeNumber(String raw, int fallback) {
+        String value = raw == null ? "" : raw.trim();
+        if (!value.matches("-?\\d{1,9}")) {
+            return fallback;
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException error) {
+            return fallback;
+        }
+    }
+
     private static boolean quoteIsInline(Element quote) {
         for (Node child : quote.childNodes()) {
             if (!(child instanceof Element element)) {
@@ -187,19 +213,21 @@ public final class DiaryMarkdown {
                 continue;
             }
             if (tag.equals("ul") || tag.equals("ol")) {
-                List<String> lines = new ArrayList<>();
-                int index = 1;
+                List<Element> items = new ArrayList<>();
                 for (Element item : element.children()) {
-                    if (!item.normalName().equals("li")) {
-                        continue;
+                    if (item.normalName().equals("li")) {
+                        items.add(item);
                     }
-                    String marker = tag.equals("ul") ? "-" : index + ".";
+                }
+                List<String> lines = new ArrayList<>();
+                for (int index = 0; index < items.size(); index += 1) {
+                    Element item = items.get(index);
+                    String marker = tag.equals("ul") ? "-" : orderedItemNumber(element, items, index) + ".";
                     String text = renderInline(item.childNodes()).trim();
                     if (text.isEmpty()) {
                         text = renderBlocks(item.childNodes()).trim();
                     }
                     lines.add(marker + " " + text);
-                    index += 1;
                 }
                 if (!lines.isEmpty()) {
                     parts.add(String.join("\n", lines));

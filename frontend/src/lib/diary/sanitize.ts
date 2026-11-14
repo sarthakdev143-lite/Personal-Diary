@@ -38,6 +38,7 @@ export function sanitizeEntryHtml(input: string): string {
         allowedAttributes: {
             a: ["href", "target", "rel"],
             img: ["src", "alt"],
+            ol: ["start"],
         },
         allowedSchemes: ["http", "https", "mailto"],
         allowedSchemesByTag: {
@@ -57,6 +58,11 @@ export function sanitizeEntryHtml(input: string): string {
                     safeAttribs.rel = "noopener noreferrer";
                 }
                 return { tagName, attribs: safeAttribs };
+            },
+            ol: (tagName, attribs) => {
+                const start = (attribs.start ?? "").trim();
+                if (/^-?\d+$/.test(start) && Number.isSafeInteger(Number(start))) return { tagName, attribs: { start } };
+                return { tagName, attribs: {} };
             },
             img: (_tagName, attribs) => {
                 const src = attribs.src ?? "";

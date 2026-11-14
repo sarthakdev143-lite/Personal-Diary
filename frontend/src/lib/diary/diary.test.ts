@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -238,6 +238,11 @@ describe("code block", () => {
         assert.equal(listEnterKey({ ...start, inItem: false }), "pass");
         assert.equal(listEnterKey({ ...start, shiftKey: true }), "pass");
         assert.equal(listEnterKey({ ...start, key: "a" }), "pass");
+        assert.equal(orderedItemNumber({ index: 0 }), 1);
+        assert.equal(orderedItemNumber({ start: "3", index: 1 }), 4);
+        assert.equal(orderedItemNumber({ start: "3", values: ["10"], index: 1 }), 11);
+        assert.equal(orderedItemNumber({ start: "nope", index: 2 }), 3);
+        assert.equal(orderedItemNumber({ start: "", index: 1 }), 2);
     });
 
     it("leaves a quote when Enter is pressed on a blank quote", () => {
@@ -436,6 +441,12 @@ describe("code block", () => {
         assert.equal(numbered.ok, true);
         if (!numbered.ok) return;
         assert.equal(numbered.content, "<h2>Saturday, November 14, 2026</h2><ol><li>one</li><li>two</li></ol>");
+        const continued = prepareEntryContent('<ol start="2"><li>Harbor</li><li>today</li></ol>');
+        assert.equal(continued.ok, true);
+        if (!continued.ok) return;
+        assert.equal(continued.content, '<ol start="2"><li>Harbor</li><li>today</li></ol>');
+        assert.equal(htmlToMarkdown(continued.content), "2. Harbor\n3. today");
+        assert.equal(htmlToMarkdown('<ol start="nope"><li>Harbor</li></ol>'), "1. Harbor");
     });
 
     it("keeps each row of a pasted table", () => {

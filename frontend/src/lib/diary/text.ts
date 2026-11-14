@@ -341,6 +341,25 @@ export function listLeaveKey(input: {
     return "leave";
 }
 
+export function orderedItemNumber(input: { start?: string | null; values?: Array<string | null | undefined>; index: number }): number {
+    const start = wholeNumber(input.start);
+    let number = start ?? 1;
+    const index = Math.max(0, input.index);
+    const values = input.values ?? [];
+    for (let i = 0; i <= index; i += 1) {
+        const value = wholeNumber(values[i]);
+        if (value !== null) number = value;
+        else if (i > 0) number += 1;
+    }
+    return number;
+}
+
+function wholeNumber(value?: string | null): number | null {
+    if (value == null || !/^-?\d+$/.test(value.trim())) return null;
+    const number = Number(value);
+    return Number.isSafeInteger(number) ? number : null;
+}
+
 export type ListEnter = "above" | "pass";
 
 export function listEnterKey(input: {

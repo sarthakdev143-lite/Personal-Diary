@@ -1,5 +1,5 @@
 import { sanitizeEntryHtml } from "./sanitize";
-import { formatEntryLong, withoutGeneratedDateHeading } from "./text";
+import { formatEntryLong, orderedItemNumber, withoutGeneratedDateHeading } from "./text";
 
 export type ExportDiary = {
     title: string;
@@ -149,8 +149,9 @@ function renderBlocks(nodes: HtmlNode[]): string {
 
         if (node.tag === "ul" || node.tag === "ol") {
             const items = node.children.filter((child): child is ElementNode => child.kind === "el" && child.tag === "li");
+            const values = items.map((item) => item.attrs.value);
             const lines = items.map((item, index) => {
-                const marker = node.tag === "ul" ? "-" : `${index + 1}.`;
+                const marker = node.tag === "ul" ? "-" : `${orderedItemNumber({ start: node.attrs.start, values, index })}.`;
                 const text = renderInline(item.children).trim() || renderBlocks(item.children).trim();
                 return `${marker} ${text}`;
             });

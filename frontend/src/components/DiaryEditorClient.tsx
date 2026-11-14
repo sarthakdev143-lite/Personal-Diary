@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, joinNeedsSpace, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, joinNeedsSpace, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -1357,6 +1357,17 @@ function outdentListItem(item: HTMLElement) {
     placeCaretAtStart(paragraph);
 }
 
+function continueOrderedList(list: HTMLElement, rest: HTMLElement, index: number) {
+    if (!(list instanceof HTMLOListElement) || !(rest instanceof HTMLOListElement) || index < 0) return;
+    const items = [...list.children].filter((child) => child.tagName === "LI");
+    const number = orderedItemNumber({
+        start: list.getAttribute("start"),
+        values: items.map((item) => item.getAttribute("value")),
+        index,
+    });
+    if (number !== 1) rest.setAttribute("start", String(number));
+}
+
 function openLineAboveItem(item: HTMLElement) {
     const list = item.parentElement;
     if (!(list instanceof HTMLUListElement || list instanceof HTMLOListElement)) return;
@@ -1367,6 +1378,7 @@ function openLineAboveItem(item: HTMLElement) {
     if (index <= 0) list.before(paragraph);
     else {
         const rest = document.createElement(list.tagName.toLowerCase());
+        continueOrderedList(list, rest, index);
         for (const child of items.slice(index)) rest.appendChild(child);
         list.after(paragraph);
         paragraph.after(rest);
@@ -1382,6 +1394,11 @@ function leaveListItem(item: HTMLElement) {
     });
     const paragraph = document.createElement("p");
     paragraph.appendChild(document.createElement("br"));
+    const original = [...list.children].filter((child) => child.tagName === "LI");
+    const splitAt = following[0] instanceof HTMLElement ? original.indexOf(following[0]) : -1;
+    const preceding = original.some((child) => child !== item && !following.includes(child));
+    const continued = preceding && following.length > 0 ? document.createElement(list.tagName.toLowerCase()) : null;
+    if (continued && splitAt >= 0) continueOrderedList(list, continued, splitAt);
     item.remove();
     const items = [...list.children].filter((child) => child.tagName === "LI");
     const place = listLeavePlace({
@@ -1391,11 +1408,10 @@ function leaveListItem(item: HTMLElement) {
     });
     if (place === "replace") list.replaceWith(paragraph);
     else if (place === "before") list.before(paragraph);
-    else if (place === "split") {
-        const rest = document.createElement(list.tagName.toLowerCase());
-        for (const next of following) rest.appendChild(next);
+    else if (place === "split" && continued) {
+        for (const next of following) continued.appendChild(next);
         list.after(paragraph);
-        paragraph.after(rest);
+        paragraph.after(continued);
     } else list.after(paragraph);
     placeCaretAtStart(paragraph);
 }

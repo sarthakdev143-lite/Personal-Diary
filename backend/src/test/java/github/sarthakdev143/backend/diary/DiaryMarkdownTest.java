@@ -36,6 +36,7 @@ class DiaryMarkdownTest {
     void keepsAListThatWasNestedInsideAParagraph() {
         String markdown = DiaryMarkdown.htmlToMarkdown("<p><ol><li>one</li><li>two</li></ol></p>");
         assertTrue(markdown.contains("1. one\n2. two"));
+        assertTrue(DiaryMarkdown.htmlToMarkdown("<ol start=\"3\"><li>Harbor</li><li>today</li></ol>").contains("3. Harbor\n4. today"));
     }
 
     @Test
