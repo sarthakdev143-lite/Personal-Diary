@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -74,14 +75,22 @@ public class DiaryController {
     }
 
     @GetMapping("/api/diaries/{id}/export")
-    public DiaryBackup.File export(
+    public ResponseEntity<?> export(
             HttpServletRequest request,
             @PathVariable String id,
             @RequestParam(name = "format", defaultValue = "json") String format) {
-        if (!"json".equalsIgnoreCase(format.trim())) {
-            throw new DiaryRejectedException("Use format=json.");
+        String requested = format.trim().toLowerCase();
+        if (requested.equals("md") || requested.equals("markdown")) {
+            DiaryService.MarkdownDownload download = diaryService.markdown(userId(request), id);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType("text/markdown;charset=UTF-8"))
+                    .header("Content-Disposition", "attachment; filename=\"" + download.filename() + "\"")
+                    .body(download.body());
         }
-        return diaryService.export(userId(request), id, Instant.now());
+        if (!requested.equals("json")) {
+            throw new DiaryRejectedException("Use format=md or format=json.");
+        }
+        return ResponseEntity.ok(diaryService.export(userId(request), id, Instant.now()));
     }
 
     @PostMapping("/api/diaries/import")

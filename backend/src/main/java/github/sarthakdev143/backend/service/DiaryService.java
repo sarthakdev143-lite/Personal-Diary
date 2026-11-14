@@ -12,8 +12,9 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import github.sarthakdev143.backend.diary.DiaryDraft;
 import github.sarthakdev143.backend.diary.DiaryBackup;
+import github.sarthakdev143.backend.diary.DiaryDraft;
+import github.sarthakdev143.backend.diary.DiaryMarkdown;
 import github.sarthakdev143.backend.diary.DiarySearch;
 import github.sarthakdev143.backend.model.Diary;
 import github.sarthakdev143.backend.model.Entry;
@@ -132,6 +133,19 @@ public class DiaryService {
     public DiaryBackup.File export(String userId, String id, Instant exportedAt) {
         Diary diary = open(userId, id);
         return DiaryBackup.write(diary, entryRepository.findByDiaryIdAndUserIdOrderByCreatedAtDesc(id, userId), exportedAt);
+    }
+
+    public MarkdownDownload markdown(String userId, String id) {
+        Diary diary = open(userId, id);
+        return new MarkdownDownload(
+                DiaryMarkdown.filename(diary.getTitle(), "md"),
+                DiaryMarkdown.diary(
+                        diary,
+                        entryRepository.findByDiaryIdAndUserIdOrderByCreatedAtDesc(id, userId),
+                        ZoneId.systemDefault()));
+    }
+
+    public record MarkdownDownload(String filename, String body) {
     }
 
     public ImportedDiary importBackup(String userId, JsonNode body, Instant now) {
