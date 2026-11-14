@@ -277,7 +277,7 @@ export function datePaste(input: { touchesDate: boolean; onlyDate: boolean }): D
     return input.onlyDate ? "writing" : "replace-writing";
 }
 
-export type DateSelectionKey = "clear" | "leave" | "pass";
+export type DateSelectionKey = "clear" | "leave" | "type" | "pass";
 
 export function dateSelectionKey(input: {
     key: string;
@@ -289,8 +289,9 @@ export function dateSelectionKey(input: {
     writingSelected: boolean;
 }): DateSelectionKey {
     if (input.altKey || input.ctrlKey || input.metaKey || input.collapsed || !input.touchesDate) return "pass";
-    if (input.key !== "Backspace" && input.key !== "Delete") return "pass";
-    return input.writingSelected ? "clear" : "leave";
+    if (input.key === "Backspace" || input.key === "Delete") return input.writingSelected ? "clear" : "leave";
+    if (input.key === "Enter" || input.key.length === 1) return "type";
+    return "pass";
 }
 
 export type DateHeadingKey = "write" | "leave" | "hold" | "drop" | "pass";

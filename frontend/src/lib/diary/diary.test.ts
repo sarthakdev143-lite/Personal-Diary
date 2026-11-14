@@ -149,7 +149,12 @@ describe("blank entry", () => {
         assert.equal(dateSelectionKey({ ...selected, key: "Backspace", touchesDate: false }), "pass");
         assert.equal(dateSelectionKey({ ...selected, key: "Backspace", ctrlKey: true }), "pass");
         assert.equal(dateSelectionKey({ ...selected, key: "Backspace", metaKey: true }), "pass");
-        assert.equal(dateSelectionKey({ ...selected, key: "Enter" }), "pass");
+        assert.equal(dateSelectionKey({ ...selected, key: "S" }), "type");
+        assert.equal(dateSelectionKey({ ...selected, key: "S", writingSelected: false }), "type");
+        assert.equal(dateSelectionKey({ ...selected, key: "Enter" }), "type");
+        assert.equal(dateSelectionKey({ ...selected, key: "Enter", writingSelected: false }), "type");
+        assert.equal(dateSelectionKey({ ...selected, key: "S", ctrlKey: true }), "pass");
+        assert.equal(dateSelectionKey({ ...selected, key: "ArrowLeft" }), "pass");
         assert.equal(dateHeadingKey({ ...plain, key: "i", metaKey: true, where: "heading" }), "hold");
         assert.equal(hasEntryContent(html), false);
     });

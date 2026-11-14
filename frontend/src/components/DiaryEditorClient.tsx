@@ -2235,6 +2235,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const touched = selectedDateHeading(editor, selection, label);
         if (touched && selection.rangeCount) {
             const range = selection.getRangeAt(0);
+            const writingSelected = pointAfterDate(touched.heading, range.endContainer, range.endOffset);
             const action = dateSelectionKey({
                 key: e.key,
                 altKey: e.altKey,
@@ -2242,8 +2243,29 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 metaKey: e.metaKey,
                 collapsed: selection.isCollapsed,
                 touchesDate: true,
-                writingSelected: pointAfterDate(touched.heading, range.endContainer, range.endOffset),
+                writingSelected,
             });
+            if (action === "type") {
+                e.preventDefault();
+                if (writingSelected) selectReplaceRange(editor, touched.heading, selection);
+                else {
+                    const next = touched.heading.nextElementSibling;
+                    if (next instanceof HTMLElement) placeCaretAtStart(next);
+                    else placeCaretAtStart(writingLineAfter(touched.heading));
+                }
+                if (e.key.length === 1) document.execCommand("insertText", false, e.key);
+                else if (writingSelected) {
+                    document.execCommand("insertParagraph", false);
+                    const first = touched.heading.nextElementSibling;
+                    const second = first?.nextElementSibling;
+                    if (first instanceof HTMLElement && second instanceof HTMLElement && blockIsEmpty(first) && blockIsEmpty(second) && !second.nextElementSibling) {
+                        second.remove();
+                        placeCaretAtStart(first);
+                    }
+                }
+                setHtmlContent(editor.innerHTML);
+                return true;
+            }
             if (action === "leave") {
                 e.preventDefault();
                 const before = editor.innerHTML;
