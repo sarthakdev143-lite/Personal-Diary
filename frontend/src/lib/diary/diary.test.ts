@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, dateHeadingKey, datePaste, formatEntryLong, freshEntryHtml, hasEntryContent, laterEntryTime, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, dateHeadingKey, datePaste, formatEntryLong, freshEntryHtml, hasEntryContent, laterEntryTime, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -146,6 +146,34 @@ describe("code block", () => {
         const html = codeBlockHtml();
         assert.equal(html.includes("code here"), false);
         assert.match(html, /<pre><code data-fresh="true"><br><\/code><\/pre>/);
+    });
+
+    it("starts the next line when Enter is pressed in the code", () => {
+        const typing = { key: "Enter", inCode: true, collapsed: true, blankLine: false, trailing: true };
+        assert.equal(codeLineKey(typing), "newline");
+        assert.equal(codeLineKey({ ...typing, blankLine: true, trailing: false }), "newline");
+        assert.equal(codeLineKey({ ...typing, blankLine: true, trailing: true }), "leave");
+        assert.equal(codeLineKey({ ...typing, inCode: false }), "pass");
+        assert.equal(codeLineKey({ ...typing, key: "a" }), "pass");
+        assert.equal(codeLineKey({ ...typing, ctrlKey: true }), "pass");
+    });
+
+    it("keeps each line when the page is saved and exported", () => {
+        const split = prepareEntryContent("<pre><code>const a = 1;</code><code>const b = 2;</code></pre>");
+        assert.equal(split.ok, true);
+        if (!split.ok) return;
+        assert.equal(split.content, "<pre><code>const a = 1;\nconst b = 2;</code></pre>");
+        assert.match(htmlToMarkdown(split.content), /```\nconst a = 1;\nconst b = 2;\n```/);
+
+        const broken = prepareEntryContent("<pre><code>const a = 1;<br>const b = 2;</code></pre>");
+        assert.equal(broken.ok, true);
+        if (!broken.ok) return;
+        assert.equal(broken.content, "<pre><code>const a = 1;\nconst b = 2;</code></pre>");
+
+        const marked = prepareEntryContent("<pre><code>const a = 1;\n\u200bconst b = 2;</code></pre>");
+        assert.equal(marked.ok, true);
+        if (!marked.ok) return;
+        assert.equal(marked.content, "<pre><code>const a = 1;\nconst b = 2;</code></pre>");
     });
 });
 

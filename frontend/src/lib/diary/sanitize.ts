@@ -74,7 +74,30 @@ export function sanitizeEntryHtml(input: string): string {
         },
         exclusiveFilter: (frame) => frame.tag === "img" && !frame.attribs.src,
     });
-    return separateGluedDateHeading(alignPictureCaptions(clean).trim());
+    return separateGluedDateHeading(joinCodeLines(alignPictureCaptions(clean).trim()));
+}
+
+function joinCodeLines(html: string): string {
+    return html.replace(/<pre\b[^>]*>[\s\S]*?<\/pre>/gi, (pre) => {
+        const inner = pre.slice(pre.indexOf(">") + 1, pre.toLowerCase().lastIndexOf("</pre>"));
+        let text = "";
+        for (const match of inner.matchAll(/<code\b[^>]*>[\s\S]*?<\/code>|<br\s*\/?>|[^<]+/gi)) {
+            const token = match[0];
+            const lower = token.toLowerCase();
+            let piece = token;
+            let separateLine = false;
+            if (lower.startsWith("<code")) {
+                piece = token.replace(/^<code\b[^>]*>/i, "").replace(/<\/code>$/i, "").replace(/<br\s*\/?>/gi, "\n");
+                separateLine = true;
+            } else if (lower.startsWith("<br")) {
+                piece = "\n";
+            }
+            if (separateLine && text.length > 0 && !text.endsWith("\n")) text += "\n";
+            text += piece;
+        }
+        text = text.replace(/\u200b/g, "").replace(/\n+$/, "");
+        return `<pre><code>${text}</code></pre>`;
+    });
 }
 
 function alignPictureCaptions(html: string): string {

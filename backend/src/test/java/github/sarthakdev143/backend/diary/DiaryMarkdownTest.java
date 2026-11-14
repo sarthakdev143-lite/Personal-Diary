@@ -33,6 +33,13 @@ class DiaryMarkdownTest {
     }
 
     @Test
+    void keepsEachLineInsideACodeFence() {
+        String markdown = DiaryMarkdown.htmlToMarkdown(
+                "<pre><code>const a = 1;</code><code>const b = 2;</code></pre>");
+        assertTrue(markdown.contains("```\nconst a = 1;\nconst b = 2;\n```"));
+    }
+
+    @Test
     void exportsARenamedPictureOnce() {
         String markdown = DiaryMarkdown.htmlToMarkdown(
                 "<figure><img src=\"data:image/png;base64,aaaa\" alt=\"Harbor\"><figcaption>Bay</figcaption></figure>");

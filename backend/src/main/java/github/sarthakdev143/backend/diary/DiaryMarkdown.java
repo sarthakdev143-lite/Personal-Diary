@@ -45,6 +45,7 @@ public final class DiaryMarkdown {
         document.select("img").forEach(DiaryMarkdown::keepSafeImage);
         document.select("a").forEach(DiaryMarkdown::keepSafeLink);
         PictureCaptions.align(document);
+        CodeLines.join(document);
         return renderBlocks(document.body().childNodes()).trim();
     }
 

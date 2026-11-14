@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, dateHeadingKey, datePaste, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, dateHeadingKey, datePaste, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -470,6 +470,119 @@ function placeCaretAtStart(node: HTMLElement) {
     caret.collapse(true);
     selection.removeAllRanges();
     selection.addRange(caret);
+}
+
+function textOffsetWithin(root: HTMLElement, container: Node, offset: number): number {
+    const range = document.createRange();
+    range.selectNodeContents(root);
+    range.setEnd(container, offset);
+    return range.toString().length;
+}
+
+function placeCaretAtTextOffset(root: HTMLElement, offset: number) {
+    const selection = window.getSelection();
+    if (!selection) return;
+    let remaining = offset;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    while (node) {
+        const length = node.textContent?.length ?? 0;
+        if (remaining <= length) {
+            const caret = document.createRange();
+            caret.setStart(node, remaining);
+            caret.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(caret);
+            return;
+        }
+        remaining -= length;
+        node = walker.nextNode();
+    }
+    placeCaretAtEnd(root);
+}
+
+function codeLineState(code: HTMLElement, selection: Selection): {
+    collapsed: boolean;
+    blankLine: boolean;
+    trailing: boolean;
+} | null {
+    if (!selection.rangeCount) return null;
+    const range = selection.getRangeAt(0);
+    if (!code.contains(range.startContainer) || !code.contains(range.endContainer)) return null;
+    const raw = code.textContent ?? "";
+    const offset = textOffsetWithin(code, range.startContainer, range.startOffset);
+    const lineStart = offset === 0 ? -1 : raw.lastIndexOf("\n", offset - 1);
+    const start = lineStart === -1 ? 0 : lineStart + 1;
+    const nextBreak = raw.indexOf("\n", offset);
+    const line = raw.slice(start, nextBreak === -1 ? raw.length : nextBreak).replace(/[\u200b\u00a0]/g, "");
+    const after = raw.slice(offset).replace(/[\u200b\u00a0\n]/g, "");
+    return { collapsed: range.collapsed, blankLine: line.trim() === "", trailing: after.trim() === "" };
+}
+
+function insertCodeNewline(code: HTMLElement, selection: Selection) {
+    if (!selection.rangeCount) return;
+    const range = selection.getRangeAt(0);
+    const start = textOffsetWithin(code, range.startContainer, range.startOffset);
+    const end = textOffsetWithin(code, range.endContainer, range.endOffset);
+    const rest = (code.textContent ?? "").slice(end).replace(/[\u200b\u00a0]/g, "");
+    document.execCommand("insertHTML", false, rest.trim() === "" ? "&#10;&#8203;" : "&#10;");
+    placeCaretAtTextOffset(code, start + 1);
+}
+
+function selectCodeOffsets(code: HTMLElement, start: number, end: number) {
+    const selection = window.getSelection();
+    if (!selection) return;
+    const range = document.createRange();
+    let filled = 0;
+    let started = false;
+    const walker = document.createTreeWalker(code, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    while (node) {
+        const length = node.textContent?.length ?? 0;
+        const next = filled + length;
+        if (!started && start <= next) {
+            range.setStart(node, Math.max(0, start - filled));
+            started = true;
+        }
+        if (started && end <= next) {
+            range.setEnd(node, Math.max(0, end - filled));
+            selection.removeAllRanges();
+            selection.addRange(range);
+            return;
+        }
+        filled = next;
+        node = walker.nextNode();
+    }
+}
+
+function leaveCodeBlock(pre: HTMLElement, code: HTMLElement) {
+    const meaningful = (code.textContent ?? "").replace(/[\u200b\u00a0\n]/g, "").trim();
+    const parent = pre.parentElement;
+    const next = pre.nextElementSibling;
+    if (!meaningful) {
+        pre.remove();
+        if (next instanceof HTMLElement) placeCaretAtStart(next);
+        else if (parent) {
+            const paragraph = document.createElement("p");
+            paragraph.appendChild(document.createElement("br"));
+            parent.appendChild(paragraph);
+            placeCaretAtStart(paragraph);
+        }
+        return;
+    }
+    const trailing = /(?:\n[\u200b\u00a0]*)$/.exec(code.textContent ?? "");
+    if (trailing) {
+        const text = code.textContent ?? "";
+        selectCodeOffsets(code, text.length - trailing[0].length, text.length);
+        document.execCommand("delete");
+    }
+    if (next instanceof HTMLElement) placeCaretAtStart(next);
+    else {
+        const paragraph = document.createElement("p");
+        paragraph.appendChild(document.createElement("br"));
+        pre.after(paragraph);
+        placeCaretAtStart(paragraph);
+    }
 }
 
 function placeCaretAtEnd(node: HTMLElement) {
@@ -1692,6 +1805,39 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const keepCodeLine = (e: React.KeyboardEvent) => {
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection?.rangeCount || mode === "view") return false;
+        const anchor = selection.anchorNode;
+        const host = anchor instanceof Element ? anchor : anchor?.parentElement ?? null;
+        const pre = host?.closest("pre");
+        if (!(pre instanceof HTMLElement) || !editor.contains(pre)) return false;
+        const range = selection.getRangeAt(0);
+        if (!pre.contains(range.startContainer) || !pre.contains(range.endContainer)) return false;
+        const code = host?.closest("code");
+        const block = code instanceof HTMLElement && pre.contains(code) ? code : pre.querySelector("code");
+        const target = block instanceof HTMLElement ? block : pre;
+        const state = codeLineState(target, selection);
+        if (!state) return false;
+        const action = codeLineKey({
+            key: e.key,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            inCode: true,
+            collapsed: state.collapsed,
+            blankLine: state.blankLine,
+            trailing: state.trailing,
+        });
+        if (action === "pass") return false;
+        e.preventDefault();
+        if (action === "leave") leaveCodeBlock(pre, target);
+        else insertCodeNewline(target, selection);
+        setHtmlContent(editor.innerHTML);
+        return true;
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (saveEntryShortcut(e)) {
             e.preventDefault();
@@ -1707,6 +1853,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             }
         }
         if (keepDateLine(e)) return;
+        if (keepCodeLine(e)) return;
         if (editSelectedPicture(e)) return;
         if (keepPictureNameApart(e)) return;
         if (moveAroundPicture(e)) return;
@@ -2133,7 +2280,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     color:#a8d8a8;
                     line-height:1.6;
                 }
-                #de-editor pre code{display:block;min-height:1.6em;}
+                #de-editor pre code{display:block;min-height:1.6em;white-space:pre;}
                 #de-editor a{color:#c4a882;text-decoration:underline;text-underline-offset:3px;}
                 #de-editor img{max-width:100%;border-radius:6px;margin:12px 0;display:block;}
                 #de-editor figure{margin:12px 0 16px;}

@@ -79,6 +79,25 @@ export function separateGluedDateHeading(html: string): string {
     return `${heading}<p>${escaped}</p>${rest}`;
 }
 
+export type CodeLineKey = "newline" | "leave" | "pass";
+
+export function codeLineKey(input: {
+    key: string;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    inCode: boolean;
+    collapsed: boolean;
+    blankLine: boolean;
+    trailing: boolean;
+}): CodeLineKey {
+    if (!input.inCode) return "pass";
+    if (input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.key !== "Enter") return "pass";
+    if (input.collapsed && input.blankLine && input.trailing) return "leave";
+    return "newline";
+}
+
 export type DatePaste = "writing" | "replace-writing" | "pass";
 
 export function datePaste(input: { touchesDate: boolean; onlyDate: boolean }): DatePaste {

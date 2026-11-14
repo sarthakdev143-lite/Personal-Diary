@@ -130,6 +130,18 @@ class EntryDraftTest {
     }
 
     @Test
+    void keepsEachLineOfACodeBlock() {
+        EntryDraft split = EntryDraft.prepare("<pre><code>const a = 1;</code><code>const b = 2;</code></pre>");
+        EntryDraft.Ready ready = assertInstanceOf(EntryDraft.Ready.class, split);
+        assertTrue(ready.content().contains("const a = 1;\nconst b = 2;"));
+        assertFalse(ready.content().contains("</code><code>"));
+
+        EntryDraft broken = EntryDraft.prepare("<pre><code>const a = 1;<br>const b = 2;</code></pre>");
+        EntryDraft.Ready lines = assertInstanceOf(EntryDraft.Ready.class, broken);
+        assertTrue(lines.content().contains("const a = 1;\nconst b = 2;"));
+    }
+
+    @Test
     void ignoresTheGeneratedDateAndRejectsAPageThatIsOnlyThatDate() {
         EntryDraft dated = EntryDraft.prepare(
                 "<h2>Saturday, November 14, 2026</h2><p>Garden path</p>");
