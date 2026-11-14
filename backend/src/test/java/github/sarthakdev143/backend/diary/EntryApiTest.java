@@ -108,6 +108,57 @@ class EntryApiTest {
                 .andExpect(jsonPath("$.plainText").value("Garden path"));
     }
 
+    @Test
+    void findsPagesInOneDiaryByWritingDateAndEdited() throws Exception {
+        saveSession("token-a", "user-a");
+        saveSession("token-b", "user-b");
+        String diaryId = JsonPath.read(mockMvc.perform(post("/api/diaries")
+                .cookie(cookie("token-a"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"Field notes\"}"))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString(), "$._id");
+
+        mockMvc.perform(post("/api/diaries/" + diaryId + "/entries")
+                .cookie(cookie("token-a"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"content\":\"<p>Quiet rain</p>\",\"createdAt\":\"2026-11-14T09:30:00Z\",\"updatedAt\":\"2026-11-14T09:30:05Z\"}"))
+                .andExpect(status().isCreated());
+        mockMvc.perform(post("/api/diaries/" + diaryId + "/entries")
+                .cookie(cookie("token-a"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"content\":\"<p>Garden path</p>\",\"createdAt\":\"2026-02-02T15:00:00Z\"}"))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/diaries/" + diaryId + "/entries").param("q", "quiet").cookie(cookie("token-a")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].plainText").value("Quiet rain"));
+
+        mockMvc.perform(get("/api/diaries/" + diaryId + "/entries").param("q", "February").cookie(cookie("token-a")))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].plainText").value("Garden path"));
+
+        mockMvc.perform(get("/api/diaries/" + diaryId + "/entries").param("q", "edited").cookie(cookie("token-a")))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].plainText").value("Quiet rain"));
+
+        mockMvc.perform(get("/api/diaries/" + diaryId + "/entries").param("q", "9:30").cookie(cookie("token-a")))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].plainText").value("Quiet rain"));
+
+        mockMvc.perform(get("/api/diaries/" + diaryId + "/entries").param("q", "snow").cookie(cookie("token-a")))
+                .andExpect(jsonPath("$.length()").value(0));
+
+        mockMvc.perform(get("/api/diaries/" + diaryId + "/entries").param("q", "   ").cookie(cookie("token-a")))
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].plainText").value("Quiet rain"))
+                .andExpect(jsonPath("$[1].plainText").value("Garden path"));
+
+        mockMvc.perform(get("/api/diaries/" + diaryId + "/entries").param("q", "quiet").cookie(cookie("token-b")))
+                .andExpect(status().isNotFound());
+    }
+
     private static Cookie cookie(String token) {
         return new Cookie("next-auth.session-token", token);
     }

@@ -1,6 +1,7 @@
 package github.sarthakdev143.backend.controller;
 
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 
@@ -12,11 +13,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import github.sarthakdev143.backend.diary.DiarySearch;
 import github.sarthakdev143.backend.diary.EntryDraft;
 import github.sarthakdev143.backend.diary.EntryWhen;
 import github.sarthakdev143.backend.diary.SessionUserFilter;
@@ -37,10 +40,19 @@ public class EntryController {
     private final EntryRepository entries;
 
     @GetMapping("/api/diaries/{diaryId}/entries")
-    public List<EntryResponse> list(HttpServletRequest request, @PathVariable String diaryId) {
+    public List<EntryResponse> list(
+            HttpServletRequest request,
+            @PathVariable String diaryId,
+            @RequestParam(name = "q", required = false) String query) {
         String userId = userId(request);
         owned(diaryId, userId);
-        return entries.findByDiaryIdAndUserIdOrderByCreatedAtDesc(diaryId, userId).stream()
+        List<Entry> rows = entries.findByDiaryIdAndUserIdOrderByCreatedAtDesc(diaryId, userId);
+        if (DiarySearch.normalize(query).isEmpty()) {
+            return rows.stream().map(EntryResponse::from).toList();
+        }
+        ZoneId zone = ZoneId.systemDefault();
+        return rows.stream()
+                .filter(entry -> DiarySearch.pageMatches(note(entry), query, zone))
                 .map(EntryResponse::from)
                 .toList();
     }
@@ -133,6 +145,15 @@ public class EntryController {
         entries.delete(entry);
         touchDiary(diaryId, userId, Instant.now());
         return Map.of("success", true);
+    }
+
+    private static DiarySearch.Note note(Entry entry) {
+        return new DiarySearch.Note(
+                entry.getId(),
+                entry.getContent(),
+                entry.getPlainText(),
+                entry.getCreatedAt(),
+                entry.getUpdatedAt());
     }
 
     private Entry ownedEntry(String diaryId, String entryId, String userId) {

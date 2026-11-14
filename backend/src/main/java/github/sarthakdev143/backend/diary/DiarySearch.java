@@ -51,6 +51,14 @@ public final class DiarySearch {
         return new Hit(true, snippet(newest, query, zone), newest.id());
     }
 
+    public static boolean pageMatches(Note note, String rawQuery, ZoneId zone) {
+        String query = normalize(rawQuery);
+        if (query.isEmpty()) {
+            return true;
+        }
+        return contains(searchText(note, zone), query);
+    }
+
     private static boolean contains(String haystack, String needle) {
         return haystack != null && haystack.toLowerCase(Locale.ROOT).contains(needle.toLowerCase(Locale.ROOT));
     }
