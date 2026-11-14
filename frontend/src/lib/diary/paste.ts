@@ -82,6 +82,23 @@ export function pictureFormat(input: { inPicture: boolean; command?: string; kin
     return "keep";
 }
 
+export type PictureBoundsKey = "clear" | "type" | "pass";
+
+export function pictureBoundsKey(input: {
+    key: string;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    touchesPicture: boolean;
+    outsideSelected: boolean;
+}): PictureBoundsKey {
+    if (input.altKey || input.ctrlKey || input.metaKey || input.collapsed || !input.touchesPicture || !input.outsideSelected) return "pass";
+    if (input.key === "Backspace" || input.key === "Delete") return "clear";
+    if (input.key === "Enter" || input.key.length === 1) return "type";
+    return "pass";
+}
+
 export function captionBreakText(before: string, after: string): { name: string; next: string } {
     const cut = boundarySpaceCut(before, after);
     if (!cut) return { name: before, next: after };

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -166,6 +166,19 @@ describe("entry paste", () => {
         assert.deepEqual(captionBreakText("Harbor ", "rain"), { name: "Harbor", next: "rain" });
         assert.deepEqual(captionBreakText("Harbor", "rain"), { name: "Harbor", next: "rain" });
         assert.deepEqual(captionBreakText("Harbor", ""), { name: "Harbor", next: "" });
+    });
+
+    it("keeps a picture when the selection also holds the writing around it", () => {
+        const crossed = { collapsed: false, touchesPicture: true, outsideSelected: true };
+        assert.equal(pictureBoundsKey({ key: "Backspace", ...crossed }), "clear");
+        assert.equal(pictureBoundsKey({ key: "Delete", ...crossed }), "clear");
+        assert.equal(pictureBoundsKey({ key: "x", ...crossed }), "type");
+        assert.equal(pictureBoundsKey({ key: "Enter", ...crossed }), "type");
+        assert.equal(pictureBoundsKey({ key: "Backspace", ...crossed, collapsed: true }), "pass");
+        assert.equal(pictureBoundsKey({ key: "Backspace", ...crossed, outsideSelected: false }), "pass");
+        assert.equal(pictureBoundsKey({ key: "Backspace", ...crossed, touchesPicture: false }), "pass");
+        assert.equal(pictureBoundsKey({ key: "Backspace", ...crossed, ctrlKey: true }), "pass");
+        assert.equal(pictureBoundsKey({ key: "ArrowLeft", ...crossed }), "pass");
     });
 
     it("leaves the picture together when a heading or a list is chosen", () => {
