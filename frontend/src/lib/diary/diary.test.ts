@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryMatchesListQuery, entryPageAddress, escapeRegExp, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, laterEntryTime, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
     normalizeTheme,
@@ -556,6 +556,34 @@ describe("entry date", () => {
         assert.equal(entryToShowAfterDelete([newest], "newest"), null);
         assert.equal(entryToShowAfterDelete(entries, "missing"), null);
         assert.equal(entryToShowAfterDelete([], "newest"), null);
+    });
+
+    it("puts a deleted entry back on its date and keeps the edited mark", () => {
+        const created = new Date(2026, 1, 2, 18).toISOString();
+        const updated = new Date(2026, 10, 14, 18).toISOString();
+        const body = entryUndoBody({
+            content: "<p>February garden</p>",
+            createdAt: created,
+            updatedAt: updated,
+        });
+        assert.equal(body.content, "<p>February garden</p>");
+        assert.equal(body.createdAt, created);
+        assert.equal(body.updatedAt, updated);
+        assert.equal(laterEntryTime(new Date(created), new Date(updated)).toISOString(), updated);
+        assert.equal(laterEntryTime(new Date(created), new Date(2026, 0, 1)).toISOString(), created);
+        assert.equal(entryWasRevised(body.createdAt, laterEntryTime(new Date(body.createdAt), new Date(body.updatedAt)).toISOString()), true);
+
+        const rain = { _id: "rain", createdAt: new Date(2026, 10, 14, 18).toISOString() };
+        const older = { _id: "older", createdAt: new Date(2026, 0, 1).toISOString() };
+        const restored = { _id: "garden", createdAt: created };
+        assert.deepEqual(
+            entriesWithRestored([rain, older], restored).map((entry) => entry._id),
+            ["rain", "garden", "older"],
+        );
+        assert.deepEqual(
+            entriesWithRestored([rain, restored], restored).map((entry) => entry._id),
+            ["rain", "garden"],
+        );
     });
 
     it("moves up and down the entry list", () => {

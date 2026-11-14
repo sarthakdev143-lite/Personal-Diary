@@ -6,12 +6,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
+import { ToastAction } from "@/components/ui/toast";
 import { DESCRIPTION_MAX, DIARY_THEMES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
 import { takeImportNotice } from "@/lib/diary/import";
 import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
 import { entryMatchesListQuery, entryPageAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryUndoBody, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
@@ -75,6 +76,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const editorRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const entryClock = useRef(new Date());
+    const restoreEntryRef = useRef<(entry: Entry) => void>(() => {});
     const linkInputRef = useRef<HTMLInputElement>(null);
     const entrySearchRef = useRef<HTMLInputElement>(null);
     const saveHintRef = useRef<HTMLSpanElement>(null);
@@ -462,6 +464,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const handleDeleteEntry = async () => {
         if (!selectedEntryId || isSaving) return;
         const removedId = selectedEntryId;
+        const removed = entries.find((entry) => entry._id === removedId);
         const next = entryToShowAfterDelete(visibleEntries, removedId)
             ?? entryToShowAfterDelete(entries, removedId);
         const staysInList = visibleEntries.some((entry) => entry._id === next?._id);
@@ -485,12 +488,69 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     if (!entryMatchesListQuery(next, entryQuery)) setEntryQuery("");
                 }
             }
-            toast({ title: "Entry deleted" });
+            toast({
+                title: "Entry deleted",
+                description: removed ? fmtLong(removed.createdAt) : undefined,
+                duration: 12000,
+                action: removed ? (
+                    <ToastAction
+                        altText="Bring this entry back"
+                        onClick={(event) => {
+                            event.preventDefault();
+                            restoreEntryRef.current(removed);
+                        }}
+                    >
+                        Undo
+                    </ToastAction>
+                ) : undefined,
+            });
         } catch (e) {
             toast({ title: "Not deleted", description: e instanceof Error ? e.message : "Error", variant: "destructive" });
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const restoreEntry = async (entry: Entry) => {
+        setIsSaving(true);
+        try {
+            const res = await fetch(`/api/diaries/${diaryId}/entries`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(entryUndoBody(entry)),
+            });
+            const data = await res.json() as Entry & { error?: string };
+            if (!res.ok) throw new Error(data.error || "Failed to restore entry.");
+            setEntries((prev) => entriesWithRestored(prev, data));
+            setEntryMonth(monthForSavedEntry(data.createdAt, entryMonth));
+            if (!entryMatchesListQuery(data, entryQuery)) setEntryQuery("");
+            setSelectedEntryId(data._id);
+            setMode("view");
+            setConfirmDelete(null);
+            setPendingDiscard(null);
+            const created = new Date(data.createdAt);
+            rememberDate(calendarDate(created), created);
+            writeEditor(data.content);
+            toast({ title: "Entry restored", description: fmtLong(data.createdAt) });
+            window.setTimeout(() => {
+                document.querySelector(".de-entry-card.active")?.scrollIntoView({ block: "nearest" });
+            }, 0);
+        } catch (restoreError) {
+            toast({
+                title: "Not restored",
+                description: restoreError instanceof Error ? restoreError.message : "Error",
+                variant: "destructive",
+            });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    restoreEntryRef.current = (entry) => {
+        if (isSaving) return;
+        askToDiscard(() => {
+            void restoreEntry(entry);
+        });
     };
 
     const handleSaveDiary = async () => {

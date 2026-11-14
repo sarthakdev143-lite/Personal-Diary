@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prepareEntryContent } from "@/lib/diary/content";
 import { asRecord, readJsonBody } from "@/lib/diary/json";
+import { laterEntryTime } from "@/lib/diary/text";
 import { parseEntryDate } from "@/lib/diary/validation";
 
 import {
@@ -91,6 +92,15 @@ export async function POST(request: Request, context: RouteContext) {
             createdAt = parsedCreatedAt.value;
         }
 
+        let updatedAt = createdAt;
+        if (payload.updatedAt !== undefined && payload.updatedAt !== null && payload.updatedAt !== "") {
+            const parsedUpdatedAt = parseEntryDate(payload.updatedAt, Date.now(), "updatedAt");
+            if (!parsedUpdatedAt.ok) {
+                return NextResponse.json({ error: parsedUpdatedAt.error }, { status: 400 });
+            }
+            updatedAt = laterEntryTime(createdAt, parsedUpdatedAt.value);
+        }
+
         const db = await getDatabase();
         const diariesCollection = db.collection<DiaryDocument>("diaries");
         const entriesCollection = db.collection<EntryDocument>("entries");
@@ -107,7 +117,7 @@ export async function POST(request: Request, context: RouteContext) {
             content: prepared.content,
             plainText: prepared.plainText,
             createdAt,
-            updatedAt: createdAt,
+            updatedAt,
         };
 
         const result = await entriesCollection.insertOne(entry);

@@ -1,5 +1,6 @@
 import { DEFAULT_DIARY_THEME, MAX_IMPORT_ENTRIES, isAllowedTheme } from "./constants";
 import { prepareEntryContent } from "./content";
+import { laterEntryTime } from "./text";
 import { isObjectId } from "./ids";
 import { asRecord } from "./json";
 import { normalizeDescription, normalizeTitle, parseEntryDate } from "./validation";
@@ -124,9 +125,7 @@ export function parseDiaryBackup(
             if (!parsedUpdatedAt.ok) {
                 return { ok: false, error: `${label}: ${parsedUpdatedAt.error}` };
             }
-            updatedAt = parsedUpdatedAt.value.getTime() < createdAt.value.getTime()
-                ? createdAt.value
-                : parsedUpdatedAt.value;
+            updatedAt = laterEntryTime(createdAt.value, parsedUpdatedAt.value);
         }
 
         entries.push({

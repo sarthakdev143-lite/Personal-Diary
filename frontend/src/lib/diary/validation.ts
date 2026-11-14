@@ -74,18 +74,18 @@ export function normalizeThemeUpdate(value: unknown): FieldResult<string> {
     return { ok: true, value: theme };
 }
 
-export function parseEntryDate(value: unknown, now = Date.now()): FieldResult<Date> {
+export function parseEntryDate(value: unknown, now = Date.now(), field = "createdAt"): FieldResult<Date> {
     if (typeof value !== "string" || !value.trim()) {
-        return { ok: false, error: "createdAt must be an ISO date string." };
+        return { ok: false, error: `${field} must be an ISO date string.` };
     }
 
     const parsed = new Date(value);
     const time = parsed.getTime();
     if (Number.isNaN(time)) {
-        return { ok: false, error: "Invalid createdAt date." };
+        return { ok: false, error: `Invalid ${field} date.` };
     }
     if (time < Date.UTC(1970, 0, 1) || time > now + DAY_MS) {
-        return { ok: false, error: "createdAt is out of range." };
+        return { ok: false, error: `${field} is out of range.` };
     }
 
     return { ok: true, value: parsed };

@@ -340,6 +340,32 @@ export function entryToShowAfterDelete<T extends { _id: string }>(
     return entries[index + 1] ?? entries[index - 1] ?? null;
 }
 
+export function entryUndoBody(entry: {
+    content: string;
+    createdAt: string;
+    updatedAt: string;
+}): { content: string; createdAt: string; updatedAt: string } {
+    return {
+        content: entry.content,
+        createdAt: entry.createdAt,
+        updatedAt: entry.updatedAt,
+    };
+}
+
+export function laterEntryTime(createdAt: Date, updatedAt: Date): Date {
+    return updatedAt.getTime() < createdAt.getTime() ? createdAt : updatedAt;
+}
+
+export function entriesWithRestored<T extends { _id: string; createdAt: string }>(
+    entries: readonly T[],
+    restored: T,
+): T[] {
+    const without = entries.filter((entry) => entry._id !== restored._id);
+    return [...without, restored].sort(
+        (left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt),
+    );
+}
+
 export function entryLayerEscape(event: {
     key: string;
     altKey: boolean;
