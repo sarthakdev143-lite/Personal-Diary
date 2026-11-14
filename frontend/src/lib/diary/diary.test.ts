@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, entryMatchesListQuery, escapeRegExp, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToShowAfterDelete, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
     normalizeTheme,
@@ -418,6 +418,19 @@ describe("entry date", () => {
         assert.equal(entryToShowOnOpen([older, newer])?.id, "newer");
         assert.equal(entryToShowOnOpen([newer, older])?.id, "newer");
         assert.equal(entryToShowOnOpen([older, { ...older, id: "same" }])?.id, "older");
+    });
+
+    it("opens the following entry after a delete, or the one before it when it was last", () => {
+        const newest = { _id: "newest" };
+        const middle = { _id: "middle" };
+        const oldest = { _id: "oldest" };
+        const entries = [newest, middle, oldest];
+        assert.equal(entryToShowAfterDelete(entries, "newest")?._id, "middle");
+        assert.equal(entryToShowAfterDelete(entries, "middle")?._id, "oldest");
+        assert.equal(entryToShowAfterDelete(entries, "oldest")?._id, "middle");
+        assert.equal(entryToShowAfterDelete([newest], "newest"), null);
+        assert.equal(entryToShowAfterDelete(entries, "missing"), null);
+        assert.equal(entryToShowAfterDelete([], "newest"), null);
     });
 
     it("keeps the clock time when only the date changes and marks a rewrite", () => {

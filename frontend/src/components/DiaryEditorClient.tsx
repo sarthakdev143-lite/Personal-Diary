@@ -9,7 +9,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { DESCRIPTION_MAX, DIARY_THEMES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
 import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
 import { entryMatchesListQuery } from "@/lib/diary/search";
-import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryMonths, entrySelectionAction, entryToShowOnOpen, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryMonths, entrySelectionAction, entryToShowAfterDelete, entryToShowOnOpen, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
@@ -435,13 +435,30 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
     const handleDeleteEntry = async () => {
         if (!selectedEntryId || isSaving) return;
+        const removedId = selectedEntryId;
+        const next = entryToShowAfterDelete(visibleEntries, removedId)
+            ?? entryToShowAfterDelete(entries, removedId);
+        const staysInList = visibleEntries.some((entry) => entry._id === next?._id);
         setIsSaving(true);
         try {
-            const res = await fetch(`/api/diaries/${diaryId}/entries/${selectedEntryId}`, { method: "DELETE" });
+            const res = await fetch(`/api/diaries/${diaryId}/entries/${removedId}`, { method: "DELETE" });
             const data = await res.json().catch(() => null) as { error?: string } | null;
             if (!res.ok) throw new Error(data?.error || "Failed to delete entry.");
-            setEntries((prev) => prev.filter((entry) => entry._id !== selectedEntryId));
-            resetComposer();
+            setEntries((prev) => prev.filter((entry) => entry._id !== removedId));
+            if (!next) {
+                resetComposer();
+            } else {
+                setSelectedEntryId(next._id);
+                setMode("view");
+                setConfirmDelete(null);
+                const created = new Date(next.createdAt);
+                rememberDate(calendarDate(created), created);
+                writeEditor(next.content);
+                if (!staysInList) {
+                    setEntryMonth(monthForSavedEntry(next.createdAt, entryMonth));
+                    if (!entryMatchesListQuery(next, entryQuery)) setEntryQuery("");
+                }
+            }
             toast({ title: "Entry deleted" });
         } catch (e) {
             toast({ title: "Not deleted", description: e instanceof Error ? e.message : "Error", variant: "destructive" });

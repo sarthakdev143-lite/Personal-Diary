@@ -292,6 +292,15 @@ export function entryToShowOnOpen<T extends { createdAt: string }>(entries: read
     return chosen;
 }
 
+export function entryToShowAfterDelete<T extends { _id: string }>(
+    entries: readonly T[],
+    deletedId: string,
+): T | null {
+    const index = entries.findIndex((entry) => entry._id === deletedId);
+    if (index < 0) return null;
+    return entries[index + 1] ?? entries[index - 1] ?? null;
+}
+
 export function formatEntryLong(value: string): string {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "—";
