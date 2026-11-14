@@ -246,7 +246,9 @@ describe("code block", () => {
         assert.equal(quoteEnterKey({ ...middle, before: "Harbor ", after: " rain" }), "break");
         assert.equal(quoteEnterKey({ ...middle, before: "Harbor.", after: "rain" }), "break");
         assert.equal(quoteEnterKey({ ...middle, after: "" }), "pass");
-        assert.equal(quoteEnterKey({ ...middle, before: "", after: "rain" }), "pass");
+        assert.equal(quoteEnterKey({ ...middle, before: "", after: "rain" }), "above");
+        assert.equal(quoteEnterKey({ ...middle, before: "  ", after: "rain" }), "above");
+        assert.equal(quoteEnterKey({ ...middle, before: "", after: "rain", besideBreak: true }), "pass");
         assert.equal(quoteEnterKey({ ...middle, before: "  ", after: " \u00a0" }), "pass");
         assert.equal(quoteEnterKey({ ...middle, collapsed: false }), "pass");
         assert.equal(quoteEnterKey({ ...middle, inQuote: false }), "pass");

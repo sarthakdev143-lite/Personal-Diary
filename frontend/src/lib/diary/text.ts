@@ -231,7 +231,7 @@ export function dividerCaret(input: {
     return "stay";
 }
 
-export type QuoteEnter = "break" | "blank" | "pass";
+export type QuoteEnter = "break" | "blank" | "above" | "pass";
 
 export function quoteEnterKey(input: {
     key: string;
@@ -250,6 +250,7 @@ export function quoteEnterKey(input: {
     const before = input.before.replace(/\u00a0/g, " ");
     const after = input.after.replace(/\u00a0/g, " ");
     if (before.trim() && after.trim()) return input.besideBreak ? "blank" : "break";
+    if (!before.trim() && after.trim() && !input.besideBreak) return "above";
     return "pass";
 }
 

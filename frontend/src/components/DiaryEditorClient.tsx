@@ -3002,7 +3002,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         e.preventDefault();
         const before = editor.innerHTML;
         const quoteText = quote.textContent ?? "";
-        if (split === "blank" && beside) openBlankLine(beside.br, beside.side);
+        if (split === "above") {
+            const paragraph = document.createElement("p");
+            paragraph.appendChild(document.createElement("br"));
+            quote.before(paragraph);
+            placeCaretAtStart(paragraph);
+        } else if (split === "blank" && beside) openBlankLine(beside.br, beside.side);
         else breakQuote(quote, selection);
         keepSplit({ before, after: editor.innerHTML, tag: quote.tagName, text: quoteText, offset });
         setHtmlContent(editor.innerHTML);
