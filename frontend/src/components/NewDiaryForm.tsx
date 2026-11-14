@@ -172,6 +172,8 @@ const NewDiaryForm = ({
             )}
             <div
                 id="form-parent"
+                inert={!formActive || isFullScreen}
+                aria-hidden={!formActive || isFullScreen}
                 className="fixed bottom-0 left-1/2 z-50 w-full max-w-[95%] rounded-3xl border border-white/10 bg-zinc-950 p-3 text-zinc-100 shadow-2xl xs:max-w-[29rem]"
                 style={{ transform: "translate(-50%, 100%)", opacity: 0 }}
             >
@@ -227,6 +229,8 @@ const NewDiaryForm = ({
             </div>
             <div
                 id="theme-selection"
+                inert={!isFullScreen}
+                aria-hidden={!isFullScreen}
                 className="fixed inset-0 z-[60] hidden flex-col items-stretch gap-4 overflow-y-auto bg-zinc-950 p-4 text-zinc-100 xl:flex-row xl:items-center xl:overflow-hidden xl:p-6"
             >
                 <button
