@@ -131,6 +131,38 @@ export function splitSpace(input: {
     return "keep";
 }
 
+export type HeadingEnter = "paragraph" | "pass";
+
+export function headingEnterKey(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    inHeading: boolean;
+    collapsed: boolean;
+    dateHeading: boolean;
+    before: string;
+    after: string;
+}): HeadingEnter {
+    if (input.key !== "Enter" || input.shiftKey || input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (!input.inHeading || !input.collapsed || input.dateHeading) return "pass";
+    const before = input.before.replace(/\u00a0/g, " ");
+    const after = input.after.replace(/\u00a0/g, " ");
+    if (!before.trim() || !after.trim()) return "pass";
+    return "paragraph";
+}
+
+export type HeadingSplitUndo = "restore" | "pass";
+
+export function headingSplitUndo(input: {
+    saved: { before: string; after: string } | null;
+    current: string;
+}): HeadingSplitUndo {
+    if (!input.saved || input.current !== input.saved.after) return "pass";
+    return "restore";
+}
+
 export function boundarySpaceCut(before: string, after: string): { before: number; after: number } | null {
     if (splitSpace({ key: "Enter", inCode: false, before, after }) !== "trim") return null;
     const left = before.replace(/\u00a0/g, " ");

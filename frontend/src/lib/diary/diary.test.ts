@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, dateHeadingKey, datePaste, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, splitSpace, joinNeedsSpace, laterEntryTime, lineJoinKey, listLeaveKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, dateHeadingKey, datePaste, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, joinNeedsSpace, laterEntryTime, lineJoinKey, listLeaveKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -238,6 +238,22 @@ describe("code block", () => {
         assert.deepEqual(boundarySpaceCut("Harbor  ", " rain"), { before: 2, after: 1 });
         assert.equal(boundarySpaceCut("Harbor", "rain"), null);
         assert.equal(boundarySpaceCut("Harbor ", ""), null);
+    });
+
+    it("moves the rest of a heading onto a normal line", () => {
+        const middle = { key: "Enter", inHeading: true, collapsed: true, dateHeading: false, before: "Dawn", after: " watch" };
+        assert.equal(headingEnterKey(middle), "paragraph");
+        assert.equal(headingEnterKey({ ...middle, before: "Dawn ", after: "watch" }), "paragraph");
+        assert.equal(headingEnterKey({ ...middle, before: "Dawn", after: "watch" }), "paragraph");
+        assert.equal(headingEnterKey({ ...middle, after: "" }), "pass");
+        assert.equal(headingEnterKey({ ...middle, before: "" }), "pass");
+        assert.equal(headingEnterKey({ ...middle, dateHeading: true }), "pass");
+        assert.equal(headingEnterKey({ ...middle, shiftKey: true }), "pass");
+        assert.equal(headingEnterKey({ ...middle, inHeading: false }), "pass");
+        const saved = { before: "<h1>Dawn watch</h1>", after: "<h1>Dawn</h1><p>watch</p>" };
+        assert.equal(headingSplitUndo({ saved, current: saved.after }), "restore");
+        assert.equal(headingSplitUndo({ saved, current: "<h1>Dawn</h1><p>watch!</p>" }), "pass");
+        assert.equal(headingSplitUndo({ saved: null, current: saved.after }), "pass");
     });
 
     it("keeps the rest of a line with a divider", () => {

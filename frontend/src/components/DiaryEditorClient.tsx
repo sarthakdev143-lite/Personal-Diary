@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codePullKey, dateHeadingKey, datePaste, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, splitSpace, joinNeedsSpace, lineJoinKey, listLeaveKey, quoteLeaveKey, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codePullKey, dateHeadingKey, datePaste, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, joinNeedsSpace, lineJoinKey, listLeaveKey, quoteLeaveKey, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -817,6 +817,31 @@ function selectTextRange(nodes: Text[], start: number, end: number) {
     }
 }
 
+function leaveHeading(heading: HTMLElement, selection: Selection) {
+    const range = selection.getRangeAt(0);
+    const nodes = textPieces(heading);
+    const offset = caretTextOffset(nodes, range.startContainer, range.startOffset);
+    if (offset === null) return;
+    const raw = nodes.map((node) => node.data).join("");
+    const cut = boundarySpaceCut(raw.slice(0, offset), raw.slice(offset));
+    const keepEnd = offset - (cut?.before ?? 0);
+    const restStart = offset + (cut?.after ?? 0);
+    selectTextRange(nodes, restStart, raw.length);
+    if (!selection.rangeCount) return;
+    const rest = selection.getRangeAt(0).extractContents();
+    if (cut) {
+        selectTextRange(textPieces(heading), keepEnd, restStart);
+        selection.getRangeAt(0)?.deleteContents();
+    }
+    const paragraph = document.createElement("p");
+    while (rest.firstChild) paragraph.appendChild(rest.firstChild);
+    if (!(paragraph.textContent ?? "").replace(/[\u200b\u00a0]/g, "").trim() && !paragraph.querySelector("img")) {
+        paragraph.appendChild(document.createElement("br"));
+    }
+    heading.after(paragraph);
+    placeCaretAtStart(paragraph);
+}
+
 function settleCode(editor: HTMLElement) {
     const fresh = editor.querySelector("code[data-fresh]");
     const pre = fresh?.closest("pre");
@@ -961,6 +986,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const linkRange = useRef<Range | null>(null);
     const imageRange = useRef<Range | null>(null);
     const pictureRemoval = useRef<{ before: string; after: string } | null>(null);
+    const headingSplit = useRef<{ before: string; after: string; tag: string; text: string; offset: number } | null>(null);
     const discardButtonRef = useRef<HTMLButtonElement>(null);
 
     const [diary, setDiary] = useState<Diary | null>(null);
@@ -1116,6 +1142,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         settleDateHeading(editor);
         const saved = pictureRemoval.current;
         if (saved && editor.innerHTML !== saved.after) pictureRemoval.current = null;
+        const split = headingSplit.current;
+        if (split && editor.innerHTML !== split.after) headingSplit.current = null;
         setHtmlContent(editor.innerHTML);
         updateActiveFormats();
     }, [updateActiveFormats]);
@@ -2332,6 +2360,62 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const undoHeadingSplit = () => {
+        const editor = editorRef.current;
+        const saved = headingSplit.current;
+        if (!editor || !saved || headingSplitUndo({ saved, current: editor.innerHTML }) !== "restore") {
+            if (saved && editor && editor.innerHTML !== saved.after) headingSplit.current = null;
+            return false;
+        }
+        headingSplit.current = null;
+        editor.innerHTML = saved.before;
+        setHtmlContent(saved.before);
+        editor.focus();
+        const heading = [...editor.querySelectorAll(saved.tag)].find((node) => node.textContent === saved.text);
+        if (heading instanceof HTMLElement) placeCaretAtTextOffset(heading, saved.offset);
+        return true;
+    };
+
+    const keepHeadingLine = (e: React.KeyboardEvent) => {
+        if (e.key !== "Enter") return false;
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection?.rangeCount || mode === "view" || !selection.isCollapsed) return false;
+        const anchor = selection.anchorNode;
+        const host = anchor instanceof Element ? anchor : anchor?.parentElement ?? null;
+        const heading = host?.closest("h1, h2, h3");
+        if (!(heading instanceof HTMLElement) || !editor.contains(heading)) return false;
+        const instant = instantFor(entryDate);
+        const label = instant ? fmtLong(instant.toISOString()) : "";
+        const dateHeading = label ? [...editor.querySelectorAll("h2")].find((node) => (node.textContent ?? "").trim() === label) : null;
+        const nodes = textPieces(heading);
+        const range = selection.getRangeAt(0);
+        const offset = caretTextOffset(nodes, range.startContainer, range.startOffset);
+        if (offset === null) return false;
+        const raw = nodes.map((node) => node.data).join("");
+        const action = headingEnterKey({
+            key: e.key,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            inHeading: true,
+            collapsed: true,
+            dateHeading: heading === dateHeading,
+            before: raw.slice(0, offset),
+            after: raw.slice(offset),
+        });
+        if (action !== "paragraph") return false;
+        e.preventDefault();
+        const before = editor.innerHTML;
+        const text = heading.textContent ?? "";
+        const tag = heading.tagName;
+        leaveHeading(heading, selection);
+        headingSplit.current = { before, after: editor.innerHTML, tag, text, offset };
+        setHtmlContent(editor.innerHTML);
+        return true;
+    };
+
     const trimSplit = (e: React.KeyboardEvent) => {
         if (e.key !== "Enter") return false;
         const editor = editorRef.current;
@@ -2376,12 +2460,13 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         document.execCommand("defaultParagraphSeparator", false, "p");
         if ((e.key === "z" || e.key === "Z") && (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) {
             const editor = editorRef.current;
-            if (editor && e.target instanceof Node && editor.contains(e.target) && undoRemovedPicture()) {
+            if (editor && e.target instanceof Node && editor.contains(e.target) && (undoRemovedPicture() || undoHeadingSplit())) {
                 e.preventDefault();
                 return;
             }
         }
         if (keepDateLine(e)) return;
+        if (keepHeadingLine(e)) return;
         if (keepCodeLine(e)) return;
         if (keepListLine(e)) return;
         if (keepQuoteLine(e)) return;
