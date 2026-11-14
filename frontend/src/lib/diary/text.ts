@@ -423,6 +423,11 @@ export function listCommand(command: string): ListCommand {
     return "pass";
 }
 
+export function listUndoCaret(offset: number | null): number | null {
+    if (offset === null || !Number.isFinite(offset) || offset < 0) return null;
+    return Math.floor(offset);
+}
+
 export type UndoButton = "saved" | "browser";
 
 export function undoButton(command: string): UndoButton {
