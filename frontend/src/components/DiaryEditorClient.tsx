@@ -58,7 +58,7 @@ const TOOLBAR: ToolButton[][] = [
     [
         { icon: "🖼", title: "Insert image", kind: "image" },
         { icon: "</>", title: "Code block", html: "<pre><code>code here</code></pre><p><br></p>" },
-        { icon: "🔗", title: "Insert link", kind: "link" },
+        { icon: "🔗", title: "Insert link", kind: "link", format: "link" },
     ],
     [
         { icon: "⟵", title: "Undo", command: "undo" },
@@ -159,6 +159,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             const normalized = block.replace(/[<>]/g, "").toLowerCase();
             if (normalized) fmt.add(normalized);
         }
+        const linkHost = anchor instanceof Element ? anchor : anchor.parentElement;
+        const link = linkHost?.closest("a");
+        if (link && editorRef.current.contains(link)) fmt.add("link");
         setActiveFormats(fmt);
     }, []);
 
