@@ -13,4 +13,6 @@ public interface EntryRepository extends MongoRepository<Entry, String> {
     List<Entry> findByDiaryIdAndUserIdOrderByCreatedAtDesc(String diaryId, String userId);
 
     Optional<Entry> findByIdAndDiaryIdAndUserId(String id, String diaryId, String userId);
+
+    void deleteByDiaryIdAndUserId(String diaryId, String userId);
 }

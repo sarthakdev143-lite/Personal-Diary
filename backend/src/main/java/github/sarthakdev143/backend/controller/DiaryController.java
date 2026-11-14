@@ -6,9 +6,12 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -34,6 +37,33 @@ public class DiaryController {
         return diaryService.list(userId(request)).stream().map(DiaryResponse::from).toList();
     }
 
+    @GetMapping("/api/diaries/{id}")
+    public DiaryPage open(HttpServletRequest request, @PathVariable String id) {
+        String userId = userId(request);
+        Diary diary = diaryService.open(userId, id);
+        List<EntryController.EntryResponse> entries = diaryService.entries(userId, id).stream()
+                .map(EntryController.EntryResponse::from)
+                .toList();
+        return new DiaryPage(DiaryResponse.from(diary), entries);
+    }
+
+    @PutMapping("/api/diaries/{id}")
+    public DiaryResponse update(HttpServletRequest request, @PathVariable String id, @RequestBody DiaryUpdate body) {
+        return DiaryResponse.from(diaryService.update(
+                userId(request),
+                id,
+                body.title(),
+                body.description(),
+                body.theme(),
+                body.pinned()));
+    }
+
+    @DeleteMapping("/api/diaries/{id}")
+    public Map<String, Boolean> delete(HttpServletRequest request, @PathVariable String id) {
+        diaryService.delete(userId(request), id);
+        return Map.of("success", true);
+    }
+
     @PostMapping("/api/diaries")
     public ResponseEntity<DiaryResponse> create(HttpServletRequest request, @RequestBody DiaryRequest body) {
         Diary diary = diaryService.create(
@@ -52,12 +82,19 @@ public class DiaryController {
     public record DiaryRequest(String title, String description, String theme) {
     }
 
+    public record DiaryUpdate(String title, String description, String theme, Boolean pinned) {
+    }
+
+    public record DiaryPage(DiaryResponse diary, List<EntryController.EntryResponse> entries) {
+    }
+
     public record DiaryResponse(
             @JsonProperty("_id") String id,
             String userId,
             String title,
             String description,
             String theme,
+            boolean pinned,
             Instant createdAt,
             Instant updatedAt) {
         static DiaryResponse from(Diary diary) {
@@ -67,6 +104,7 @@ public class DiaryController {
                     diary.getTitle(),
                     diary.getDescription(),
                     diary.getTheme(),
+                    diary.isPinned(),
                     diary.getCreatedAt(),
                     diary.getUpdatedAt());
         }

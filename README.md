@@ -15,6 +15,17 @@ cd backend
 
 The API listens on http://localhost:8080. `GET` and `POST /api/diaries` create and list diaries. `GET` and `POST /api/diaries/{id}/entries` add a page, `PUT` changes it, and `DELETE` removes it. All of them require that session cookie. `./mvnw test` runs the diary tests.
 
+## Run the API
+
+The `backend` directory is a separate Spring Boot service. It reads the same MongoDB database as the website and the same `next-auth.session-token` cookie, so a signed-in browser can call it directly.
+
+```bash
+cd backend
+./mvnw spring-boot:run
+```
+
+The API listens on http://localhost:8080. A request without that session cookie receives 401. `GET /api/diaries` lists the signed-in person's diaries, with pinned diaries first. `POST /api/diaries` creates one. `GET /api/diaries/{id}` returns that diary and its entries. `PUT /api/diaries/{id}` renames it or changes its cover; a pin change leaves the updated time alone. `DELETE /api/diaries/{id}` removes the diary and its entries. Entry routes live under `/api/diaries/{id}/entries`. `./mvnw test` runs the diary tests.
+
 ## Run the website
 
 ```bash
