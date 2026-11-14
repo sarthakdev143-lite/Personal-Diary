@@ -15,8 +15,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import github.sarthakdev143.backend.diary.EntryDraft;
+import github.sarthakdev143.backend.diary.EntryWhen;
 import github.sarthakdev143.backend.diary.SessionUserFilter;
 import github.sarthakdev143.backend.model.Diary;
 import github.sarthakdev143.backend.model.Entry;
@@ -47,22 +49,26 @@ public class EntryController {
     public ResponseEntity<EntryResponse> create(
             HttpServletRequest request,
             @PathVariable String diaryId,
-            @RequestBody EntryRequest body) {
+            @RequestBody JsonNode body) {
         String userId = userId(request);
         Diary diary = owned(diaryId, userId);
-        EntryDraft draft = EntryDraft.prepare(body.content());
+        EntryDraft draft = EntryDraft.prepare(text(body, "content"));
         if (draft instanceof EntryDraft.Rejected rejected) {
             throw new DiaryRejectedException(rejected.error());
         }
         EntryDraft.Ready ready = (EntryDraft.Ready) draft;
         Instant now = Instant.now();
+        Instant createdAt = instant(body, "createdAt", now, false).orElse(now);
+        Instant updatedAt = instant(body, "updatedAt", now, true)
+                .map(updated -> EntryWhen.later(createdAt, updated))
+                .orElse(createdAt);
         Entry entry = new Entry();
         entry.setDiaryId(diary.getId());
         entry.setUserId(userId);
         entry.setContent(ready.content());
         entry.setPlainText(ready.plainText());
-        entry.setCreatedAt(now);
-        entry.setUpdatedAt(now);
+        entry.setCreatedAt(createdAt);
+        entry.setUpdatedAt(updatedAt);
         Entry saved = entries.save(entry);
         diary.setUpdatedAt(now);
         diaries.save(diary);
@@ -74,28 +80,46 @@ public class EntryController {
             HttpServletRequest request,
             @PathVariable String diaryId,
             @PathVariable String entryId,
-            @RequestBody EntryRequest body) {
+            @RequestBody JsonNode body) {
         String userId = userId(request);
         Entry entry = ownedEntry(diaryId, entryId, userId);
-        if (body.content() == null) {
+        boolean hasContent = body != null && body.has("content") && !body.get("content").isNull();
+        boolean hasCreatedAt = body != null && body.has("createdAt") && !body.get("createdAt").isNull();
+        if (!hasContent && !hasCreatedAt) {
             throw new DiaryRejectedException("No valid fields provided for update.");
         }
-        EntryDraft draft = EntryDraft.prepare(body.content());
-        if (draft instanceof EntryDraft.Rejected rejected) {
-            throw new DiaryRejectedException(rejected.error());
-        }
-        EntryDraft.Ready ready = (EntryDraft.Ready) draft;
-        if (!ready.content().equals(entry.getContent())) {
-            Instant now = Instant.now();
-            if (!now.isAfter(entry.getCreatedAt())) {
-                now = entry.getCreatedAt().plusMillis(1);
+        String content = entry.getContent();
+        String plainText = entry.getPlainText();
+        boolean writingChanged = false;
+        if (hasContent) {
+            EntryDraft draft = EntryDraft.prepare(text(body, "content"));
+            if (draft instanceof EntryDraft.Rejected rejected) {
+                throw new DiaryRejectedException(rejected.error());
             }
-            entry.setContent(ready.content());
-            entry.setPlainText(ready.plainText());
-            entry.setUpdatedAt(now);
-            entries.save(entry);
-            touchDiary(diaryId, userId, now);
+            EntryDraft.Ready ready = (EntryDraft.Ready) draft;
+            writingChanged = EntryWhen.writingChanged(entry.getContent(), ready.content());
+            content = ready.content();
+            plainText = ready.plainText();
         }
+        Instant now = Instant.now();
+        Instant nextCreatedAt = hasCreatedAt ? requiredInstant(body, "createdAt", now) : null;
+        EntryWhen.Revision revision = EntryWhen.revise(
+                entry.getCreatedAt(),
+                entry.getUpdatedAt(),
+                nextCreatedAt,
+                writingChanged,
+                now);
+        boolean dateChanged = !revision.createdAt().equals(entry.getCreatedAt());
+        boolean contentChanged = hasContent && !content.equals(entry.getContent());
+        if (!writingChanged && !dateChanged && !contentChanged) {
+            return EntryResponse.from(entry);
+        }
+        entry.setContent(content);
+        entry.setPlainText(plainText);
+        entry.setCreatedAt(revision.createdAt());
+        entry.setUpdatedAt(revision.updatedAt());
+        entries.save(entry);
+        touchDiary(diaryId, userId, now);
         return EntryResponse.from(entry);
     }
 
@@ -127,11 +151,31 @@ public class EntryController {
         return diaries.findByIdAndUserId(diaryId, userId).orElseThrow(DiaryMissingException::new);
     }
 
-    private static String userId(HttpServletRequest request) {
-        return (String) request.getAttribute(SessionUserFilter.USER_ID);
+    private static java.util.Optional<Instant> instant(JsonNode body, String field, Instant now, boolean blankIsAbsent) {
+        EntryWhen.When when = EntryWhen.read(body, field, now, blankIsAbsent);
+        if (when instanceof EntryWhen.When.Bad bad) {
+            throw new DiaryRejectedException(bad.error());
+        }
+        if (when instanceof EntryWhen.When.Ok ok) {
+            return java.util.Optional.of(ok.value());
+        }
+        return java.util.Optional.empty();
     }
 
-    public record EntryRequest(String content) {
+    private static Instant requiredInstant(JsonNode body, String field, Instant now) {
+        return instant(body, field, now, false)
+                .orElseThrow(() -> new DiaryRejectedException(field + " must be an ISO date string."));
+    }
+
+    private static String text(JsonNode body, String field) {
+        if (body == null || !body.has(field) || !body.get(field).isTextual()) {
+            return null;
+        }
+        return body.get(field).asText();
+    }
+
+    private static String userId(HttpServletRequest request) {
+        return (String) request.getAttribute(SessionUserFilter.USER_ID);
     }
 
     public record EntryResponse(
