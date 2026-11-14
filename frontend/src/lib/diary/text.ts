@@ -178,9 +178,9 @@ export function selectionEnterUndo(input: {
     ctrlKey?: boolean;
     metaKey?: boolean;
     collapsed: boolean;
-    singleBlock: boolean;
+    inWriting: boolean;
 }): "place" | "pass" {
-    if (input.collapsed || !input.singleBlock || input.shiftKey || input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.collapsed || !input.inWriting || input.shiftKey || input.altKey || input.ctrlKey || input.metaKey) return "pass";
     if (input.key !== "Enter") return "pass";
     return "place";
 }
@@ -192,15 +192,15 @@ export function selectionTypeUndo(input: {
     metaKey?: boolean;
     composing?: boolean;
     collapsed: boolean;
-    singleBlock: boolean;
+    inWriting: boolean;
 }): "place" | "pass" {
-    if (input.collapsed || !input.singleBlock || input.composing || input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.collapsed || !input.inWriting || input.composing || input.altKey || input.ctrlKey || input.metaKey) return "pass";
     if (input.key.length !== 1) return "pass";
     return "place";
 }
 
-export function selectionCutUndo(input: { collapsed: boolean; singleBlock: boolean }): "place" | "pass" {
-    if (input.collapsed || !input.singleBlock) return "pass";
+export function selectionCutUndo(input: { collapsed: boolean; inWriting: boolean }): "place" | "pass" {
+    if (input.collapsed || !input.inWriting) return "pass";
     return "place";
 }
 
