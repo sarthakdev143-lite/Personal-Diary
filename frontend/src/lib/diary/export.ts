@@ -90,6 +90,13 @@ function escapeLinkText(value: string): string {
     return value.replace(/[\[\]]/g, "");
 }
 
+function wrapInline(inner: string, open: string, close: string): string {
+    const trailing = inner.match(/\s+$/)?.[0] ?? "";
+    const core = trailing ? inner.slice(0, -trailing.length) : inner;
+    if (!core.trim()) return inner;
+    return `${open}${core}${close}${trailing}`;
+}
+
 function renderInline(nodes: HtmlNode[]): string {
     return nodes.map((node) => {
         if (node.kind === "text") return node.text.replace(/\s+/g, " ");
@@ -102,15 +109,17 @@ function renderInline(nodes: HtmlNode[]): string {
         }
 
         const inner = renderInline(node.children);
-        if (node.tag === "strong" || node.tag === "b") return `**${inner}**`;
-        if (node.tag === "em" || node.tag === "i") return `*${inner}*`;
-        if (node.tag === "s" || node.tag === "strike" || node.tag === "del") return `~~${inner}~~`;
-        if (node.tag === "u") return inner ? `<u>${inner}</u>` : inner;
+        if (node.tag === "strong" || node.tag === "b") return wrapInline(inner, "**", "**");
+        if (node.tag === "em" || node.tag === "i") return wrapInline(inner, "*", "*");
+        if (node.tag === "s" || node.tag === "strike" || node.tag === "del") return wrapInline(inner, "~~", "~~");
+        if (node.tag === "u") return inner.trim() ? wrapInline(inner, "<u>", "</u>") : inner;
         if (node.tag === "code") return `\`${inner}\``;
         if (node.tag === "a") {
             const href = node.attrs.href ?? "";
+            const leading = inner.match(/^\s*/)?.[0] ?? "";
+            const trailing = inner.match(/\s*$/)?.[0] ?? "";
             const label = inner.trim() || href;
-            return href ? `[${escapeLinkText(label)}](${href})` : inner;
+            return href ? `${leading}[${escapeLinkText(label)}](${href})${trailing}` : inner;
         }
         return inner;
     }).join("");

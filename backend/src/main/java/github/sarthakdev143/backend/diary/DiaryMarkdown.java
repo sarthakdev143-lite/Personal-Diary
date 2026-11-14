@@ -262,6 +262,22 @@ public final class DiaryMarkdown {
         return String.join("\n\n", parts);
     }
 
+    private static boolean isGap(char value) {
+        return Character.isWhitespace(value) || value == '\u00a0';
+    }
+
+    private static String wrapInline(String inner, String open, String close) {
+        int end = inner.length();
+        while (end > 0 && isGap(inner.charAt(end - 1))) {
+            end -= 1;
+        }
+        String core = inner.substring(0, end);
+        if (core.isBlank()) {
+            return inner;
+        }
+        return open + core + close + inner.substring(end);
+    }
+
     private static String renderInline(List<Node> nodes) {
         StringBuilder builder = new StringBuilder();
         for (Node node : nodes) {
@@ -290,25 +306,36 @@ public final class DiaryMarkdown {
             }
             String inner = renderInline(element.childNodes());
             if (tag.equals("strong") || tag.equals("b")) {
-                builder.append("**").append(inner).append("**");
+                builder.append(wrapInline(inner, "**", "**"));
             } else if (tag.equals("em") || tag.equals("i")) {
-                builder.append("*").append(inner).append("*");
+                builder.append(wrapInline(inner, "*", "*"));
             } else if (tag.equals("s") || tag.equals("strike") || tag.equals("del")) {
-                builder.append("~~").append(inner).append("~~");
+                builder.append(wrapInline(inner, "~~", "~~"));
             } else if (tag.equals("u")) {
-                if (!inner.isEmpty()) {
-                    builder.append("<u>").append(inner).append("</u>");
-                }
+                builder.append(inner.isBlank() ? inner : wrapInline(inner, "<u>", "</u>"));
             } else if (tag.equals("code")) {
                 builder.append("`").append(inner).append("`");
             } else if (tag.equals("a")) {
                 String href = element.attr("href");
-                String label = inner.trim().isEmpty() ? href : inner.trim();
-                label = label.replace("[", "").replace("]", "");
-                if (!href.isEmpty()) {
-                    builder.append("[").append(label).append("](").append(href).append(")");
-                } else {
+                if (href.isEmpty()) {
                     builder.append(inner);
+                } else {
+                    int start = 0;
+                    int end = inner.length();
+                    while (start < end && isGap(inner.charAt(start))) {
+                        start += 1;
+                    }
+                    while (end > start && isGap(inner.charAt(end - 1))) {
+                        end -= 1;
+                    }
+                    String label = inner.substring(start, end);
+                    if (label.isEmpty()) {
+                        label = href;
+                    }
+                    label = label.replace("[", "").replace("]", "");
+                    builder.append(inner, 0, start);
+                    builder.append("[").append(label).append("](").append(href).append(")");
+                    builder.append(inner.substring(end));
                 }
             } else {
                 builder.append(inner);

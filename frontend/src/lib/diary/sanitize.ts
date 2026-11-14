@@ -61,8 +61,9 @@ export function sanitizeEntryHtml(input: string): string {
             },
             ol: (tagName, attribs) => {
                 const start = (attribs.start ?? "").trim();
-                if (/^-?\d+$/.test(start) && Number.isSafeInteger(Number(start))) return { tagName, attribs: { start } };
-                return { tagName, attribs: {} };
+                const safeAttribs: Record<string, string> = {};
+                if (/^-?\d+$/.test(start) && Number.isSafeInteger(Number(start))) safeAttribs.start = start;
+                return { tagName, attribs: safeAttribs };
             },
             img: (_tagName, attribs) => {
                 const src = attribs.src ?? "";

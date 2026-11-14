@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, styledLine, styledPunctuation, styledSpace, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, plainMarkSpaces, plainSpacesAfterMarks, styledLine, styledPunctuation, styledSpace, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -427,6 +427,18 @@ describe("code block", () => {
         assert.equal(plainSpacesAfterMarks("<p>See\u00a0rain</p>"), "<p>See rain</p>");
         assert.equal(plainSpacesAfterMarks("<p><b>Harbor</b>&nbsp; rain</p>"), "<p><b>Harbor</b>  rain</p>");
         assert.equal(plainSpacesAfterMarks("<p><b>Harbor</b>&nbsp; </p>"), "<p><b>Harbor</b>&nbsp; </p>");
+    });
+
+    it("moves a trailing space out of a styled word when the line has other writing", () => {
+        assert.equal(plainMarkSpaces("<p>See <b>Harbor </b>rain</p>"), "<p>See <b>Harbor</b> rain</p>");
+        assert.equal(plainMarkSpaces("<p>See <b>Harbor&nbsp;</b>rain</p>"), "<p>See <b>Harbor</b> rain</p>");
+        assert.equal(plainMarkSpaces("<p>See <i>Harbor </i></p>"), "<p>See <i>Harbor</i> </p>");
+        assert.equal(plainMarkSpaces('<p>See <a href="https://example.com">Harbor </a>today</p>'), '<p>See <a href="https://example.com">Harbor</a> today</p>');
+        assert.equal(plainMarkSpaces("<p><b>See Harbor </b></p>"), "<p><b>See Harbor </b></p>");
+        assert.equal(htmlToMarkdown("<p>See <b>Harbor </b>rain</p>"), "See **Harbor** rain");
+        assert.equal(htmlToMarkdown("<p>See <i>Harbor </i>today</p>"), "See *Harbor* today");
+        assert.equal(htmlToMarkdown('<p>See <a href="https://example.com">Harbor </a>today</p>'), "See [Harbor](https://example.com) today");
+        assert.equal(htmlToMarkdown("<p><b>See Harbor </b></p>"), "**See Harbor**");
     });
 
     it("undo of a split line puts the space back", () => {

@@ -74,6 +74,14 @@ class DiaryMarkdownTest {
     }
 
     @Test
+    void keepsASpaceAfterAStyledWord() {
+        assertEquals("See **Harbor** rain", DiaryMarkdown.htmlToMarkdown("<p>See <b>Harbor </b>rain</p>"));
+        assertEquals("See *Harbor* today", DiaryMarkdown.htmlToMarkdown("<p>See <i>Harbor </i>today</p>"));
+        assertEquals("See [Harbor](https://example.com) today", DiaryMarkdown.htmlToMarkdown("<p>See <a href=\"https://example.com\">Harbor </a>today</p>"));
+        assertEquals("**See Harbor**", DiaryMarkdown.htmlToMarkdown("<p><b>See Harbor </b></p>"));
+    }
+
+    @Test
     void keepsAnUnderline() {
         assertEquals("a <u>quiet</u> rain", DiaryMarkdown.htmlToMarkdown("<p>a <u>quiet</u> rain</p>"));
         assertEquals("a  rain", DiaryMarkdown.htmlToMarkdown("<p>a <u></u> rain</p>"));
