@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styledLine, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, styledLine, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -1813,6 +1813,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const pictureRemoval = useRef<{ before: string; after: string } | null>(null);
     const headingSplit = useRef<{ before: string; after: string; tag: string; text: string; offset: number } | null>(null);
     const blankLine = useRef<{ before: string; after: string; path?: number[]; caret?: number; breakIndex?: number; breakSide?: "before" | "after" } | null>(null);
+    const styleUndo = useRef<{ before: string; after: string; path: number[]; caret: number } | null>(null);
+    const styleRedo = useRef<{ undone: string; redone: string; path: number[]; caret: number } | null>(null);
     const redoPage = useRef<{
         undone: string;
         redone: string;
@@ -2054,7 +2056,19 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             ? { fromList: block.tagName === "LI", text: (block.textContent ?? "").replace(/\u00a0/g, " "), offset: textOffsetWithin(block, range.endContainer, range.endOffset) }
             : null;
         if (selection?.rangeCount && !selection.isCollapsed && STYLE_COMMANDS.has(cmd)) excludeStyleEdges(selection.getRangeAt(0));
+        const styleRange = editor && selection?.rangeCount && !selection.isCollapsed && STYLE_COMMANDS.has(cmd) ? selection.getRangeAt(0) : null;
+        const styleBlock = styleRange ? lineBlock(styleRange.endContainer) : null;
+        const styleHost = editor;
+        const styleCaret = styleRange && styleHost && styleBlock instanceof HTMLElement && styleHost.contains(styleBlock)
+            ? styleUndoCaret(textOffsetWithin(styleBlock, styleRange.endContainer, styleRange.endOffset))
+            : null;
+        const stylePath = styleCaret !== null && styleHost && styleBlock instanceof HTMLElement ? childPath(styleHost, styleBlock) : null;
+        const styleBefore = stylePath && styleHost ? styleHost.innerHTML : null;
         document.execCommand(cmd, false, value);
+        if (styleBefore !== null && stylePath && styleCaret !== null && styleHost && styleHost.innerHTML !== styleBefore) {
+            styleUndo.current = { before: styleBefore, after: styleHost.innerHTML, path: stylePath, caret: styleCaret };
+            styleRedo.current = null;
+        }
         if (editor && listCommand(cmd) === "lift") liftNestedLists(editor);
         if (editor && caret) placeListCaret(editor, caret.fromList, caret.text, caret.offset);
         if (editorRef.current) setHtmlContent(editorRef.current.innerHTML);
@@ -3669,6 +3683,45 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const placeStyleCaret = (path: number[], caret: number) => {
+        const editor = editorRef.current;
+        if (!editor) return;
+        editor.focus();
+        const line = nodeAtPath(editor, path);
+        if (line instanceof HTMLElement) placeCaretAtTextOffset(line, caret);
+    };
+
+    const undoStyle = () => {
+        const editor = editorRef.current;
+        const saved = styleUndo.current;
+        if (!editor || !saved || editor.innerHTML !== saved.after) {
+            if (saved && editor && editor.innerHTML !== saved.after) styleUndo.current = null;
+            return false;
+        }
+        if (!document.execCommand("undo")) return false;
+        styleUndo.current = null;
+        setHtmlContent(editor.innerHTML);
+        if (editor.innerHTML !== saved.before) return true;
+        styleRedo.current = { undone: editor.innerHTML, redone: saved.after, path: saved.path, caret: saved.caret };
+        placeStyleCaret(saved.path, saved.caret);
+        return true;
+    };
+
+    const redoStyle = () => {
+        const editor = editorRef.current;
+        const saved = styleRedo.current;
+        if (!editor || !saved || editor.innerHTML !== saved.undone) {
+            if (saved && editor && editor.innerHTML !== saved.undone) styleRedo.current = null;
+            return false;
+        }
+        if (!document.execCommand("redo")) return false;
+        styleRedo.current = null;
+        setHtmlContent(editor.innerHTML);
+        styleUndo.current = { before: saved.undone, after: editor.innerHTML, path: saved.path, caret: saved.caret };
+        placeStyleCaret(saved.path, saved.caret);
+        return true;
+    };
+
     const keepHeadingLine = (e: React.KeyboardEvent) => {
         if (e.key !== "Enter") return false;
         const editor = editorRef.current;
@@ -3785,14 +3838,14 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             matches: true,
         }) === "restore") {
             const editor = editorRef.current;
-            if (editor && e.target instanceof Node && editor.contains(e.target) && (redoSavedPage() || pageHoldsSnapshot())) {
+            if (editor && e.target instanceof Node && editor.contains(e.target) && (redoSavedPage() || redoStyle() || pageHoldsSnapshot())) {
                 e.preventDefault();
                 return;
             }
         }
         if ((e.key === "z" || e.key === "Z") && (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) {
             const editor = editorRef.current;
-            if (editor && e.target instanceof Node && editor.contains(e.target) && (undoRemovedPicture() || undoHeadingSplit() || undoBlankLine())) {
+            if (editor && e.target instanceof Node && editor.contains(e.target) && (undoRemovedPicture() || undoHeadingSplit() || undoBlankLine() || undoStyle())) {
                 e.preventDefault();
                 return;
             }
@@ -3889,9 +3942,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
         if (tool.command === "redo") {
             editorRef.current?.focus();
-            if (redoSavedPage() || pageHoldsSnapshot()) return;
+            if (redoSavedPage() || redoStyle() || pageHoldsSnapshot()) return;
         }
-        if (tool.command && undoButton(tool.command) === "saved" && (undoRemovedPicture() || undoHeadingSplit() || undoBlankLine())) return;
+        if (tool.command && undoButton(tool.command) === "saved" && (undoRemovedPicture() || undoHeadingSplit() || undoBlankLine() || undoStyle())) return;
         if (tool.command) exec(tool.command, tool.value);
     };
 
