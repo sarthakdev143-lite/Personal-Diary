@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, escapeRegExp, normalizeSearchQuery } from "./search";
-import { calendarDate, entryInstant, entryPlainText, retitleEntryDate, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entryPlainText, monthKey, monthLabel, retitleEntryDate, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
     normalizeTheme,
@@ -288,6 +288,23 @@ describe("entry date", () => {
             "<h2>Tuesday, February 3, 2026</h2><p>Rain</p>",
         );
         assert.equal(retitleEntryDate("<p>Rain</p>", "Monday, February 2, 2026", "Tuesday, February 3, 2026"), "<p>Rain</p>");
+    });
+
+    it("groups entries by month, newest first", () => {
+        const february = new Date(2026, 1, 2, 15).toISOString();
+        const november = new Date(2026, 10, 14, 15).toISOString();
+        assert.equal(monthKey(february), "2026-02");
+        assert.equal(monthLabel("2026-02"), "February 2026");
+        assert.equal(monthKey("nope"), null);
+
+        const months = entryMonths([february, february, november, "nope"]);
+        assert.deepEqual(months.map((month) => [month.key, month.count]), [["2026-11", 1], ["2026-02", 2]]);
+        assert.equal(entryInMonth(february, "2026-02"), true);
+        assert.equal(entryInMonth(february, ""), true);
+        assert.equal(entryInMonth(february, "2026-11"), false);
+        assert.equal(emptyEntryListMessage("rain", "2026-02"), "No entries match “rain” in February 2026.");
+        assert.equal(emptyEntryListMessage("rain", ""), "No entries match “rain”.");
+        assert.equal(emptyEntryListMessage("", "2026-11"), "No entries in November 2026.");
     });
 });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { DESCRIPTION_MAX, DIARY_THEMES, MAX_IMAGE_BYTES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
 import { diaryFieldsMatch } from "@/lib/diary/search";
-import { calendarDate, entryInstant, entryPlainText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, retitleEntryDate, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entryPlainText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, retitleEntryDate, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
@@ -93,6 +93,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const [confirmDelete, setConfirmDelete] = useState<"entry" | "diary" | null>(null);
     const [baseline, setBaseline] = useState("");
     const [entryQuery, setEntryQuery] = useState("");
+    const [entryMonth, setEntryMonth] = useState("");
     const [isExporting, setIsExporting] = useState<"md" | "json" | null>(null);
     const [entryDate, setEntryDate] = useState(() => calendarDate(new Date()));
     const [savedDate, setSavedDate] = useState(() => calendarDate(new Date()));
@@ -462,8 +463,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const canSave = hasEntryContent(htmlContent) && mode !== "view";
     const selectedEntry = entries.find((entry) => entry._id === selectedEntryId);
     const cover = coverForTheme(diary?.theme);
+    const months = useMemo(() => entryMonths(entries.map((entry) => entry.createdAt)), [entries]);
+    const activeMonth = months.some((month) => month.key === entryMonth) ? entryMonth : "";
     const visibleEntries = entries.filter((entry) =>
-        diaryFieldsMatch(entry.plainText || entryPlainText(entry.content), "", entryQuery)
+        entryInMonth(entry.createdAt, activeMonth)
+        && diaryFieldsMatch(entry.plainText || entryPlainText(entry.content), "", entryQuery)
     );
 
     if (isLoading) return (
@@ -563,7 +567,13 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     font-family:'Lora',Georgia,serif;font-size:13px;color:#ede5d8;
                     background:#0d0b09;border:1px solid #2a2520;border-radius:3px;padding:8px 10px;
                 }
-                .de-entry-search:focus{outline:none;border-color:#6a5a48;}
+                .de-entry-search:focus,.de-month:focus{outline:none;border-color:#6a5a48;}
+                .de-month{
+                    display:block;width:calc(100% - 32px);margin:0 16px 8px;
+                    font-family:'Lora',Georgia,serif;font-size:13px;color:#ede5d8;
+                    background:#0d0b09;border:1px solid #2a2520;border-radius:3px;padding:8px 10px;
+                    color-scheme:dark;
+                }
                 .de-entry-card:hover{background:#131109;}
                 .de-entry-card.active{background:#161208;border-left-color:#c4a882;}
 
@@ -892,6 +902,21 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 maxLength={80}
                             />
                         )}
+                        {months.length > 1 && (
+                            <select
+                                className="de-month"
+                                aria-label="Month"
+                                value={activeMonth}
+                                onChange={(event) => setEntryMonth(event.target.value)}
+                            >
+                                <option value="">All months</option>
+                                {months.map((month) => (
+                                    <option key={month.key} value={month.key}>
+                                        {month.label} ({month.count})
+                                    </option>
+                                ))}
+                            </select>
+                        )}
                         {entries.length === 0 ? (
                             <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 20px 48px" }}>
                                 <p style={{ fontFamily: "'Lora',Georgia,serif", fontStyle: "italic", color: "#a79f93", fontSize: 13, textAlign: "center", lineHeight: 1.8 }}>
@@ -900,7 +925,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             </div>
                         ) : visibleEntries.length === 0 ? (
                             <p style={{ padding: "8px 20px 24px", fontFamily: "'Lora',Georgia,serif", fontStyle: "italic", color: "#a79f93", fontSize: 13, lineHeight: 1.8 }}>
-                                No entries match “{entryQuery.trim()}”.
+                                {emptyEntryListMessage(entryQuery, activeMonth)}
                             </p>
                         ) : (
                             visibleEntries.map((entry, i) => {

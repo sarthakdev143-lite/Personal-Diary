@@ -92,6 +92,51 @@ export function entryInstant(value: string, now = new Date()): Date | null {
     return chosen;
 }
 
+export type EntryMonth = {
+    key: string;
+    label: string;
+    count: number;
+};
+
+export function monthKey(value: string): string | null {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+export function monthLabel(key: string): string {
+    const match = /^(\d{4})-(\d{2})$/.exec(key);
+    if (!match) return key;
+    const date = new Date(Number(match[1]), Number(match[2]) - 1, 1);
+    return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(date);
+}
+
+export function entryMonths(dates: string[]): EntryMonth[] {
+    const counts = new Map<string, number>();
+    for (const value of dates) {
+        const key = monthKey(value);
+        if (!key) continue;
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+
+    return [...counts.entries()]
+        .sort(([left], [right]) => right.localeCompare(left))
+        .map(([key, count]) => ({ key, label: monthLabel(key), count }));
+}
+
+export function entryInMonth(createdAt: string, month: string): boolean {
+    if (!month) return true;
+    return monthKey(createdAt) === month;
+}
+
+export function emptyEntryListMessage(query: string, month: string): string {
+    const text = query.trim();
+    const when = month ? monthLabel(month) : "";
+    if (text && when) return `No entries match “${text}” in ${when}.`;
+    if (text) return `No entries match “${text}”.`;
+    return `No entries in ${when}.`;
+}
+
 export function retitleEntryDate(html: string, fromLabel: string, toLabel: string): string {
     if (!fromLabel || !toLabel || fromLabel === toLabel) return html;
     const prefix = `<h2>${fromLabel}</h2>`;

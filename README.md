@@ -26,6 +26,6 @@ npm run lint
 
 - Create a diary and choose one of the built-in covers. Change that cover later from the diary details.
 - Date an entry today or on a past day.
-- Search diaries by title, description, or the text of an entry.
+- Search diaries by title, description, or the text of an entry. Inside a diary, narrow the list to one month.
 - Edit or delete an entry, and rename or delete a diary.
 - Download a diary as Markdown, or as a JSON backup from its details. Import that backup from the diary list.
