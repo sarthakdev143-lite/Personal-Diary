@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, pictureCaptionKey } from "@/lib/diary/paste";
+import { decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryUndoBody, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
@@ -122,6 +122,39 @@ function captionCaret(caption: HTMLElement, selection: Selection): { collapsed: 
         atStart: before.toString().length === 0,
         atEnd: after.toString().length === 0,
     };
+}
+
+function lineAfterPicture(editor: HTMLElement, selection: Selection): { block: HTMLElement; caption: HTMLElement; atStart: boolean; empty: boolean } | null {
+    if (!selection.rangeCount || !selection.anchorNode) return null;
+    const range = selection.getRangeAt(0);
+    const anchor = selection.anchorNode;
+    const host = anchor instanceof Element ? anchor : anchor.parentElement;
+    const block = host?.closest("p, h1, h2, h3, li, blockquote, pre");
+    if (!(block instanceof HTMLElement) || !editor.contains(block)) return null;
+    const figure = block.previousElementSibling;
+    if (!(figure instanceof HTMLElement) || figure.tagName !== "FIGURE") return null;
+    const caption = figure.querySelector("figcaption");
+    if (!(caption instanceof HTMLElement)) return null;
+    if (!block.contains(range.startContainer) || !block.contains(range.endContainer)) return null;
+    const before = document.createRange();
+    before.selectNodeContents(block);
+    before.setEnd(range.startContainer, range.startOffset);
+    return {
+        block,
+        caption,
+        atStart: before.toString().length === 0,
+        empty: (block.textContent ?? "").replace(/\u00a0/g, " ").trim().length === 0,
+    };
+}
+
+function placeCaretAtEnd(node: HTMLElement) {
+    const selection = window.getSelection();
+    if (!selection) return;
+    const caret = document.createRange();
+    caret.selectNodeContents(node);
+    caret.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(caret);
 }
 
 function continueAfterPicture(caption: HTMLElement) {
@@ -1079,6 +1112,29 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         setImageAlt("");
     };
 
+    const keepPictureNameApart = (e: React.KeyboardEvent) => {
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection || mode === "view") return false;
+        const line = lineAfterPicture(editor, selection);
+        if (!line) return false;
+        const action = lineAfterPictureKey({
+            key: e.key,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            collapsed: selection.isCollapsed,
+            atStart: line.atStart,
+            empty: line.empty,
+        });
+        if (action === "pass") return false;
+        e.preventDefault();
+        if (action === "remove") line.block.remove();
+        placeCaretAtEnd(line.caption);
+        setHtmlContent(editor.innerHTML);
+        return true;
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (saveEntryShortcut(e)) {
             e.preventDefault();
@@ -1086,6 +1142,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             return;
         }
         if (mode === "view") return;
+        if (keepPictureNameApart(e)) return;
         const editor = editorRef.current;
         const selection = window.getSelection();
         const anchor = selection?.anchorNode;

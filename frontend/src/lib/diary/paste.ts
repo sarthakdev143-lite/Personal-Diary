@@ -33,6 +33,22 @@ export function pictureCaptionKey(input: {
     return "pass";
 }
 
+export type LineAfterPictureKey = "move" | "remove" | "pass";
+
+export function lineAfterPictureKey(input: {
+    key: string;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    atStart: boolean;
+    empty: boolean;
+}): LineAfterPictureKey {
+    if (input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.key !== "Backspace" || !input.collapsed || !input.atStart) return "pass";
+    return input.empty ? "remove" : "move";
+}
+
 export function imageHtml(src: string, alt: string): string {
     const name = imageAltText(alt)
         .replace(/&/g, "&amp;")

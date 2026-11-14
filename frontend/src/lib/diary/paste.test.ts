@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, pictureCaptionKey } from "./paste";
+import { decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -135,5 +135,15 @@ describe("entry paste", () => {
         assert.equal(pictureCaptionKey({ key: "Delete", collapsed: true, atStart: false, atEnd: true }), "hold");
         assert.equal(pictureCaptionKey({ key: "Delete", collapsed: false, atStart: false, atEnd: true }), "pass");
         assert.equal(pictureCaptionKey({ key: "a", collapsed: true, atStart: true, atEnd: false }), "pass");
+    });
+
+    it("keeps the next line from joining the picture name", () => {
+        const atStart = { collapsed: true, atStart: true, empty: false };
+        assert.equal(lineAfterPictureKey({ key: "Backspace", ...atStart }), "move");
+        assert.equal(lineAfterPictureKey({ key: "Backspace", collapsed: true, atStart: true, empty: true }), "remove");
+        assert.equal(lineAfterPictureKey({ key: "Backspace", collapsed: true, atStart: false, empty: false }), "pass");
+        assert.equal(lineAfterPictureKey({ key: "Backspace", ctrlKey: true, ...atStart }), "pass");
+        assert.equal(lineAfterPictureKey({ key: "Delete", ...atStart }), "pass");
+        assert.equal(lineAfterPictureKey({ key: "Enter", ...atStart }), "pass");
     });
 });
