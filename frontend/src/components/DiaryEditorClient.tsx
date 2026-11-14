@@ -685,6 +685,32 @@ function placeCaretOn(node: Node | null, fallback: HTMLElement) {
     selection.addRange(caret);
 }
 
+function blockIsEmpty(block: HTMLElement): boolean {
+    return !(block.textContent ?? "").replace(/[\u200b\u00a0]/g, "").trim() && !block.querySelector("img");
+}
+
+function childPath(editor: HTMLElement, node: HTMLElement): number[] {
+    const path: number[] = [];
+    let current: HTMLElement | null = node;
+    while (current && current !== editor) {
+        const parent: HTMLElement | null = current.parentElement;
+        if (!parent) break;
+        path.unshift([...parent.children].indexOf(current));
+        current = parent;
+    }
+    return path;
+}
+
+function nodeAtPath(editor: HTMLElement, path: number[]): HTMLElement | null {
+    let current: HTMLElement = editor;
+    for (const index of path) {
+        const next = current.children[index];
+        if (!(next instanceof HTMLElement)) return null;
+        current = next;
+    }
+    return current === editor ? null : current;
+}
+
 function removeJoined(source: HTMLElement) {
     const list = source.parentElement;
     source.remove();
@@ -992,7 +1018,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const imageRange = useRef<Range | null>(null);
     const pictureRemoval = useRef<{ before: string; after: string } | null>(null);
     const headingSplit = useRef<{ before: string; after: string; tag: string; text: string; offset: number } | null>(null);
-    const blankLine = useRef<{ before: string; after: string } | null>(null);
+    const blankLine = useRef<{ before: string; after: string; path?: number[] } | null>(null);
     const discardButtonRef = useRef<HTMLButtonElement>(null);
 
     const [diary, setDiary] = useState<Diary | null>(null);
@@ -2183,9 +2209,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (action === "drop") {
             const next = line.block.nextElementSibling;
             const before = editor.innerHTML;
+            const path = childPath(editor, line.block);
             line.block.remove();
             if (next instanceof HTMLElement) placeCaretAtStart(next);
-            blankLine.current = { before, after: editor.innerHTML };
+            blankLine.current = { before, after: editor.innerHTML, path };
             setHtmlContent(editor.innerHTML);
             return true;
         }
@@ -2369,9 +2396,20 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             atStart: edges.atStart,
             atEnd: edges.atEnd,
             neighbor: neighbor ? "text" : "none",
+            blockEmpty: blockIsEmpty(block),
+            neighborEmpty: neighbor ? blockIsEmpty(neighbor) : false,
         });
-        if (action !== "join" || !neighbor) return false;
+        if (action === "pass" || !neighbor) return false;
         e.preventDefault();
+        if (action === "clear") {
+            const before = editor.innerHTML;
+            const path = childPath(editor, block);
+            removeJoined(backward ? neighbor : block);
+            placeCaretAtStart(backward ? block : neighbor);
+            blankLine.current = { before, after: editor.innerHTML, path };
+            setHtmlContent(editor.innerHTML);
+            return true;
+        }
         if (backward) joinBlock(neighbor, block);
         else joinBlock(block, neighbor);
         setHtmlContent(editor.innerHTML);
@@ -2405,7 +2443,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         editor.innerHTML = saved.before;
         setHtmlContent(saved.before);
         editor.focus();
-        const line = editor.firstElementChild?.nextElementSibling;
+        const line = saved.path ? nodeAtPath(editor, saved.path) : editor.firstElementChild?.nextElementSibling;
         if (line instanceof HTMLElement) placeCaretAtStart(line);
         return true;
     };

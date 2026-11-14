@@ -213,6 +213,9 @@ describe("code block", () => {
         assert.equal(lineJoinKey({ ...join, neighbor: "none" }), "pass");
         assert.equal(lineJoinKey({ ...join, shiftKey: true }), "pass");
         assert.equal(lineJoinKey({ ...join, ctrlKey: true }), "pass");
+        assert.equal(lineJoinKey({ ...join, neighborEmpty: true }), "clear");
+        assert.equal(lineJoinKey({ ...join, key: "Delete", atStart: true, atEnd: true, blockEmpty: true }), "clear");
+        assert.equal(lineJoinKey({ ...join, key: "Delete", atStart: false, atEnd: true, neighborEmpty: true }), "join");
         assert.equal(joinNeedsSpace("Harbor", "rain"), true);
         assert.equal(joinNeedsSpace("Harbor,", "rain"), true);
         assert.equal(joinNeedsSpace("Harbor ", "rain"), false);
