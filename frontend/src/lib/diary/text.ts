@@ -79,6 +79,17 @@ export function separateGluedDateHeading(html: string): string {
     return `${heading}<p>${escaped}</p>${rest}`;
 }
 
+export type DividerCaret = "join" | "stay";
+
+export function dividerCaret(input: {
+    emptyLine: boolean;
+    followsRule: boolean;
+    nextHasWriting: boolean;
+}): DividerCaret {
+    if (input.emptyLine && input.followsRule && input.nextHasWriting) return "join";
+    return "stay";
+}
+
 export type QuoteLeaveKey = "leave" | "pass";
 
 export function quoteLeaveKey(input: {
