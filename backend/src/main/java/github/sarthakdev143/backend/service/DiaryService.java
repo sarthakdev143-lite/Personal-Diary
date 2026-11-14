@@ -1,12 +1,17 @@
 package github.sarthakdev143.backend.service;
 
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
 
 import github.sarthakdev143.backend.diary.DiaryDraft;
+import github.sarthakdev143.backend.diary.DiarySearch;
 import github.sarthakdev143.backend.model.Diary;
 import github.sarthakdev143.backend.model.Entry;
 import github.sarthakdev143.backend.repository.DiaryRepository;
@@ -26,6 +31,39 @@ public class DiaryService {
                         .thenComparing(Diary::getUpdatedAt, Comparator.nullsLast(Comparator.reverseOrder()))
                         .thenComparing(Diary::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
                 .toList();
+    }
+
+    public List<ListedDiary> search(String userId, String rawQuery) {
+        List<Diary> diaries = list(userId);
+        Map<String, List<DiarySearch.Note>> notes = entryRepository.findByUserId(userId).stream()
+                .collect(Collectors.groupingBy(
+                        Entry::getDiaryId,
+                        Collectors.mapping(DiaryService::note, Collectors.toList())));
+        ZoneId zone = ZoneId.systemDefault();
+        return diaries.stream().flatMap(diary -> {
+            DiarySearch.Hit hit = DiarySearch.match(
+                    diary.getTitle(),
+                    diary.getDescription(),
+                    notes.getOrDefault(diary.getId(), List.of()),
+                    rawQuery,
+                    zone);
+            if (!hit.matched()) {
+                return Stream.empty();
+            }
+            return Stream.of(new ListedDiary(diary, hit.snippet(), hit.entryId()));
+        }).toList();
+    }
+
+    public record ListedDiary(Diary diary, String match, String matchEntry) {
+    }
+
+    private static DiarySearch.Note note(Entry entry) {
+        return new DiarySearch.Note(
+                entry.getId(),
+                entry.getContent(),
+                entry.getPlainText(),
+                entry.getCreatedAt(),
+                entry.getUpdatedAt());
     }
 
     public Diary open(String userId, String id) {

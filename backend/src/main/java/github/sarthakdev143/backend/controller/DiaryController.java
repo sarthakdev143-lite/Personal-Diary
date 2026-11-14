@@ -13,11 +13,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import github.sarthakdev143.backend.diary.DiarySearch;
 import github.sarthakdev143.backend.diary.SessionUserFilter;
 import github.sarthakdev143.backend.model.Diary;
 import github.sarthakdev143.backend.service.DiaryMissingException;
@@ -33,8 +36,12 @@ public class DiaryController {
     private final DiaryService diaryService;
 
     @GetMapping("/api/diaries")
-    public List<DiaryResponse> list(HttpServletRequest request) {
-        return diaryService.list(userId(request)).stream().map(DiaryResponse::from).toList();
+    public List<DiaryResponse> list(HttpServletRequest request, @RequestParam(name = "q", required = false) String query) {
+        String userId = userId(request);
+        if (DiarySearch.normalize(query).isEmpty()) {
+            return diaryService.list(userId).stream().map(DiaryResponse::from).toList();
+        }
+        return diaryService.search(userId, query).stream().map(DiaryResponse::from).toList();
     }
 
     @GetMapping("/api/diaries/{id}")
@@ -96,8 +103,18 @@ public class DiaryController {
             String theme,
             boolean pinned,
             Instant createdAt,
-            Instant updatedAt) {
+            Instant updatedAt,
+            @JsonInclude(JsonInclude.Include.NON_NULL) String match,
+            @JsonInclude(JsonInclude.Include.NON_NULL) String matchEntry) {
         static DiaryResponse from(Diary diary) {
+            return from(diary, null, null);
+        }
+
+        static DiaryResponse from(DiaryService.ListedDiary listed) {
+            return from(listed.diary(), listed.match(), listed.matchEntry());
+        }
+
+        private static DiaryResponse from(Diary diary, String match, String matchEntry) {
             return new DiaryResponse(
                     diary.getId(),
                     diary.getUserId(),
@@ -106,7 +123,9 @@ public class DiaryController {
                     diary.getTheme(),
                     diary.isPinned(),
                     diary.getCreatedAt(),
-                    diary.getUpdatedAt());
+                    diary.getUpdatedAt(),
+                    match,
+                    matchEntry);
         }
     }
 }

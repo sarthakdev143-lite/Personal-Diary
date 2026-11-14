@@ -12,6 +12,8 @@ import github.sarthakdev143.backend.model.Entry;
 public interface EntryRepository extends MongoRepository<Entry, String> {
     List<Entry> findByDiaryIdAndUserIdOrderByCreatedAtDesc(String diaryId, String userId);
 
+    List<Entry> findByUserId(String userId);
+
     Optional<Entry> findByIdAndDiaryIdAndUserId(String id, String diaryId, String userId);
 
     void deleteByDiaryIdAndUserId(String diaryId, String userId);
