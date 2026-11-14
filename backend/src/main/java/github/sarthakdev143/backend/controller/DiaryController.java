@@ -19,7 +19,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 
+import github.sarthakdev143.backend.diary.DiaryBackup;
 import github.sarthakdev143.backend.diary.DiarySearch;
 import github.sarthakdev143.backend.diary.SessionUserFilter;
 import github.sarthakdev143.backend.model.Diary;
@@ -71,6 +73,26 @@ public class DiaryController {
         return Map.of("success", true);
     }
 
+    @GetMapping("/api/diaries/{id}/export")
+    public DiaryBackup.File export(
+            HttpServletRequest request,
+            @PathVariable String id,
+            @RequestParam(name = "format", defaultValue = "json") String format) {
+        if (!"json".equalsIgnoreCase(format.trim())) {
+            throw new DiaryRejectedException("Use format=json.");
+        }
+        return diaryService.export(userId(request), id, Instant.now());
+    }
+
+    @PostMapping("/api/diaries/import")
+    public ResponseEntity<ImportResponse> importBackup(HttpServletRequest request, @RequestBody JsonNode body) {
+        DiaryService.ImportedDiary imported = diaryService.importBackup(userId(request), body, Instant.now());
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ImportResponse(
+                DiaryResponse.from(imported.diary()),
+                imported.importedEntries(),
+                imported.skippedEntries()));
+    }
+
     @PostMapping("/api/diaries")
     public ResponseEntity<DiaryResponse> create(HttpServletRequest request, @RequestBody DiaryRequest body) {
         Diary diary = diaryService.create(
@@ -93,6 +115,9 @@ public class DiaryController {
     }
 
     public record DiaryPage(DiaryResponse diary, List<EntryController.EntryResponse> entries) {
+    }
+
+    public record ImportResponse(DiaryResponse diary, int importedEntries, int skippedEntries) {
     }
 
     public record DiaryResponse(

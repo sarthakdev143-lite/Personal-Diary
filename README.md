@@ -24,7 +24,7 @@ cd backend
 ./mvnw spring-boot:run
 ```
 
-The API listens on http://localhost:8080. A request without that session cookie receives 401. `GET /api/diaries` lists the signed-in person's diaries, with pinned diaries first. `GET /api/diaries?q=rain` keeps that order and returns only diaries whose title, description, or page matches, including the page date and the word “edited”. A page match includes `match` and `matchEntry`. `POST /api/diaries` creates one. `GET /api/diaries/{id}` returns that diary and its entries. `PUT /api/diaries/{id}` renames it or changes its cover; a pin change leaves the updated time alone. `DELETE /api/diaries/{id}` removes the diary and its entries. Entry routes live under `/api/diaries/{id}/entries`. `./mvnw test` runs the diary tests.
+The API listens on http://localhost:8080. A request without that session cookie receives 401. `GET /api/diaries` lists the signed-in person's diaries, with pinned diaries first. `GET /api/diaries?q=rain` keeps that order and returns only diaries whose title, description, or page matches, including the page date and the word “edited”. A page match includes `match` and `matchEntry`. `POST /api/diaries` creates one. `GET /api/diaries/{id}/export?format=json` downloads that diary as a JSON backup. `POST /api/diaries/import` reads that backup, keeps its pin, and skips an empty page. `GET /api/diaries/{id}` returns that diary and its entries. `PUT /api/diaries/{id}` renames it or changes its cover; a pin change leaves the updated time alone. `DELETE /api/diaries/{id}` removes the diary and its entries. Entry routes live under `/api/diaries/{id}/entries`. `./mvnw test` runs the diary tests.
 
 ## Run the website
 

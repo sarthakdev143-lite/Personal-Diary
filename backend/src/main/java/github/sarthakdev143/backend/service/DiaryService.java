@@ -10,7 +10,10 @@ import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import github.sarthakdev143.backend.diary.DiaryDraft;
+import github.sarthakdev143.backend.diary.DiaryBackup;
 import github.sarthakdev143.backend.diary.DiarySearch;
 import github.sarthakdev143.backend.model.Diary;
 import github.sarthakdev143.backend.model.Entry;
@@ -124,5 +127,50 @@ public class DiaryService {
         diary.setCreatedAt(now);
         diary.setUpdatedAt(now);
         return diaryRepository.save(diary);
+    }
+
+    public DiaryBackup.File export(String userId, String id, Instant exportedAt) {
+        Diary diary = open(userId, id);
+        return DiaryBackup.write(diary, entryRepository.findByDiaryIdAndUserIdOrderByCreatedAtDesc(id, userId), exportedAt);
+    }
+
+    public ImportedDiary importBackup(String userId, JsonNode body, Instant now) {
+        DiaryBackup.Parsed parsed = DiaryBackup.read(body, now);
+        if (parsed instanceof DiaryBackup.Parsed.Rejected rejected) {
+            throw new DiaryRejectedException(rejected.error());
+        }
+        DiaryBackup.Parsed.Ready ready = (DiaryBackup.Parsed.Ready) parsed;
+        Diary diary = new Diary();
+        diary.setUserId(userId);
+        diary.setTitle(ready.title());
+        diary.setDescription(ready.description());
+        diary.setTheme(ready.theme());
+        diary.setPinned(ready.pinned());
+        diary.setCreatedAt(now);
+        diary.setUpdatedAt(now);
+        Diary saved = diaryRepository.save(diary);
+        try {
+            List<Entry> rows = ready.entries().stream().map(entry -> {
+                Entry row = new Entry();
+                row.setDiaryId(saved.getId());
+                row.setUserId(userId);
+                row.setContent(entry.content());
+                row.setPlainText(entry.plainText());
+                row.setCreatedAt(entry.createdAt());
+                row.setUpdatedAt(entry.updatedAt());
+                return row;
+            }).toList();
+            if (!rows.isEmpty()) {
+                entryRepository.saveAll(rows);
+            }
+        } catch (RuntimeException error) {
+            entryRepository.deleteByDiaryIdAndUserId(saved.getId(), userId);
+            diaryRepository.deleteById(saved.getId());
+            throw error;
+        }
+        return new ImportedDiary(saved, ready.entries().size(), ready.skipped());
+    }
+
+    public record ImportedDiary(Diary diary, int importedEntries, int skippedEntries) {
     }
 }
