@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, styledLine, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, styledLine, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -937,6 +937,11 @@ function textOutsideMark(mark: HTMLElement): boolean {
         node = walker.nextNode();
     }
     return false;
+}
+
+function markEndsWithDigit(mark: HTMLElement): boolean {
+    const text = (mark.textContent ?? "").replace(/[\u00a0\u200b]/g, " ").trimEnd();
+    return /\d$/.test(text);
 }
 
 function spaceMark(selection: Selection): HTMLElement | null {
@@ -3077,7 +3082,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const anchor = selection.anchorNode;
         if (!anchor || !editor.contains(anchor)) return false;
         const mark = spaceMark(selection);
-        const action = styledSpace({
+        const decision = {
             key: e.key,
             shiftKey: e.shiftKey,
             altKey: e.altKey,
@@ -3086,19 +3091,21 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             collapsed: selection.isCollapsed,
             atMarkEnd: Boolean(mark),
             outsideText: Boolean(mark),
-        });
-        if (action !== "outside" || !mark) return false;
+        };
+        const punctuation = styledPunctuation({ ...decision, endsWithDigit: mark ? markEndsWithDigit(mark) : false });
+        if ((styledSpace(decision) !== "outside" && punctuation !== "outside") || !mark) return false;
         e.preventDefault();
         const before = editor.innerHTML;
+        const inserted = e.key === " " ? "\u00a0" : e.key;
         const range = document.createRange();
         if (anchor instanceof Text && !mark.contains(anchor)) {
             const at = Math.min(selection.anchorOffset, anchor.data.length);
-            anchor.insertData(at, "\u00a0");
-            range.setStart(anchor, at + 1);
+            anchor.insertData(at, inserted);
+            range.setStart(anchor, at + inserted.length);
         } else {
-            const space = document.createTextNode("\u00a0");
-            mark.after(space);
-            range.setStart(space, space.data.length);
+            const text = document.createTextNode(inserted);
+            mark.after(text);
+            range.setStart(text, text.data.length);
         }
         range.collapse(true);
         selection.removeAllRanges();

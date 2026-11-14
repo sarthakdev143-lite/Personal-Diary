@@ -151,7 +151,26 @@ export function styledLine(input: {
     return count;
 }
 
+const SENTENCE_PUNCTUATION = new Set([".", ",", ";", ":", "!", "?", ")", "]", "}", "…"]);
+
 export type StyledSpace = "outside" | "pass";
+
+export function styledPunctuation(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    atMarkEnd: boolean;
+    outsideText: boolean;
+    endsWithDigit: boolean;
+}): StyledSpace {
+    if (input.altKey || input.ctrlKey || input.metaKey || !input.collapsed) return "pass";
+    if (!input.atMarkEnd || !input.outsideText || !SENTENCE_PUNCTUATION.has(input.key)) return "pass";
+    if (input.endsWithDigit && (input.key === "." || input.key === ",")) return "pass";
+    return "outside";
+}
 
 export function styledSpace(input: {
     key: string;

@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, styledLine, styledSpace, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, styledLine, styledPunctuation, styledSpace, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -380,6 +380,25 @@ describe("code block", () => {
         assert.equal(styledLine({ ...end, shiftKey: true }), null);
         assert.equal(styledLine({ ...end, key: " " }), null);
         assert.equal(styledLine({ ...end, ctrlKey: true }), null);
+    });
+
+    it("puts sentence punctuation after a styled word outside that style", () => {
+        const end = { key: ".", collapsed: true, atMarkEnd: true, outsideText: true, endsWithDigit: false };
+        for (const key of [".", ",", ";", ":", "!", "?", ")", "]", "}", "…"]) {
+            assert.equal(styledPunctuation({ ...end, key }), "outside");
+        }
+        assert.equal(styledPunctuation({ ...end, key: ".", endsWithDigit: true }), "pass");
+        assert.equal(styledPunctuation({ ...end, key: ",", endsWithDigit: true }), "pass");
+        assert.equal(styledPunctuation({ ...end, key: "!", endsWithDigit: true }), "outside");
+        assert.equal(styledPunctuation({ ...end, outsideText: false }), "pass");
+        assert.equal(styledPunctuation({ ...end, atMarkEnd: false }), "pass");
+        assert.equal(styledPunctuation({ ...end, collapsed: false }), "pass");
+        assert.equal(styledPunctuation({ ...end, key: "s" }), "pass");
+        assert.equal(styledPunctuation({ ...end, key: "'" }), "pass");
+        assert.equal(styledPunctuation({ ...end, key: " " }), "pass");
+        assert.equal(styledPunctuation({ ...end, ctrlKey: true }), "pass");
+        assert.equal(styledPunctuation({ ...end, altKey: true }), "pass");
+        assert.equal(styledPunctuation({ ...end, metaKey: true }), "pass");
     });
 
     it("puts a space after a styled word outside that style", () => {
