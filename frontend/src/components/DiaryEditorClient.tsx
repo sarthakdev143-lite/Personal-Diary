@@ -74,6 +74,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const entryClock = useRef(new Date());
     const linkInputRef = useRef<HTMLInputElement>(null);
     const linkRange = useRef<Range | null>(null);
+    const discardButtonRef = useRef<HTMLButtonElement>(null);
 
     const [diary, setDiary] = useState<Diary | null>(null);
     const [entries, setEntries] = useState<Entry[]>([]);
@@ -97,6 +98,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const [linkOpen, setLinkOpen] = useState(false);
     const [linkDraft, setLinkDraft] = useState("");
     const [linkError, setLinkError] = useState<string | null>(null);
+    const [pendingDiscard, setPendingDiscard] = useState<(() => void) | null>(null);
 
     useEffect(() => {
         let mounted = true;
@@ -180,6 +182,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         linkInputRef.current?.focus();
     }, [linkOpen]);
 
+    useEffect(() => {
+        if (!pendingDiscard) return;
+        discardButtonRef.current?.focus();
+    }, [pendingDiscard]);
+
     const exec = useCallback((cmd: string, value?: string) => {
         editorRef.current?.focus();
         document.execCommand(cmd, false, value);
@@ -241,9 +248,19 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return () => window.removeEventListener("beforeunload", warnBeforeLeaving);
     }, [isDirty]);
 
-    const discardIfDirty = () => {
-        if (!isDirty) return true;
-        return window.confirm("Discard unsaved changes?");
+    const askToDiscard = (run: () => void) => {
+        if (!isDirty) {
+            setPendingDiscard(null);
+            run();
+            return;
+        }
+        setPendingDiscard(() => run);
+    };
+
+    const confirmDiscard = () => {
+        const run = pendingDiscard;
+        setPendingDiscard(null);
+        run?.();
     };
 
     const rememberDate = (value: string, clock?: Date) => {
@@ -279,32 +296,34 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     };
 
     const handleNewEntry = () => {
-        if (!discardIfDirty()) return;
-        const now = new Date();
-        rememberDate(calendarDate(now), now);
-        const html = headingFor(now.toISOString());
-        setSelectedEntryId(null);
-        setMode("compose");
-        setConfirmDelete(null);
-        writeEditor(html);
-        editorRef.current?.focus();
-        if (editorRef.current) {
-            const range = document.createRange();
-            range.selectNodeContents(editorRef.current);
-            range.collapse(false);
-            window.getSelection()?.removeAllRanges();
-            window.getSelection()?.addRange(range);
-        }
+        askToDiscard(() => {
+            const now = new Date();
+            rememberDate(calendarDate(now), now);
+            const html = headingFor(now.toISOString());
+            setSelectedEntryId(null);
+            setMode("compose");
+            setConfirmDelete(null);
+            writeEditor(html);
+            editorRef.current?.focus();
+            if (editorRef.current) {
+                const range = document.createRange();
+                range.selectNodeContents(editorRef.current);
+                range.collapse(false);
+                window.getSelection()?.removeAllRanges();
+                window.getSelection()?.addRange(range);
+            }
+        });
     };
 
     const revertToSaved = (entry: Entry) => {
-        if (!discardIfDirty()) return;
-        setSelectedEntryId(entry._id);
-        setMode("view");
-        setConfirmDelete(null);
-        const created = new Date(entry.createdAt);
-        rememberDate(calendarDate(created), created);
-        writeEditor(entry.content);
+        askToDiscard(() => {
+            setSelectedEntryId(entry._id);
+            setMode("view");
+            setConfirmDelete(null);
+            const created = new Date(entry.createdAt);
+            rememberDate(calendarDate(created), created);
+            writeEditor(entry.content);
+        });
     };
 
     const handleEntrySelect = (entry: Entry) => {
@@ -314,13 +333,14 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             revertToSaved(entry);
             return;
         }
-        if (!discardIfDirty()) return;
-        setSelectedEntryId(entry._id);
-        setMode("view");
-        setConfirmDelete(null);
-        const created = new Date(entry.createdAt);
-        rememberDate(calendarDate(created), created);
-        writeEditor(entry.content);
+        askToDiscard(() => {
+            setSelectedEntryId(entry._id);
+            setMode("view");
+            setConfirmDelete(null);
+            const created = new Date(entry.createdAt);
+            rememberDate(calendarDate(created), created);
+            writeEditor(entry.content);
+        });
     };
 
     const handleSave = async () => {
@@ -356,6 +376,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             setSelectedEntryId(data._id);
             setMode("view");
             setConfirmDelete(null);
+            setPendingDiscard(null);
             const created = new Date(data.createdAt);
             rememberDate(calendarDate(created), created);
             writeEditor(data.content);
@@ -511,6 +532,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === "Escape" && pendingDiscard) {
+            e.preventDefault();
+            setPendingDiscard(null);
+            return;
+        }
         if ((e.ctrlKey || e.metaKey) && e.key === "s") { e.preventDefault(); handleSave(); }
     };
 
@@ -758,6 +784,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     border-top:1px solid #1a1814;
                 }
                 .de-footer-actions{display:flex;gap:8px;align-items:center;}
+                .de-discard{
+                    flex-shrink:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+                    padding:8px 28px;background:#1a1210;border-top:1px solid #3a2a24;
+                    font-family:'Lora',Georgia,serif;font-size:14px;color:#e7b2a4;
+                }
 
                 /* Buttons */
                 .de-save-btn{
@@ -830,6 +861,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     }
                     #de-editor{padding:52px 18px 48px;}
                     .de-footer{padding:9px 14px;gap:8px;flex-wrap:wrap;}
+                    .de-discard{padding:8px 14px;}
                     .de-save-btn,.de-footer-actions{margin-left:auto;}
                     .de-kbd-hint{display:none;}
                 }
@@ -874,7 +906,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             href="/diary"
                             className="de-back"
                             onClick={(event) => {
-                                if (!discardIfDirty()) event.preventDefault();
+                                if (!isDirty) return;
+                                event.preventDefault();
+                                askToDiscard(() => router.push("/diary"));
                             }}
                         >
                             ← back
@@ -1144,6 +1178,21 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             />
                         </div>
 
+                        {pendingDiscard && (
+                            <div className="de-discard" role="group" aria-labelledby="discard-prompt">
+                                <p id="discard-prompt" style={{ margin: 0 }}>Discard unsaved changes?</p>
+                                <button
+                                    ref={discardButtonRef}
+                                    type="button"
+                                    className="de-danger-btn"
+                                    onClick={confirmDiscard}
+                                >
+                                    discard
+                                </button>
+                                <button type="button" className="de-ghost-btn" onClick={() => setPendingDiscard(null)}>keep editing</button>
+                            </div>
+                        )}
+
                         {/* Footer */}
                         <div className="de-footer">
                             <div className="de-mono" style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 10, color: "#8f8679", letterSpacing: "0.1em", flexWrap: "wrap" }}>
@@ -1188,7 +1237,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                         <>
                                             <button type="button" className="de-ghost-btn" onClick={() => { setMode("edit"); setConfirmDelete(null); setBaseline(htmlContent); }}>edit</button>
                                             <button type="button" className="de-danger-btn" onClick={() => setConfirmDelete("entry")}>delete</button>
-                                            <button type="button" className="de-ghost-btn" onClick={() => { if (discardIfDirty()) resetComposer(); }}>✕ close</button>
+                                            <button type="button" className="de-ghost-btn" onClick={() => askToDiscard(resetComposer)}>✕ close</button>
                                         </>
                                     )}
                                 </div>
