@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, wordGapInsert, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, wordGapInsert, stickyUndo, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -1885,7 +1885,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const imageRange = useRef<Range | null>(null);
     const pictureRemoval = useRef<{ before: string; after: string } | null>(null);
     const headingSplit = useRef<{ before: string; after: string; tag: string; text: string; offset: number } | null>(null);
-    const blankLine = useRef<{ before: string; after: string; path?: number[]; caret?: number; breakIndex?: number; breakSide?: "before" | "after" } | null>(null);
+    const blankLine = useRef<{ before: string; after: string; path?: number[]; caret?: number; breakIndex?: number; breakSide?: "before" | "after"; sticky?: boolean } | null>(null);
     const selectionTyping = useRef(false);
     const selectionTypeStart = useRef<number | null>(null);
     const selectionTypeLine = useRef<HTMLElement | null>(null);
@@ -1906,8 +1906,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         undoCaret?: number;
         breakIndex?: number;
         breakSide?: "before" | "after";
+        sticky?: boolean;
     } | null>(null);
-    const keepBlank = (page: { before: string; after: string; path?: number[]; caret?: number; breakIndex?: number; breakSide?: "before" | "after" }) => {
+    const keepBlank = (page: { before: string; after: string; path?: number[]; caret?: number; breakIndex?: number; breakSide?: "before" | "after"; sticky?: boolean }) => {
         blankLine.current = page;
         redoPage.current = null;
         selectionTyping.current = false;
@@ -2093,8 +2094,19 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             else selectionTyping.current = false;
         }
         if (blankLine.current && editor.innerHTML !== blankLine.current.after) {
-            blankLine.current = null;
-            selectionTyping.current = false;
+            const saved = blankLine.current;
+            const selection = window.getSelection();
+            const block = selection?.rangeCount ? lineBlock(selection.anchorNode) : null;
+            const savedLine = saved.path ? nodeAtPath(editor, saved.path) : null;
+            const decision = stickyUndo({
+                sticky: Boolean(saved.sticky),
+                matches: false,
+                sameLine: Boolean(block && savedLine && block === savedLine),
+            });
+            if (decision === "clear") {
+                blankLine.current = null;
+                selectionTyping.current = false;
+            }
         }
         const redo = redoPage.current;
         if (redo && editor.innerHTML !== redo.undone && editor.innerHTML !== redo.redone) redoPage.current = null;
@@ -3135,6 +3147,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         undoCaret?: number;
         breakIndex?: number;
         breakSide?: "before" | "after";
+        sticky?: boolean;
     }) => {
         const mark = editorRef.current ? caretMark(editorRef.current) : null;
         redoPage.current = { ...page, caretPath: mark?.path, caretOffset: mark?.offset };
@@ -3819,11 +3832,19 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const undoBlankLine = () => {
         const editor = editorRef.current;
         const saved = blankLine.current;
-        if (!editor || !saved || headingSplitUndo({ saved, current: editor.innerHTML }) !== "restore") {
-            if (saved && editor && editor.innerHTML !== saved.after) blankLine.current = null;
+        const selection = window.getSelection();
+        const block = selection?.rangeCount ? lineBlock(selection.anchorNode) : null;
+        const savedLine = editor && saved?.path ? nodeAtPath(editor, saved.path) : null;
+        const decision = stickyUndo({
+            sticky: Boolean(saved?.sticky),
+            matches: headingSplitUndo({ saved, current: editor?.innerHTML ?? "" }) === "restore",
+            sameLine: Boolean(block && savedLine && block === savedLine),
+        });
+        if (!editor || !saved || decision !== "restore") {
+            if (decision === "clear") blankLine.current = null;
             return false;
         }
-        holdRedo({ undone: saved.before, redone: saved.after, kind: "blank", path: saved.path, undoCaret: saved.caret, breakIndex: saved.breakIndex, breakSide: saved.breakSide });
+        holdRedo({ undone: saved.before, redone: saved.after, kind: "blank", path: saved.path, undoCaret: saved.caret, breakIndex: saved.breakIndex, breakSide: saved.breakSide, sticky: saved.sticky });
         blankLine.current = null;
         selectionTyping.current = false;
         selectionTypeStart.current = null;
@@ -3861,7 +3882,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         editor.innerHTML = saved.redone;
         setHtmlContent(saved.redone);
         editor.focus();
-        if (saved.kind === "blank") blankLine.current = { before: saved.undone, after: saved.redone, path: saved.path, caret: saved.undoCaret, breakIndex: saved.breakIndex, breakSide: saved.breakSide };
+        if (saved.kind === "blank") blankLine.current = { before: saved.undone, after: saved.redone, path: saved.path, caret: saved.undoCaret, breakIndex: saved.breakIndex, breakSide: saved.breakSide, sticky: saved.sticky };
         else if (saved.kind === "heading" && saved.tag && saved.text !== undefined && saved.offset !== undefined) {
             headingSplit.current = { before: saved.undone, after: saved.redone, tag: saved.tag, text: saved.text, offset: saved.offset };
         } else pictureRemoval.current = { before: saved.undone, after: saved.redone };
@@ -4188,7 +4209,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const path = childPath(editor, block);
         removeTextSpan(block, span.start, span.end);
         if (editor.innerHTML === before) return;
-        keepBlank({ before, after: editor.innerHTML, path, caret });
+        keepBlank({ before, after: editor.innerHTML, path, caret, sticky: true });
         rememberWordGap(editor, block, blockIsEmpty(block) ? "none" : gap);
         setHtmlContent(editor.innerHTML);
     };
