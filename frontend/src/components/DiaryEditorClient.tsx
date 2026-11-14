@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styledLine, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
@@ -1723,10 +1723,10 @@ function keepInlineChain(fragment: DocumentFragment, chain: HTMLElement[]) {
     }
 }
 
-function continueAfterPicture(caption: HTMLElement) {
+function continueAfterPicture(caption: HTMLElement): number | null {
     const figure = caption.closest("figure");
     const selection = window.getSelection();
-    if (!figure || !selection || !selection.rangeCount) return;
+    if (!figure || !selection || !selection.rangeCount) return null;
     const range = selection.getRangeAt(0);
     const nodes = textPieces(caption);
     const raw = nodes.map((node) => node.data).join("");
@@ -1734,7 +1734,7 @@ function continueAfterPicture(caption: HTMLElement) {
     if (offset === null) {
         if (!raw || (range.startContainer === caption && range.startOffset === 0)) offset = 0;
         else if (range.startContainer === caption && range.startOffset >= caption.childNodes.length) offset = raw.length;
-        else return;
+        else return null;
     }
     const cut = boundarySpaceCut(raw.slice(0, offset), raw.slice(offset));
     const keepEnd = offset - (cut?.before ?? 0);
@@ -1776,6 +1776,7 @@ function continueAfterPicture(caption: HTMLElement) {
     }
     figure.after(paragraph);
     placeCaretAtStart(paragraph);
+    return offset;
 }
 
 const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
@@ -3804,8 +3805,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         e.preventDefault();
         const editorBefore = editor.innerHTML;
         const path = childPath(editor, caption);
-        if (action === "break") continueAfterPicture(caption);
-        if (action === "break") keepBlank({ before: editorBefore, after: editor.innerHTML, path });
+        if (action === "break") {
+            const caret = captionUndoCaret(continueAfterPicture(caption)) ?? undefined;
+            keepBlank({ before: editorBefore, after: editor.innerHTML, path, caret });
+        }
         setHtmlContent(editor.innerHTML);
     };
 
