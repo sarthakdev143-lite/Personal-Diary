@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { captionBreakText, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, joinNeedsSpace, lineJoinKey, listCommand, listEdgeKey, listLeaveKey, quoteLeaveKey, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, joinNeedsSpace, lineJoinKey, listCommand, listEdgeKey, listLeaveKey, quoteLeaveKey, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -922,6 +922,19 @@ function nodeAtPath(editor: HTMLElement, path: number[]): HTMLElement | null {
     return current === editor ? null : current;
 }
 
+function caretMark(editor: HTMLElement): { path: number[]; offset: number } | null {
+    const selection = window.getSelection();
+    if (!selection?.rangeCount) return null;
+    const range = selection.getRangeAt(0);
+    const anchor = range.startContainer;
+    if (!editor.contains(anchor)) return null;
+    const host = anchor instanceof Element ? anchor : anchor.parentElement;
+    const line = host?.closest("p, h1, h2, h3, li, blockquote, pre, figcaption");
+    if (!(line instanceof HTMLElement) || !editor.contains(line)) return null;
+    const offset = caretTextOffset(textPieces(line), range.startContainer, range.startOffset) ?? 0;
+    return { path: childPath(editor, line), offset };
+}
+
 function removeJoined(source: HTMLElement) {
     const list = source.parentElement;
     source.remove();
@@ -1252,6 +1265,29 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const pictureRemoval = useRef<{ before: string; after: string } | null>(null);
     const headingSplit = useRef<{ before: string; after: string; tag: string; text: string; offset: number } | null>(null);
     const blankLine = useRef<{ before: string; after: string; path?: number[] } | null>(null);
+    const redoPage = useRef<{
+        undone: string;
+        redone: string;
+        kind: "blank" | "heading" | "picture";
+        path?: number[];
+        tag?: string;
+        text?: string;
+        offset?: number;
+        caretPath?: number[];
+        caretOffset?: number;
+    } | null>(null);
+    const keepBlank = (page: { before: string; after: string; path?: number[] }) => {
+        blankLine.current = page;
+        redoPage.current = null;
+    };
+    const keepSplit = (page: { before: string; after: string; tag: string; text: string; offset: number }) => {
+        headingSplit.current = page;
+        redoPage.current = null;
+    };
+    const keepPicture = (page: { before: string; after: string }) => {
+        pictureRemoval.current = page;
+        redoPage.current = null;
+    };
     const discardButtonRef = useRef<HTMLButtonElement>(null);
 
     const [diary, setDiary] = useState<Diary | null>(null);
@@ -1411,6 +1447,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (split && editor.innerHTML !== split.after) headingSplit.current = null;
         const blank = blankLine.current;
         if (blank && editor.innerHTML !== blank.after) blankLine.current = null;
+        const redo = redoPage.current;
+        if (redo && editor.innerHTML !== redo.undone && editor.innerHTML !== redo.redone) redoPage.current = null;
         setHtmlContent(editor.innerHTML);
         updateActiveFormats();
     }, [updateActiveFormats]);
@@ -1440,6 +1478,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     useEffect(() => {
         if (mode !== "view") return;
         pictureRemoval.current = null;
+        redoPage.current = null;
         setPictureQueue([]);
         setPictureTotal(0);
         setImageAlt("");
@@ -2314,7 +2353,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 editor.appendChild(paragraph);
                 placeCaretAtStart(paragraph);
             }
-            pictureRemoval.current = { before, after: editor.innerHTML };
+            keepPicture({ before, after: editor.innerHTML });
         } else if (action === "name") {
             typePictureName(picture, image, e.key, selection);
         } else {
@@ -2331,6 +2370,19 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const holdRedo = (page: {
+        undone: string;
+        redone: string;
+        kind: "blank" | "heading" | "picture";
+        path?: number[];
+        tag?: string;
+        text?: string;
+        offset?: number;
+    }) => {
+        const mark = editorRef.current ? caretMark(editorRef.current) : null;
+        redoPage.current = { ...page, caretPath: mark?.path, caretOffset: mark?.offset };
+    };
+
     const undoRemovedPicture = () => {
         const editor = editorRef.current;
         const saved = pictureRemoval.current;
@@ -2339,6 +2391,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             if (saved && editor && editor.innerHTML !== saved.after) pictureRemoval.current = null;
             return false;
         }
+        holdRedo({ undone: saved.before, redone: saved.after, kind: "picture" });
         pictureRemoval.current = null;
         editor.innerHTML = saved.before;
         setHtmlContent(saved.before);
@@ -2375,7 +2428,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const path = childPath(editor, line.block);
         if (action === "remove") line.block.remove();
         placeCaretAtEnd(line.caption);
-        if (action === "remove") blankLine.current = { before, after: editor.innerHTML, path };
+        if (action === "remove") keepBlank({ before, after: editor.innerHTML, path });
         setHtmlContent(editor.innerHTML);
         return true;
     };
@@ -2474,7 +2527,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             }
         }
         const path = host instanceof HTMLElement && editor.contains(host) ? childPath(editor, host) : undefined;
-        blankLine.current = { before: beforeHtml, after: editor.innerHTML, path };
+        keepBlank({ before: beforeHtml, after: editor.innerHTML, path });
         setHtmlContent(editor.innerHTML);
         return true;
     };
@@ -2532,7 +2585,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 e.preventDefault();
                 const before = editor.innerHTML;
                 const path = clearWritingSelection(editor, touched.heading, selection);
-                blankLine.current = { before, after: editor.innerHTML, path };
+                keepBlank({ before, after: editor.innerHTML, path });
                 setHtmlContent(editor.innerHTML);
                 return true;
             }
@@ -2558,7 +2611,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             const path = childPath(editor, line.block);
             line.block.remove();
             if (next instanceof HTMLElement) placeCaretAtStart(next);
-            blankLine.current = { before, after: editor.innerHTML, path };
+            keepBlank({ before, after: editor.innerHTML, path });
             setHtmlContent(editor.innerHTML);
             return true;
         }
@@ -2605,7 +2658,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             const before = editor.innerHTML;
             const path = childPath(editor, pre);
             leaveCodeBlock(pre, target);
-            blankLine.current = { before, after: editor.innerHTML, path };
+            keepBlank({ before, after: editor.innerHTML, path });
             setHtmlContent(editor.innerHTML);
             return true;
         }
@@ -2639,7 +2692,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const before = editor.innerHTML;
         const path = childPath(editor, item);
         leaveListItem(item);
-        blankLine.current = { before, after: editor.innerHTML, path };
+        keepBlank({ before, after: editor.innerHTML, path });
         setHtmlContent(editor.innerHTML);
         return true;
     };
@@ -2668,7 +2721,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const before = editor.innerHTML;
         const path = childPath(editor, quote);
         leaveQuote(quote);
-        blankLine.current = { before, after: editor.innerHTML, path };
+        keepBlank({ before, after: editor.innerHTML, path });
         setHtmlContent(editor.innerHTML);
         return true;
     };
@@ -2707,7 +2760,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             const before = editor.innerHTML;
             const path = childPath(editor, pre);
             pullFirstCodeLine(neighbor, pre);
-            blankLine.current = { before, after: editor.innerHTML, path };
+            keepBlank({ before, after: editor.innerHTML, path });
             setHtmlContent(editor.innerHTML);
             return true;
         }
@@ -2732,7 +2785,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const before = editor.innerHTML;
         const path = childPath(editor, block);
         pullFirstCodeLine(block, code);
-        blankLine.current = { before, after: editor.innerHTML, path };
+        keepBlank({ before, after: editor.innerHTML, path });
         setHtmlContent(editor.innerHTML);
         return true;
     };
@@ -2767,7 +2820,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             const before = editor.innerHTML;
             const path = childPath(editor, block);
             outdentListItem(block);
-            blankLine.current = { before, after: editor.innerHTML, path };
+            keepBlank({ before, after: editor.innerHTML, path });
             setHtmlContent(editor.innerHTML);
             return true;
         }
@@ -2797,7 +2850,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             placeCaretAtEnd(neighbor);
         } else if (backward) joinBlock(neighbor, block);
         else joinBlock(block, neighbor);
-        blankLine.current = { before, after: editor.innerHTML, path };
+        keepBlank({ before, after: editor.innerHTML, path });
         setHtmlContent(editor.innerHTML);
         return true;
     };
@@ -2809,6 +2862,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             if (saved && editor && editor.innerHTML !== saved.after) headingSplit.current = null;
             return false;
         }
+        holdRedo({ undone: saved.before, redone: saved.after, kind: "heading", tag: saved.tag, text: saved.text, offset: saved.offset });
         headingSplit.current = null;
         editor.innerHTML = saved.before;
         setHtmlContent(saved.before);
@@ -2825,12 +2879,45 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             if (saved && editor && editor.innerHTML !== saved.after) blankLine.current = null;
             return false;
         }
+        holdRedo({ undone: saved.before, redone: saved.after, kind: "blank", path: saved.path });
         blankLine.current = null;
         editor.innerHTML = saved.before;
         setHtmlContent(saved.before);
         editor.focus();
         const line = saved.path ? nodeAtPath(editor, saved.path) : editor.firstElementChild?.nextElementSibling;
         if (line instanceof HTMLElement) placeCaretAtStart(line);
+        return true;
+    };
+
+    const pageHoldsSnapshot = () => {
+        const editor = editorRef.current;
+        if (!editor) return false;
+        const html = editor.innerHTML;
+        return Boolean(
+            (blankLine.current && html === blankLine.current.after)
+            || (headingSplit.current && html === headingSplit.current.after)
+            || (pictureRemoval.current && html === pictureRemoval.current.after)
+        );
+    };
+
+    const redoSavedPage = () => {
+        const editor = editorRef.current;
+        const saved = redoPage.current;
+        const matches = Boolean(editor && saved && editor.innerHTML === saved.undone);
+        if (!editor || !saved || savedRedo({ command: "redo", matches }) !== "restore") {
+            if (saved && editor && editor.innerHTML !== saved.undone) redoPage.current = null;
+            return false;
+        }
+        editor.innerHTML = saved.redone;
+        setHtmlContent(saved.redone);
+        editor.focus();
+        if (saved.kind === "blank") blankLine.current = { before: saved.undone, after: saved.redone, path: saved.path };
+        else if (saved.kind === "heading" && saved.tag && saved.text !== undefined && saved.offset !== undefined) {
+            headingSplit.current = { before: saved.undone, after: saved.redone, tag: saved.tag, text: saved.text, offset: saved.offset };
+        } else pictureRemoval.current = { before: saved.undone, after: saved.redone };
+        const line = saved.caretPath ? nodeAtPath(editor, saved.caretPath) : null;
+        if (line instanceof HTMLElement) placeCaretAtTextOffset(line, saved.caretOffset ?? 0);
+        redoPage.current = null;
         return true;
     };
 
@@ -2878,7 +2965,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             else heading.replaceWith(paragraph);
             placeCaretAtStart(paragraph);
         }
-        headingSplit.current = { before, after: editor.innerHTML, tag, text, offset };
+        keepSplit({ before, after: editor.innerHTML, tag, text, offset });
         setHtmlContent(editor.innerHTML);
         return true;
     };
@@ -2925,6 +3012,20 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
         if (mode === "view") return;
         document.execCommand("defaultParagraphSeparator", false, "p");
+        if (savedRedo({
+            key: e.key,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            matches: true,
+        }) === "restore") {
+            const editor = editorRef.current;
+            if (editor && e.target instanceof Node && editor.contains(e.target) && (redoSavedPage() || pageHoldsSnapshot())) {
+                e.preventDefault();
+                return;
+            }
+        }
         if ((e.key === "z" || e.key === "Z") && (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) {
             const editor = editorRef.current;
             if (editor && e.target instanceof Node && editor.contains(e.target) && (undoRemovedPicture() || undoHeadingSplit() || undoBlankLine())) {
@@ -2967,7 +3068,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const editorBefore = editor.innerHTML;
         const path = childPath(editor, caption);
         if (action === "break") continueAfterPicture(caption);
-        if (action === "break") blankLine.current = { before: editorBefore, after: editor.innerHTML, path };
+        if (action === "break") keepBlank({ before: editorBefore, after: editor.innerHTML, path });
         setHtmlContent(editor.innerHTML);
     };
 
@@ -3016,6 +3117,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (tool.html) {
             insertHTML(tool.html);
             return;
+        }
+        if (tool.command === "redo") {
+            editorRef.current?.focus();
+            if (redoSavedPage() || pageHoldsSnapshot()) return;
         }
         if (tool.command && undoButton(tool.command) === "saved" && (undoRemovedPicture() || undoHeadingSplit() || undoBlankLine())) return;
         if (tool.command) exec(tool.command, tool.value);

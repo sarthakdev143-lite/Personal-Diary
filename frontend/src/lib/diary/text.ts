@@ -230,6 +230,25 @@ export function undoButton(command: string): UndoButton {
     return command === "undo" ? "saved" : "browser";
 }
 
+export type SavedRedo = "restore" | "pass";
+
+export function savedRedo(input: {
+    command?: string;
+    key?: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    matches: boolean;
+}): SavedRedo {
+    if (input.altKey || !input.matches) return "pass";
+    if (input.command === "redo") return "restore";
+    if (!(input.ctrlKey || input.metaKey)) return "pass";
+    if (input.key === "y" || input.key === "Y") return "restore";
+    if ((input.key === "z" || input.key === "Z") && input.shiftKey) return "restore";
+    return "pass";
+}
+
 export type ListEdge = "outdent" | "pass";
 
 export function listEdgeKey(input: {
