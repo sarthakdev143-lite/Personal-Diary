@@ -336,6 +336,11 @@ describe("entry html", () => {
         const picture = prepareEntryContent(`<h2>${label}</h2><img src="https://example.com/sunset.png" alt="sunset">`);
         assert.equal(picture.ok, true);
         if (picture.ok) assert.equal(picture.plainText, "sunset");
+
+        const named = prepareEntryContent(`<img src="https://example.com/sunset.png" alt="sunset"><p>sunset</p>`);
+        assert.equal(named.ok, true);
+        if (named.ok) assert.equal(named.plainText, "sunset");
+        assert.equal(wordCount(`<img src="https://example.com/sunset.png" alt="sunset"><p>sunset</p>`), 1);
     });
 });
 

@@ -20,7 +20,8 @@ export function imageHtml(src: string, alt: string): string {
         .replace(/"/g, "&quot;")
         .replace(/</g, "&lt;");
     const altAttr = name ? ` alt="${name}"` : "";
-    return `<img src="${src}"${altAttr} /><p><br></p>`;
+    const caption = name ? `<p>${name}</p>` : "<p><br></p>";
+    return `<img src="${src}"${altAttr} />${caption}`;
 }
 
 export function imageFileIssue(file: { type: string; size: number }): ImageFileIssue | null {

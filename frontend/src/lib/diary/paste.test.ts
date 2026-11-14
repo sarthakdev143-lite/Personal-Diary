@@ -117,7 +117,7 @@ describe("entry paste", () => {
         assert.equal(imageAltText("a".repeat(200)).length, 180);
         assert.equal(
             imageHtml("data:image/png;base64,aaaa", 'sketch "one"'),
-            '<img src="data:image/png;base64,aaaa" alt="sketch &quot;one&quot;" /><p><br></p>',
+            '<img src="data:image/png;base64,aaaa" alt="sketch &quot;one&quot;" /><p>sketch &quot;one&quot;</p>',
         );
         assert.equal(
             imageHtml("data:image/png;base64,aaaa", "   "),

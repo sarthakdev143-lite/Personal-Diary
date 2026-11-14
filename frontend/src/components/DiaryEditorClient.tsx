@@ -1301,6 +1301,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 .de-link-error{
                     margin:0;flex-basis:100%;font-family:'Lora',Georgia,serif;font-size:13px;color:#e7b2a4;
                 }
+                .de-picture-preview{
+                    width:48px;height:36px;object-fit:cover;flex-shrink:0;
+                    border-radius:3px;border:1px solid #2a2520;background:#0d0b09;
+                }
                 .de-tbtn{
                     font-family:'JetBrains Mono',monospace;
                     font-size:11px;
@@ -1772,6 +1776,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         }}
                     >
                         <label htmlFor="entry-image-alt">{pictureLabel}</label>
+                        <img className="de-picture-preview" src={pendingImage} alt="" aria-hidden="true" />
                         <input
                             id="entry-image-alt"
                             ref={imageAltRef}
