@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import { importNotice, importedDiaryPath, rememberImportNotice } from "@/lib/diary/import";
-import { diarySearchShortcut, searchShortcutLabel } from "@/lib/diary/keys";
+import { diaryListKeyAction, diarySearchShortcut, searchShortcutLabel } from "@/lib/diary/keys";
 
 const DiaryDashboardClient = () => {
     const router = useRouter();
@@ -52,35 +52,53 @@ const DiaryDashboardClient = () => {
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
+            const target = event.target;
+            const inField = target instanceof HTMLElement && (
+                target.tagName === "INPUT"
+                || target.tagName === "TEXTAREA"
+                || target.tagName === "SELECT"
+                || target.isContentEditable
+            );
+            const action = diaryListKeyAction({
+                key: event.key,
+                altKey: event.altKey,
+                ctrlKey: event.ctrlKey,
+                metaKey: event.metaKey,
+                shiftKey: event.shiftKey,
+                inField,
+                searchFocused: target === searchInputRef.current,
+                query: queryRef.current,
+                formOpen: formActiveRef.current,
+                themeOpen: fullScreenRef.current,
+            });
+            if (action === "theme") {
+                event.preventDefault();
+                setIsFullScreen(false);
+                return;
+            }
+            if (action === "form") {
+                event.preventDefault();
+                setNewDiaryFormActive(false);
+                return;
+            }
+            if (action === "clear") {
+                event.preventDefault();
+                setQuery("");
+                return;
+            }
+            if (action === "close") {
+                event.preventDefault();
+                searchInputRef.current?.blur();
+                return;
+            }
             if (!diarySearchShortcut(event)) return;
             if (formActiveRef.current || fullScreenRef.current) return;
             event.preventDefault();
             searchInputRef.current?.focus();
         };
 
-        const handleFormClose = (event: KeyboardEvent) => {
-            if (event.key.toLowerCase() !== "escape") return;
-
-            if (fullScreenRef.current) {
-                setIsFullScreen(false);
-                return;
-            }
-
-            if (document.activeElement === searchInputRef.current && queryRef.current) {
-                setQuery("");
-                return;
-            }
-
-            setNewDiaryFormActive(false);
-        };
-
-        window.addEventListener("keydown", handleFormClose);
         window.addEventListener("keydown", handleKeyDown);
-
-        return () => {
-            window.removeEventListener("keydown", handleFormClose);
-            window.removeEventListener("keydown", handleKeyDown);
-        };
+        return () => window.removeEventListener("keydown", handleKeyDown);
     }, []);
 
     const importBackup = async (file: File | undefined) => {
@@ -191,7 +209,7 @@ const DiaryDashboardClient = () => {
                     />
                 </div>
                 <div id="diaries" className="mx-auto flex h-auto w-full max-w-[85%] flex-wrap gap-5 max-sm:justify-center">
-                    <Diaries query={debouncedQuery} refetchTrigger={refetchTrigger} />
+                    <Diaries query={debouncedQuery} refetchTrigger={refetchTrigger} paused={newDiaryFormActive || isFullScreen} />
                     <Button
                         onClick={() => setNewDiaryFormActive(true)}
                         id="add-new-diary"

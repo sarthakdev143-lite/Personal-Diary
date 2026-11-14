@@ -2,12 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 
 import { coverForTheme } from "@/lib/diary/constants";
+import { diaryListKeyAction } from "@/lib/diary/keys";
 import { diaryMatchPath } from "@/lib/diary/search";
-import { formatDiaryDate } from "@/lib/diary/text";
+import { entryToShowByStep, formatDiaryDate } from "@/lib/diary/text";
 
 type Diary = {
     _id: string;
@@ -27,9 +28,10 @@ const truncateDescription = (description: string, maxLength = 110) => {
     return `${description.slice(0, maxLength).trimEnd()}...`;
 };
 
-const Diaries = ({ query = "", refetchTrigger = 0 }: { query?: string; refetchTrigger?: number }) => {
+const Diaries = ({ query = "", refetchTrigger = 0, paused = false }: { query?: string; refetchTrigger?: number; paused?: boolean }) => {
     const { status } = useSession();
     const [attempt, setAttempt] = useState(0);
+    const visibleRef = useRef<Diary[]>([]);
     const [result, setResult] = useState<{
         key: string;
         diaries: Diary[];
@@ -85,8 +87,53 @@ const Diaries = ({ query = "", refetchTrigger = 0 }: { query?: string; refetchTr
         };
     }, [status, query, refetchTrigger, attempt, requestKey]);
 
+    useEffect(() => {
+        const onKey = (event: KeyboardEvent) => {
+            const target = event.target;
+            const inField = target instanceof HTMLElement && (
+                target.tagName === "INPUT"
+                || target.tagName === "TEXTAREA"
+                || target.tagName === "SELECT"
+                || target.isContentEditable
+            );
+            const action = diaryListKeyAction({
+                key: event.key,
+                altKey: event.altKey,
+                ctrlKey: event.ctrlKey,
+                metaKey: event.metaKey,
+                shiftKey: event.shiftKey,
+                inField,
+                searchFocused: false,
+                query: "",
+                formOpen: paused,
+                themeOpen: false,
+            });
+            if (action !== "next" && action !== "previous") return;
+            const list = visibleRef.current;
+            if (!list.length) return;
+            const active = document.activeElement instanceof Element
+                ? document.activeElement.closest<HTMLElement>("[data-diary-id]")
+                : null;
+            const next = entryToShowByStep(
+                list,
+                active?.dataset.diaryId ?? null,
+                action === "next" ? "next" : "previous",
+            );
+            if (!next) return;
+            const link = document.querySelector<HTMLAnchorElement>(`a[data-diary-id="${CSS.escape(next._id)}"]`);
+            if (!link) return;
+            event.preventDefault();
+            link.focus();
+            link.scrollIntoView({ block: "nearest" });
+        };
+
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [paused]);
+
     const isCurrent = result?.key === requestKey;
     const diaries = isCurrent ? result.diaries : [];
+    visibleRef.current = diaries;
     const error = isCurrent ? result.error : null;
     const isLoading = status === "loading" || (status === "authenticated" && !isCurrent);
 
@@ -138,7 +185,8 @@ const Diaries = ({ query = "", refetchTrigger = 0 }: { query?: string; refetchTr
                 <Link
                     key={diary._id}
                     href={diaryMatchPath(diary._id, query ? diary.matchEntry : null)}
-                    className="flex min-h-36 w-full max-w-xs overflow-hidden rounded-xl border border-white/10 bg-zinc-600/10 text-white/80 shadow-lg"
+                    data-diary-id={diary._id}
+                    className="flex min-h-36 w-full max-w-xs overflow-hidden rounded-xl border border-white/10 bg-zinc-600/10 text-white/80 shadow-lg focus-visible:border-white/70 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70"
                 >
                     {cover ? (
                         <span className="relative block h-full w-16 shrink-0">
