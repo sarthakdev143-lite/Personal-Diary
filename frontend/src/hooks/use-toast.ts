@@ -7,6 +7,7 @@ import type {
   ToastActionElement,
   ToastProps,
 } from "@/components/ui/toast"
+import { toastsForPage } from "@/lib/diary/toast-page"
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000
@@ -16,6 +17,7 @@ type ToasterToast = ToastProps & {
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
+  page: string
 }
 
 let count = 0
@@ -41,6 +43,10 @@ type Action =
   | {
     type: "REMOVE_TOAST"
     toastId?: ToasterToast["id"]
+  }
+  | {
+    type: "KEEP_PAGE"
+    page: string
   }
 
 interface State {
@@ -117,7 +123,28 @@ export const reducer = (state: State, action: Action): State => {
         ...state,
         toasts: state.toasts.filter((t) => t.id !== action.toastId),
       }
+
+    case "KEEP_PAGE":
+      return {
+        ...state,
+        toasts: toastsForPage(state.toasts, action.page),
+      }
   }
+}
+
+let toastPage = ""
+
+export function keepToastsForPage(page: string) {
+  toastPage = page
+  const dropped = memoryState.toasts.filter((item) => item.page !== page)
+  for (const item of dropped) {
+    const timeout = toastTimeouts.get(item.id)
+    if (!timeout) continue
+    clearTimeout(timeout)
+    toastTimeouts.delete(item.id)
+  }
+  if (dropped.length === 0) return
+  dispatch({ type: "KEEP_PAGE", page })
 }
 
 const listeners: Array<(state: State) => void> = []
@@ -131,7 +158,7 @@ function dispatch(action: Action) {
   })
 }
 
-type Toast = Omit<ToasterToast, "id">
+type Toast = Omit<ToasterToast, "id" | "page">
 
 function toast({ ...props }: Toast) {
   const id = genId()
@@ -148,6 +175,7 @@ function toast({ ...props }: Toast) {
     toast: {
       ...props,
       id,
+      page: toastPage,
       open: true,
       onOpenChange: (open) => {
         if (!open) dismiss()
