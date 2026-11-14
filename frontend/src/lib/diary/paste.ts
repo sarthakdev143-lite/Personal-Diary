@@ -72,6 +72,13 @@ export function pictureClick(input: { image: boolean; inEditor: boolean }): Pict
     return "pass";
 }
 
+export type PictureSelectionMark = "selected" | "plain";
+
+export function pictureSelectionMark(input: { editing: boolean; imageSelected: boolean }): PictureSelectionMark {
+    if (input.editing && input.imageSelected) return "selected";
+    return "plain";
+}
+
 export function imageHtml(src: string, alt: string): string {
     const name = imageAltText(alt)
         .replace(/&/g, "&amp;")

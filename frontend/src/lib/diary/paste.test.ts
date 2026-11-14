@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, selectedPictureKey } from "./paste";
+import { decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureSelectionMark, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -162,5 +162,11 @@ describe("entry paste", () => {
         assert.equal(pictureClick({ image: true, inEditor: true }), "select");
         assert.equal(pictureClick({ image: false, inEditor: true }), "pass");
         assert.equal(pictureClick({ image: true, inEditor: false }), "pass");
+    });
+
+    it("marks only the selected picture while editing", () => {
+        assert.equal(pictureSelectionMark({ editing: true, imageSelected: true }), "selected");
+        assert.equal(pictureSelectionMark({ editing: true, imageSelected: false }), "plain");
+        assert.equal(pictureSelectionMark({ editing: false, imageSelected: true }), "plain");
     });
 });

@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, selectedPictureKey } from "@/lib/diary/paste";
+import { decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureSelectionMark, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryUndoBody, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
@@ -597,6 +597,25 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const notice = takeImportNotice();
         if (notice) toast(notice);
     }, [isLoading, toast]);
+
+    useEffect(() => {
+        const markSelectedPicture = () => {
+            const editor = editorRef.current;
+            if (!editor) return;
+            const current = editor.querySelector("img.de-selected");
+            const selection = window.getSelection();
+            const image = selection ? selectedImage(editor, selection) : null;
+            if (pictureSelectionMark({ editing: mode !== "view", imageSelected: Boolean(image) }) !== "selected" || !image) {
+                current?.classList.remove("de-selected");
+                return;
+            }
+            if (current && current !== image) current.classList.remove("de-selected");
+            image.classList.add("de-selected");
+        };
+        document.addEventListener("selectionchange", markSelectedPicture);
+        markSelectedPicture();
+        return () => document.removeEventListener("selectionchange", markSelectedPicture);
+    }, [mode]);
 
     useEffect(() => {
         if (!isDirty) return;
@@ -1663,6 +1682,18 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 #de-editor pre code{display:block;min-height:1.6em;}
                 #de-editor a{color:#c4a882;text-decoration:underline;text-underline-offset:3px;}
                 #de-editor img{max-width:100%;border-radius:6px;margin:12px 0;display:block;}
+                #de-editor figure{margin:12px 0 16px;}
+                #de-editor figure img{margin:0;}
+                #de-editor figcaption{
+                    font-family:'JetBrains Mono',monospace;
+                    font-style:normal;
+                    font-size:12px;
+                    line-height:1.4;
+                    letter-spacing:0.04em;
+                    color:#a79f93;
+                    margin-top:6px;
+                }
+                #de-editor img.de-selected{outline:1px solid #c4a882;outline-offset:3px;}
 
                 /* Read-only overlay */
                 #de-editor[contenteditable="false"]{opacity:0.75;cursor:default;}
