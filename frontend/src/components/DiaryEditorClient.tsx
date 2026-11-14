@@ -2390,9 +2390,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const dateHeading = label ? [...editor.querySelectorAll("h2")].find((node) => (node.textContent ?? "").trim() === label) : null;
         const nodes = textPieces(heading);
         const range = selection.getRangeAt(0);
-        const offset = caretTextOffset(nodes, range.startContainer, range.startOffset);
-        if (offset === null) return false;
         const raw = nodes.map((node) => node.data).join("");
+        const offset = caretTextOffset(nodes, range.startContainer, range.startOffset) ?? (raw.replace(/[\s\u00a0]/g, "") ? null : 0);
+        if (offset === null) return false;
         const action = headingEnterKey({
             key: e.key,
             shiftKey: e.shiftKey,
@@ -2402,15 +2402,24 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             inHeading: true,
             collapsed: true,
             dateHeading: heading === dateHeading,
+            hasImage: Boolean(heading.querySelector("img")),
             before: raw.slice(0, offset),
             after: raw.slice(offset),
         });
-        if (action !== "paragraph") return false;
+        if (action === "pass") return false;
         e.preventDefault();
         const before = editor.innerHTML;
         const text = heading.textContent ?? "";
         const tag = heading.tagName;
-        leaveHeading(heading, selection);
+        if (action === "paragraph") {
+            leaveHeading(heading, selection);
+        } else {
+            const paragraph = document.createElement("p");
+            paragraph.appendChild(document.createElement("br"));
+            if (action === "above") heading.before(paragraph);
+            else heading.replaceWith(paragraph);
+            placeCaretAtStart(paragraph);
+        }
         headingSplit.current = { before, after: editor.innerHTML, tag, text, offset };
         setHtmlContent(editor.innerHTML);
         return true;

@@ -131,7 +131,7 @@ export function splitSpace(input: {
     return "keep";
 }
 
-export type HeadingEnter = "paragraph" | "pass";
+export type HeadingEnter = "paragraph" | "above" | "leave" | "pass";
 
 export function headingEnterKey(input: {
     key: string;
@@ -142,6 +142,7 @@ export function headingEnterKey(input: {
     inHeading: boolean;
     collapsed: boolean;
     dateHeading: boolean;
+    hasImage?: boolean;
     before: string;
     after: string;
 }): HeadingEnter {
@@ -149,8 +150,10 @@ export function headingEnterKey(input: {
     if (!input.inHeading || !input.collapsed || input.dateHeading) return "pass";
     const before = input.before.replace(/\u00a0/g, " ");
     const after = input.after.replace(/\u00a0/g, " ");
-    if (!before.trim() || !after.trim()) return "pass";
-    return "paragraph";
+    if (before.trim() && after.trim()) return "paragraph";
+    if (!before.trim() && after.trim()) return "above";
+    if (!before.trim() && !after.trim() && !input.hasImage) return "leave";
+    return "pass";
 }
 
 export type HeadingSplitUndo = "restore" | "pass";

@@ -246,7 +246,12 @@ describe("code block", () => {
         assert.equal(headingEnterKey({ ...middle, before: "Dawn ", after: "watch" }), "paragraph");
         assert.equal(headingEnterKey({ ...middle, before: "Dawn", after: "watch" }), "paragraph");
         assert.equal(headingEnterKey({ ...middle, after: "" }), "pass");
-        assert.equal(headingEnterKey({ ...middle, before: "" }), "pass");
+        assert.equal(headingEnterKey({ ...middle, before: "", after: "watch" }), "above");
+        assert.equal(headingEnterKey({ ...middle, before: "  ", after: "watch" }), "above");
+        assert.equal(headingEnterKey({ ...middle, before: "", after: "" }), "leave");
+        assert.equal(headingEnterKey({ ...middle, before: "  ", after: " \u00a0" }), "leave");
+        assert.equal(headingEnterKey({ ...middle, before: "", after: "", hasImage: true }), "pass");
+        assert.equal(headingEnterKey({ ...middle, before: "", dateHeading: true }), "pass");
         assert.equal(headingEnterKey({ ...middle, dateHeading: true }), "pass");
         assert.equal(headingEnterKey({ ...middle, shiftKey: true }), "pass");
         assert.equal(headingEnterKey({ ...middle, inHeading: false }), "pass");
