@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -226,6 +226,18 @@ describe("code block", () => {
         assert.equal(listLeaveKey({ ...blank, shiftKey: true }), "pass");
         assert.equal(listLeaveKey({ ...blank, ctrlKey: true }), "pass");
         assert.equal(headingSplitUndo({ saved: { before: "<ul><li>one</li><li><br></li></ul>", after: "<ul><li>one</li></ul><p><br></p>" }, current: "<ul><li>one</li></ul><p><br></p>" }), "restore");
+        assert.equal(listLeavePlace({ remaining: false, preceding: false, following: false }), "replace");
+        assert.equal(listLeavePlace({ remaining: true, preceding: false, following: true }), "before");
+        assert.equal(listLeavePlace({ remaining: true, preceding: true, following: true }), "split");
+        assert.equal(listLeavePlace({ remaining: true, preceding: true, following: false }), "after");
+        const start = { key: "Enter", inItem: true, collapsed: true, empty: false, atStart: true };
+        assert.equal(listEnterKey(start), "above");
+        assert.equal(listEnterKey({ ...start, atStart: false }), "pass");
+        assert.equal(listEnterKey({ ...start, empty: true }), "pass");
+        assert.equal(listEnterKey({ ...start, collapsed: false }), "pass");
+        assert.equal(listEnterKey({ ...start, inItem: false }), "pass");
+        assert.equal(listEnterKey({ ...start, shiftKey: true }), "pass");
+        assert.equal(listEnterKey({ ...start, key: "a" }), "pass");
     });
 
     it("leaves a quote when Enter is pressed on a blank quote", () => {

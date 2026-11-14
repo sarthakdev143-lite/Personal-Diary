@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, joinNeedsSpace, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, listLeaveKey, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, joinNeedsSpace, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -1357,6 +1357,23 @@ function outdentListItem(item: HTMLElement) {
     placeCaretAtStart(paragraph);
 }
 
+function openLineAboveItem(item: HTMLElement) {
+    const list = item.parentElement;
+    if (!(list instanceof HTMLUListElement || list instanceof HTMLOListElement)) return;
+    const items = [...list.children].filter((child) => child.tagName === "LI");
+    const index = items.indexOf(item);
+    const paragraph = document.createElement("p");
+    paragraph.appendChild(document.createElement("br"));
+    if (index <= 0) list.before(paragraph);
+    else {
+        const rest = document.createElement(list.tagName.toLowerCase());
+        for (const child of items.slice(index)) rest.appendChild(child);
+        list.after(paragraph);
+        paragraph.after(rest);
+    }
+    placeCaretAtStart(paragraph);
+}
+
 function leaveListItem(item: HTMLElement) {
     const list = item.parentElement;
     if (!(list instanceof HTMLUListElement || list instanceof HTMLOListElement)) return;
@@ -1366,17 +1383,20 @@ function leaveListItem(item: HTMLElement) {
     const paragraph = document.createElement("p");
     paragraph.appendChild(document.createElement("br"));
     item.remove();
-    const remaining = [...list.children].some((child) => child.tagName === "LI");
-    if (!remaining) {
-        list.replaceWith(paragraph);
-    } else if (following.length) {
+    const items = [...list.children].filter((child) => child.tagName === "LI");
+    const place = listLeavePlace({
+        remaining: items.length > 0,
+        preceding: items.some((child) => !following.includes(child)),
+        following: following.length > 0,
+    });
+    if (place === "replace") list.replaceWith(paragraph);
+    else if (place === "before") list.before(paragraph);
+    else if (place === "split") {
         const rest = document.createElement(list.tagName.toLowerCase());
         for (const next of following) rest.appendChild(next);
         list.after(paragraph);
         paragraph.after(rest);
-    } else {
-        list.after(paragraph);
-    }
+    } else list.after(paragraph);
     placeCaretAtStart(paragraph);
 }
 
@@ -2930,6 +2950,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const item = host?.closest("li");
         if (!(item instanceof HTMLElement) || !editor.contains(item)) return false;
         const text = (item.textContent ?? "").replace(/[\u200b\u00a0]/g, "").trim();
+        const empty = text.length === 0 && !item.querySelector("img");
         const action = listLeaveKey({
             key: e.key,
             shiftKey: e.shiftKey,
@@ -2938,13 +2959,35 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             metaKey: e.metaKey,
             inItem: true,
             collapsed: selection.isCollapsed,
-            empty: text.length === 0 && !item.querySelector("img"),
+            empty,
         });
-        if (action === "pass") return false;
+        if (action === "leave") {
+            e.preventDefault();
+            const before = editor.innerHTML;
+            const path = childPath(editor, item);
+            leaveListItem(item);
+            keepBlank({ before, after: editor.innerHTML, path });
+            setHtmlContent(editor.innerHTML);
+            return true;
+        }
+        const edges = caretEdges(item, selection);
+        if (!edges) return false;
+        const above = listEnterKey({
+            key: e.key,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            inItem: true,
+            collapsed: edges.collapsed,
+            empty,
+            atStart: edges.atStart,
+        });
+        if (above !== "above") return false;
         e.preventDefault();
         const before = editor.innerHTML;
         const path = childPath(editor, item);
-        leaveListItem(item);
+        openLineAboveItem(item);
         keepBlank({ before, after: editor.innerHTML, path });
         setHtmlContent(editor.innerHTML);
         return true;

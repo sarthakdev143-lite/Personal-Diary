@@ -341,6 +341,33 @@ export function listLeaveKey(input: {
     return "leave";
 }
 
+export type ListEnter = "above" | "pass";
+
+export function listEnterKey(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    inItem: boolean;
+    collapsed: boolean;
+    empty: boolean;
+    atStart: boolean;
+}): ListEnter {
+    if (input.key !== "Enter" || input.shiftKey || input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (!input.inItem || !input.collapsed || input.empty || !input.atStart) return "pass";
+    return "above";
+}
+
+export type ListLeavePlace = "replace" | "before" | "split" | "after";
+
+export function listLeavePlace(input: { remaining: boolean; preceding: boolean; following: boolean }): ListLeavePlace {
+    if (!input.remaining) return "replace";
+    if (input.following && !input.preceding) return "before";
+    if (input.following && input.preceding) return "split";
+    return "after";
+}
+
 export type CodePull = "pull" | "pass";
 
 export function codePullKey(input: {
