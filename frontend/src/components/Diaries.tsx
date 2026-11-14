@@ -135,7 +135,7 @@ const Diaries = ({ query = "", refetchTrigger = 0 }: { query?: string; refetchTr
                 <Link
                     key={diary._id}
                     href={`/diary/${diary._id}`}
-                    className="flex h-36 w-full max-w-xs overflow-hidden rounded-xl border border-white/10 bg-zinc-600/10 text-white/80 shadow-lg"
+                    className="flex min-h-36 w-full max-w-xs overflow-hidden rounded-xl border border-white/10 bg-zinc-600/10 text-white/80 shadow-lg"
                 >
                     {cover ? (
                         <span className="relative block h-full w-16 shrink-0">
@@ -157,7 +157,7 @@ const Diaries = ({ query = "", refetchTrigger = 0 }: { query?: string; refetchTr
                                 {truncateDescription(diary.description || "No description")}
                             </p>
                         </div>
-                        <p className="truncate text-xs tracking-wide text-zinc-400">
+                        <p className="text-xs tracking-wide text-zinc-400">
                             Updated {formatDiaryDate(diary.updatedAt || diary.createdAt)}
                         </p>
                     </div>
