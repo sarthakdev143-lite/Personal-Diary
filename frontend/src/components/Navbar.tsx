@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, X, RotateCcw, ArrowBigLeftDash } from "lucide-react";
+import { Menu, X, RotateCcw, ArrowLeft } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
 import { useDiary } from "@/context/DiaryContext";
@@ -42,7 +42,6 @@ const Navbar = () => {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const pathName = usePathname();
     const { isRotating, setIsRotating, resetDiaryPosition } = useDiary();
-    const backButtonRef = useRef<HTMLButtonElement>(null);
     const isDiaryDetailPage = /^\/diary\/.+/.test(pathName);
 
     useEffect(() => {
@@ -78,12 +77,9 @@ const Navbar = () => {
         <header className="fixed z-30 w-full mt-8">
             <nav className="flex justify-between mx-auto w-[95%] xs:w-11/12 relative items-center" ref={dropdownRef}>
                 {pathName !== "/" && (
-                    <Button asChild size={"icon"} className="p-6 rounded-full shadow-md group overflow-hidden mr-4" ref={backButtonRef}>
-                        <Link href="/">
-                            <div className="relative flex items-center gap-2">
-                                <ArrowBigLeftDash style={{ width: "22px", height: "22px" }} className="w-full h-full relative ml-[2.3rem]" />
-                                <ArrowBigLeftDash style={{ width: "22px", height: "22px" }} className="w-full h-full relative group-hover:mr-[4.7rem] transition-all duration-300" />
-                            </div>
+                    <Button asChild size="icon" className="mr-4 h-12 w-12 rounded-full border border-white/40 bg-zinc-700 text-zinc-50 shadow-md hover:bg-zinc-600">
+                        <Link href="/" aria-label="Back to home">
+                            <ArrowLeft aria-hidden="true" className="h-5 w-5" />
                         </Link>
                     </Button>
                 )}
