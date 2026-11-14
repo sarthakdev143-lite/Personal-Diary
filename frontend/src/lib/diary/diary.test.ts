@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, joinNeedsSpace, laterEntryTime, lineJoinKey, listCommand, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, joinNeedsSpace, laterEntryTime, lineJoinKey, listCommand, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -313,6 +313,15 @@ describe("code block", () => {
         assert.equal(splitSpace({ ...between, inCode: true }), "keep");
         assert.equal(splitSpace({ ...between, key: "Backspace" }), "keep");
         assert.equal(splitSpace({ ...between, ctrlKey: true }), "keep");
+    });
+
+    it("keeps the space when backspace removes the last letter of a bold word", () => {
+        assert.equal(plainSpacesAfterMarks("<p><b>Harbo</b>&nbsp;rain</p>"), "<p><b>Harbo</b> rain</p>");
+        assert.equal(plainSpacesAfterMarks("<p><i>Harbo</i>\u00a0rain</p>"), "<p><i>Harbo</i> rain</p>");
+        assert.equal(plainSpacesAfterMarks('<p>See <a href="https://example.com">Harbo</a>&nbsp;rain</p>'), '<p>See <a href="https://example.com">Harbo</a> rain</p>');
+        assert.equal(plainSpacesAfterMarks("<p>&nbsp;rain</p>"), "<p> rain</p>");
+        assert.equal(plainSpacesAfterMarks("<p><b>Harbo</b> rain</p>"), "<p><b>Harbo</b> rain</p>");
+        assert.equal(plainSpacesAfterMarks("<p>&nbsp;</p>"), "<p>&nbsp;</p>");
     });
 
     it("undo of a split line puts the space back", () => {

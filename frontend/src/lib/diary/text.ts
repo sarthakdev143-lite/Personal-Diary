@@ -104,6 +104,12 @@ export function lineJoinKey(input: {
     return "pass";
 }
 
+export function plainSpacesAfterMarks(html: string): string {
+    return html
+        .replace(/(<\/(?:b|strong|i|em|u|s|strike|del|a)>)(?:&nbsp;|\u00a0)/gi, "$1 ")
+        .replace(/(<(?:p|h1|h2|h3|li|blockquote|figcaption)\b[^>]*>)(?:&nbsp;|\u00a0)(?=[^\s<])/gi, "$1 ");
+}
+
 export function joinNeedsSpace(previous: string, next: string): boolean {
     const left = previous.replace(/\u00a0/g, " ");
     const right = next.replace(/\u00a0/g, " ");

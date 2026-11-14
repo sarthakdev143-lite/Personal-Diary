@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, joinNeedsSpace, lineJoinKey, listCommand, listEdgeKey, listLeaveKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, joinNeedsSpace, lineJoinKey, listCommand, listEdgeKey, listLeaveKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -867,6 +867,17 @@ function writingHost(block: HTMLElement): HTMLElement {
     return nested instanceof HTMLElement ? nested : block;
 }
 
+function restoreMarkSpaces(root: HTMLElement) {
+    root.querySelectorAll("b, strong, i, em, u, s, strike, del, a").forEach((mark) => {
+        const next = mark.nextSibling;
+        if (next instanceof Text && next.data.startsWith("\u00a0")) next.data = ` ${next.data.slice(1)}`;
+    });
+    root.querySelectorAll("p, h1, h2, h3, li, blockquote, figcaption").forEach((block) => {
+        const first = block.firstChild;
+        if (first instanceof Text && first.data.startsWith("\u00a0") && /^[^\s<]/.test(first.data.slice(1))) first.data = ` ${first.data.slice(1)}`;
+    });
+}
+
 function caretEdges(block: HTMLElement, selection: Selection): { collapsed: boolean; atStart: boolean; atEnd: boolean } | null {
     if (!selection.rangeCount) return null;
     const range = selection.getRangeAt(0);
@@ -1506,6 +1517,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const onInput = useCallback(() => {
         const editor = editorRef.current;
         if (!editor) return;
+        if (plainSpacesAfterMarks(editor.innerHTML) !== editor.innerHTML) restoreMarkSpaces(editor);
         settleDateHeading(editor);
         const saved = pictureRemoval.current;
         if (saved && editor.innerHTML !== saved.after) pictureRemoval.current = null;
