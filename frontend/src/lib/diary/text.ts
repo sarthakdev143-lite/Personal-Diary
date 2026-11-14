@@ -224,6 +224,12 @@ export function listCommand(command: string): ListCommand {
     return "pass";
 }
 
+export type UndoButton = "saved" | "browser";
+
+export function undoButton(command: string): UndoButton {
+    return command === "undo" ? "saved" : "browser";
+}
+
 export type ListEdge = "outdent" | "pass";
 
 export function listEdgeKey(input: {
