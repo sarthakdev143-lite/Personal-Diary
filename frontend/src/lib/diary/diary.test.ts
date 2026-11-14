@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryMatchesListQuery, escapeRegExp, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
     normalizeTheme,
@@ -495,6 +495,15 @@ describe("entry date", () => {
         assert.equal(entryToOpenWhenHidden([february, olderFebruary], "rain")?._id, "garden");
         assert.equal(entryToOpenWhenHidden([], "rain"), null);
         assert.equal(entryToOpenWhenHidden([february, olderFebruary], null)?._id, "garden");
+    });
+
+    it("opens a match when find hides the open entry and leaves a new entry alone", () => {
+        const november = { _id: "rain", createdAt: new Date(2026, 10, 14, 15).toISOString() };
+        const february = { _id: "garden", createdAt: new Date(2026, 1, 2, 15).toISOString() };
+        assert.equal(entryToOpenForFilter([november, february], null), null);
+        assert.equal(entryToOpenForFilter([november, february], "rain"), null);
+        assert.equal(entryToOpenForFilter([february], "rain")?._id, "garden");
+        assert.equal(entryToOpenForFilter([], "rain"), null);
     });
 
     it("opens the newest saved entry", () => {

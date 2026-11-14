@@ -312,6 +312,14 @@ export function entryToOpenWhenHidden<T extends { _id: string; createdAt: string
     return entryToShowOnOpen(visible);
 }
 
+export function entryToOpenForFilter<T extends { _id: string; createdAt: string }>(
+    visible: readonly T[],
+    currentId: string | null,
+): T | null {
+    if (!currentId) return null;
+    return entryToOpenWhenHidden(visible, currentId);
+}
+
 export function entryToShowAfterDelete<T extends { _id: string }>(
     entries: readonly T[],
     deletedId: string,

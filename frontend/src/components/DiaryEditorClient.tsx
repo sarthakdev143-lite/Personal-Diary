@@ -11,7 +11,7 @@ import { takeImportNotice } from "@/lib/diary/import";
 import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
 import { entryMatchesListQuery } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
@@ -1327,7 +1327,22 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 className="de-entry-search"
                                 type="search"
                                 value={entryQuery}
-                                onChange={(event) => setEntryQuery(event.target.value)}
+                                onChange={(event) => {
+                                    const query = event.target.value;
+                                    setEntryQuery(query);
+                                    const next = entryToOpenForFilter(
+                                        entries.filter((entry) =>
+                                            entryInMonth(entry.createdAt, activeMonth)
+                                            && entryMatchesListQuery(entry, query)
+                                        ),
+                                        selectedEntryId,
+                                    );
+                                    if (!next) return;
+                                    handleEntrySelect(next);
+                                    window.requestAnimationFrame(() => {
+                                        document.querySelector(".de-entry-card.active")?.scrollIntoView({ block: "nearest" });
+                                    });
+                                }}
                                 placeholder="Find an entry"
                                 aria-label="Find an entry"
                                 maxLength={80}
