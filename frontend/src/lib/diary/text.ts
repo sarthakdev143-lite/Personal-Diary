@@ -111,6 +111,13 @@ export function joinNeedsSpace(previous: string, next: string): boolean {
     return opens && continues;
 }
 
+export type CodeGap = "close" | "stay";
+
+export function codeGap(input: { emptyLine: boolean; nextBlock: boolean }): CodeGap {
+    if (input.emptyLine && input.nextBlock) return "close";
+    return "stay";
+}
+
 export type DividerCaret = "join" | "stay";
 
 export function dividerCaret(input: {

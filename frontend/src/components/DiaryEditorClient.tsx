@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codePullKey, dateHeadingKey, datePaste, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, dividerCaret, hasEntryContent, joinNeedsSpace, lineJoinKey, listLeaveKey, quoteLeaveKey, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codePullKey, dateHeadingKey, datePaste, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, codeGap, dividerCaret, hasEntryContent, joinNeedsSpace, lineJoinKey, listLeaveKey, quoteLeaveKey, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -774,6 +774,20 @@ function joinBlock(target: HTMLElement, source: HTMLElement) {
     placeCaretOn(start, into);
 }
 
+function settleCode(editor: HTMLElement) {
+    const fresh = editor.querySelector("code[data-fresh]");
+    const pre = fresh?.closest("pre");
+    if (!(pre instanceof HTMLElement) || !editor.contains(pre)) return;
+    const gap = pre.nextElementSibling;
+    if (!(gap instanceof HTMLElement)) return;
+    const text = (gap.textContent ?? "").replace(/[\u200b\u00a0]/g, "").trim();
+    const action = codeGap({
+        emptyLine: text.length === 0 && !gap.querySelector("img"),
+        nextBlock: gap.nextElementSibling !== null,
+    });
+    if (action === "close") gap.remove();
+}
+
 function settleDivider(editor: HTMLElement) {
     const selection = window.getSelection();
     if (!selection?.rangeCount) return;
@@ -1123,6 +1137,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         editor?.focus();
         document.execCommand("insertHTML", false, html);
         if (editor && /<hr\b/i.test(html)) settleDivider(editor);
+        if (editor && /<pre\b/i.test(html)) settleCode(editor);
         if (editorRef.current) setHtmlContent(editorRef.current.innerHTML);
         updateActiveFormats();
     }, [updateActiveFormats]);
