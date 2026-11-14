@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -172,6 +172,29 @@ describe("entry paste", () => {
         assert.equal(pictureUndo({ saved, current: saved.after }), "restore");
         assert.equal(pictureUndo({ saved, current: "<p>After!</p>" }), "pass");
         assert.equal(pictureUndo({ saved: null, current: saved.after }), "pass");
+    });
+
+    it("moves around a picture instead of into it", () => {
+        const plain = { shiftKey: false, altKey: false, ctrlKey: false, metaKey: false };
+        assert.equal(pictureMoveKey({ ...plain, key: "ArrowDown", where: "before" }), "select");
+        assert.equal(pictureMoveKey({ ...plain, key: "ArrowRight", where: "before" }), "select");
+        assert.equal(pictureMoveKey({ ...plain, key: "ArrowUp", where: "after" }), "select");
+        assert.equal(pictureMoveKey({ ...plain, key: "ArrowLeft", where: "after" }), "select");
+        assert.equal(pictureMoveKey({ ...plain, key: "ArrowDown", where: "after" }), "pass");
+        assert.equal(pictureMoveKey({ ...plain, key: "ArrowUp", where: "both" }), "select");
+        assert.equal(pictureMoveKey({ ...plain, key: "ArrowDown", where: "both" }), "select");
+        assert.equal(pictureMoveKey({ ...plain, key: "ArrowDown", where: "selected" }), "after");
+        assert.equal(pictureMoveKey({ ...plain, key: "ArrowUp", where: "selected" }), "before");
+        assert.equal(pictureMoveKey({ ...plain, key: "ArrowLeft", where: "caption", atStart: true, atEnd: false }), "select");
+        assert.equal(pictureMoveKey({ ...plain, key: "ArrowUp", where: "caption", atStart: true, atEnd: false }), "select");
+        assert.equal(pictureMoveKey({ ...plain, key: "ArrowDown", where: "caption", atStart: false, atEnd: true }), "after");
+        assert.equal(pictureMoveKey({ ...plain, key: "ArrowRight", where: "caption", atStart: false, atEnd: true }), "after");
+        assert.equal(pictureMoveKey({ ...plain, key: "ArrowDown", where: "caption", atStart: false, atEnd: false }), "pass");
+        assert.equal(pictureMoveKey({ ...plain, key: "ArrowDown", where: "figure" }), "after");
+        assert.equal(pictureMoveKey({ ...plain, key: "ArrowUp", where: "figure" }), "before");
+        assert.equal(pictureMoveKey({ ...plain, key: "x", where: "figure" }), "name");
+        assert.equal(pictureMoveKey({ ...plain, key: "ArrowDown", shiftKey: true, where: "before" }), "pass");
+        assert.equal(pictureMoveKey({ ...plain, key: "Enter", where: "selected" }), "pass");
     });
 
     it("marks only the selected picture while editing", () => {

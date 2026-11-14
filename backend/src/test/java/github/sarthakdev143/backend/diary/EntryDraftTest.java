@@ -76,6 +76,24 @@ class EntryDraftTest {
     }
 
     @Test
+    void keepsALetterTypedBesideAPicture() {
+        EntryDraft draft = EntryDraft.prepare(
+                "<h2>Saturday, November 14, 2026</h2><p>Before</p><figure>x<img src=\"https://example.com/sunset.png\" alt=\"Harbor\"><figcaption>Harbor</figcaption></figure><p>After</p>");
+        EntryDraft.Ready ready = assertInstanceOf(EntryDraft.Ready.class, draft);
+        assertEquals("Before x Harbor After", ready.plainText());
+        assertTrue(ready.content().contains("<p>x</p>"));
+        assertTrue(ready.content().contains("<figcaption>Harbor</figcaption>"));
+        assertTrue(ready.content().contains("<p>After</p>"));
+        assertFalse(ready.content().contains("<figure>x"));
+
+        EntryDraft trailing = EntryDraft.prepare(
+                "<figure><img src=\"https://example.com/sunset.png\" alt=\"Harbor\"><figcaption>Harbor</figcaption>y</figure>");
+        EntryDraft.Ready trailed = assertInstanceOf(EntryDraft.Ready.class, trailing);
+        assertEquals("Harbor y", trailed.plainText());
+        assertTrue(trailed.content().contains("<p>y</p>"));
+    }
+
+    @Test
     void dropsTheNameWhenThePictureIsGone() {
         EntryDraft draft = EntryDraft.prepare(
                 "<h2>Saturday, November 14, 2026</h2><figure><figcaption>Harbor</figcaption></figure><p>After</p>");

@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryUndoBody, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
@@ -155,6 +155,161 @@ function selectedImage(editor: HTMLElement, selection: Selection): HTMLImageElem
     const node = parent.childNodes[range.startOffset];
     if (!(node instanceof HTMLImageElement) || range.endOffset !== range.startOffset + 1 || !editor.contains(node)) return null;
     return node;
+}
+
+function clearPictureMark(image: Element) {
+    image.classList.remove("de-selected");
+    if (image instanceof HTMLElement && image.classList.length === 0) image.removeAttribute("class");
+}
+
+function adjacentBlock(block: HTMLElement, direction: "next" | "previous"): Element | null {
+    const sibling = direction === "next" ? block.nextElementSibling : block.previousElementSibling;
+    if (sibling) return sibling;
+    const parent = block.parentElement;
+    if (parent && parent.id !== "de-editor" && (parent.tagName === "UL" || parent.tagName === "OL" || parent.tagName === "BLOCKQUOTE")) {
+        return direction === "next" ? parent.nextElementSibling : parent.previousElementSibling;
+    }
+    return null;
+}
+
+function pictureMoveContext(editor: HTMLElement, selection: Selection): {
+    where: "before" | "after" | "both" | "caption" | "selected" | "figure";
+    atStart: boolean;
+    atEnd: boolean;
+    figure: HTMLElement;
+    image: HTMLImageElement | null;
+    previousFigure: HTMLElement | null;
+    nextFigure: HTMLElement | null;
+} | null {
+    const selected = selectedImage(editor, selection);
+    if (selected) {
+        const owner = selected.closest("figure");
+        const figure = owner instanceof HTMLElement && editor.contains(owner) ? owner : selected;
+        return { where: "selected", atStart: false, atEnd: false, figure, image: selected, previousFigure: null, nextFigure: null };
+    }
+    const anchor = selection.anchorNode;
+    if (!anchor) return null;
+    const host = anchor instanceof Element ? anchor : anchor.parentElement;
+    const caption = host?.closest("figcaption");
+    if (caption instanceof HTMLElement && editor.contains(caption)) {
+        const figure = caption.closest("figure");
+        if (!(figure instanceof HTMLElement) || !selection.isCollapsed) return null;
+        const caret = captionCaret(caption, selection);
+        if (!caret) return null;
+        const image = figure.querySelector("img");
+        return {
+            where: "caption",
+            atStart: caret.atStart,
+            atEnd: caret.atEnd,
+            figure,
+            image: image instanceof HTMLImageElement ? image : null,
+            previousFigure: null,
+            nextFigure: null,
+        };
+    }
+    const owner = host?.closest("figure");
+    if (owner instanceof HTMLElement && editor.contains(owner)) {
+        const image = owner.querySelector("img");
+        return {
+            where: "figure",
+            atStart: false,
+            atEnd: false,
+            figure: owner,
+            image: image instanceof HTMLImageElement ? image : null,
+            previousFigure: null,
+            nextFigure: null,
+        };
+    }
+    if (!selection.isCollapsed) return null;
+    const block = host?.closest("p, h1, h2, h3, li, blockquote, pre");
+    if (!(block instanceof HTMLElement) || !editor.contains(block)) return null;
+    const edge = captionCaret(block, selection);
+    if (!edge) return null;
+    const next = edge.atEnd ? adjacentBlock(block, "next") : null;
+    const previous = edge.atStart ? adjacentBlock(block, "previous") : null;
+    const nextFigure = next instanceof HTMLElement && next.tagName === "FIGURE" && editor.contains(next) ? next : null;
+    const previousFigure = previous instanceof HTMLElement && previous.tagName === "FIGURE" && editor.contains(previous) ? previous : null;
+    if (!nextFigure && !previousFigure) return null;
+    const where = nextFigure && previousFigure ? "both" : nextFigure ? "before" : "after";
+    const figure = (where === "after" ? previousFigure : nextFigure) ?? previousFigure;
+    if (!figure) return null;
+    const image = figure.querySelector("img");
+    return {
+        where,
+        atStart: edge.atStart,
+        atEnd: edge.atEnd,
+        figure,
+        image: image instanceof HTMLImageElement ? image : null,
+        previousFigure,
+        nextFigure,
+    };
+}
+
+function caretInsidePicture(editor: HTMLElement, selection: Selection): HTMLImageElement | null {
+    if (!selection.isCollapsed || !selection.anchorNode || !editor.contains(selection.anchorNode)) return null;
+    const anchor = selection.anchorNode;
+    const host = anchor instanceof Element ? anchor : anchor.parentElement;
+    if (!host || host.closest("figcaption")) return null;
+    const figure = host.closest("figure");
+    if (!(figure instanceof HTMLElement) || !editor.contains(figure)) return null;
+    const image = figure.querySelector("img");
+    return image instanceof HTMLImageElement ? image : null;
+}
+
+function selectPictureImage(image: HTMLImageElement) {
+    const selection = window.getSelection();
+    if (!selection) return;
+    const range = document.createRange();
+    range.selectNode(image);
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
+
+function moveBesidePicture(figure: HTMLElement, direction: "before" | "after") {
+    const neighbor = direction === "before" ? figure.previousElementSibling : figure.nextElementSibling;
+    if (neighbor instanceof HTMLElement && neighbor.tagName === "FIGURE") {
+        const image = neighbor.querySelector("img");
+        if (image instanceof HTMLImageElement) {
+            selectPictureImage(image);
+            return;
+        }
+    }
+    if (neighbor instanceof HTMLElement) {
+        if (direction === "before") placeCaretAtEnd(neighbor);
+        else placeCaretAtStart(neighbor);
+        return;
+    }
+    if (direction === "after") {
+        const paragraph = document.createElement("p");
+        paragraph.appendChild(document.createElement("br"));
+        figure.after(paragraph);
+        placeCaretAtStart(paragraph);
+    }
+}
+
+function typePictureName(picture: HTMLElement, image: HTMLImageElement, key: string, selection: Selection) {
+    if (picture.tagName === "FIGURE") {
+        let caption = picture.querySelector("figcaption");
+        if (!(caption instanceof HTMLElement)) {
+            caption = document.createElement("figcaption");
+            picture.appendChild(caption);
+        }
+        placeCaretAtEnd(caption);
+        if (!document.execCommand("insertText", false, key)) {
+            caption.textContent = `${caption.textContent ?? ""}${key}`;
+            placeCaretAtEnd(caption);
+        }
+        return;
+    }
+    const caret = document.createRange();
+    caret.setStartAfter(image);
+    caret.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(caret);
+    if (!document.execCommand("insertText", false, key)) {
+        const text = document.createTextNode(key);
+        image.after(text);
+    }
 }
 
 function placeCaretAtStart(node: HTMLElement) {
@@ -610,12 +765,16 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             if (!editor) return;
             const current = editor.querySelector("img.de-selected");
             const selection = window.getSelection();
+            if (mode !== "view" && selection) {
+                const stranded = caretInsidePicture(editor, selection);
+                if (stranded) selectPictureImage(stranded);
+            }
             const image = selection ? selectedImage(editor, selection) : null;
             if (pictureSelectionMark({ editing: mode !== "view", imageSelected: Boolean(image) }) !== "selected" || !image) {
-                current?.classList.remove("de-selected");
+                if (current) clearPictureMark(current);
                 return;
             }
-            if (current && current !== image) current.classList.remove("de-selected");
+            if (current && current !== image) clearPictureMark(current);
             image.classList.add("de-selected");
         };
         document.addEventListener("selectionchange", markSelectedPicture);
@@ -1190,7 +1349,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const figure = image.closest("figure");
         const picture = figure instanceof HTMLElement && editor.contains(figure) ? figure : image;
         if (action === "remove") {
-            editor.querySelectorAll("img.de-selected").forEach((img) => img.classList.remove("de-selected"));
+            editor.querySelectorAll("img.de-selected").forEach((img) => clearPictureMark(img));
             const before = editor.innerHTML;
             const next = picture.nextElementSibling;
             picture.remove();
@@ -1203,32 +1362,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             }
             pictureRemoval.current = { before, after: editor.innerHTML };
         } else if (action === "name") {
-            if (picture instanceof HTMLElement && picture.tagName === "FIGURE") {
-                let caption = picture.querySelector("figcaption");
-                if (!(caption instanceof HTMLElement)) {
-                    caption = document.createElement("figcaption");
-                    picture.appendChild(caption);
-                }
-                placeCaretAtEnd(caption);
-                if (!document.execCommand("insertText", false, e.key)) {
-                    caption.textContent = `${caption.textContent ?? ""}${e.key}`;
-                    placeCaretAtEnd(caption);
-                }
-            } else {
-                const caret = document.createRange();
-                caret.setStartAfter(image);
-                caret.collapse(true);
-                selection.removeAllRanges();
-                selection.addRange(caret);
-                if (!document.execCommand("insertText", false, e.key)) {
-                    const text = document.createTextNode(e.key);
-                    image.after(text);
-                    caret.setStart(text, text.length);
-                    caret.collapse(true);
-                    selection.removeAllRanges();
-                    selection.addRange(caret);
-                }
-            }
+            typePictureName(picture, image, e.key, selection);
         } else {
             const next = picture.nextElementSibling;
             if (next instanceof HTMLElement && editor.contains(next)) placeCaretAtStart(next);
@@ -1289,6 +1423,45 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const moveAroundPicture = (e: React.KeyboardEvent) => {
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection || mode === "view") return false;
+        const context = pictureMoveContext(editor, selection);
+        if (!context) return false;
+        const action = pictureMoveKey({
+            key: e.key,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            where: context.where,
+            atStart: context.atStart,
+            atEnd: context.atEnd,
+        });
+        if (action === "pass") return false;
+        if (action === "select") {
+            const forward = e.key === "ArrowDown" || e.key === "ArrowRight";
+            const target = context.where === "both"
+                ? (forward ? context.nextFigure : context.previousFigure)
+                : context.figure;
+            const image = target?.querySelector("img");
+            if (!(image instanceof HTMLImageElement)) return false;
+            e.preventDefault();
+            editor.focus();
+            selectPictureImage(image);
+            return true;
+        }
+        if (action === "before" && !context.figure.previousElementSibling) return false;
+        if (action === "name" && !context.image) return false;
+        e.preventDefault();
+        const before = editor.innerHTML;
+        if (action === "name" && context.image) typePictureName(context.figure, context.image, e.key, selection);
+        else if (action === "before" || action === "after") moveBesidePicture(context.figure, action);
+        if (editor.innerHTML !== before) setHtmlContent(editor.innerHTML);
+        return true;
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (saveEntryShortcut(e)) {
             e.preventDefault();
@@ -1305,6 +1478,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
         if (editSelectedPicture(e)) return;
         if (keepPictureNameApart(e)) return;
+        if (moveAroundPicture(e)) return;
         const editor = editorRef.current;
         const selection = window.getSelection();
         const anchor = selection?.anchorNode;

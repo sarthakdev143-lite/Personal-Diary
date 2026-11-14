@@ -79,15 +79,33 @@ export function sanitizeEntryHtml(input: string): string {
 function alignPictureCaptions(html: string): string {
     return html.replace(/<figure\b[^>]*>[\s\S]*?<\/figure>/gi, (figure) => {
         const imageMatch = figure.match(/<img\b[^>]*>/i);
-        if (!imageMatch) return "";
+        if (!imageMatch || imageMatch.index === undefined) return "";
         const captionMatch = figure.match(/<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/i);
-        if (!captionMatch) return figure.replace(/<\/?figure\b[^>]*>/gi, "");
+        if (!captionMatch || captionMatch.index === undefined) return figure.replace(/<\/?figure\b[^>]*>/gi, "");
         const name = decodeCaption(captionMatch[1] ?? "");
         const image = imageWithAlt(imageMatch[0], name);
-        if (!name) return image;
-        const escaped = name.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
-        return `<figure>${image}<figcaption>${escaped}</figcaption></figure>`;
+        const contentStart = figure.indexOf(">") + 1;
+        const contentEnd = figure.toLowerCase().lastIndexOf("</figure>");
+        const imageAt = imageMatch.index;
+        const imageEnd = imageAt + imageMatch[0].length;
+        const captionAt = captionMatch.index;
+        const captionEnd = captionAt + captionMatch[0].length;
+        const loose = (start: number, end: number) => (end > start ? decodeCaption(figure.slice(start, end)) : "");
+        const before = captionAt >= imageEnd
+            ? loose(contentStart, imageAt)
+            : `${loose(contentStart, captionAt)} ${loose(captionEnd, imageAt)}`.trim();
+        const after = captionAt >= imageEnd
+            ? `${loose(imageEnd, captionAt)} ${loose(captionEnd, contentEnd)}`.trim()
+            : loose(imageEnd, contentEnd);
+        const picture = name
+            ? `<figure>${image}<figcaption>${name.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;")}</figcaption></figure>`
+            : image;
+        return `${before ? `<p>${escapeText(before)}</p>` : ""}${picture}${after ? `<p>${escapeText(after)}</p>` : ""}`;
     });
+}
+
+function escapeText(value: string): string {
+    return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function decodeCaption(value: string): string {

@@ -79,6 +79,33 @@ export function pictureSelectionMark(input: { editing: boolean; imageSelected: b
     return "plain";
 }
 
+export type PictureMove = "select" | "before" | "after" | "name" | "pass";
+
+export function pictureMoveKey(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    where: "before" | "after" | "both" | "caption" | "selected" | "figure";
+    atStart?: boolean;
+    atEnd?: boolean;
+}): PictureMove {
+    if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    const forward = input.key === "ArrowDown" || input.key === "ArrowRight";
+    const backward = input.key === "ArrowUp" || input.key === "ArrowLeft";
+    if ((input.where === "before" || input.where === "both") && forward) return "select";
+    if ((input.where === "after" || input.where === "both") && backward) return "select";
+    if (input.where === "selected" && forward) return "after";
+    if (input.where === "selected" && backward) return "before";
+    if (input.where === "caption" && backward && input.atStart) return "select";
+    if (input.where === "caption" && forward && input.atEnd) return "after";
+    if (input.where === "figure" && forward) return "after";
+    if (input.where === "figure" && backward) return "before";
+    if (input.where === "figure" && input.key.length === 1) return "name";
+    return "pass";
+}
+
 export type PictureUndo = "restore" | "pass";
 
 export function pictureUndo(input: {

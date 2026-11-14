@@ -1,7 +1,11 @@
 package github.sarthakdev143.backend.diary;
 
+import java.util.ArrayList;
+
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.TextNode;
 
 final class PictureCaptions {
     private PictureCaptions() {
@@ -19,6 +23,7 @@ final class PictureCaptions {
                 figure.unwrap();
                 continue;
             }
+            liftLooseText(figure, image);
             String name = caption.text().replaceAll("\\s+", " ").trim();
             if (name.length() > 180) {
                 name = name.substring(0, 180);
@@ -36,6 +41,39 @@ final class PictureCaptions {
                     extra.remove();
                 }
             }
+        }
+    }
+
+    private static void liftLooseText(Element figure, Element image) {
+        StringBuilder before = new StringBuilder();
+        StringBuilder after = new StringBuilder();
+        boolean seenImage = false;
+        for (Node child : new ArrayList<>(figure.childNodes())) {
+            if (child == image) {
+                seenImage = true;
+                continue;
+            }
+            if (child instanceof Element element && element.normalName().equals("figcaption")) {
+                continue;
+            }
+            String text = child instanceof TextNode textNode
+                    ? textNode.getWholeText()
+                    : child instanceof Element element ? element.text() : "";
+            child.remove();
+            StringBuilder target = seenImage ? after : before;
+            String piece = text.replaceAll("\\s+", " ").trim();
+            if (!piece.isEmpty()) {
+                if (!target.isEmpty()) {
+                    target.append(' ');
+                }
+                target.append(piece);
+            }
+        }
+        if (!before.isEmpty()) {
+            figure.before(new Element("p").text(before.toString()));
+        }
+        if (!after.isEmpty()) {
+            figure.after(new Element("p").text(after.toString()));
         }
     }
 }

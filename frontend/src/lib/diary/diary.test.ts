@@ -368,6 +368,22 @@ describe("entry html", () => {
             assert.equal(removedPicture.plainText, "After");
         }
 
+        const stranded = prepareEntryContent('<h2>Saturday, November 14, 2026</h2><p>Before</p><figure>x<img src="https://example.com/sunset.png" alt="Harbor"><figcaption>Harbor</figcaption></figure><p>After</p>');
+        assert.equal(stranded.ok, true);
+        if (stranded.ok) {
+            assert.match(stranded.content, /<p>x<\/p>/);
+            assert.match(stranded.content, /<figcaption>Harbor<\/figcaption>/);
+            assert.match(stranded.content, /<p>After<\/p>/);
+            assert.equal(stranded.content.includes("<figure>x"), false);
+            assert.equal(stranded.plainText, "Before x Harbor After");
+        }
+        const trailing = prepareEntryContent('<figure><img src="https://example.com/sunset.png" alt="Harbor"><figcaption>Harbor</figcaption>y</figure>');
+        assert.equal(trailing.ok, true);
+        if (trailing.ok) {
+            assert.match(trailing.content, /<p>y<\/p>/);
+            assert.equal(trailing.plainText, "Harbor y");
+        }
+
         const renamed = prepareEntryContent('<figure><img src="https://example.com/sunset.png" alt="Harbor"><figcaption>Bay</figcaption></figure>');
         assert.equal(renamed.ok, true);
         if (renamed.ok) {
