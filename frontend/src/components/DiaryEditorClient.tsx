@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { DESCRIPTION_MAX, DIARY_THEMES, MAX_IMAGE_BYTES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
 import { diaryFieldsMatch } from "@/lib/diary/search";
-import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entrySelectionAction, entryToShowOnOpen, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryMonths, entrySelectionAction, entryToShowOnOpen, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
@@ -72,6 +72,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const editorRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const entryClock = useRef(new Date());
+    const linkInputRef = useRef<HTMLInputElement>(null);
+    const linkRange = useRef<Range | null>(null);
 
     const [diary, setDiary] = useState<Diary | null>(null);
     const [entries, setEntries] = useState<Entry[]>([]);
@@ -92,6 +94,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const [isExporting, setIsExporting] = useState<"md" | "json" | null>(null);
     const [entryDate, setEntryDate] = useState(() => calendarDate(new Date()));
     const [savedDate, setSavedDate] = useState(() => calendarDate(new Date()));
+    const [linkOpen, setLinkOpen] = useState(false);
+    const [linkDraft, setLinkDraft] = useState("");
+    const [linkError, setLinkError] = useState<string | null>(null);
 
     useEffect(() => {
         let mounted = true;
@@ -170,6 +175,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return () => document.removeEventListener("selectionchange", onSelectionChange);
     }, [onSelectionChange]);
 
+    useEffect(() => {
+        if (!linkOpen) return;
+        linkInputRef.current?.focus();
+    }, [linkOpen]);
+
     const exec = useCallback((cmd: string, value?: string) => {
         editorRef.current?.focus();
         document.execCommand(cmd, false, value);
@@ -204,11 +214,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         reader.readAsDataURL(file);
     }, [insertHTML, toast]);
 
-    const writeEditor = useCallback((html: string) => {
+    const writeEditor = (html: string) => {
         setBaseline(html);
         setHtmlContent(html);
+        setLinkOpen(false);
         if (editorRef.current) editorRef.current.innerHTML = html;
-    }, []);
+    };
 
     useLayoutEffect(() => {
         if (isLoading || !editorRef.current || !htmlContent) return;
@@ -457,21 +468,46 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
     };
 
-    const insertLink = () => {
-        const url = window.prompt("Link URL");
-        if (!url) return;
-        let parsed: URL;
-        try {
-            parsed = new URL(url);
-        } catch {
-            toast({ title: "Link not added", description: "Enter a full http, https, or mailto URL.", variant: "destructive" });
+    const closeLinkField = () => {
+        setLinkOpen(false);
+        setLinkDraft("");
+        setLinkError(null);
+        linkRange.current = null;
+    };
+
+    const openLinkField = () => {
+        if (linkOpen) {
+            closeLinkField();
             return;
         }
-        if (parsed.protocol !== "http:" && parsed.protocol !== "https:" && parsed.protocol !== "mailto:") {
-            toast({ title: "Link not added", description: "Use an http, https, or mailto link.", variant: "destructive" });
+        const selection = window.getSelection();
+        const editor = editorRef.current;
+        linkRange.current = selection && selection.rangeCount > 0 && editor?.contains(selection.anchorNode)
+            ? selection.getRangeAt(0).cloneRange()
+            : null;
+        setLinkDraft("");
+        setLinkError(null);
+        setLinkOpen(true);
+    };
+
+    const applyLink = (event: React.FormEvent) => {
+        event.preventDefault();
+        const parsed = entryLinkUrl(linkDraft);
+        if (!parsed.ok) {
+            setLinkError(parsed.error);
             return;
         }
-        exec("createLink", parsed.href);
+        const editor = editorRef.current;
+        editor?.focus();
+        const selection = window.getSelection();
+        if (linkRange.current && selection) {
+            selection.removeAllRanges();
+            selection.addRange(linkRange.current);
+        }
+        document.execCommand("createLink", false, parsed.href);
+        if (editor) setHtmlContent(editor.innerHTML);
+        updateActiveFormats();
+        closeLinkField();
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -484,7 +520,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             return;
         }
         if (tool.kind === "link") {
-            insertLink();
+            openLinkField();
             return;
         }
         if (tool.html) {
@@ -574,6 +610,22 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     border-bottom:1px solid #1e1c18;
                 }
                 .de-toolbar-sep{width:1px;height:18px;background:#2a2520;margin:0 4px;flex-shrink:0;}
+                .de-link{
+                    flex-shrink:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+                    padding:8px 16px;background:#14110e;border-bottom:1px solid #1e1c18;
+                }
+                .de-link label{
+                    font-family:'JetBrains Mono',monospace;font-size:9px;
+                    letter-spacing:0.18em;text-transform:uppercase;color:#a79f93;
+                }
+                .de-link input{
+                    flex:1;min-width:160px;font-family:'Lora',Georgia,serif;font-size:14px;
+                    color:#ede5d8;background:#0d0b09;border:1px solid #2a2520;border-radius:3px;padding:6px 10px;
+                }
+                .de-link input[aria-invalid="true"]{border-color:#6a3a32;}
+                .de-link-error{
+                    margin:0;flex-basis:100%;font-family:'Lora',Georgia,serif;font-size:13px;color:#e7b2a4;
+                }
                 .de-tbtn{
                     font-family:'JetBrains Mono',monospace;
                     font-size:11px;
@@ -964,6 +1016,33 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             </div>
                         ))}
                     </div>
+                )}
+
+                {linkOpen && mode !== "view" && (
+                    <form className="de-link" onSubmit={applyLink}>
+                        <label htmlFor="entry-link-url">Link</label>
+                        <input
+                            id="entry-link-url"
+                            ref={linkInputRef}
+                            value={linkDraft}
+                            placeholder="https://example.com"
+                            aria-invalid={Boolean(linkError)}
+                            aria-describedby={linkError ? "entry-link-error" : undefined}
+                            onChange={(event) => {
+                                setLinkDraft(event.target.value);
+                                if (linkError) setLinkError(null);
+                            }}
+                            onKeyDown={(event) => {
+                                if (event.key === "Escape") {
+                                    event.preventDefault();
+                                    closeLinkField();
+                                }
+                            }}
+                        />
+                        <button type="submit" className="de-save-btn">add link</button>
+                        <button type="button" className="de-ghost-btn" onClick={closeLinkField}>cancel</button>
+                        {linkError && <p id="entry-link-error" className="de-link-error">{linkError}</p>}
+                    </form>
                 )}
 
                 {/* BODY */}

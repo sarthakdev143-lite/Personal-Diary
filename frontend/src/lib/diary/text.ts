@@ -209,6 +209,20 @@ export function entryWritingChanged(previousHtml: string, nextHtml: string): boo
     return withoutGeneratedDateHeading(previousHtml) !== withoutGeneratedDateHeading(nextHtml);
 }
 
+export function entryLinkUrl(value: string): { ok: true; href: string } | { ok: false; error: string } {
+    const trimmed = value.trim();
+    let parsed: URL;
+    try {
+        parsed = new URL(trimmed);
+    } catch {
+        return { ok: false, error: "Enter a full http, https, or mailto URL." };
+    }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:" && parsed.protocol !== "mailto:") {
+        return { ok: false, error: "Use an http, https, or mailto link." };
+    }
+    return { ok: true, href: parsed.href };
+}
+
 export function nextEntryRevision(input: {
     createdAt: Date;
     updatedAt: Date;

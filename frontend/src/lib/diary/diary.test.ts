@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, escapeRegExp, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entryPlainText, entrySelectionAction, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryMonths, entryPlainText, entrySelectionAction, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
     normalizeTheme,
@@ -423,6 +423,16 @@ describe("entry date", () => {
         assert.equal(entrySelectionAction("newest", "edit", "older"), "open");
         assert.equal(entrySelectionAction(null, "compose", "newest"), "open");
         assert.equal(entrySelectionAction("newest", "compose", "newest"), "open");
+    });
+});
+
+describe("entry links", () => {
+    it("accepts an http, https, or mailto link and rejects the rest", () => {
+        assert.deepEqual(entryLinkUrl("  https://example.com/rain  "), { ok: true, href: "https://example.com/rain" });
+        assert.deepEqual(entryLinkUrl("mailto:rain@example.com"), { ok: true, href: "mailto:rain@example.com" });
+        assert.deepEqual(entryLinkUrl("example.com"), { ok: false, error: "Enter a full http, https, or mailto URL." });
+        assert.deepEqual(entryLinkUrl("javascript:alert(1)"), { ok: false, error: "Use an http, https, or mailto link." });
+        assert.equal(entryLinkUrl("").ok, false);
     });
 });
 
