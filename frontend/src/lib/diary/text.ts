@@ -159,6 +159,11 @@ export function replacedSelectionUndo(input: { collapsed: boolean }): "place" | 
     return input.collapsed ? "keep" : "place";
 }
 
+export function pasteSelectionUndo(input: { collapsed: boolean; action: "default" | "plain" | "html" | "image" | "reject" | "ignore" }): "place" | "keep" {
+    if (input.action !== "default" && input.action !== "plain" && input.action !== "html") return "keep";
+    return replacedSelectionUndo({ collapsed: input.collapsed });
+}
+
 export function formatUndoCommand(command: string): boolean {
     return command === "bold"
         || command === "italic"

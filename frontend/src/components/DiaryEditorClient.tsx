@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, styledLine, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, pasteSelectionUndo, styledLine, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -2068,6 +2068,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return rememberSelectionUndo(host, range);
     };
 
+    const keepReplacedSelection = (mark: { before: string; path: number[]; caret: number } | null) => {
+        const host = editorRef.current;
+        if (!mark || !host || host.innerHTML === mark.before) return;
+        keepBlank({ before: mark.before, after: host.innerHTML, path: mark.path, caret: mark.caret });
+    };
+
     const exec = useCallback((cmd: string, value?: string) => {
         const editor = editorRef.current;
         if (editor && dateHeadingHoldsSelection(editor, window.getSelection())) return;
@@ -2186,7 +2192,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             const text = data.getData("text/plain");
             if (text) {
                 event.preventDefault();
+                const mark = pasteSelectionUndo({ collapsed: selection.isCollapsed, action: "html" }) === "place" ? selectionUndo(editor) : null;
                 insertHTML(codePasteHtml(text));
+                keepReplacedSelection(mark);
                 return;
             }
         }
@@ -2198,7 +2206,17 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             text: data.getData("text/plain"),
         });
         if (decision.action === "default") {
-            if (moved !== "pass") insertText(data.getData("text/plain"));
+            const text = data.getData("text/plain");
+            const mark = moved === "pass" && text && editor && selection && pasteSelectionUndo({ collapsed: selection.isCollapsed, action: "default" }) === "place"
+                ? selectionUndo(editor)
+                : null;
+            if (mark) {
+                event.preventDefault();
+                insertText(text);
+                keepReplacedSelection(mark);
+                return;
+            }
+            if (moved !== "pass") insertText(text);
             return;
         }
         event.preventDefault();
@@ -2210,11 +2228,19 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             if (decision.warning) {
                 toast({ title: decision.warning.title, description: decision.warning.description, variant: "destructive" });
             }
+            const mark = moved === "pass" && editor && selection && pasteSelectionUndo({ collapsed: selection.isCollapsed, action: "html" }) === "place"
+                ? selectionUndo(editor)
+                : null;
             insertHTML(decision.html);
+            keepReplacedSelection(mark);
             return;
         }
         if (decision.action === "plain") {
+            const mark = moved === "pass" && editor && selection && pasteSelectionUndo({ collapsed: selection.isCollapsed, action: "plain" }) === "place"
+                ? selectionUndo(editor)
+                : null;
             insertText(decision.text);
+            keepReplacedSelection(mark);
             return;
         }
         if (decision.action === "ignore") return;
