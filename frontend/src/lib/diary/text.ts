@@ -159,6 +159,18 @@ export function replacedSelectionUndo(input: { collapsed: boolean }): "place" | 
     return input.collapsed ? "keep" : "place";
 }
 
+export function selectionDeleteUndo(input: {
+    key: string;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+}): "place" | "pass" {
+    if (input.collapsed || input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.key !== "Backspace" && input.key !== "Delete") return "pass";
+    return "place";
+}
+
 export function pasteSelectionUndo(input: { collapsed: boolean; action: "default" | "plain" | "html" | "image" | "reject" | "ignore" }): "place" | "keep" {
     if (input.action !== "default" && input.action !== "plain" && input.action !== "html") return "keep";
     return replacedSelectionUndo({ collapsed: input.collapsed });
