@@ -104,6 +104,7 @@ function renderInline(nodes: HtmlNode[]): string {
         if (node.tag === "strong" || node.tag === "b") return `**${inner}**`;
         if (node.tag === "em" || node.tag === "i") return `*${inner}*`;
         if (node.tag === "s" || node.tag === "strike" || node.tag === "del") return `~~${inner}~~`;
+        if (node.tag === "u") return inner ? `<u>${inner}</u>` : inner;
         if (node.tag === "code") return `\`${inner}\``;
         if (node.tag === "a") {
             const href = node.attrs.href ?? "";

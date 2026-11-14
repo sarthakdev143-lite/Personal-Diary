@@ -425,6 +425,12 @@ describe("export", () => {
         assert.equal(markdown.includes("alert"), false);
     });
 
+    it("keeps an underline in the markdown", () => {
+        assert.equal(htmlToMarkdown("<p>a <u>quiet</u> rain</p>"), "a <u>quiet</u> rain");
+        assert.equal(htmlToMarkdown("<p>a <u></u> rain</p>"), "a  rain");
+        assert.equal(htmlToMarkdown("<p><strong><u>both</u></strong></p>"), "**<u>both</u>**");
+    });
+
     it("writes the diary in chronological order", () => {
         const markdown = diaryToMarkdown(diary, [newer, older]);
         assert.match(markdown, /^# Morning Pages!\n\nQuiet notes\n\n/);
