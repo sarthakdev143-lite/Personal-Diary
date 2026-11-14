@@ -41,6 +41,30 @@ class EntryDraftTest {
     }
 
     @Test
+    void keepsAPastedPictureAndDropsAnUnsafeOne() {
+        EntryDraft pasted = EntryDraft.prepare("<img src=\"data:image/png;base64,aaaa\" alt=\"sketch\">");
+        EntryDraft.Ready ready = assertInstanceOf(EntryDraft.Ready.class, pasted);
+        assertEquals("sketch", ready.plainText());
+        assertTrue(ready.content().contains("data:image/png;base64,aaaa"));
+
+        EntryDraft svg = EntryDraft.prepare("<p>Look</p><img src=\"data:image/svg+xml;base64,PHN2Zz4=\">");
+        EntryDraft.Ready writing = assertInstanceOf(EntryDraft.Ready.class, svg);
+        assertEquals("Look", writing.plainText());
+        assertFalse(writing.content().contains("svg"));
+
+        EntryDraft script = EntryDraft.prepare("<p>Look</p><img src=\"javascript:alert(1)\">");
+        EntryDraft.Ready safe = assertInstanceOf(EntryDraft.Ready.class, script);
+        assertEquals("Look", safe.plainText());
+        assertFalse(safe.content().contains("javascript"));
+
+        String huge = "data:image/png;base64," + "a".repeat(220_000);
+        EntryDraft oversized = EntryDraft.prepare("<p>note</p><img src=\"" + huge + "\">");
+        EntryDraft.Ready kept = assertInstanceOf(EntryDraft.Ready.class, oversized);
+        assertEquals("note", kept.plainText());
+        assertFalse(kept.content().contains("data:image"));
+    }
+
+    @Test
     void ignoresTheGeneratedDateAndRejectsAPageThatIsOnlyThatDate() {
         EntryDraft dated = EntryDraft.prepare(
                 "<h2>Saturday, November 14, 2026</h2><p>Garden path</p>");

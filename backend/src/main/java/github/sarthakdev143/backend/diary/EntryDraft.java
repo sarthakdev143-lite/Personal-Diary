@@ -1,5 +1,7 @@
 package github.sarthakdev143.backend.diary;
 
+import java.util.regex.Pattern;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -42,8 +44,13 @@ public sealed interface EntryDraft permits EntryDraft.Ready, EntryDraft.Rejected
     }
 
     private static void keepSafeImage(Element image) {
+        Pattern dataImage = Pattern.compile(
+                "^data:image/(png|jpeg|gif|webp);base64,[a-z0-9+/=\\s]+$",
+                Pattern.CASE_INSENSITIVE);
         String src = image.attr("src").trim();
-        if (!src.startsWith("https://") && !src.startsWith("http://")) {
+        boolean data = src.startsWith("data:") && dataImage.matcher(src).matches() && src.length() <= 220_000;
+        boolean remote = src.startsWith("https://") || src.startsWith("http://");
+        if (!data && !remote) {
             image.remove();
             return;
         }
@@ -74,7 +81,6 @@ public sealed interface EntryDraft permits EntryDraft.Ready, EntryDraft.Rejected
                         "ul", "ol", "li", "blockquote", "hr", "pre", "code", "a", "img")
                 .addAttributes("a", "href")
                 .addAttributes("img", "src", "alt")
-                .addProtocols("a", "href", "http", "https", "mailto")
-                .addProtocols("img", "src", "http", "https");
+                .addProtocols("a", "href", "http", "https", "mailto");
     }
 }
