@@ -546,6 +546,18 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         closeLinkField();
     };
 
+    const editAnchor = (anchor: HTMLAnchorElement, command: "createLink" | "unlink", value?: string) => {
+        const editor = editorRef.current;
+        editor?.focus();
+        const selection = window.getSelection();
+        if (!selection) return;
+        const range = document.createRange();
+        range.selectNodeContents(anchor);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        document.execCommand(command, false, value);
+    };
+
     const applyLink = (event: React.FormEvent) => {
         event.preventDefault();
         const parsed = entryLinkUrl(linkDraft);
@@ -555,7 +567,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
         const anchor = rangeAnchor(linkRange.current);
         if (anchor) {
-            anchor.setAttribute("href", parsed.href);
+            editAnchor(anchor, "createLink", parsed.href);
             writeLinkChange();
             return;
         }
@@ -572,14 +584,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
     const removeLink = () => {
         const anchor = rangeAnchor(linkRange.current);
-        const parent = anchor?.parentNode;
-        if (!anchor || !parent) {
+        if (!anchor) {
             closeLinkField();
             return;
         }
-        while (anchor.firstChild) parent.insertBefore(anchor.firstChild, anchor);
-        anchor.remove();
-        parent.normalize();
+        editAnchor(anchor, "unlink");
         writeLinkChange();
     };
 
