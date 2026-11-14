@@ -129,6 +129,11 @@ export function entryPageAddress(
     return diaryMatchPath(diaryId, entryId);
 }
 
+export function entryShareAddress(origin: string, diaryId: string, entryId: string | null): string {
+    const base = origin.trim().replace(/\/+$/, "");
+    return `${base}${entryPageAddress(diaryId, entryId, "view")}`;
+}
+
 export function buildEntrySearchFilter(userId: string, rawQuery: string): EntrySearchFilter | null {
     const query = normalizeSearchQuery(rawQuery);
     if (!query) return null;

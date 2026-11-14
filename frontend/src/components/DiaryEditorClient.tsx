@@ -11,7 +11,7 @@ import { DESCRIPTION_MAX, DIARY_THEMES, TITLE_MAX, coverForTheme, isAllowedTheme
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
 import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
-import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress } from "@/lib/diary/search";
+import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryUndoBody, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
@@ -720,6 +720,17 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         } catch (e) {
             toast({ title: "Not deleted", description: e instanceof Error ? e.message : "Error", variant: "destructive" });
             setIsSavingDiary(false);
+        }
+    };
+
+    const copyEntryLink = async () => {
+        if (!selectedEntryId) return;
+        const address = entryShareAddress(window.location.origin, diaryId, selectedEntryId);
+        try {
+            await navigator.clipboard.writeText(address);
+            toast({ title: "Link copied", description: address });
+        } catch {
+            toast({ title: "Copy this link", description: address });
         }
     };
 
@@ -1781,6 +1792,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                     ) : (
                                         <>
                                             <button type="button" className="de-ghost-btn" onClick={() => { setMode("edit"); setConfirmDelete(null); setBaseline(htmlContent); }}>edit</button>
+                                            {selectedEntryId && (
+                                                <button type="button" className="de-ghost-btn" onClick={() => void copyEntryLink()}>copy link</button>
+                                            )}
                                             <button type="button" className="de-danger-btn" onClick={() => setConfirmDelete("entry")}>delete</button>
                                             <button type="button" className="de-ghost-btn" onClick={() => askToDiscard(resetComposer)}>✕ close</button>
                                         </>

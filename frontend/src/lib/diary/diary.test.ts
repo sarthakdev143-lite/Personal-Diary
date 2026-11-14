@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
-import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, escapeRegExp, normalizeSearchQuery } from "./search";
+import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, normalizeSearchQuery } from "./search";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, laterEntryTime, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
@@ -352,6 +352,8 @@ describe("search", () => {
         assert.equal(entryPageAddress("diary1", "garden", "compose"), "/diary/diary1");
         assert.equal(entryPageAddress("diary1", null, "view"), "/diary/diary1");
         assert.equal(entryPageAddress("diary1", "a b", "view"), "/diary/diary1?entry=a%20b");
+        assert.equal(entryShareAddress("https://diary.example/", "diary1", "a b"), "https://diary.example/diary/diary1?entry=a%20b");
+        assert.equal(entryShareAddress("https://diary.example", "diary1", null), "https://diary.example/diary/diary1");
     });
 
     it("shows the words that matched on the entry card", () => {
