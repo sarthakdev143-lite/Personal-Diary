@@ -321,10 +321,11 @@ export function entryFindKeyAction(event: {
     inField: boolean;
     searchFocused: boolean;
     query: string;
-}): "focus" | "clear" | null {
+}): "focus" | "clear" | "close" | null {
     if (event.altKey || event.ctrlKey || event.metaKey) return null;
     if (event.key === "Escape") {
-        return event.searchFocused && event.query ? "clear" : null;
+        if (!event.searchFocused) return null;
+        return event.query ? "clear" : "close";
     }
     if (event.key !== "/" || event.shiftKey || event.searchFocused || event.inField) return null;
     return "focus";

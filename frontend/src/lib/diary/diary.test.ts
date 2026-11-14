@@ -534,7 +534,7 @@ describe("entry date", () => {
         assert.equal(entryToShowByStep([], "newest", "next"), null);
     });
 
-    it("focuses entry search with slash and clears it with escape", () => {
+    it("focuses entry search with slash, clears it with escape, and leaves an empty find", () => {
         const plain = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false, inField: false, searchFocused: false, query: "" };
         assert.equal(entryFindKeyAction({ ...plain, key: "/" }), "focus");
         assert.equal(entryFindKeyAction({ ...plain, key: "/", inField: true }), null);
@@ -544,7 +544,7 @@ describe("entry date", () => {
         assert.equal(entryFindKeyAction({ ...plain, key: "/", altKey: true }), null);
         assert.equal(entryFindKeyAction({ ...plain, key: "/", shiftKey: true }), null);
         assert.equal(entryFindKeyAction({ ...plain, key: "Escape", searchFocused: true, query: "rain" }), "clear");
-        assert.equal(entryFindKeyAction({ ...plain, key: "Escape", searchFocused: true, query: "" }), null);
+        assert.equal(entryFindKeyAction({ ...plain, key: "Escape", searchFocused: true, query: "" }), "close");
         assert.equal(entryFindKeyAction({ ...plain, key: "Escape", query: "rain" }), null);
         assert.equal(entryFindKeyAction({ ...plain, key: "ArrowDown" }), null);
     });

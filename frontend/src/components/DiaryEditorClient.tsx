@@ -747,6 +747,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 setEntryQuery("");
                 return;
             }
+            if (findAction === "close") {
+                event.preventDefault();
+                entrySearchRef.current?.blur();
+                return;
+            }
             if (findAction === "focus") {
                 if (!entrySearchRef.current) return;
                 event.preventDefault();
