@@ -16,7 +16,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryUndoBody, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryUndoBody, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
@@ -27,7 +27,6 @@ type EditorMode = "compose" | "view" | "edit";
 const fmtShort = formatDiaryDate;
 const fmtTime = formatEntryTime;
 const fmtLong = formatEntryLong;
-const headingFor = (iso: string) => `<h2>${fmtLong(iso)}</h2><p><br></p>`;
 
 function showFindMarks(root: HTMLElement, query: string, activeIndex: number): HTMLElement | null {
     const needle = query.trim();
@@ -186,12 +185,27 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     theme: data.diary?.theme ?? "",
                 });
                 const draftKey = entryDraftKey(diaryId);
+                let resumeDraft = false;
                 try {
                     const stored = readEntryDraft(window.sessionStorage.getItem(draftKey));
-                    if (offerEntryDraft(stored, loaded)) setKeptDraft(stored);
-                    else window.sessionStorage.removeItem(draftKey);
+                    if (offerEntryDraft(stored, loaded)) {
+                        setKeptDraft(stored);
+                        resumeDraft = true;
+                    } else {
+                        window.sessionStorage.removeItem(draftKey);
+                    }
                 } catch {
                     setKeptDraft(null);
+                }
+                if (!latest && !resumeDraft && mounted) {
+                    const now = new Date();
+                    const day = calendarDate(now);
+                    const html = freshEntryHtml(now.toISOString());
+                    setEntryDate(day);
+                    setSavedDate(day);
+                    entryClock.current = now;
+                    setBaseline(html);
+                    setHtmlContent(html);
                 }
             } catch (e) {
                 if (mounted) setError(e instanceof Error ? e.message : "Failed to load.");
@@ -352,9 +366,18 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     };
 
     useLayoutEffect(() => {
-        if (isLoading || !editorRef.current || !htmlContent) return;
-        if (editorRef.current.innerHTML) return;
-        editorRef.current.innerHTML = htmlContent;
+        const editor = editorRef.current;
+        if (isLoading || !editor || !htmlContent) return;
+        if (editor.innerHTML) return;
+        editor.innerHTML = htmlContent;
+        if (editor.getAttribute("contenteditable") !== "true") return;
+        editor.focus();
+        const range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
     }, [isLoading, htmlContent]);
 
     const isDirty = mode !== "view" && (htmlContent !== baseline || entryDate !== savedDate);
@@ -459,6 +482,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             // The notice can still close when storage is unavailable.
         }
         setKeptDraft(null);
+        if (entries.length === 0 && !selectedEntryId && !hasEntryContent(htmlContent)) {
+            const now = new Date();
+            rememberDate(calendarDate(now), now);
+            writeEditor(freshEntryHtml(now.toISOString()));
+        }
     };
 
     const rememberDate = (value: string, clock?: Date) => {
@@ -490,18 +518,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         setConfirmDelete(null);
         const now = new Date();
         rememberDate(calendarDate(now), now);
-        writeEditor("");
+        writeEditor(freshEntryHtml(now.toISOString()));
     };
 
     const handleNewEntry = () => {
         askToDiscard(() => {
-            const now = new Date();
-            rememberDate(calendarDate(now), now);
-            const html = headingFor(now.toISOString());
-            setSelectedEntryId(null);
-            setMode("compose");
-            setConfirmDelete(null);
-            writeEditor(html);
+            resetComposer();
             editorRef.current?.focus();
             if (editorRef.current) {
                 const range = document.createRange();

@@ -420,6 +420,10 @@ export function entryCardQuery(entryId: string): string {
     return `button[data-entry-id="${escaped}"]`;
 }
 
+export function freshEntryHtml(iso: string): string {
+    return `<h2>${formatEntryLong(iso)}</h2><p><br></p>`;
+}
+
 export function formatEntryLong(value: string): string {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "—";
