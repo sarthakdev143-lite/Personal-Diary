@@ -130,6 +130,27 @@ export function plainSpacesAfterMarks(html: string): string {
         .replace(/(<(?:p|h1|h2|h3|li|blockquote|figcaption)\b[^>]*>)(?:&nbsp;|\u00a0)(?=[^\s<])/gi, "$1 ");
 }
 
+export function styledLine(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    atBlockEnd: boolean;
+    coversBlock: boolean[];
+}): number | null {
+    if (input.key !== "Enter" || input.shiftKey || input.altKey || input.ctrlKey || input.metaKey) return null;
+    if (!input.collapsed || !input.atBlockEnd) return null;
+    if (input.coversBlock.length === 0 || input.coversBlock.every(Boolean)) return null;
+    let count = 0;
+    for (const covers of input.coversBlock) {
+        if (!covers) break;
+        count += 1;
+    }
+    return count;
+}
+
 export type StyledSpace = "outside" | "pass";
 
 export function styledSpace(input: {

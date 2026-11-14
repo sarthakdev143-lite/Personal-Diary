@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, styledSpace, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, styledLine, styledSpace, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -365,6 +365,21 @@ describe("code block", () => {
         assert.equal(splitSpace({ ...between, inCode: true }), "keep");
         assert.equal(splitSpace({ ...between, key: "Backspace" }), "keep");
         assert.equal(splitSpace({ ...between, ctrlKey: true }), "keep");
+    });
+
+    it("starts a plain line when Enter follows a styled word", () => {
+        const end = { key: "Enter", collapsed: true, atBlockEnd: true, coversBlock: [false] };
+        assert.equal(styledLine(end), 0);
+        assert.equal(styledLine({ ...end, coversBlock: [true, false] }), 1);
+        assert.equal(styledLine({ ...end, coversBlock: [false, false] }), 0);
+        assert.equal(styledLine({ ...end, coversBlock: [true] }), null);
+        assert.equal(styledLine({ ...end, coversBlock: [true, true] }), null);
+        assert.equal(styledLine({ ...end, coversBlock: [] }), null);
+        assert.equal(styledLine({ ...end, atBlockEnd: false }), null);
+        assert.equal(styledLine({ ...end, collapsed: false }), null);
+        assert.equal(styledLine({ ...end, shiftKey: true }), null);
+        assert.equal(styledLine({ ...end, key: " " }), null);
+        assert.equal(styledLine({ ...end, ctrlKey: true }), null);
     });
 
     it("puts a space after a styled word outside that style", () => {
