@@ -398,18 +398,18 @@ function pointAfterDate(heading: HTMLElement, container: Node, offset: number): 
     return (heading.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
 }
 
-function deleteSelectedAfterDate(heading: HTMLElement, selection: Selection) {
+function selectReplaceRange(editor: HTMLElement, heading: HTMLElement, selection: Selection) {
     if (!selection.rangeCount) return;
     const range = selection.getRangeAt(0);
-    if (!pointAfterDate(heading, range.endContainer, range.endOffset)) return;
-    const clipped = document.createRange();
-    if (pointAfterDate(heading, range.startContainer, range.startOffset)) {
-        clipped.setStart(range.startContainer, range.startOffset);
-    } else {
-        clipped.setStartAfter(heading);
+    if (!pointAfterDate(heading, range.endContainer, range.endOffset)) {
+        placeWritingCaret(heading, true);
+        return;
     }
-    clipped.setEnd(range.endContainer, range.endOffset);
-    clipped.deleteContents();
+    editor.focus();
+    const clipped = range.cloneRange();
+    if (!pointAfterDate(heading, range.startContainer, range.startOffset)) clipped.setStartAfter(heading);
+    selection.removeAllRanges();
+    selection.addRange(clipped);
 }
 
 function placeWritingCaret(heading: HTMLElement, onlyDate: boolean) {
@@ -794,8 +794,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const touched = editor ? selectedDateHeading(editor, selection, dateLineLabel()) : null;
         if (!touched) return "pass" as const;
         const action = datePaste({ touchesDate: true, onlyDate: touched.onlyDate });
-        if (action === "replace-writing") deleteSelectedAfterDate(touched.heading, selection);
-        placeWritingCaret(touched.heading, action === "writing");
+        if (action === "replace-writing") selectReplaceRange(editor, touched.heading, selection);
+        else placeWritingCaret(touched.heading, true);
         return action;
     };
 
@@ -853,8 +853,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         event.preventDefault();
         event.clipboardData.setData("text/plain", selection.toString());
         if (datePaste({ touchesDate: true, onlyDate: touched.onlyDate }) !== "replace-writing") return;
-        deleteSelectedAfterDate(touched.heading, selection);
-        placeWritingCaret(touched.heading, false);
+        selectReplaceRange(editor, touched.heading, selection);
+        document.execCommand("delete");
         setHtmlContent(editor.innerHTML);
     };
 
