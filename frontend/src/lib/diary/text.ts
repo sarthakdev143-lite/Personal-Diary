@@ -209,6 +209,11 @@ export function styledLine(input: {
     return count;
 }
 
+export function styledLineUndoCaret(offset: number | null): number | null {
+    if (offset === null || !Number.isFinite(offset) || offset < 0) return null;
+    return Math.floor(offset);
+}
+
 const SENTENCE_PUNCTUATION = new Set([".", ",", ";", ":", "!", "?", ")", "]", "}", "…"]);
 
 export type StyledSpace = "outside" | "pass";
