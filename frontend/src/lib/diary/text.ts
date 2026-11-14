@@ -129,6 +129,12 @@ export function entryInMonth(createdAt: string, month: string): boolean {
     return monthKey(createdAt) === month;
 }
 
+export function monthForSavedEntry(createdAt: string, month: string): string {
+    const key = monthKey(createdAt);
+    if (!key || entryInMonth(createdAt, month)) return month;
+    return key;
+}
+
 export function emptyEntryListMessage(query: string, month: string): string {
     const text = query.trim();
     const when = month ? monthLabel(month) : "";

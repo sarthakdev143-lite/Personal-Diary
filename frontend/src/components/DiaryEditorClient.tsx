@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { DESCRIPTION_MAX, DIARY_THEMES, MAX_IMAGE_BYTES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
 import { diaryFieldsMatch } from "@/lib/diary/search";
-import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entryPlainText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, retitleEntryDate, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entryPlainText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
@@ -301,19 +301,22 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             );
             const data = await res.json() as Entry & { error?: string };
             if (!res.ok) throw new Error(data.error || "Failed to save.");
-            rememberDate(calendarDate(new Date(data.createdAt)));
             const placeEntry = (items: Entry[]) =>
                 [...items].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
             if (editing) {
                 setEntries((prev) => placeEntry(prev.map((entry) => entry._id === data._id ? data : entry)));
-                setMode("view");
-                writeEditor(data.content);
-                toast({ title: "Updated", description: fmtLong(data.createdAt) });
             } else {
                 setEntries((prev) => placeEntry([data, ...prev]));
-                resetComposer();
-                toast({ title: "Saved", description: fmtLong(data.createdAt) });
             }
+            setEntryMonth(monthForSavedEntry(data.createdAt, entryMonth));
+            const savedText = data.plainText || entryPlainText(data.content);
+            if (!diaryFieldsMatch(savedText, "", entryQuery)) setEntryQuery("");
+            setSelectedEntryId(data._id);
+            setMode("view");
+            setConfirmDelete(null);
+            rememberDate(calendarDate(new Date(data.createdAt)));
+            writeEditor(data.content);
+            toast({ title: editing ? "Updated" : "Saved", description: fmtLong(data.createdAt) });
         } catch (e) {
             toast({ title: "Not saved", description: e instanceof Error ? e.message : "Error", variant: "destructive" });
         } finally {

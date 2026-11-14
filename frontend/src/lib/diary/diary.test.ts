@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, escapeRegExp, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entryPlainText, monthKey, monthLabel, retitleEntryDate, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entryPlainText, monthForSavedEntry, monthKey, monthLabel, retitleEntryDate, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
     normalizeTheme,
@@ -305,6 +305,10 @@ describe("entry date", () => {
         assert.equal(emptyEntryListMessage("rain", "2026-02"), "No entries match “rain” in February 2026.");
         assert.equal(emptyEntryListMessage("rain", ""), "No entries match “rain”.");
         assert.equal(emptyEntryListMessage("", "2026-11"), "No entries in November 2026.");
+        assert.equal(monthForSavedEntry(february, ""), "");
+        assert.equal(monthForSavedEntry(february, "2026-02"), "2026-02");
+        assert.equal(monthForSavedEntry(february, "2026-11"), "2026-02");
+        assert.equal(monthForSavedEntry("nope", "2026-11"), "2026-11");
     });
 });
 
