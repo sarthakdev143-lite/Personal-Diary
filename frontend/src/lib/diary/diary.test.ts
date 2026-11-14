@@ -176,6 +176,18 @@ describe("code block", () => {
         assert.equal(marked.content, "<pre><code>const a = 1;\nconst b = 2;</code></pre>");
     });
 
+    it("keeps a list that was nested inside a paragraph", () => {
+        const saved = prepareEntryContent("<p><ul><li><b>first</b></li><li>second</li></ul></p>");
+        assert.equal(saved.ok, true);
+        if (!saved.ok) return;
+        assert.equal(saved.content, "<ul><li><b>first</b></li><li>second</li></ul>");
+        assert.equal(htmlToMarkdown(saved.content), "- **first**\n- second");
+        const numbered = prepareEntryContent("<h2>Saturday, November 14, 2026</h2><p><ol><li>one</li><li>two</li></ol></p>");
+        assert.equal(numbered.ok, true);
+        if (!numbered.ok) return;
+        assert.equal(numbered.content, "<h2>Saturday, November 14, 2026</h2><ol><li>one</li><li>two</li></ol>");
+    });
+
     it("keeps each row of a pasted table", () => {
         const saved = prepareEntryContent("<table><tr><th>Rain</th><th>Harbor</th></tr><tr><td>Bread</td><td><b>Market</b></td></tr></table>");
         assert.equal(saved.ok, true);

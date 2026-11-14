@@ -17,6 +17,7 @@ final class PastedLines {
     }
 
     static void lift(Document document) {
+        liftNestedLists(document);
         liftTables(document);
         ArrayList<Element> wrappers = new ArrayList<>(document.select("div, section, article"));
         for (int index = wrappers.size() - 1; index >= 0; index -= 1) {
@@ -41,6 +42,51 @@ final class PastedLines {
                 wrapper.appendElement("br");
             }
         }
+    }
+
+    private static void liftNestedLists(Document document) {
+        for (Element paragraph : new ArrayList<>(document.select("p"))) {
+            Element list = onlyList(paragraph);
+            if (list != null) {
+                paragraph.replaceWith(list);
+                continue;
+            }
+            Element previous = paragraph.previousElementSibling();
+            Element next = paragraph.nextElementSibling();
+            boolean empty = paragraph.children().isEmpty() && paragraph.ownText().isBlank();
+            boolean besideList = isList(previous) || isList(next);
+            if (empty && besideList) {
+                paragraph.remove();
+            }
+        }
+    }
+
+    private static boolean isList(Element element) {
+        return element != null && (element.normalName().equals("ul") || element.normalName().equals("ol"));
+    }
+
+    private static Element onlyList(Element paragraph) {
+        if (!paragraph.ownText().isBlank()) {
+            return null;
+        }
+        Element list = null;
+        for (Node node : paragraph.childNodes()) {
+            if (node instanceof TextNode text && text.getWholeText().isBlank()) {
+                continue;
+            }
+            if (!(node instanceof Element child)) {
+                return null;
+            }
+            if (child.normalName().equals("br")) {
+                continue;
+            }
+            if (list == null && (child.normalName().equals("ul") || child.normalName().equals("ol"))) {
+                list = child;
+                continue;
+            }
+            return null;
+        }
+        return list;
     }
 
     private static void liftTables(Document document) {

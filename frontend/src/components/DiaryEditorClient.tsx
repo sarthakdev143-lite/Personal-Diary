@@ -480,6 +480,62 @@ function selectionInsideCode(editor: HTMLElement, selection: Selection): boolean
     return pre instanceof HTMLElement && editor.contains(pre) && pre.contains(range.startContainer) && pre.contains(range.endContainer);
 }
 
+const LIST_BLOCKS = new Set(["H1", "H2", "H3", "P", "UL", "OL", "BLOCKQUOTE", "PRE", "HR", "FIGURE", "DIV", "IMG"]);
+
+function liftNestedLists(editor: HTMLElement) {
+    for (const paragraph of [...editor.querySelectorAll("p")]) {
+        const list = onlyList(paragraph);
+        if (list) paragraph.replaceWith(list);
+    }
+    const loose: Node[] = [];
+    const flush = () => {
+        const nodes = loose.splice(0);
+        const visible = nodes.some((node) => node.nodeType !== Node.TEXT_NODE || (node.textContent ?? "").replace(/\u00a0/g, " ").trim());
+        if (!visible) {
+            for (const node of nodes) node.parentNode?.removeChild(node);
+            return;
+        }
+        const paragraph = document.createElement("p");
+        nodes[0].parentNode?.insertBefore(paragraph, nodes[0]);
+        for (const node of nodes) paragraph.appendChild(node);
+        while (paragraph.firstChild instanceof HTMLSpanElement || paragraph.firstChild instanceof HTMLFontElement) {
+            const span = paragraph.firstChild;
+            if ([...span.children].some((child) => child.tagName !== "BR")) break;
+            while (span.firstChild) paragraph.insertBefore(span.firstChild, span);
+            span.remove();
+        }
+        if (paragraph.lastChild instanceof HTMLBRElement && paragraph.childNodes.length > 1) paragraph.lastChild.remove();
+    };
+    for (const node of [...editor.childNodes]) {
+        if (node instanceof Element && LIST_BLOCKS.has(node.tagName)) {
+            flush();
+            continue;
+        }
+        loose.push(node);
+    }
+    flush();
+}
+
+function onlyList(paragraph: HTMLElement): HTMLElement | null {
+    const lists = [...paragraph.children].filter((child) => child.tagName === "UL" || child.tagName === "OL");
+    if (lists.length !== 1) return null;
+    for (const node of paragraph.childNodes) {
+        if (node === lists[0]) continue;
+        if (node instanceof Text && !node.data.trim()) continue;
+        if (node instanceof HTMLBRElement) continue;
+        return null;
+    }
+    return lists[0];
+}
+
+function placeListCaret(editor: HTMLElement, fromList: boolean, text: string, offset: number) {
+    const candidates = [...editor.querySelectorAll("li, p")].filter((item) => (item.textContent ?? "").replace(/\u00a0/g, " ") === text);
+    const preferred = candidates.find((item) => fromList ? item.tagName === "P" : item.tagName === "LI");
+    const target = preferred ?? candidates[0];
+    if (!(target instanceof HTMLElement)) return;
+    placeCaretAtTextOffset(target, offset);
+}
+
 function textOffsetWithin(root: HTMLElement, container: Node, offset: number): number {
     const range = document.createRange();
     range.selectNodeContents(root);
@@ -840,7 +896,18 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const editor = editorRef.current;
         if (editor && dateHeadingHoldsSelection(editor, window.getSelection())) return;
         editor?.focus();
+        const selection = window.getSelection();
+        const lists = cmd === "insertUnorderedList" || cmd === "insertOrderedList";
+        const range = editor && lists && selection?.rangeCount ? selection.getRangeAt(0) : null;
+        const block = range ? (range.endContainer instanceof Element ? range.endContainer : range.endContainer.parentElement)?.closest("li, p") : null;
+        const caret = editor && range && block instanceof HTMLElement
+            ? { fromList: block.tagName === "LI", text: (block.textContent ?? "").replace(/\u00a0/g, " "), offset: textOffsetWithin(block, range.endContainer, range.endOffset) }
+            : null;
         document.execCommand(cmd, false, value);
+        if (editor && caret) {
+            liftNestedLists(editor);
+            placeListCaret(editor, caret.fromList, caret.text, caret.offset);
+        }
         if (editorRef.current) setHtmlContent(editorRef.current.innerHTML);
         updateActiveFormats();
     }, [updateActiveFormats]);
@@ -2281,7 +2348,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     border-radius:0 4px 4px 0;
                 }
                 #de-editor hr{border:none;border-top:1px solid #2a2520;margin:24px 0;}
-                #de-editor ul,#de-editor ol{padding-left:28px;margin:8px 0;}
+                #de-editor ul{padding-left:28px;margin:8px 0;list-style:disc;}
+                #de-editor ol{padding-left:28px;margin:8px 0;list-style:decimal;}
                 #de-editor li{margin-bottom:4px;color:#d0c8bc;}
                 #de-editor pre{
                     background:#111009;

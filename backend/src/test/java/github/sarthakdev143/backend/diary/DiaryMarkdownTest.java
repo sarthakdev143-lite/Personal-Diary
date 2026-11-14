@@ -33,6 +33,12 @@ class DiaryMarkdownTest {
     }
 
     @Test
+    void keepsAListThatWasNestedInsideAParagraph() {
+        String markdown = DiaryMarkdown.htmlToMarkdown("<p><ol><li>one</li><li>two</li></ol></p>");
+        assertTrue(markdown.contains("1. one\n2. two"));
+    }
+
+    @Test
     void keepsEachRowOfAPastedTable() {
         String markdown = DiaryMarkdown.htmlToMarkdown(
                 "<table><tr><td>Rain</td><td>Harbor</td></tr><tr><td>Bread</td><td><b>Market</b></td></tr></table>");

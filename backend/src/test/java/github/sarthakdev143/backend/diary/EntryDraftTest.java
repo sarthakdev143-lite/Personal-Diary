@@ -130,6 +130,16 @@ class EntryDraftTest {
     }
 
     @Test
+    void keepsAListThatWasNestedInsideAParagraph() {
+        EntryDraft draft = EntryDraft.prepare("<p><ul><li><b>first</b></li><li>second</li></ul></p>");
+        EntryDraft.Ready ready = assertInstanceOf(EntryDraft.Ready.class, draft);
+        assertTrue(ready.content().contains("<ul>"));
+        assertTrue(ready.content().contains("<li><b>first</b></li>"));
+        assertTrue(ready.content().contains("<li>second</li>"));
+        assertFalse(ready.content().contains("<p>"));
+    }
+
+    @Test
     void keepsEachRowOfAPastedTable() {
         EntryDraft draft = EntryDraft.prepare(
                 "<table><tr><th>Rain</th><th>Harbor</th></tr><tr><td>Bread</td><td><b>Market</b></td></tr></table>");

@@ -78,7 +78,7 @@ export function sanitizeEntryHtml(input: string): string {
 }
 
 function liftBlockLines(html: string): string {
-    let current = liftTables(html);
+    let current = liftNestedLists(liftTables(html));
     const block = /<(?:p|div|section|article|h[1-3]|ul|ol|blockquote|pre|hr|figure|table)\b/i;
     const wrapper = /<(div|section|article)\b[^>]*>((?:(?!<\/?(?:div|section|article)\b)[\s\S])*)<\/\1>/gi;
     let previous = "";
@@ -92,6 +92,13 @@ function liftBlockLines(html: string): string {
         });
     }
     return current;
+}
+
+function liftNestedLists(html: string): string {
+    return html.replace(/<p\b[^>]*>([\s\S]*?)<\/p>/gi, (paragraph, inner: string) => {
+        const list = inner.match(/^\s*(<(ul|ol)\b[\s\S]*<\/\2>)\s*$/i);
+        return list ? list[1] : paragraph;
+    });
 }
 
 function liftTables(html: string): string {
