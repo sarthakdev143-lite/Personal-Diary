@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styledLine, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styledLine, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -969,6 +969,53 @@ function writingOutsideMark(mark: HTMLElement): boolean {
         node = walker.nextNode();
     }
     return false;
+}
+
+const STYLE_COMMANDS = new Set(["bold", "italic", "underline", "strikeThrough"]);
+
+function textInside(range: Range, text: Text): { start: number; end: number } | null {
+    const start = text === range.startContainer ? range.startOffset : 0;
+    const end = text === range.endContainer ? range.endOffset : text.data.length;
+    if (end <= start) return null;
+    try {
+        if (text !== range.startContainer && text !== range.endContainer && !range.intersectsNode(text)) return null;
+    } catch {
+        return null;
+    }
+    return { start, end };
+}
+
+function excludeStyleEdges(range: Range) {
+    if (range.collapsed) return;
+    const cut = styleEdgeCut(range.toString());
+    if (!cut) return;
+    const root = range.commonAncestorContainer.nodeType === Node.TEXT_NODE
+        ? range.commonAncestorContainer.parentNode
+        : range.commonAncestorContainer;
+    if (!root) return;
+    const nodes: Text[] = [];
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let current = walker.nextNode();
+    while (current) {
+        if (current instanceof Text && textInside(range, current)) nodes.push(current);
+        current = walker.nextNode();
+    }
+    const point = (count: number, fromEnd: boolean) => {
+        let left = count;
+        const list = fromEnd ? [...nodes].reverse() : nodes;
+        for (const text of list) {
+            const inside = textInside(range, text);
+            if (!inside) continue;
+            const available = inside.end - inside.start;
+            if (left <= available) return { node: text, offset: fromEnd ? inside.end - left : inside.start + left };
+            left -= available;
+        }
+        return null;
+    };
+    const end = cut.trailing ? point(cut.trailing, true) : null;
+    const start = cut.leading ? point(cut.leading, false) : null;
+    if (end) range.setEnd(end.node, end.offset);
+    if (start) range.setStart(start.node, start.offset);
 }
 
 function moveTrailingMarkSpaces(root: HTMLElement) {
@@ -1984,6 +2031,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const caret = editor && range && block instanceof HTMLElement
             ? { fromList: block.tagName === "LI", text: (block.textContent ?? "").replace(/\u00a0/g, " "), offset: textOffsetWithin(block, range.endContainer, range.endOffset) }
             : null;
+        if (selection?.rangeCount && !selection.isCollapsed && STYLE_COMMANDS.has(cmd)) excludeStyleEdges(selection.getRangeAt(0));
         document.execCommand(cmd, false, value);
         if (editor && listCommand(cmd) === "lift") liftNestedLists(editor);
         if (editor && caret) placeListCaret(editor, caret.fromList, caret.text, caret.offset);
@@ -2747,6 +2795,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         editor?.focus();
         const selection = window.getSelection();
         if (linkRange.current && selection) {
+            excludeStyleEdges(linkRange.current);
             selection.removeAllRanges();
             selection.addRange(linkRange.current);
         }
@@ -3669,6 +3718,19 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             return;
         }
         if (mode === "view") return;
+        const styleCommand = styleShortcut({
+            key: e.key,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+        });
+        const styleEditor = editorRef.current;
+        if (styleCommand && styleEditor && e.target instanceof Node && styleEditor.contains(e.target)) {
+            e.preventDefault();
+            exec(styleCommand);
+            return;
+        }
         document.execCommand("defaultParagraphSeparator", false, "p");
         if (savedRedo({
             key: e.key,

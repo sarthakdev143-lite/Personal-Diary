@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, plainMarkSpaces, plainSpacesAfterMarks, styledLine, styledPunctuation, styledSpace, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styledLine, styledPunctuation, styledSpace, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -452,6 +452,20 @@ describe("code block", () => {
         assert.equal(htmlToMarkdown("<p>See<i> Harbor</i> today</p>"), "See *Harbor* today");
         assert.equal(htmlToMarkdown('<p>See<a href="https://example.com"> Harbor</a> today</p>'), "See [Harbor](https://example.com) today");
         assert.equal(htmlToMarkdown("<p><b> Harbor</b></p>"), "**Harbor**");
+    });
+
+    it("leaves the spaces around a word out of the style command", () => {
+        assert.deepEqual(styleEdgeCut(" Harbor"), { leading: 1, trailing: 0 });
+        assert.deepEqual(styleEdgeCut("Harbor "), { leading: 0, trailing: 1 });
+        assert.deepEqual(styleEdgeCut(" Harbor "), { leading: 1, trailing: 1 });
+        assert.deepEqual(styleEdgeCut("\u00a0Harbor\u00a0"), { leading: 1, trailing: 1 });
+        assert.equal(styleEdgeCut("Harbor"), null);
+        assert.equal(styleEdgeCut(" "), null);
+        assert.equal(styleShortcut({ key: "b", ctrlKey: true }), "bold");
+        assert.equal(styleShortcut({ key: "I", metaKey: true }), "italic");
+        assert.equal(styleShortcut({ key: "u", ctrlKey: true }), "underline");
+        assert.equal(styleShortcut({ key: "b", ctrlKey: true, shiftKey: true }), null);
+        assert.equal(styleShortcut({ key: "b" }), null);
     });
 
     it("undo of a split line puts the space back", () => {
