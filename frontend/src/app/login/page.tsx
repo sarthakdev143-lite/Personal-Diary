@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { signIn } from "next-auth/react"
+import { useEffect, useState } from "react"
+import { signIn, useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { Loader2, LogIn } from "lucide-react"
 import { motion } from "framer-motion"
 
@@ -23,6 +24,12 @@ export default function LoginPage() {
         github: false,
     })
     const { toast } = useToast()
+    const { status } = useSession()
+    const router = useRouter()
+
+    useEffect(() => {
+        if (status === "authenticated") router.replace("/diary")
+    }, [status, router])
 
     const handleLogin = async (provider: "google" | "github") => {
         setIsLoading((prev) => ({ ...prev, [provider]: true }))
@@ -39,6 +46,10 @@ export default function LoginPage() {
         } finally {
             setIsLoading((prev) => ({ ...prev, [provider]: false }))
         }
+    }
+
+    if (status !== "unauthenticated") {
+        return <div className="min-h-screen bg-zinc-950" />
     }
 
     return (
@@ -61,7 +72,7 @@ export default function LoginPage() {
                         </div>
                         <CardTitle className="text-2xl font-bold text-center">Welcome!</CardTitle>
                         <CardDescription className="text-center text-muted-foreground/80">
-                            Please Signin / Signup to Continue
+                            Sign in with Google or GitHub to open your diaries.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4 pt-2">
