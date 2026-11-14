@@ -161,13 +161,22 @@ export function headingEnterKey(input: {
     return "pass";
 }
 
+export function sameEditingPage(left: string, right: string): boolean {
+    const plain = (html: string) => html
+        .replace(/ class="de-selected"/g, "")
+        .replace(/ class="de-selected /g, ' class="')
+        .replace(/ de-selected"/g, '"')
+        .replace(/ de-selected /g, " ");
+    return plain(left) === plain(right);
+}
+
 export type HeadingSplitUndo = "restore" | "pass";
 
 export function headingSplitUndo(input: {
     saved: { before: string; after: string } | null;
     current: string;
 }): HeadingSplitUndo {
-    if (!input.saved || input.current !== input.saved.after) return "pass";
+    if (!input.saved || !sameEditingPage(input.current, input.saved.after)) return "pass";
     return "restore";
 }
 

@@ -1,6 +1,6 @@
 import { MAX_IMAGE_BYTES } from "./constants";
 import { sanitizeEntryHtml } from "./sanitize";
-import { boundarySpaceCut } from "./text";
+import { boundarySpaceCut, sameEditingPage } from "./text";
 
 const IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/gif", "image/webp"]);
 
@@ -152,7 +152,7 @@ export function pictureUndo(input: {
     saved: { before: string; after: string } | null;
     current: string;
 }): PictureUndo {
-    if (!input.saved || input.current !== input.saved.after) return "pass";
+    if (!input.saved || !sameEditingPage(input.current, input.saved.after)) return "pass";
     return "restore";
 }
 
