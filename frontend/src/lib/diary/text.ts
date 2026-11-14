@@ -155,6 +155,10 @@ export function styleUndoCaret(offset: number | null): number | null {
     return Math.floor(offset);
 }
 
+export function replacedSelectionUndo(input: { collapsed: boolean }): "place" | "keep" {
+    return input.collapsed ? "keep" : "place";
+}
+
 export function formatUndoCommand(command: string): boolean {
     return command === "bold"
         || command === "italic"
