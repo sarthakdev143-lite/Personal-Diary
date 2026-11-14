@@ -140,7 +140,9 @@ function renderBlocks(nodes: HtmlNode[]): string {
         }
 
         if (node.tag === "blockquote") {
-            const inner = renderBlocks(node.children).trim();
+            const blocks = new Set(["p", "div", "section", "article", "h1", "h2", "h3", "ul", "ol", "blockquote", "pre", "hr", "figure", "table"]);
+            const inline = node.children.every((child) => child.kind === "text" || !blocks.has(child.tag));
+            const inner = (inline ? renderInline(node.children) : renderBlocks(node.children)).trim();
             if (inner) parts.push(inner.split("\n").map((line) => `> ${line}`).join("\n"));
             continue;
         }

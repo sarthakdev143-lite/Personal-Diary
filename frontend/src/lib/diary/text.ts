@@ -214,6 +214,27 @@ export function dividerCaret(input: {
     return "stay";
 }
 
+export type QuoteEnter = "break" | "pass";
+
+export function quoteEnterKey(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    inQuote: boolean;
+    collapsed: boolean;
+    before: string;
+    after: string;
+}): QuoteEnter {
+    if (input.key !== "Enter" || input.shiftKey || input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (!input.inQuote || !input.collapsed) return "pass";
+    const before = input.before.replace(/\u00a0/g, " ");
+    const after = input.after.replace(/\u00a0/g, " ");
+    if (before.trim() && after.trim()) return "break";
+    return "pass";
+}
+
 export type QuoteLeaveKey = "leave" | "pass";
 
 export function quoteLeaveKey(input: {

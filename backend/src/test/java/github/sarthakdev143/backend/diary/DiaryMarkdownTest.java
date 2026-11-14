@@ -66,6 +66,13 @@ class DiaryMarkdownTest {
     }
 
     @Test
+    void keepsEachLineOfAQuote() {
+        assertEquals("> **Harbor**\n> **rain**", DiaryMarkdown.htmlToMarkdown(
+                "<blockquote><b>Harbor</b><br><b>rain</b></blockquote>"));
+        assertEquals("> Quiet", DiaryMarkdown.htmlToMarkdown("<blockquote>Quiet</blockquote>"));
+    }
+
+    @Test
     void keepsAnUnderline() {
         assertEquals("a <u>quiet</u> rain", DiaryMarkdown.htmlToMarkdown("<p>a <u>quiet</u> rain</p>"));
         assertEquals("a  rain", DiaryMarkdown.htmlToMarkdown("<p>a <u></u> rain</p>"));

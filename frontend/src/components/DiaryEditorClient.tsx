@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, joinNeedsSpace, lineJoinKey, listCommand, listEdgeKey, listLeaveKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, joinNeedsSpace, lineJoinKey, listCommand, listEdgeKey, listLeaveKey, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -1158,6 +1158,46 @@ function settleDivider(editor: HTMLElement) {
     paragraph.remove();
     const target = next.matches("ul, ol") ? next.querySelector("li") : next;
     if (target instanceof HTMLElement) placeCaretAtStart(target);
+}
+
+function breakQuote(quote: HTMLElement, selection: Selection) {
+    const range = selection.getRangeAt(0);
+    const nodes = textPieces(quote);
+    const offset = caretTextOffset(nodes, range.startContainer, range.startOffset);
+    if (offset === null) return;
+    const raw = nodes.map((node) => node.data).join("");
+    const cut = boundarySpaceCut(raw.slice(0, offset), raw.slice(offset));
+    const keepEnd = offset - (cut?.before ?? 0);
+    const restStart = offset + (cut?.after ?? 0);
+    const rest = document.createDocumentFragment();
+    if (restStart < raw.length) {
+        let cursor = 0;
+        let startNode = nodes[0];
+        for (const node of nodes) {
+            if (restStart < cursor + node.data.length) {
+                startNode = node;
+                break;
+            }
+            cursor += node.data.length;
+        }
+        const chain = inlineChain(startNode, quote);
+        selectTextRange(nodes, restStart, raw.length);
+        if (!selection.rangeCount || selection.isCollapsed) return;
+        const moved = selection.getRangeAt(0).extractContents();
+        while (moved.firstChild) rest.appendChild(moved.firstChild);
+        keepInlineChain(rest, chain);
+    }
+    if (cut) {
+        selectTextRange(textPieces(quote), keepEnd, restStart);
+        if (selection.rangeCount && !selection.isCollapsed) selection.getRangeAt(0).deleteContents();
+    }
+    dropEmptyMarks(quote);
+    quote.appendChild(document.createElement("br"));
+    const first = rest.firstChild;
+    while (rest.firstChild) quote.appendChild(rest.firstChild);
+    if (first instanceof HTMLElement) placeCaretAtStart(first);
+    else if (first instanceof Text) placeCaretOn(first, quote);
+    else placeCaretAtEnd(quote);
 }
 
 function leaveQuote(quote: HTMLElement) {
@@ -2794,12 +2834,39 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             collapsed: selection.isCollapsed,
             empty: text.length === 0 && !quote.querySelector("img"),
         });
-        if (action === "pass") return false;
+        if (action === "leave") {
+            e.preventDefault();
+            const before = editor.innerHTML;
+            const path = childPath(editor, quote);
+            leaveQuote(quote);
+            keepBlank({ before, after: editor.innerHTML, path });
+            setHtmlContent(editor.innerHTML);
+            return true;
+        }
+        if (e.key !== "Enter" || !selection.isCollapsed) return false;
+        if (lineBlock(anchor) !== quote) return false;
+        const nodes = textPieces(quote);
+        const range = selection.getRangeAt(0);
+        const raw = nodes.map((node) => node.data).join("");
+        const offset = caretTextOffset(nodes, range.startContainer, range.startOffset);
+        if (offset === null) return false;
+        const split = quoteEnterKey({
+            key: e.key,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            inQuote: true,
+            collapsed: true,
+            before: raw.slice(0, offset),
+            after: raw.slice(offset),
+        });
+        if (split !== "break") return false;
         e.preventDefault();
         const before = editor.innerHTML;
-        const path = childPath(editor, quote);
-        leaveQuote(quote);
-        keepBlank({ before, after: editor.innerHTML, path });
+        const quoteText = quote.textContent ?? "";
+        breakQuote(quote, selection);
+        keepSplit({ before, after: editor.innerHTML, tag: quote.tagName, text: quoteText, offset });
         setHtmlContent(editor.innerHTML);
         return true;
     };

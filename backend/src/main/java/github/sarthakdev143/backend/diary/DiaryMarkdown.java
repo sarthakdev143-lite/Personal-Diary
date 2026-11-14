@@ -134,6 +134,22 @@ public final class DiaryMarkdown {
         }
     }
 
+    private static boolean quoteIsInline(Element quote) {
+        for (Node child : quote.childNodes()) {
+            if (!(child instanceof Element element)) {
+                continue;
+            }
+            String name = element.normalName();
+            if (name.equals("p") || name.equals("div") || name.equals("section") || name.equals("article")
+                    || name.equals("h1") || name.equals("h2") || name.equals("h3")
+                    || name.equals("ul") || name.equals("ol") || name.equals("blockquote")
+                    || name.equals("pre") || name.equals("hr") || name.equals("figure") || name.equals("table")) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private static String renderBlocks(List<Node> nodes) {
         List<String> parts = new ArrayList<>();
         for (Node node : nodes) {
@@ -164,7 +180,7 @@ public final class DiaryMarkdown {
                 continue;
             }
             if (tag.equals("blockquote")) {
-                String inner = renderBlocks(element.childNodes()).trim();
+                String inner = (quoteIsInline(element) ? renderInline(element.childNodes()) : renderBlocks(element.childNodes())).trim();
                 if (!inner.isEmpty()) {
                     parts.add(inner.lines().map(line -> "> " + line).reduce((left, right) -> left + "\n" + right).orElse(""));
                 }

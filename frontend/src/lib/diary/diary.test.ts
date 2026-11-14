@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, joinNeedsSpace, laterEntryTime, lineJoinKey, listCommand, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, joinNeedsSpace, laterEntryTime, lineJoinKey, listCommand, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -238,6 +238,23 @@ describe("code block", () => {
         assert.equal(quoteLeaveKey({ ...blank, shiftKey: true }), "pass");
         assert.equal(quoteLeaveKey({ ...blank, ctrlKey: true }), "pass");
         assert.equal(headingSplitUndo({ saved: { before: "<blockquote>Quiet</blockquote><blockquote><br></blockquote>", after: "<blockquote>Quiet</blockquote><p><br></p>" }, current: "<blockquote>Quiet</blockquote><p><br></p>" }), "restore");
+    });
+
+    it("keeps a quote together when Enter is pressed between two words", () => {
+        const middle = { key: "Enter", inQuote: true, collapsed: true, before: "Harbor", after: "rain" };
+        assert.equal(quoteEnterKey(middle), "break");
+        assert.equal(quoteEnterKey({ ...middle, before: "Harbor ", after: " rain" }), "break");
+        assert.equal(quoteEnterKey({ ...middle, before: "Harbor.", after: "rain" }), "break");
+        assert.equal(quoteEnterKey({ ...middle, after: "" }), "pass");
+        assert.equal(quoteEnterKey({ ...middle, before: "", after: "rain" }), "pass");
+        assert.equal(quoteEnterKey({ ...middle, before: "  ", after: " \u00a0" }), "pass");
+        assert.equal(quoteEnterKey({ ...middle, collapsed: false }), "pass");
+        assert.equal(quoteEnterKey({ ...middle, inQuote: false }), "pass");
+        assert.equal(quoteEnterKey({ ...middle, key: "a" }), "pass");
+        assert.equal(quoteEnterKey({ ...middle, shiftKey: true }), "pass");
+        assert.equal(quoteEnterKey({ ...middle, ctrlKey: true }), "pass");
+        assert.equal(wordCount("<blockquote><b>Harbor</b><br><b>rain</b></blockquote>"), 2);
+        assert.equal(entryWritingText("<blockquote><b>Harbor</b><br><b>rain</b></blockquote>"), "Harbor rain");
     });
 
     it("keeps a space when two lines join", () => {
@@ -905,6 +922,11 @@ describe("export", () => {
         assert.match(markdown, /Hello \*\*there\*\* & welcome/);
         assert.match(markdown, /- one\n- two/);
         assert.match(markdown, /> quoted/);
+        assert.equal(
+            htmlToMarkdown("<blockquote><b>Harbor</b><br><b>rain</b></blockquote>"),
+            "> **Harbor**\n> **rain**",
+        );
+        assert.equal(htmlToMarkdown("<blockquote>Quiet</blockquote>"), "> Quiet");
         assert.match(markdown, /```\nconst a = 1;\n```/);
         assert.match(markdown, /\[site\]\(https:\/\/example.com\)/);
         assert.match(markdown, /!\[sketch\]\(image\)/);
