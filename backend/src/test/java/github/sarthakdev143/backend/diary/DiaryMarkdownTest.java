@@ -33,6 +33,13 @@ class DiaryMarkdownTest {
     }
 
     @Test
+    void keepsEachRowOfAPastedTable() {
+        String markdown = DiaryMarkdown.htmlToMarkdown(
+                "<table><tr><td>Rain</td><td>Harbor</td></tr><tr><td>Bread</td><td><b>Market</b></td></tr></table>");
+        assertTrue(markdown.contains("Rain Harbor\n\nBread **Market**"));
+    }
+
+    @Test
     void keepsPastedLinesThatWereWrappedInDivs() {
         String markdown = DiaryMarkdown.htmlToMarkdown("<div>Monday</div><div><b>Walked</b> to the harbor</div>");
         assertTrue(markdown.contains("Monday\n\n**Walked** to the harbor"));

@@ -130,6 +130,16 @@ class EntryDraftTest {
     }
 
     @Test
+    void keepsEachRowOfAPastedTable() {
+        EntryDraft draft = EntryDraft.prepare(
+                "<table><tr><th>Rain</th><th>Harbor</th></tr><tr><td>Bread</td><td><b>Market</b></td></tr></table>");
+        EntryDraft.Ready ready = assertInstanceOf(EntryDraft.Ready.class, draft);
+        assertTrue(ready.content().contains("<p>Rain Harbor</p>"));
+        assertTrue(ready.content().contains("<p>Bread <b>Market</b></p>"));
+        assertFalse(ready.content().contains("<table"));
+    }
+
+    @Test
     void keepsPastedLinesThatWereWrappedInDivs() {
         EntryDraft draft = EntryDraft.prepare("<div>Monday</div><div><b>Walked</b> to the harbor</div>");
         EntryDraft.Ready ready = assertInstanceOf(EntryDraft.Ready.class, draft);

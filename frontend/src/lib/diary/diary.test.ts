@@ -176,6 +176,14 @@ describe("code block", () => {
         assert.equal(marked.content, "<pre><code>const a = 1;\nconst b = 2;</code></pre>");
     });
 
+    it("keeps each row of a pasted table", () => {
+        const saved = prepareEntryContent("<table><tr><th>Rain</th><th>Harbor</th></tr><tr><td>Bread</td><td><b>Market</b></td></tr></table>");
+        assert.equal(saved.ok, true);
+        if (!saved.ok) return;
+        assert.equal(saved.content, "<p>Rain Harbor</p><p>Bread <b>Market</b></p>");
+        assert.equal(htmlToMarkdown(saved.content), "Rain Harbor\n\nBread **Market**");
+    });
+
     it("keeps pasted lines that were wrapped in divs", () => {
         const saved = prepareEntryContent("<div>Monday</div><div><b>Walked</b> to the harbor</div>");
         assert.equal(saved.ok, true);

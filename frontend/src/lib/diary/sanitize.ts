@@ -78,9 +78,9 @@ export function sanitizeEntryHtml(input: string): string {
 }
 
 function liftBlockLines(html: string): string {
+    let current = liftTables(html);
     const block = /<(?:p|div|section|article|h[1-3]|ul|ol|blockquote|pre|hr|figure|table)\b/i;
     const wrapper = /<(div|section|article)\b[^>]*>((?:(?!<\/?(?:div|section|article)\b)[\s\S])*)<\/\1>/gi;
-    let current = html;
     let previous = "";
     while (current !== previous) {
         previous = current;
@@ -92,6 +92,27 @@ function liftBlockLines(html: string): string {
         });
     }
     return current;
+}
+
+function liftTables(html: string): string {
+    return html.replace(/<table\b[^>]*>[\s\S]*?<\/table>/gi, (table) => {
+        const rows = [...table.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)];
+        return rows.map((row) => {
+            const cells = [...row[1].matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi)]
+                .map((cell) => tableCell(cell[1]))
+                .filter((cell) => cell.length > 0);
+            return cells.length ? `<p>${cells.join(" ")}</p>` : "";
+        }).join("");
+    });
+}
+
+function tableCell(inner: string): string {
+    let body = inner.trim();
+    const wrapped = body.match(/^<p\b[^>]*>([\s\S]*)<\/p>$/i);
+    if (wrapped) body = wrapped[1].trim();
+    body = body.replace(/<br\s*\/?>/gi, " ").replace(/\s+/g, " ").trim();
+    const visible = body.replace(/<[^>]+>/g, "").replace(/&nbsp;/gi, " ").trim();
+    return visible ? body : "";
 }
 
 function joinCodeLines(html: string): string {

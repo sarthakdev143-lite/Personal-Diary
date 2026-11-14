@@ -76,6 +76,17 @@ describe("entry paste", () => {
         assert.equal(codePasteHtml("a < b & c"), "a &lt; b &amp; c");
     });
 
+    it("keeps each row when a table is pasted", () => {
+        const decision = decideEntryPaste({
+            files: [],
+            html: "<table><tr><td>Rain</td><td>Harbor</td></tr><tr><td>Bread</td><td><b>Market</b></td></tr></table>",
+            text: "Rain\tHarbor\nBread\tMarket",
+        });
+        assert.equal(decision.action, "html");
+        if (decision.action !== "html") return;
+        assert.equal(decision.html, "<p>Rain Harbor</p><p>Bread <b>Market</b></p>");
+    });
+
     it("keeps each line when the pasted notes are wrapped in divs", () => {
         const decision = decideEntryPaste({
             files: [],
