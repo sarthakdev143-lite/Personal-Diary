@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codePullKey, dateHeadingKey, datePaste, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, codeGap, dividerCaret, hasEntryContent, joinNeedsSpace, lineJoinKey, listLeaveKey, quoteLeaveKey, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codePullKey, dateHeadingKey, datePaste, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, codeGap, dividerCaret, hasEntryContent, splitSpace, joinNeedsSpace, lineJoinKey, listLeaveKey, quoteLeaveKey, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -772,6 +772,55 @@ function joinBlock(target: HTMLElement, source: HTMLElement) {
     }
     removeJoined(source);
     placeCaretOn(start, into);
+}
+
+function textPieces(root: HTMLElement): Text[] {
+    const nodes: Text[] = [];
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    while (node) {
+        if (node instanceof Text) nodes.push(node);
+        node = walker.nextNode();
+    }
+    return nodes;
+}
+
+function caretTextOffset(nodes: Text[], container: Node, offset: number): number | null {
+    if (!(container instanceof Text)) return null;
+    let count = 0;
+    for (const node of nodes) {
+        if (node === container) return count + Math.min(offset, node.data.length);
+        count += node.data.length;
+    }
+    return null;
+}
+
+function dropBoundarySpace(block: HTMLElement, selection: Selection) {
+    const range = selection.getRangeAt(0);
+    const nodes = textPieces(block);
+    const offset = caretTextOffset(nodes, range.startContainer, range.startOffset);
+    if (offset === null) return;
+    const raw = nodes.map((node) => node.data).join("");
+    const space = (index: number) => {
+        const mark = raw[index] ?? "";
+        return mark === " " || mark === "\u00a0" || mark === "\t";
+    };
+    let start = offset;
+    let end = offset;
+    while (start > 0 && space(start - 1)) start -= 1;
+    while (end < raw.length && space(end)) end += 1;
+    let cursor = 0;
+    for (const node of nodes) {
+        const nodeStart = cursor;
+        const nodeEnd = cursor + node.data.length;
+        const cutStart = Math.max(start, nodeStart);
+        const cutEnd = Math.min(end, nodeEnd);
+        if (cutStart < cutEnd) {
+            node.data = node.data.slice(0, cutStart - nodeStart) + node.data.slice(cutEnd - nodeStart);
+        }
+        cursor = nodeEnd;
+    }
+    placeCaretAtTextOffset(block, start);
 }
 
 function settleCode(editor: HTMLElement) {
@@ -2289,6 +2338,39 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const trimSplit = (e: React.KeyboardEvent) => {
+        if (e.key !== "Enter") return false;
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection?.rangeCount || mode === "view" || !selection.isCollapsed) return false;
+        const anchor = selection.anchorNode;
+        const host = anchor instanceof Element ? anchor : anchor?.parentElement ?? null;
+        if (host?.closest("pre") || host?.closest("figcaption")) return false;
+        const block = lineBlock(anchor);
+        if (!block || !editor.contains(block)) return false;
+        const nodes = textPieces(block);
+        const range = selection.getRangeAt(0);
+        const offset = caretTextOffset(nodes, range.startContainer, range.startOffset);
+        if (offset === null) return false;
+        const raw = nodes.map((node) => node.data).join("");
+        const action = splitSpace({
+            key: e.key,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            inCode: false,
+            before: raw.slice(0, offset),
+            after: raw.slice(offset),
+        });
+        if (action !== "trim") return false;
+        e.preventDefault();
+        dropBoundarySpace(block, selection);
+        document.execCommand(e.shiftKey ? "insertLineBreak" : "insertParagraph", false);
+        setHtmlContent(editor.innerHTML);
+        return true;
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (saveEntryShortcut(e)) {
             e.preventDefault();
@@ -2313,6 +2395,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (moveAroundPicture(e)) return;
         if (pullCodeEdge(e)) return;
         if (joinLines(e)) return;
+        if (trimSplit(e)) return;
         const editor = editorRef.current;
         const selection = window.getSelection();
         const anchor = selection?.anchorNode;

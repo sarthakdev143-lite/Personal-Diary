@@ -111,6 +111,26 @@ export function joinNeedsSpace(previous: string, next: string): boolean {
     return opens && continues;
 }
 
+export type SplitSpace = "trim" | "keep";
+
+export function splitSpace(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    inCode: boolean;
+    before: string;
+    after: string;
+}): SplitSpace {
+    if (input.key !== "Enter" || input.altKey || input.ctrlKey || input.metaKey || input.inCode) return "keep";
+    const before = input.before.replace(/\u00a0/g, " ");
+    const after = input.after.replace(/\u00a0/g, " ");
+    if (!before.trim() || !after.trim()) return "keep";
+    if (/\s$/.test(before) || /^\s/.test(after)) return "trim";
+    return "keep";
+}
+
 export type CodeGap = "close" | "stay";
 
 export function codeGap(input: { emptyLine: boolean; nextBlock: boolean }): CodeGap {

@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, dateHeadingKey, datePaste, formatEntryLong, freshEntryHtml, hasEntryContent, codeGap, codePullKey, dividerCaret, joinNeedsSpace, laterEntryTime, lineJoinKey, listLeaveKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, dateHeadingKey, datePaste, formatEntryLong, freshEntryHtml, hasEntryContent, codeGap, codePullKey, dividerCaret, splitSpace, joinNeedsSpace, laterEntryTime, lineJoinKey, listLeaveKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -215,6 +215,20 @@ describe("code block", () => {
         assert.equal(joinNeedsSpace("Harbor", " rain"), false);
         assert.equal(joinNeedsSpace("", "rain"), false);
         assert.equal(joinNeedsSpace("Harbor", ""), false);
+    });
+
+    it("starts the next line on the word when Enter splits two words", () => {
+        const between = { key: "Enter", inCode: false, before: "Harbor", after: " rain keeps going" };
+        assert.equal(splitSpace(between), "trim");
+        assert.equal(splitSpace({ ...between, before: "Harbor ", after: "rain keeps going" }), "trim");
+        assert.equal(splitSpace({ ...between, before: "Harbor\u00a0", after: "rain" }), "trim");
+        assert.equal(splitSpace({ ...between, shiftKey: true }), "trim");
+        assert.equal(splitSpace({ ...between, before: "Harbor", after: "rain" }), "keep");
+        assert.equal(splitSpace({ ...between, before: "Harbor ", after: "" }), "keep");
+        assert.equal(splitSpace({ ...between, before: "", after: " rain" }), "keep");
+        assert.equal(splitSpace({ ...between, inCode: true }), "keep");
+        assert.equal(splitSpace({ ...between, key: "Backspace" }), "keep");
+        assert.equal(splitSpace({ ...between, ctrlKey: true }), "keep");
     });
 
     it("keeps the rest of a line with a divider", () => {
