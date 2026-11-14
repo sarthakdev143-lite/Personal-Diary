@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, codePullUndoCaret, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, blankUndoCaret, joinUndoCaret, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, wordGapInsert, stickyUndo, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, codePullUndoCaret, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, blankUndoCaret, joinUndoCaret, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, wordGapInsert, wordGapKey, stickyUndo, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -552,7 +552,21 @@ describe("code block", () => {
         assert.equal(wordGapInsert("before", ","), null);
         assert.equal(wordGapInsert("after", " "), null);
         assert.equal(wordGapInsert("before", " "), null);
-        assert.equal(wordGapInsert("after", "B."), null);
+        assert.deepEqual(wordGapInsert("after", "B."), { text: "B. ", caret: 2, pull: false });
+        assert.deepEqual(wordGapInsert("after", "Bay falls"), { text: "Bay falls ", caret: 9, pull: false });
+        assert.deepEqual(wordGapInsert("before", "Bay falls"), { text: " Bay falls", caret: 10, pull: false });
+        assert.deepEqual(wordGapInsert("after", "Bay,"), { text: "Bay, ", caret: 4, pull: false });
+        assert.equal(wordGapInsert("after", "Bay\nfalls"), null);
+        assert.equal(wordGapKey({ key: "Control" }), "keep");
+        assert.equal(wordGapKey({ key: "Meta" }), "keep");
+        assert.equal(wordGapKey({ key: "Shift" }), "keep");
+        assert.equal(wordGapKey({ key: "Alt" }), "clear");
+        assert.equal(wordGapKey({ key: "v", ctrlKey: true }), "keep");
+        assert.equal(wordGapKey({ key: "v", metaKey: true }), "keep");
+        assert.equal(wordGapKey({ key: "Insert", shiftKey: true }), "keep");
+        assert.equal(wordGapKey({ key: "b", ctrlKey: true }), "clear");
+        assert.equal(wordGapKey({ key: "Backspace" }), "clear");
+        assert.equal(wordGapKey({ key: "B" }), "keep");
     });
 
     it("keeps the deleted word available to undo while its replacement is typed", () => {
