@@ -415,6 +415,11 @@ export function entryToShowByStep<T extends { _id: string }>(
     return entries[step] ?? null;
 }
 
+export function entryCardQuery(entryId: string): string {
+    const escaped = entryId.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    return `button[data-entry-id="${escaped}"]`;
+}
+
 export function formatEntryLong(value: string): string {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "—";

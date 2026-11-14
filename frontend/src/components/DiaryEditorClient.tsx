@@ -13,7 +13,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryUndoBody, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryUndoBody, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
@@ -993,10 +993,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             );
             if (!next) return;
             event.preventDefault();
+            const card = document.querySelector<HTMLButtonElement>(entryCardQuery(next._id));
+            card?.focus({ preventScroll: true });
             selectEntryRef.current(next);
-            window.requestAnimationFrame(() => {
-                document.querySelector(".de-entry-card.active")?.scrollIntoView({ block: "nearest" });
-            });
+            card?.scrollIntoView({ block: "nearest" });
         };
 
         window.addEventListener("keydown", onKey);
@@ -1657,6 +1657,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                     <button
                                         key={entry._id}
                                         type="button"
+                                        data-entry-id={entry._id}
+                                        aria-current={active ? "true" : undefined}
                                         onClick={() => handleEntrySelect(entry)}
                                         className={`de-entry-card de-fade${active ? " active" : ""}`}
                                         style={{ animationDelay: `${i * 25}ms` }}
