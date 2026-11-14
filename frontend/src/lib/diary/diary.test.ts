@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
-import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryMatchesListQuery, escapeRegExp, normalizeSearchQuery } from "./search";
+import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryMatchesListQuery, entryPageAddress, escapeRegExp, normalizeSearchQuery } from "./search";
 import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
@@ -344,6 +344,14 @@ describe("search", () => {
 
         const blank = diaryListMatch(diary, [garden], " ");
         assert.equal(blank.entryId, null);
+    });
+
+    it("keeps the open entry in the address and drops it for a new entry", () => {
+        assert.equal(entryPageAddress("diary1", "garden", "view"), "/diary/diary1?entry=garden");
+        assert.equal(entryPageAddress("diary1", "garden", "edit"), "/diary/diary1?entry=garden");
+        assert.equal(entryPageAddress("diary1", "garden", "compose"), "/diary/diary1");
+        assert.equal(entryPageAddress("diary1", null, "view"), "/diary/diary1");
+        assert.equal(entryPageAddress("diary1", "a b", "view"), "/diary/diary1?entry=a%20b");
     });
 
     it("still matches a date search after the writing is saved", () => {

@@ -9,7 +9,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { DESCRIPTION_MAX, DIARY_THEMES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
 import { takeImportNotice } from "@/lib/diary/import";
 import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
-import { entryMatchesListQuery } from "@/lib/diary/search";
+import { entryMatchesListQuery, entryPageAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
@@ -144,6 +144,14 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         })();
         return () => { mounted = false; };
     }, [diaryId]);
+
+    useEffect(() => {
+        if (isLoading) return;
+        const next = entryPageAddress(diaryId, selectedEntryId, mode);
+        const current = `${window.location.pathname}${window.location.search}`;
+        if (current === next) return;
+        window.history.replaceState(window.history.state, "", next);
+    }, [isLoading, diaryId, mode, selectedEntryId]);
 
     useEffect(() => {
         if (isLoading) return;

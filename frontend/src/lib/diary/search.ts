@@ -85,6 +85,15 @@ export function diaryMatchPath(diaryId: string, entryId: string | null | undefin
     return `/diary/${diaryId}?entry=${encodeURIComponent(entryId)}`;
 }
 
+export function entryPageAddress(
+    diaryId: string,
+    entryId: string | null,
+    mode: "compose" | "view" | "edit",
+): string {
+    if (mode === "compose") return diaryMatchPath(diaryId, null);
+    return diaryMatchPath(diaryId, entryId);
+}
+
 export function buildEntrySearchFilter(userId: string, rawQuery: string): EntrySearchFilter | null {
     const query = normalizeSearchQuery(rawQuery);
     if (!query) return null;
