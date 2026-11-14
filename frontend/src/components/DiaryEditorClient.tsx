@@ -10,6 +10,7 @@ import { DESCRIPTION_MAX, DIARY_THEMES, TITLE_MAX, coverForTheme, isAllowedTheme
 import { takeImportNotice } from "@/lib/diary/import";
 import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
 import { entryMatchesListQuery } from "@/lib/diary/search";
+import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenFromLink, entryToShowAfterDelete, entryToShowByStep, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
@@ -76,6 +77,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const entryClock = useRef(new Date());
     const linkInputRef = useRef<HTMLInputElement>(null);
     const entrySearchRef = useRef<HTMLInputElement>(null);
+    const saveHintRef = useRef<HTMLSpanElement>(null);
     const linkRange = useRef<Range | null>(null);
     const discardButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -670,7 +672,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             setPendingDiscard(null);
             return;
         }
-        if ((e.ctrlKey || e.metaKey) && e.key === "s") { e.preventDefault(); handleSave(); }
+        if (saveEntryShortcut(e)) {
+            e.preventDefault();
+            void handleSave();
+        }
     };
 
     const runTool = (tool: ToolButton) => {
@@ -766,6 +771,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
     }, [mode, detailsOpen, linkOpen, confirmDelete, pendingDiscard, visibleEntries, selectedEntryId, entryQuery]);
+
+    useEffect(() => {
+        if (isLoading || !saveHintRef.current) return;
+        saveHintRef.current.textContent = `${commandKeyLabel(navigator.platform)}+s to save`;
+    }, [mode, isLoading]);
 
     if (isLoading) return (
         <div style={{ position: "fixed", inset: 0, zIndex: 10, background: "#0d0b09", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1411,7 +1421,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 {mode !== "view" && (
                                     <>
                                         <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
-                                        <span className="de-kbd-hint">ctrl+s to save</span>
+                                        <span ref={saveHintRef} className="de-kbd-hint">ctrl+s to save</span>
                                     </>
                                 )}
                                 {mode === "view" && (
