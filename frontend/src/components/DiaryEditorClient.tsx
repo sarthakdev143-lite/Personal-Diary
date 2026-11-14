@@ -483,6 +483,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const wc = wordCount(htmlContent);
     const canSave = hasEntryContent(htmlContent) && mode !== "view";
     const selectedEntry = entries.find((entry) => entry._id === selectedEntryId);
+    const statusDate = mode === "edit"
+        ? entryInstant(entryDate)?.toISOString() ?? selectedEntry?.createdAt
+        : selectedEntry?.createdAt;
+    const statusLabel = selectedEntry && statusDate && mode !== "compose"
+        ? `${mode === "edit" ? "editing" : "viewing"} · ${fmtShort(statusDate)}`
+        : null;
     const cover = coverForTheme(diary?.theme);
     const months = useMemo(() => entryMonths(entries.map((entry) => entry.createdAt)), [entries]);
     const activeMonth = months.some((month) => month.key === entryMonth) ? entryMonth : "";
@@ -746,7 +752,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         width:100%;max-height:min(280px,36vh);flex-shrink:0;
                         border-right:none;border-bottom:1px solid #1a1814;
                     }
-                    #de-editor{padding:28px 18px 48px;}
+                    #de-editor{padding:52px 18px 48px;}
                     .de-footer{padding:9px 14px;gap:8px;flex-wrap:wrap;}
                     .de-save-btn,.de-footer-actions{margin-left:auto;}
                     .de-kbd-hint{display:none;}
@@ -997,9 +1003,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
                     {/* RIGHT */}
                     <section className="de-right">
-                        {mode === "view" && selectedEntry && (
+                        {statusLabel && (
                             <div className="de-viewing-badge de-fade">
-                                {mode === "edit" ? "editing" : "viewing"} · {fmtShort(selectedEntry.createdAt)}
+                                {statusLabel}
                             </div>
                         )}
 
