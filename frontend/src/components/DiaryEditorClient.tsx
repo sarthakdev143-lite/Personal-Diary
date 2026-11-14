@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ToastAction } from "@/components/ui/toast";
 import { DESCRIPTION_MAX, DIARY_THEMES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
 import { takeImportNotice } from "@/lib/diary/import";
+import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
 import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
 import { entryMatchesListQuery, entryPageAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -107,6 +108,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const [linkError, setLinkError] = useState<string | null>(null);
     const [linkHasAnchor, setLinkHasAnchor] = useState(false);
     const [pendingDiscard, setPendingDiscard] = useState<(() => void) | null>(null);
+    const [keptDraft, setKeptDraft] = useState<EntryDraft | null>(null);
 
     useEffect(() => {
         let mounted = true;
@@ -138,6 +140,14 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     description: data.diary?.description ?? "",
                     theme: data.diary?.theme ?? "",
                 });
+                const draftKey = entryDraftKey(diaryId);
+                try {
+                    const stored = readEntryDraft(window.sessionStorage.getItem(draftKey));
+                    if (offerEntryDraft(stored, loaded)) setKeptDraft(stored);
+                    else window.sessionStorage.removeItem(draftKey);
+                } catch {
+                    setKeptDraft(null);
+                }
             } catch (e) {
                 if (mounted) setError(e instanceof Error ? e.message : "Failed to load.");
             } finally {
@@ -305,6 +315,40 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const isDirty = mode !== "view" && (htmlContent !== baseline || entryDate !== savedDate);
 
     useEffect(() => {
+        if (!isDirty) return;
+        setKeptDraft(null);
+    }, [isDirty]);
+
+    const wroteDraft = useRef(false);
+
+    useEffect(() => {
+        if (isLoading) return;
+        if (keptDraft && !isDirty) return;
+        const key = entryDraftKey(diaryId);
+        try {
+            const raw = entryDraftRecord({
+                diaryId,
+                entryId: mode === "compose" ? null : selectedEntryId,
+                content: htmlContent,
+                baseline,
+                entryDate,
+                savedDate,
+            });
+            if (raw) {
+                window.sessionStorage.setItem(key, raw);
+                wroteDraft.current = true;
+                return;
+            }
+            if (wroteDraft.current && !keptDraft) {
+                window.sessionStorage.removeItem(key);
+                wroteDraft.current = false;
+            }
+        } catch {
+            // The browser refused to keep the writing.
+        }
+    }, [isLoading, keptDraft, isDirty, diaryId, mode, selectedEntryId, htmlContent, baseline, entryDate, savedDate]);
+
+    useEffect(() => {
         if (isLoading) return;
         const notice = takeImportNotice();
         if (notice) toast(notice);
@@ -335,6 +379,41 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const run = pendingDiscard;
         setPendingDiscard(null);
         run?.();
+    };
+
+    const restoreKeptDraft = () => {
+        if (!keptDraft) return;
+        const target = restoredDraftTarget(keptDraft, entries);
+        const entry = target === "edit" ? entries.find((item) => item._id === keptDraft.entryId) : undefined;
+        if (entry) {
+            setSelectedEntryId(entry._id);
+            setMode("edit");
+            setBaseline(entry.content);
+            const created = new Date(entry.createdAt);
+            setSavedDate(calendarDate(created));
+            entryClock.current = created;
+        } else {
+            setSelectedEntryId(null);
+            setMode("compose");
+            setBaseline(keptDraft.baseline);
+            setSavedDate(keptDraft.entryDate);
+        }
+        setConfirmDelete(null);
+        setEntryDate(keptDraft.entryDate);
+        setHtmlContent(keptDraft.content);
+        setLinkOpen(false);
+        if (editorRef.current) editorRef.current.innerHTML = keptDraft.content;
+        setKeptDraft(null);
+        window.requestAnimationFrame(() => editorRef.current?.focus());
+    };
+
+    const discardKeptDraft = () => {
+        try {
+            window.sessionStorage.removeItem(entryDraftKey(diaryId));
+        } catch {
+            // The notice can still close when storage is unavailable.
+        }
+        setKeptDraft(null);
     };
 
     const rememberDate = (value: string, clock?: Date) => {
@@ -1521,6 +1600,14 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 data-enable-grammarly="false"
                             />
                         </div>
+
+                        {keptDraft && !pendingDiscard && (
+                            <div className="de-discard" role="group" aria-labelledby="kept-draft">
+                                <p id="kept-draft" style={{ margin: 0 }}>Unsaved writing was kept.</p>
+                                <button type="button" className="de-ghost-btn" onClick={restoreKeptDraft}>restore</button>
+                                <button type="button" className="de-danger-btn" onClick={discardKeptDraft}>discard</button>
+                            </div>
+                        )}
 
                         {pendingDiscard && (
                             <div className="de-discard" role="group" aria-labelledby="discard-prompt">
