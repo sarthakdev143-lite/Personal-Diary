@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
@@ -23,7 +23,6 @@ const DiaryPreview: React.FC<DiaryPreviewProps> = ({ selectedTexture }) => {
     const previewMeshesRef = useRef<PreviewMeshes | null>(null);
     const animationIdRef = useRef<number | null>(null);
     const initialTextureRef = useRef(selectedTexture);
-    const [isLoading, setIsLoading] = useState(true);
 
     const { createDiaryCover, createDiarySpine, createLighting, createPages, diaryGroup, loadTexture, scene } =
         useSetupScene(selectedTexture);
@@ -39,7 +38,15 @@ const DiaryPreview: React.FC<DiaryPreviewProps> = ({ selectedTexture }) => {
         camera.lookAt(0, 0, 0);
         cameraRef.current = camera;
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        let renderer: THREE.WebGLRenderer;
+        try {
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        } catch {
+            mountElement.style.backgroundImage = `url("${initialTextureRef.current.replace(/["\\]/g, "")}")`;
+            mountElement.style.backgroundSize = "cover";
+            mountElement.style.backgroundPosition = "center";
+            return;
+        }
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -90,7 +97,6 @@ const DiaryPreview: React.FC<DiaryPreviewProps> = ({ selectedTexture }) => {
         };
 
         animationIdRef.current = window.requestAnimationFrame(animate);
-        setIsLoading(false);
 
         return () => {
             if (animationIdRef.current !== null) {
@@ -121,13 +127,7 @@ const DiaryPreview: React.FC<DiaryPreviewProps> = ({ selectedTexture }) => {
     ]);
 
     return (
-        <div ref={mountRef} className="relative flex h-full w-full items-center justify-center">
-            {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                    <div className="text-white">Loading...</div>
-                </div>
-            )}
-        </div>
+        <div ref={mountRef} className="relative flex h-full w-full items-center justify-center" />
     );
 };
 

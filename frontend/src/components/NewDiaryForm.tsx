@@ -227,7 +227,7 @@ const NewDiaryForm = ({
                         <p className="text-sm text-gray-300">{formData.title || "Your Diary"}</p>
                     </div>
                     
-                    {selectedTexture && (
+                    {isFullScreen && selectedTexture && (
                         <div className="w-full h-full relative">
                             <DiaryPreview selectedTexture={selectedTexture} />
                         </div>
