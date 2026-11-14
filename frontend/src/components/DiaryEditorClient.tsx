@@ -1081,15 +1081,32 @@ function leaveHeading(heading: HTMLElement, selection: Selection) {
     const cut = boundarySpaceCut(raw.slice(0, offset), raw.slice(offset));
     const keepEnd = offset - (cut?.before ?? 0);
     const restStart = offset + (cut?.after ?? 0);
-    selectTextRange(nodes, restStart, raw.length);
-    if (!selection.rangeCount) return;
-    const rest = selection.getRangeAt(0).extractContents();
+    const rest = document.createDocumentFragment();
+    if (restStart < raw.length) {
+        let cursor = 0;
+        let startNode = nodes[0];
+        for (const node of nodes) {
+            if (restStart < cursor + node.data.length) {
+                startNode = node;
+                break;
+            }
+            cursor += node.data.length;
+        }
+        const chain = inlineChain(startNode, heading);
+        selectTextRange(nodes, restStart, raw.length);
+        if (!selection.rangeCount || selection.isCollapsed) return;
+        const moved = selection.getRangeAt(0).extractContents();
+        while (moved.firstChild) rest.appendChild(moved.firstChild);
+        keepInlineChain(rest, chain);
+    }
     if (cut) {
         selectTextRange(textPieces(heading), keepEnd, restStart);
-        selection.getRangeAt(0)?.deleteContents();
+        if (selection.rangeCount && !selection.isCollapsed) selection.getRangeAt(0).deleteContents();
     }
     const paragraph = document.createElement("p");
     while (rest.firstChild) paragraph.appendChild(rest.firstChild);
+    dropEmptyMarks(heading);
+    dropEmptyMarks(paragraph);
     if (!(paragraph.textContent ?? "").replace(/[\u200b\u00a0]/g, "").trim() && !paragraph.querySelector("img")) {
         paragraph.appendChild(document.createElement("br"));
     }
