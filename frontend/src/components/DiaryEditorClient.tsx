@@ -7,9 +7,9 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { DESCRIPTION_MAX, DIARY_THEMES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
-import { diaryFieldsMatch } from "@/lib/diary/search";
 import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
-import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryListSearchText, entryMonths, entrySelectionAction, entryToShowOnOpen, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
+import { entryMatchesListQuery } from "@/lib/diary/search";
+import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryMonths, entrySelectionAction, entryToShowOnOpen, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
@@ -417,8 +417,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 setEntries((prev) => placeEntry([data, ...prev]));
             }
             setEntryMonth(monthForSavedEntry(data.createdAt, entryMonth));
-            const savedText = data.plainText || entryWritingText(data.content);
-            if (!diaryFieldsMatch(savedText, "", entryQuery)) setEntryQuery("");
+            if (!entryMatchesListQuery(data, entryQuery)) setEntryQuery("");
             setSelectedEntryId(data._id);
             setMode("view");
             setConfirmDelete(null);
@@ -676,7 +675,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const activeMonth = months.some((month) => month.key === entryMonth) ? entryMonth : "";
     const visibleEntries = entries.filter((entry) =>
         entryInMonth(entry.createdAt, activeMonth)
-        && diaryFieldsMatch(entryListSearchText(entry), "", entryQuery)
+        && entryMatchesListQuery(entry, entryQuery)
     );
 
     if (isLoading) return (

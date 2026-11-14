@@ -1,4 +1,5 @@
 import { SEARCH_MAX } from "./constants";
+import { entryListSearchText } from "./text";
 
 type RegexQuery = { $regex: string; $options: "i" };
 
@@ -22,6 +23,15 @@ export function diaryFieldsMatch(title: string, description: string, rawQuery: s
     const query = normalizeSearchQuery(rawQuery).toLowerCase();
     if (!query) return true;
     return title.toLowerCase().includes(query) || description.toLowerCase().includes(query);
+}
+
+export function entryMatchesListQuery(entry: {
+    content: string;
+    plainText?: string | null;
+    createdAt: string;
+    updatedAt: string;
+}, rawQuery: string): boolean {
+    return diaryFieldsMatch(entryListSearchText(entry), "", rawQuery);
 }
 
 export function buildEntrySearchFilter(userId: string, rawQuery: string): EntrySearchFilter | null {

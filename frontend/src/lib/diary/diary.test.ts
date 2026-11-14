@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
-import { buildEntrySearchFilter, diaryFieldsMatch, escapeRegExp, normalizeSearchQuery } from "./search";
+import { buildEntrySearchFilter, diaryFieldsMatch, entryMatchesListQuery, escapeRegExp, normalizeSearchQuery } from "./search";
 import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
@@ -267,6 +267,20 @@ describe("search", () => {
         const revisedText = entryListSearchText(revised);
         assert.equal(diaryFieldsMatch(revisedText, "", "edited"), true);
         assert.equal(diaryFieldsMatch(revisedText, "", "09:30"), true);
+    });
+
+    it("still matches a date search after the writing is saved", () => {
+        const created = new Date(2026, 10, 14, 9, 30).toISOString();
+        const entry = {
+            content: "<p>Quiet rain</p>",
+            plainText: "Quiet rain",
+            createdAt: created,
+            updatedAt: created,
+        };
+        assert.equal(entryMatchesListQuery(entry, "November"), true);
+        assert.equal(entryMatchesListQuery(entry, "09:30"), true);
+        assert.equal(entryMatchesListQuery(entry, "garden"), false);
+        assert.equal(entryMatchesListQuery(entry, ""), true);
     });
 });
 
