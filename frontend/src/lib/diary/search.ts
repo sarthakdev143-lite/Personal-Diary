@@ -61,6 +61,18 @@ function matchingPiece(entry: ListedEntry, query: string): string {
     return snippet;
 }
 
+export function entryCardPreview(entry: {
+    content: string;
+    plainText?: string | null;
+    createdAt: string;
+    updatedAt: string;
+}, rawQuery: string): string {
+    const writing = entry.plainText?.trim() || entryWritingText(entry.content);
+    const query = normalizeSearchQuery(rawQuery);
+    if (!query) return writing.slice(0, 90);
+    return matchingPiece(entry, query);
+}
+
 export function diaryListMatch(
     diary: { title: string; description?: string | null },
     entries: readonly ListedEntry[],

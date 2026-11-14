@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
-import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryMatchesListQuery, entryPageAddress, escapeRegExp, normalizeSearchQuery } from "./search";
+import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchesListQuery, entryPageAddress, escapeRegExp, normalizeSearchQuery } from "./search";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, laterEntryTime, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
@@ -352,6 +352,23 @@ describe("search", () => {
         assert.equal(entryPageAddress("diary1", "garden", "compose"), "/diary/diary1");
         assert.equal(entryPageAddress("diary1", null, "view"), "/diary/diary1");
         assert.equal(entryPageAddress("diary1", "a b", "view"), "/diary/diary1?entry=a%20b");
+    });
+
+    it("shows the words that matched on the entry card", () => {
+        const created = new Date(2026, 1, 2, 18).toISOString();
+        const entry = {
+            content: `<p>${"quiet rain ".repeat(30)}the hidden lantern by the gate</p>`,
+            plainText: `${"quiet rain ".repeat(30)}the hidden lantern by the gate`,
+            createdAt: created,
+            updatedAt: created,
+        };
+        const opening = entryCardPreview(entry, "");
+        assert.equal(opening.includes("lantern"), false);
+        assert.equal(opening.startsWith("quiet rain"), true);
+        const matched = entryCardPreview(entry, "lantern");
+        assert.match(matched, /hidden lantern by the gate/);
+        assert.equal(matched.startsWith("…"), true);
+        assert.equal(entryCardPreview(entry, "   "), opening);
     });
 
     it("still matches a date search after the writing is saved", () => {

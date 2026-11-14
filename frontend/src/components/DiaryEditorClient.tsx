@@ -11,7 +11,7 @@ import { DESCRIPTION_MAX, DIARY_THEMES, TITLE_MAX, coverForTheme, isAllowedTheme
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
 import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
-import { entryMatchesListQuery, entryPageAddress } from "@/lib/diary/search";
+import { entryCardPreview, entryMatchesListQuery, entryPageAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryUndoBody, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
@@ -26,10 +26,32 @@ const fmtTime = formatEntryTime;
 const fmtLong = formatEntryLong;
 const headingFor = (iso: string) => `<h2>${fmtLong(iso)}</h2><p><br></p>`;
 
-const entryPreview = (entry: Entry) => {
-    const text = entry.plainText?.trim() || entryWritingText(entry.content);
-    return text.slice(0, 90);
-};
+function showFindMark(root: HTMLElement, query: string): HTMLElement | null {
+    const needle = query.trim();
+    if (!needle) return null;
+    const lower = needle.toLowerCase();
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    while (node) {
+        const text = node.textContent ?? "";
+        const index = text.toLowerCase().indexOf(lower);
+        if (index >= 0) {
+            const range = document.createRange();
+            range.setStart(node, index);
+            range.setEnd(node, index + needle.length);
+            const mark = document.createElement("mark");
+            mark.className = "de-find";
+            try {
+                range.surroundContents(mark);
+            } catch {
+                return null;
+            }
+            return mark;
+        }
+        node = walker.nextNode();
+    }
+    return null;
+}
 
 // Toolbar button definition
 type ToolButton = {
@@ -955,6 +977,18 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         saveHintRef.current.textContent = `${commandKeyLabel(navigator.platform)}+s to save`;
     }, [mode, isLoading]);
 
+    useLayoutEffect(() => {
+        const root = editorRef.current;
+        if (!root || isLoading || !entryOnScreen) return;
+        if (mode !== "view") {
+            if (root.querySelector("mark.de-find")) root.innerHTML = htmlContent;
+            return;
+        }
+        if (htmlContent) root.innerHTML = htmlContent;
+        const mark = showFindMark(root, entryQuery);
+        mark?.scrollIntoView({ block: "nearest" });
+    }, [isLoading, entryOnScreen, mode, htmlContent, entryQuery]);
+
     if (isLoading) return (
         <div style={{ position: "fixed", inset: 0, zIndex: 10, background: "#0d0b09", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid #4a4030", borderTopColor: "#c4a882", animation: "spin 1s linear infinite" }} />
@@ -1122,6 +1156,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 }
                 #de-editor::selection,
                 #de-editor *::selection{background:#3a3020;color:#ede5d8;}
+                #de-editor mark.de-find{background:#4a3b24;color:#f4ead8;padding:0 2px;border-radius:2px;}
 
                 /* Typography inside editor */
                 #de-editor h1{font-size:26px;font-weight:500;color:#ede5d8;margin:24px 0 12px;letter-spacing:-0.01em;line-height:1.3;}
@@ -1542,7 +1577,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         ) : (
                             visibleEntries.map((entry, i) => {
                                 const active = selectedEntryId === entry._id;
-                                const preview = entryPreview(entry);
+                                const preview = entryCardPreview(entry, entryQuery);
                                 return (
                                     <button
                                         key={entry._id}
