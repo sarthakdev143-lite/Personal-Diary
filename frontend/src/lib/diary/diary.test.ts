@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, dateHeadingKey, datePaste, formatEntryLong, freshEntryHtml, hasEntryContent, codeGap, codePullKey, dividerCaret, splitSpace, joinNeedsSpace, laterEntryTime, lineJoinKey, listLeaveKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, dateHeadingKey, datePaste, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, splitSpace, joinNeedsSpace, laterEntryTime, lineJoinKey, listLeaveKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -229,6 +229,15 @@ describe("code block", () => {
         assert.equal(splitSpace({ ...between, inCode: true }), "keep");
         assert.equal(splitSpace({ ...between, key: "Backspace" }), "keep");
         assert.equal(splitSpace({ ...between, ctrlKey: true }), "keep");
+    });
+
+    it("undo of a split line puts the space back", () => {
+        assert.deepEqual(boundarySpaceCut("Harbor", " rain"), { before: 0, after: 1 });
+        assert.deepEqual(boundarySpaceCut("Harbor ", "rain"), { before: 1, after: 0 });
+        assert.deepEqual(boundarySpaceCut("Harbor\u00a0", "rain"), { before: 1, after: 0 });
+        assert.deepEqual(boundarySpaceCut("Harbor  ", " rain"), { before: 2, after: 1 });
+        assert.equal(boundarySpaceCut("Harbor", "rain"), null);
+        assert.equal(boundarySpaceCut("Harbor ", ""), null);
     });
 
     it("keeps the rest of a line with a divider", () => {

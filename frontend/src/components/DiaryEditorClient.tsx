@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codePullKey, dateHeadingKey, datePaste, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, codeGap, dividerCaret, hasEntryContent, splitSpace, joinNeedsSpace, lineJoinKey, listLeaveKey, quoteLeaveKey, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codePullKey, dateHeadingKey, datePaste, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, splitSpace, joinNeedsSpace, lineJoinKey, listLeaveKey, quoteLeaveKey, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -795,32 +795,26 @@ function caretTextOffset(nodes: Text[], container: Node, offset: number): number
     return null;
 }
 
-function dropBoundarySpace(block: HTMLElement, selection: Selection) {
-    const range = selection.getRangeAt(0);
-    const nodes = textPieces(block);
-    const offset = caretTextOffset(nodes, range.startContainer, range.startOffset);
-    if (offset === null) return;
-    const raw = nodes.map((node) => node.data).join("");
-    const space = (index: number) => {
-        const mark = raw[index] ?? "";
-        return mark === " " || mark === "\u00a0" || mark === "\t";
-    };
-    let start = offset;
-    let end = offset;
-    while (start > 0 && space(start - 1)) start -= 1;
-    while (end < raw.length && space(end)) end += 1;
+function selectTextRange(nodes: Text[], start: number, end: number) {
+    const selection = window.getSelection();
+    if (!selection) return;
+    const range = document.createRange();
     let cursor = 0;
+    let started = false;
     for (const node of nodes) {
-        const nodeStart = cursor;
         const nodeEnd = cursor + node.data.length;
-        const cutStart = Math.max(start, nodeStart);
-        const cutEnd = Math.min(end, nodeEnd);
-        if (cutStart < cutEnd) {
-            node.data = node.data.slice(0, cutStart - nodeStart) + node.data.slice(cutEnd - nodeStart);
+        if (!started && start <= nodeEnd) {
+            range.setStart(node, Math.max(0, start - cursor));
+            started = true;
+        }
+        if (started && end <= nodeEnd) {
+            range.setEnd(node, Math.max(0, end - cursor));
+            selection.removeAllRanges();
+            selection.addRange(range);
+            return;
         }
         cursor = nodeEnd;
     }
-    placeCaretAtTextOffset(block, start);
 }
 
 function settleCode(editor: HTMLElement) {
@@ -2363,9 +2357,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             before: raw.slice(0, offset),
             after: raw.slice(offset),
         });
-        if (action !== "trim") return false;
+        const cut = boundarySpaceCut(raw.slice(0, offset), raw.slice(offset));
+        if (action !== "trim" || !cut) return false;
         e.preventDefault();
-        dropBoundarySpace(block, selection);
+        selectTextRange(nodes, offset - cut.before, offset + cut.after);
         document.execCommand(e.shiftKey ? "insertLineBreak" : "insertParagraph", false);
         setHtmlContent(editor.innerHTML);
         return true;

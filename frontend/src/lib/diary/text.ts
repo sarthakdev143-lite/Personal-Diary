@@ -131,6 +131,16 @@ export function splitSpace(input: {
     return "keep";
 }
 
+export function boundarySpaceCut(before: string, after: string): { before: number; after: number } | null {
+    if (splitSpace({ key: "Enter", inCode: false, before, after }) !== "trim") return null;
+    const left = before.replace(/\u00a0/g, " ");
+    const right = after.replace(/\u00a0/g, " ");
+    return {
+        before: left.length - left.trimEnd().length,
+        after: right.length - right.trimStart().length,
+    };
+}
+
 export type CodeGap = "close" | "stay";
 
 export function codeGap(input: { emptyLine: boolean; nextBlock: boolean }): CodeGap {
