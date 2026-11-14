@@ -171,6 +171,20 @@ export function selectionDeleteUndo(input: {
     return "place";
 }
 
+export function selectionEnterUndo(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    singleBlock: boolean;
+}): "place" | "pass" {
+    if (input.collapsed || !input.singleBlock || input.shiftKey || input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.key !== "Enter") return "pass";
+    return "place";
+}
+
 export function selectionTypeUndo(input: {
     key: string;
     altKey?: boolean;
