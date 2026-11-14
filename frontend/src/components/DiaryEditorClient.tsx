@@ -98,6 +98,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const [linkOpen, setLinkOpen] = useState(false);
     const [linkDraft, setLinkDraft] = useState("");
     const [linkError, setLinkError] = useState<string | null>(null);
+    const [linkHasAnchor, setLinkHasAnchor] = useState(false);
     const [pendingDiscard, setPendingDiscard] = useState<(() => void) | null>(null);
 
     useEffect(() => {
@@ -179,8 +180,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
     useEffect(() => {
         if (!linkOpen) return;
-        linkInputRef.current?.focus();
-    }, [linkOpen]);
+        const input = linkInputRef.current;
+        input?.focus();
+        if (linkHasAnchor) input?.select();
+    }, [linkOpen, linkHasAnchor]);
 
     useEffect(() => {
         if (!pendingDiscard) return;
@@ -493,7 +496,25 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         setLinkOpen(false);
         setLinkDraft("");
         setLinkError(null);
+        setLinkHasAnchor(false);
         linkRange.current = null;
+    };
+
+    const editorAnchor = (node: Node | null): HTMLAnchorElement | null => {
+        const editor = editorRef.current;
+        if (!node || !editor) return null;
+        const element = node instanceof Element ? node : node.parentElement;
+        const anchor = element?.closest("a");
+        if (!(anchor instanceof HTMLAnchorElement) || !editor.contains(anchor)) return null;
+        return anchor;
+    };
+
+    const rangeAnchor = (range: Range | null): HTMLAnchorElement | null => {
+        if (!range) return null;
+        const start = editorAnchor(range.startContainer);
+        const end = editorAnchor(range.endContainer);
+        if (!start || start !== end) return null;
+        return start;
     };
 
     const openLinkField = () => {
@@ -503,12 +524,23 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
         const selection = window.getSelection();
         const editor = editorRef.current;
-        linkRange.current = selection && selection.rangeCount > 0 && editor?.contains(selection.anchorNode)
+        const range = selection && selection.rangeCount > 0 && editor?.contains(selection.anchorNode)
             ? selection.getRangeAt(0).cloneRange()
             : null;
-        setLinkDraft("");
+        linkRange.current = range;
+        const href = rangeAnchor(range)?.getAttribute("href") ?? "";
+        const parsed = href ? entryLinkUrl(href) : null;
+        setLinkHasAnchor(Boolean(parsed?.ok));
+        setLinkDraft(parsed?.ok ? parsed.href : "");
         setLinkError(null);
         setLinkOpen(true);
+    };
+
+    const writeLinkChange = () => {
+        const editor = editorRef.current;
+        if (editor) setHtmlContent(editor.innerHTML);
+        updateActiveFormats();
+        closeLinkField();
     };
 
     const applyLink = (event: React.FormEvent) => {
@@ -516,6 +548,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const parsed = entryLinkUrl(linkDraft);
         if (!parsed.ok) {
             setLinkError(parsed.error);
+            return;
+        }
+        const anchor = rangeAnchor(linkRange.current);
+        if (anchor) {
+            anchor.setAttribute("href", parsed.href);
+            writeLinkChange();
             return;
         }
         const editor = editorRef.current;
@@ -526,9 +564,20 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             selection.addRange(linkRange.current);
         }
         document.execCommand("createLink", false, parsed.href);
-        if (editor) setHtmlContent(editor.innerHTML);
-        updateActiveFormats();
-        closeLinkField();
+        writeLinkChange();
+    };
+
+    const removeLink = () => {
+        const anchor = rangeAnchor(linkRange.current);
+        const parent = anchor?.parentNode;
+        if (!anchor || !parent) {
+            closeLinkField();
+            return;
+        }
+        while (anchor.firstChild) parent.insertBefore(anchor.firstChild, anchor);
+        anchor.remove();
+        parent.normalize();
+        writeLinkChange();
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -860,6 +909,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         border-right:none;border-bottom:1px solid #1a1814;
                     }
                     #de-editor{padding:52px 18px 48px;}
+                    .de-link input{flex-basis:100%;}
                     .de-footer{padding:9px 14px;gap:8px;flex-wrap:wrap;}
                     .de-discard{padding:8px 14px;}
                     .de-save-btn,.de-footer-actions{margin-left:auto;}
@@ -1073,7 +1123,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 }
                             }}
                         />
-                        <button type="submit" className="de-save-btn">add link</button>
+                        <button type="submit" className="de-save-btn">{linkHasAnchor ? "update link" : "add link"}</button>
+                        {linkHasAnchor && (
+                            <button type="button" className="de-ghost-btn" onClick={removeLink}>remove</button>
+                        )}
                         <button type="button" className="de-ghost-btn" onClick={closeLinkField}>cancel</button>
                         {linkError && <p id="entry-link-error" className="de-link-error">{linkError}</p>}
                     </form>
