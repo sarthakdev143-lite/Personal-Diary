@@ -1209,16 +1209,25 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     caption = document.createElement("figcaption");
                     picture.appendChild(caption);
                 }
-                caption.textContent = `${caption.textContent ?? ""}${e.key}`;
                 placeCaretAtEnd(caption);
+                if (!document.execCommand("insertText", false, e.key)) {
+                    caption.textContent = `${caption.textContent ?? ""}${e.key}`;
+                    placeCaretAtEnd(caption);
+                }
             } else {
-                const text = document.createTextNode(e.key);
-                image.after(text);
                 const caret = document.createRange();
-                caret.setStart(text, text.length);
+                caret.setStartAfter(image);
                 caret.collapse(true);
                 selection.removeAllRanges();
                 selection.addRange(caret);
+                if (!document.execCommand("insertText", false, e.key)) {
+                    const text = document.createTextNode(e.key);
+                    image.after(text);
+                    caret.setStart(text, text.length);
+                    caret.collapse(true);
+                    selection.removeAllRanges();
+                    selection.addRange(caret);
+                }
             }
         } else {
             const next = picture.nextElementSibling;
