@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { decideEntryPaste, imageFileIssue, imageHtml } from "@/lib/diary/paste";
+import { decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryUndoBody, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
@@ -380,6 +380,26 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
         if (decision.action === "ignore") return;
         const file = Array.from(data.files).find((item) => item.type.startsWith("image/"));
+        if (file) insertImageFile(file);
+    };
+
+    const onEditorDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+        if (![...event.dataTransfer.types].includes("Files")) return;
+        event.preventDefault();
+    };
+
+    const onEditorDrop = (event: React.DragEvent<HTMLDivElement>) => {
+        const files = Array.from(event.dataTransfer.files);
+        if (!files.length) return;
+        event.preventDefault();
+        if (mode === "view") return;
+        const decision = decideEntryDrop(files.map((file) => ({ type: file.type, size: file.size })));
+        if (decision.action === "reject") {
+            toast({ title: decision.title, description: decision.description, variant: "destructive" });
+            return;
+        }
+        if (decision.action !== "image") return;
+        const file = files.find((item) => item.type.startsWith("image/"));
         if (file) insertImageFile(file);
     };
 
@@ -1891,6 +1911,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 onMouseUp={updateActiveFormats}
                                 spellCheck={false}
                                 onPaste={onPaste}
+                                onDragOver={onEditorDragOver}
+                                onDrop={onEditorDrop}
                                 data-gramm="false"
                                 data-gramm_editor="false"
                                 data-enable-grammarly="false"

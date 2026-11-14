@@ -71,3 +71,18 @@ export function decideEntryPaste(input: {
     if (text) return { action: "plain", text };
     return { action: "ignore" };
 }
+
+export function decideEntryDrop(files: { type: string; size: number }[]): PasteDecision {
+    if (!files.length) return { action: "default" };
+    const image = files.find((file) => file.type.startsWith("image/"));
+    if (!image) {
+        return {
+            action: "reject",
+            title: "Not an image",
+            description: "Choose a PNG, JPEG, GIF, or WebP image.",
+        };
+    }
+    const issue = imageFileIssue(image);
+    if (issue) return { action: "reject", ...issue };
+    return { action: "image" };
+}

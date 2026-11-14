@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { decideEntryPaste, imageAltText, imageFileIssue, imageHtml } from "./paste";
+import { decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -77,6 +77,24 @@ describe("entry paste", () => {
             html: "",
             text: "Morning light",
         }), { action: "default" });
+    });
+
+    it("keeps a dropped picture and refuses a file that is not one", () => {
+        assert.deepEqual(decideEntryDrop([
+            { type: "text/plain", size: 12 },
+            { type: "image/webp", size: 80 },
+        ]), { action: "image" });
+        assert.deepEqual(decideEntryDrop([]), { action: "default" });
+        assert.deepEqual(decideEntryDrop([{ type: "application/pdf", size: 20 }]), {
+            action: "reject",
+            title: "Not an image",
+            description: "Choose a PNG, JPEG, GIF, or WebP image.",
+        });
+        assert.deepEqual(decideEntryDrop([{ type: "image/gif", size: MAX_IMAGE_BYTES + 1 }]), {
+            action: "reject",
+            title: "Image is too large",
+            description: "Choose an image under 150 KB.",
+        });
     });
 
     it("names a pasted picture and keeps the name out of the markup", () => {
