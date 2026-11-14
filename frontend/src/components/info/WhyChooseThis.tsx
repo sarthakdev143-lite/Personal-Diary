@@ -5,8 +5,6 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
 import { ShieldCheck, PaintBucket, Search, PenLine, Clock, Code2 } from "lucide-react";
-import Link from "next/link";
-
 const features = [
     { icon: ShieldCheck, title: "Private to you", description: "Each diary stays on your account. Other people cannot open it." },
     { icon: PenLine, title: "Rich entries", description: "Write with headings, lists, links, and images, then revise an entry later." },
@@ -58,7 +56,7 @@ const WhyChooseThis = () => {
                 Why Choose This?
             </h1>
             <p className="text-lg text-white/60 mt-2 max-w-2xl">
-                Turn your reflections into a daily habit in your own private <Link href='https://rb.gy/g4cw65' target='_blank'>journal.</Link>
+                Turn your reflections into a daily habit in your own private journal.
             </p>
 
             <div className="card-parent mt-8 flex flex-wrap justify-center gap-6 w-full max-w-5xl">
