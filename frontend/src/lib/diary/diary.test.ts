@@ -14,7 +14,7 @@ import {
 import { prepareEntryContent, presentEntry } from "./content";
 import { buildDiaryExport, diaryToMarkdown, exportFilename, htmlToMarkdown } from "./export";
 import { readJsonBody } from "./json";
-import { CONTENT_MAX, DEFAULT_DIARY_THEME, MAX_DATA_IMAGE_LENGTH } from "./constants";
+import { CONTENT_MAX, DEFAULT_DIARY_THEME, MAX_DATA_IMAGE_LENGTH, coverForTheme } from "./constants";
 
 describe("diary ids", () => {
     it("accepts a 24 character hex id", () => {
@@ -51,6 +51,12 @@ describe("diary fields", () => {
         assert.deepEqual(normalizeDescription("  notes  "), { ok: true, value: "notes" });
         const result = normalizeDescription("a".repeat(501));
         assert.equal(result.ok, false);
+    });
+
+    it("names a known cover and ignores an unknown one", () => {
+        assert.equal(coverForTheme("/textures/wooden_garage_door.webp")?.name, "Wooden Garage Door");
+        assert.equal(coverForTheme("/textures/missing.jpg"), null);
+        assert.equal(coverForTheme(null), null);
     });
 
     it("defaults a missing theme and rejects an unknown one", () => {

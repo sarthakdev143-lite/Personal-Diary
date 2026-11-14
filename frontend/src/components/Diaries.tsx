@@ -1,9 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 
+import { coverForTheme } from "@/lib/diary/constants";
 import { formatDiaryDate } from "@/lib/diary/text";
 
 type Diary = {
@@ -12,6 +14,7 @@ type Diary = {
     description: string;
     theme: string;
     createdAt: string;
+    updatedAt?: string;
 };
 
 const SKELETON_COUNT = 3;
@@ -126,23 +129,41 @@ const Diaries = ({ query = "", refetchTrigger = 0 }: { query?: string; refetchTr
 
     return (
         <>
-            {diaries.map((diary) => (
+            {diaries.map((diary) => {
+                const cover = coverForTheme(diary.theme);
+                return (
                 <Link
                     key={diary._id}
                     href={`/diary/${diary._id}`}
-                    className="flex h-36 w-full max-w-xs flex-col justify-between rounded-xl border border-white/10 bg-zinc-600/10 p-6 text-white/80 shadow-lg"
+                    className="flex h-36 w-full max-w-xs overflow-hidden rounded-xl border border-white/10 bg-zinc-600/10 text-white/80 shadow-lg"
                 >
-                    <div className="space-y-2 overflow-hidden">
-                        <h2 className="truncate text-lg font-medium text-white">{diary.title}</h2>
-                        <p className="text-sm leading-6 text-zinc-300">
-                            {truncateDescription(diary.description || "No description")}
+                    {cover ? (
+                        <span className="relative block h-full w-16 shrink-0">
+                            <Image
+                                src={cover.textureUrl}
+                                alt={cover.name}
+                                fill
+                                sizes="64px"
+                                className="object-cover"
+                            />
+                        </span>
+                    ) : (
+                        <span className="h-full w-16 shrink-0 bg-zinc-800" />
+                    )}
+                    <div className="flex min-w-0 flex-1 flex-col justify-between p-4">
+                        <div className="space-y-2 overflow-hidden">
+                            <h2 className="truncate text-lg font-medium text-white">{diary.title}</h2>
+                            <p className="line-clamp-2 text-sm leading-6 text-zinc-300">
+                                {truncateDescription(diary.description || "No description")}
+                            </p>
+                        </div>
+                        <p className="truncate text-xs tracking-wide text-zinc-400">
+                            Updated {formatDiaryDate(diary.updatedAt || diary.createdAt)}
                         </p>
                     </div>
-                    <p className="text-xs tracking-wide text-zinc-400">
-                        {formatDiaryDate(diary.createdAt)}
-                    </p>
                 </Link>
-            ))}
+                );
+            })}
         </>
     );
 };

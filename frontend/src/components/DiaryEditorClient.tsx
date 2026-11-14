@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
-import { DESCRIPTION_MAX, MAX_IMAGE_BYTES, TITLE_MAX } from "@/lib/diary/constants";
+import { DESCRIPTION_MAX, DIARY_THEMES, MAX_IMAGE_BYTES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
 import { diaryFieldsMatch } from "@/lib/diary/search";
 import { calendarDate, entryInstant, entryPlainText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, retitleEntryDate, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
@@ -88,7 +89,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const [error, setError] = useState<string | null>(null);
     const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
     const [detailsOpen, setDetailsOpen] = useState(false);
-    const [diaryDraft, setDiaryDraft] = useState({ title: "", description: "" });
+    const [diaryDraft, setDiaryDraft] = useState({ title: "", description: "", theme: "" });
     const [confirmDelete, setConfirmDelete] = useState<"entry" | "diary" | null>(null);
     const [baseline, setBaseline] = useState("");
     const [entryQuery, setEntryQuery] = useState("");
@@ -109,6 +110,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 setDiaryDraft({
                     title: data.diary?.title ?? "",
                     description: data.diary?.description ?? "",
+                    theme: data.diary?.theme ?? "",
                 });
             } catch (e) {
                 if (mounted) setError(e instanceof Error ? e.message : "Failed to load.");
@@ -348,15 +350,20 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
         setIsSavingDiary(true);
         try {
+            const payload: { title: string; description: string; theme?: string } = {
+                title: title.value,
+                description: description.value,
+            };
+            if (isAllowedTheme(diaryDraft.theme)) payload.theme = diaryDraft.theme;
             const res = await fetch(`/api/diaries/${diaryId}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title: title.value, description: description.value }),
+                body: JSON.stringify(payload),
             });
             const data = await res.json() as Diary & { error?: string };
             if (!res.ok) throw new Error(data.error || "Failed to update diary.");
             setDiary(data);
-            setDiaryDraft({ title: data.title, description: data.description });
+            setDiaryDraft({ title: data.title, description: data.description, theme: data.theme });
             setDetailsOpen(false);
             toast({ title: "Diary updated" });
         } catch (e) {
@@ -454,6 +461,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const wc = wordCount(htmlContent);
     const canSave = hasEntryContent(htmlContent) && mode !== "view";
     const selectedEntry = entries.find((entry) => entry._id === selectedEntryId);
+    const cover = coverForTheme(diary?.theme);
     const visibleEntries = entries.filter((entry) =>
         diaryFieldsMatch(entry.plainText || entryPlainText(entry.content), "", entryQuery)
     );
@@ -684,6 +692,14 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     text-transform:none;color:#ede5d8;background:#0d0b09;
                     border:1px solid #2a2520;border-radius:3px;padding:8px 10px;resize:vertical;
                 }
+                .de-covers{grid-column:1 / -1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+                .de-covers button{
+                    width:52px;height:64px;padding:0;border:1px solid #3a362e;border-radius:3px;
+                    overflow:hidden;background:#0d0b09;cursor:pointer;
+                }
+                .de-covers button[aria-pressed="true"]{border-color:#c4a882;outline:1px solid #c4a882;}
+                .de-covers img{width:100%;height:100%;object-fit:cover;display:block;}
+                .de-cover-mark{width:28px;height:36px;object-fit:cover;border-radius:2px;border:1px solid #3a362e;flex-shrink:0;}
                 .de-details-actions{grid-column:1 / -1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;color:#a79f93;font-size:12px;}
                 @media (max-width:720px){.de-details{grid-template-columns:1fr;}}
 
@@ -733,6 +749,15 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             ← back
                         </Link>
                         <div style={{ width: 1, height: 14, background: "#252018", flexShrink: 0 }} />
+                        {cover && (
+                            <Image
+                                src={cover.textureUrl}
+                                alt=""
+                                width={28}
+                                height={36}
+                                className="de-cover-mark"
+                            />
+                        )}
                         <div style={{ minWidth: 0 }}>
                             <h1 style={{ fontFamily: "'Lora',Georgia,serif", fontSize: 15, fontWeight: 500, color: "#ede5d8", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "0.01em" }}>
                                 {diary?.title || "Untitled"}
@@ -783,6 +808,19 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 onChange={(event) => setDiaryDraft((draft) => ({ ...draft, description: event.target.value }))}
                             />
                         </label>
+                        <div className="de-covers" role="group" aria-label="Cover">
+                            {DIARY_THEMES.map((theme) => (
+                                <button
+                                    key={theme.textureUrl}
+                                    type="button"
+                                    aria-label={theme.name}
+                                    aria-pressed={diaryDraft.theme === theme.textureUrl}
+                                    onClick={() => setDiaryDraft((draft) => ({ ...draft, theme: theme.textureUrl }))}
+                                >
+                                    <Image src={theme.textureUrl} alt="" width={52} height={64} />
+                                </button>
+                            ))}
+                        </div>
                         <div className="de-details-actions">
                             <button type="submit" className="de-save-btn" disabled={isSavingDiary}>
                                 {isSavingDiary ? "saving" : "save details"}

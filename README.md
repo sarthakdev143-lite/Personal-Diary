@@ -24,7 +24,7 @@ npm run lint
 
 ## What you can do
 
-- Create a diary and choose one of the built-in covers.
+- Create a diary and choose one of the built-in covers. Change that cover later from the diary details.
 - Date an entry today or on a past day.
 - Search diaries by title, description, or the text of an entry.
 - Edit or delete an entry, and rename or delete a diary.

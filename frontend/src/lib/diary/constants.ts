@@ -20,3 +20,7 @@ export const MAX_DATA_IMAGE_LENGTH = 220_000;
 export function isAllowedTheme(theme: string): boolean {
     return ALLOWED_DIARY_THEMES.includes(theme);
 }
+
+export function coverForTheme(theme: string | null | undefined) {
+    return DIARY_THEMES.find((item) => item.textureUrl === theme) ?? null;
+}
