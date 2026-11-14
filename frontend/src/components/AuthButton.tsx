@@ -1,15 +1,15 @@
 "use client";
 import { signIn, signOut, useSession } from "next-auth/react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 export function AuthButton({ pathName }: { pathName: string }) {
     const { data: session } = useSession();
     const router = useRouter();
 
     const [loading, setLoading] = useState(false);
-    const profileFigureRef = useRef<HTMLUnknownElement>(null);
 
     const handleOperation = async (operation: "signin" | "signout") => {
         try {
@@ -32,23 +32,27 @@ export function AuthButton({ pathName }: { pathName: string }) {
             {
                 session ?
                     <div className="flex justify-between flex-1 mr-3 gap-3 items-center">
-                        <figure ref={profileFigureRef} className={`flex items-center gap-3 pr-3.5 py-0.5 bg-zinc-800 hover:bg-zinc-900 transition cursor-pointer rounded-full ${pathName === '/info' ? 'max-xxs:ml-auto' : ''}`}>
+                        <Link
+                            href="/diary"
+                            aria-label={session.user?.name ? `Your diaries, ${session.user.name}` : "Your diaries"}
+                            className={`flex items-center gap-3 rounded-full bg-zinc-800 py-0.5 pr-3.5 transition hover:bg-zinc-900 ${pathName === "/info" ? "max-xxs:ml-auto" : ""}`}
+                        >
                             <Image
                                 src={profileImage}
-                                alt={session.user?.name || "User profile picture"}
+                                alt=""
                                 width={45}
                                 height={45}
                                 className="rounded-full"
                             />
                             <div className="flex flex-col overflow-hidden">
-                                <figcaption className="capitalize text-base truncate">{session.user?.name}</figcaption>
-                                <figcaption
-                                    className="text-xs text-zinc-500 max-w-36 truncate overflow-hidden"
+                                <span className="truncate text-base capitalize text-zinc-100">{session.user?.name}</span>
+                                <span
+                                    className="max-w-36 truncate overflow-hidden text-xs text-zinc-400"
                                     title={`Email: ${session.user?.email ?? "No email available"}`}>
                                     {session.user?.email}
-                                </figcaption>
+                                </span>
                             </div>
-                        </figure>
+                        </Link>
 
                         <button
                             onClick={() => handleOperation("signout")}
