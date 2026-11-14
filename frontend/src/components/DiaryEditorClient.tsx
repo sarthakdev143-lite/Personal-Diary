@@ -315,8 +315,10 @@ function typePictureName(picture: HTMLElement, image: HTMLImageElement, key: str
 function dateLineContext(editor: HTMLElement, selection: Selection, label: string): {
     where: "heading" | "after";
     heading: HTMLElement;
+    block: HTMLElement;
     atStart: boolean;
     empty: boolean;
+    followed: boolean;
 } | null {
     if (!label || !selection.rangeCount || !selection.anchorNode) return null;
     const heading = editor.firstElementChild;
@@ -324,7 +326,7 @@ function dateLineContext(editor: HTMLElement, selection: Selection, label: strin
     const text = (heading.textContent ?? "").replace(/\u00a0/g, " ");
     if (text !== label && !text.startsWith(label)) return null;
     if (heading.contains(selection.anchorNode)) {
-        return { where: "heading", heading, atStart: false, empty: false };
+        return { where: "heading", heading, block: heading, atStart: false, empty: false, followed: false };
     }
     const anchor = selection.anchorNode;
     const host = anchor instanceof Element ? anchor : anchor.parentElement;
@@ -332,11 +334,14 @@ function dateLineContext(editor: HTMLElement, selection: Selection, label: strin
     if (!(block instanceof HTMLElement) || block.previousElementSibling !== heading || !selection.isCollapsed) return null;
     const edge = captionCaret(block, selection);
     if (!edge?.atStart) return null;
+    const writing = (block.textContent ?? "").replace(/\u00a0/g, " ").trim();
     return {
         where: "after",
         heading,
+        block,
         atStart: true,
-        empty: (block.textContent ?? "").replace(/\u00a0/g, " ").trim().length === 0,
+        empty: writing.length === 0 && !block.querySelector("img"),
+        followed: block.nextElementSibling !== null,
     };
 }
 
@@ -987,6 +992,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const imageRange = useRef<Range | null>(null);
     const pictureRemoval = useRef<{ before: string; after: string } | null>(null);
     const headingSplit = useRef<{ before: string; after: string; tag: string; text: string; offset: number } | null>(null);
+    const blankLine = useRef<{ before: string; after: string } | null>(null);
     const discardButtonRef = useRef<HTMLButtonElement>(null);
 
     const [diary, setDiary] = useState<Diary | null>(null);
@@ -1144,6 +1150,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (saved && editor.innerHTML !== saved.after) pictureRemoval.current = null;
         const split = headingSplit.current;
         if (split && editor.innerHTML !== split.after) headingSplit.current = null;
+        const blank = blankLine.current;
+        if (blank && editor.innerHTML !== blank.after) blankLine.current = null;
         setHtmlContent(editor.innerHTML);
         updateActiveFormats();
     }, [updateActiveFormats]);
@@ -2167,10 +2175,20 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             where: line.where,
             atStart: line.atStart,
             empty: line.empty,
+            followed: line.followed,
         });
         if (action === "pass") return false;
         e.preventDefault();
         if (action === "hold") return true;
+        if (action === "drop") {
+            const next = line.block.nextElementSibling;
+            const before = editor.innerHTML;
+            line.block.remove();
+            if (next instanceof HTMLElement) placeCaretAtStart(next);
+            blankLine.current = { before, after: editor.innerHTML };
+            setHtmlContent(editor.innerHTML);
+            return true;
+        }
         const before = editor.innerHTML;
         const peeled = peelDateLine(line.heading, label);
         placeCaretIn(peeled.paragraph, action === "write" ? peeled.offset : 0);
@@ -2376,6 +2394,22 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const undoBlankLine = () => {
+        const editor = editorRef.current;
+        const saved = blankLine.current;
+        if (!editor || !saved || headingSplitUndo({ saved, current: editor.innerHTML }) !== "restore") {
+            if (saved && editor && editor.innerHTML !== saved.after) blankLine.current = null;
+            return false;
+        }
+        blankLine.current = null;
+        editor.innerHTML = saved.before;
+        setHtmlContent(saved.before);
+        editor.focus();
+        const line = editor.firstElementChild?.nextElementSibling;
+        if (line instanceof HTMLElement) placeCaretAtStart(line);
+        return true;
+    };
+
     const keepHeadingLine = (e: React.KeyboardEvent) => {
         if (e.key !== "Enter") return false;
         const editor = editorRef.current;
@@ -2469,7 +2503,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         document.execCommand("defaultParagraphSeparator", false, "p");
         if ((e.key === "z" || e.key === "Z") && (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) {
             const editor = editorRef.current;
-            if (editor && e.target instanceof Node && editor.contains(e.target) && (undoRemovedPicture() || undoHeadingSplit())) {
+            if (editor && e.target instanceof Node && editor.contains(e.target) && (undoRemovedPicture() || undoHeadingSplit() || undoBlankLine())) {
                 e.preventDefault();
                 return;
             }

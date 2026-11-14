@@ -275,7 +275,7 @@ export function datePaste(input: { touchesDate: boolean; onlyDate: boolean }): D
     return input.onlyDate ? "writing" : "replace-writing";
 }
 
-export type DateHeadingKey = "write" | "leave" | "hold" | "pass";
+export type DateHeadingKey = "write" | "leave" | "hold" | "drop" | "pass";
 
 export function dateHeadingKey(input: {
     key: string;
@@ -285,6 +285,7 @@ export function dateHeadingKey(input: {
     where: "heading" | "after";
     atStart?: boolean;
     empty?: boolean;
+    followed?: boolean;
 }): DateHeadingKey {
     const formatsDate = input.where === "heading"
         && (input.ctrlKey || input.metaKey)
@@ -297,6 +298,7 @@ export function dateHeadingKey(input: {
         if (input.key === "Backspace" || input.key === "Delete") return "leave";
         return "pass";
     }
+    if ((input.key === "Backspace" || input.key === "Delete") && input.atStart && input.empty && input.followed) return "drop";
     if (input.key === "Backspace" && input.atStart) return "hold";
     if (input.key === "Delete" && input.atStart && input.empty) return "hold";
     return "pass";
