@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import github.sarthakdev143.backend.diary.SessionUserFilter;
 import github.sarthakdev143.backend.model.Diary;
+import github.sarthakdev143.backend.service.DiaryMissingException;
 import github.sarthakdev143.backend.service.DiaryRejectedException;
 import github.sarthakdev143.backend.service.DiaryService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -76,5 +77,10 @@ class DiaryErrors {
     @ExceptionHandler(DiaryRejectedException.class)
     ResponseEntity<Map<String, String>> rejected(DiaryRejectedException error) {
         return ResponseEntity.badRequest().body(Map.of("error", error.getMessage()));
+    }
+
+    @ExceptionHandler(DiaryMissingException.class)
+    ResponseEntity<Map<String, String>> missing() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Diary not found"));
     }
 }
