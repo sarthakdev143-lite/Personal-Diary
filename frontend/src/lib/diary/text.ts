@@ -545,6 +545,11 @@ export function codePullKey(input: {
     return "pass";
 }
 
+export function codePullUndoCaret(offset: number | null): number | null {
+    if (offset === null || !Number.isFinite(offset) || offset < 0) return null;
+    return Math.floor(offset);
+}
+
 export type CodeLineKey = "newline" | "leave" | "pass";
 
 export function codeLineKey(input: {
