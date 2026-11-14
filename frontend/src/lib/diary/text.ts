@@ -117,7 +117,9 @@ export function breakJoinKey(input: {
     collapsed: boolean;
     atBreak: "before" | "after" | "none";
 }): BreakJoin {
-    if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey || !input.collapsed) return "pass";
+    if (input.shiftKey || input.altKey || !input.collapsed) return "pass";
+    const atEdge = (input.key === "Backspace" && input.atBreak === "after") || (input.key === "Delete" && input.atBreak === "before");
+    if ((input.ctrlKey || input.metaKey) && !atEdge) return "pass";
     if (input.key === "Backspace" && input.atBreak === "after") return "join";
     if (input.key === "Delete" && input.atBreak === "before") return "join";
     return "pass";

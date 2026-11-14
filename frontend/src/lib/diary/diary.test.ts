@@ -294,7 +294,10 @@ describe("code block", () => {
         assert.equal(breakJoinKey({ ...nextLine, atBreak: "none" }), "pass");
         assert.equal(breakJoinKey({ ...nextLine, collapsed: false }), "pass");
         assert.equal(breakJoinKey({ ...nextLine, shiftKey: true }), "pass");
-        assert.equal(breakJoinKey({ ...nextLine, ctrlKey: true }), "pass");
+        assert.equal(breakJoinKey({ ...nextLine, ctrlKey: true }), "join");
+        assert.equal(breakJoinKey({ ...nextLine, metaKey: true }), "join");
+        assert.equal(breakJoinKey({ ...nextLine, ctrlKey: true, atBreak: "none" }), "pass");
+        assert.equal(breakJoinKey({ ...nextLine, key: "Delete", atBreak: "before", ctrlKey: true }), "join");
         assert.equal(joinNeedsSpace("Harbor", "rain today"), true);
         assert.equal(joinNeedsSpace("Harbor ", "rain today"), false);
         assert.equal(joinNeedsSpace("Harbor", " rain today"), false);
