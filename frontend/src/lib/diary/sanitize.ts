@@ -1,6 +1,7 @@
 import sanitizeHtml from "sanitize-html";
 
 import { MAX_DATA_IMAGE_LENGTH } from "./constants";
+import { separateGluedDateHeading } from "./text";
 
 const DATA_IMAGE = /^data:image\/(png|jpeg|gif|webp);base64,[a-z0-9+/=\s]+$/i;
 
@@ -73,7 +74,7 @@ export function sanitizeEntryHtml(input: string): string {
         },
         exclusiveFilter: (frame) => frame.tag === "img" && !frame.attribs.src,
     });
-    return alignPictureCaptions(clean).trim();
+    return separateGluedDateHeading(alignPictureCaptions(clean).trim());
 }
 
 function alignPictureCaptions(html: string): string {

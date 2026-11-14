@@ -65,6 +65,21 @@ class EntryDraftTest {
     }
 
     @Test
+    void keepsWritingOffTheDateHeading() {
+        EntryDraft draft = EntryDraft.prepare("<h2>Saturday, November 14, 2026Kept</h2>");
+        EntryDraft.Ready ready = assertInstanceOf(EntryDraft.Ready.class, draft);
+        assertEquals("Kept", ready.plainText());
+        assertTrue(ready.content().contains("<h2>Saturday, November 14, 2026</h2>"));
+        assertTrue(ready.content().contains("<p>Kept</p>"));
+        assertFalse(ready.content().contains("2026Kept"));
+
+        EntryDraft own = EntryDraft.prepare("<h2>Notaday, November 14, 2026</h2><p>Kept</p>");
+        EntryDraft.Ready kept = assertInstanceOf(EntryDraft.Ready.class, own);
+        assertTrue(kept.content().contains("<h2>Notaday, November 14, 2026</h2>"));
+        assertEquals("Notaday, November 14, 2026 Kept", kept.plainText());
+    }
+
+    @Test
     void usesTheCaptionWhenAPictureIsRenamed() {
         EntryDraft renamed = EntryDraft.prepare(
                 "<figure><img src=\"https://example.com/sunset.png\" alt=\"Harbor\"><figcaption>Bay</figcaption></figure>");

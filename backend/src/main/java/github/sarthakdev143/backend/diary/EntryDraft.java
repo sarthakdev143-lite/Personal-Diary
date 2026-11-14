@@ -29,7 +29,7 @@ public sealed interface EntryDraft permits EntryDraft.Ready, EntryDraft.Rejected
         document.outputSettings().prettyPrint(false);
         document.select("img").forEach(EntryDraft::keepSafeImage);
         PictureCaptions.align(document);
-        String content = document.body().html().trim();
+        String content = EntryWhen.separateGluedDateHeading(document.body().html().trim());
         if (content.length() > CONTENT_MAX) {
             return new Rejected("Entry is too large. Use fewer or smaller images.");
         }

@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryUndoBody, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, dateHeadingKey, entryUndoBody, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -310,6 +310,68 @@ function typePictureName(picture: HTMLElement, image: HTMLImageElement, key: str
         const text = document.createTextNode(key);
         image.after(text);
     }
+}
+
+function dateLineContext(editor: HTMLElement, selection: Selection, label: string): {
+    where: "heading" | "after";
+    heading: HTMLElement;
+    atStart: boolean;
+    empty: boolean;
+} | null {
+    if (!label || !selection.rangeCount || !selection.anchorNode) return null;
+    const heading = editor.firstElementChild;
+    if (!(heading instanceof HTMLElement) || heading.tagName !== "H2") return null;
+    const text = (heading.textContent ?? "").replace(/\u00a0/g, " ");
+    if (text !== label && !text.startsWith(label)) return null;
+    if (heading.contains(selection.anchorNode)) {
+        return { where: "heading", heading, atStart: false, empty: false };
+    }
+    const anchor = selection.anchorNode;
+    const host = anchor instanceof Element ? anchor : anchor.parentElement;
+    const block = host?.closest("p, h1, h2, h3, li, blockquote, pre");
+    if (!(block instanceof HTMLElement) || block.previousElementSibling !== heading || !selection.isCollapsed) return null;
+    const edge = captionCaret(block, selection);
+    if (!edge?.atStart) return null;
+    return {
+        where: "after",
+        heading,
+        atStart: true,
+        empty: (block.textContent ?? "").replace(/\u00a0/g, " ").trim().length === 0,
+    };
+}
+
+function writingLineAfter(heading: HTMLElement): HTMLElement {
+    const next = heading.nextElementSibling;
+    if (next instanceof HTMLElement && next.tagName === "P") return next;
+    const paragraph = document.createElement("p");
+    paragraph.appendChild(document.createElement("br"));
+    heading.after(paragraph);
+    return paragraph;
+}
+
+function peelDateLine(heading: HTMLElement, label: string): { paragraph: HTMLElement; offset: number } {
+    const text = (heading.textContent ?? "").replace(/\u00a0/g, " ");
+    const extra = text.startsWith(label) && text !== label ? text.slice(label.length).trim() : "";
+    if (text !== label) heading.textContent = label;
+    const paragraph = writingLineAfter(heading);
+    if (!extra) return { paragraph, offset: 0 };
+    const current = (paragraph.textContent ?? "").replace(/\u00a0/g, " ").trim();
+    paragraph.textContent = current ? `${extra} ${current}` : extra;
+    return { paragraph, offset: extra.length };
+}
+
+function placeCaretIn(paragraph: HTMLElement, offset: number) {
+    if (offset <= 0 || !(paragraph.firstChild instanceof Text)) {
+        placeCaretAtStart(paragraph);
+        return;
+    }
+    const text = paragraph.firstChild;
+    const caret = document.createRange();
+    caret.setStart(text, Math.min(offset, text.length));
+    caret.collapse(true);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(caret);
 }
 
 function placeCaretAtStart(node: HTMLElement) {
@@ -765,9 +827,18 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             if (!editor) return;
             const current = editor.querySelector("img.de-selected");
             const selection = window.getSelection();
-            if (mode !== "view" && selection) {
+            if (mode !== "view" && selection?.isCollapsed) {
                 const stranded = caretInsidePicture(editor, selection);
                 if (stranded) selectPictureImage(stranded);
+                const instant = instantFor(entryDate);
+                const label = instant ? fmtLong(instant.toISOString()) : "";
+                const line = dateLineContext(editor, selection, label);
+                if (line?.where === "heading") {
+                    const before = editor.innerHTML;
+                    const peeled = peelDateLine(line.heading, label);
+                    placeCaretIn(peeled.paragraph, 0);
+                    if (editor.innerHTML !== before) setHtmlContent(editor.innerHTML);
+                }
             }
             const image = selection ? selectedImage(editor, selection) : null;
             if (pictureSelectionMark({ editing: mode !== "view", imageSelected: Boolean(image) }) !== "selected" || !image) {
@@ -780,7 +851,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         document.addEventListener("selectionchange", markSelectedPicture);
         markSelectedPicture();
         return () => document.removeEventListener("selectionchange", markSelectedPicture);
-    }, [mode]);
+    }, [mode, entryDate]);
 
     useEffect(() => {
         if (!isDirty) return;
@@ -1462,6 +1533,38 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const keepDateLine = (e: React.KeyboardEvent) => {
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection || mode === "view") return false;
+        const instant = instantFor(entryDate);
+        const label = instant ? fmtLong(instant.toISOString()) : "";
+        const line = dateLineContext(editor, selection, label);
+        if (!line) return false;
+        const action = dateHeadingKey({
+            key: e.key,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            where: line.where,
+            atStart: line.atStart,
+            empty: line.empty,
+        });
+        if (action === "pass") return false;
+        e.preventDefault();
+        if (action === "hold") return true;
+        const before = editor.innerHTML;
+        const peeled = peelDateLine(line.heading, label);
+        placeCaretIn(peeled.paragraph, action === "write" ? peeled.offset : 0);
+        if (action === "write" && e.key.length === 1 && !document.execCommand("insertText", false, e.key)) {
+            const text = peeled.paragraph.textContent ?? "";
+            peeled.paragraph.textContent = `${text.slice(0, peeled.offset)}${e.key}${text.slice(peeled.offset)}`;
+            placeCaretIn(peeled.paragraph, peeled.offset + 1);
+        }
+        if (editor.innerHTML !== before) setHtmlContent(editor.innerHTML);
+        return true;
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (saveEntryShortcut(e)) {
             e.preventDefault();
@@ -1476,6 +1579,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 return;
             }
         }
+        if (keepDateLine(e)) return;
         if (editSelectedPicture(e)) return;
         if (keepPictureNameApart(e)) return;
         if (moveAroundPicture(e)) return;

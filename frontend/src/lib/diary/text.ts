@@ -39,24 +39,55 @@ const MONTH_INDEX = new Map([
     ["December", 11],
 ]);
 
-export function withoutGeneratedDateHeading(html: string): string {
-    const match = /^<h2>([A-Za-z]+, [A-Za-z]+ \d{1,2}, \d{4})<\/h2>/.exec(html);
-    if (!match) return html;
-
-    const label = match[1];
+function isGeneratedDateLabel(label: string): boolean {
     const parts = /^[A-Za-z]+, ([A-Za-z]+) (\d{1,2}), (\d{4})$/.exec(label);
-    if (!parts) return html;
+    if (!parts) return false;
 
     const month = MONTH_INDEX.get(parts[1]);
-    if (month === undefined) return html;
+    if (month === undefined) return false;
 
     const day = Number(parts[2]);
     const year = Number(parts[3]);
     const local = new Date(year, month, day);
-    if (local.getFullYear() !== year || local.getMonth() !== month || local.getDate() !== day) return html;
-    if (formatEntryLong(local.toISOString()) !== label) return html;
+    if (local.getFullYear() !== year || local.getMonth() !== month || local.getDate() !== day) return false;
+    return formatEntryLong(local.toISOString()) === label;
+}
 
+export function withoutGeneratedDateHeading(html: string): string {
+    const match = /^<h2>([A-Za-z]+, [A-Za-z]+ \d{1,2}, \d{4})<\/h2>/.exec(html);
+    if (!match || !isGeneratedDateLabel(match[1])) return html;
     return html.slice(match[0].length);
+}
+
+export function separateGluedDateHeading(html: string): string {
+    const match = /^<h2>([A-Za-z]+, [A-Za-z]+ \d{1,2}, \d{4})([\s\S]*?)<\/h2>/.exec(html);
+    if (!match || !isGeneratedDateLabel(match[1])) return html;
+    const extra = decodeEntryText((match[2] ?? "").replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
+    if (!extra) return html;
+    const escaped = extra.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return `<h2>${match[1]}</h2><p>${escaped}</p>${html.slice(match[0].length)}`;
+}
+
+export type DateHeadingKey = "write" | "leave" | "hold" | "pass";
+
+export function dateHeadingKey(input: {
+    key: string;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    where: "heading" | "after";
+    atStart?: boolean;
+    empty?: boolean;
+}): DateHeadingKey {
+    if (input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.where === "heading") {
+        if (input.key.length === 1 || input.key === "Enter") return "write";
+        if (input.key === "Backspace" || input.key === "Delete") return "leave";
+        return "pass";
+    }
+    if (input.key === "Backspace" && input.atStart) return "hold";
+    if (input.key === "Delete" && input.atStart && input.empty) return "hold";
+    return "pass";
 }
 
 export function entryWritingText(html: string): string {

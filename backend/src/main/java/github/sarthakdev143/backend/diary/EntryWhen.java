@@ -15,6 +15,8 @@ public final class EntryWhen {
     public static final long DAY_MS = 86_400_000L;
     public static final long REVISION_GAP_MS = 2_000L;
     private static final Pattern DATE_HEADING = Pattern.compile("^<h2>([A-Za-z]+, [A-Za-z]+ \\d{1,2}, \\d{4})</h2>");
+    private static final Pattern GLUED_DATE_HEADING = Pattern.compile(
+            "^<h2>([A-Za-z]+, [A-Za-z]+ \\d{1,2}, \\d{4})([\\s\\S]*?)</h2>");
     private static final DateTimeFormatter LONG_DATE = DateTimeFormatter.ofPattern("EEEE, MMMM d, uuuu", Locale.US)
             .withResolverStyle(ResolverStyle.STRICT);
 
@@ -102,18 +104,44 @@ public final class EntryWhen {
             return "";
         }
         Matcher match = DATE_HEADING.matcher(html);
-        if (!match.find()) {
-            return html;
-        }
-        String label = match.group(1);
-        try {
-            LocalDate parsed = LocalDate.parse(label, LONG_DATE);
-            if (!LONG_DATE.format(parsed).equals(label)) {
-                return html;
-            }
-        } catch (DateTimeException error) {
+        if (!match.find() || !isGeneratedDateLabel(match.group(1))) {
             return html;
         }
         return html.substring(match.end());
+    }
+
+    public static String separateGluedDateHeading(String html) {
+        if (html == null || html.isEmpty()) {
+            return html == null ? "" : html;
+        }
+        Matcher match = GLUED_DATE_HEADING.matcher(html);
+        if (!match.find() || !isGeneratedDateLabel(match.group(1))) {
+            return html;
+        }
+        String extra = decodeHeadingText(match.group(2).replaceAll("<[^>]+>", " ")).replaceAll("\\s+", " ").trim();
+        if (extra.isEmpty()) {
+            return html;
+        }
+        String escaped = extra.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+        return "<h2>" + match.group(1) + "</h2><p>" + escaped + "</p>" + html.substring(match.end());
+    }
+
+    private static String decodeHeadingText(String value) {
+        return value.replace("&nbsp;", " ")
+                .replace("&amp;", "&")
+                .replace("&lt;", "<")
+                .replace("&gt;", ">")
+                .replace("&quot;", "\"")
+                .replace("&#39;", "'")
+                .replace("&apos;", "'");
+    }
+
+    private static boolean isGeneratedDateLabel(String label) {
+        try {
+            LocalDate parsed = LocalDate.parse(label, LONG_DATE);
+            return LONG_DATE.format(parsed).equals(label);
+        } catch (DateTimeException error) {
+            return false;
+        }
     }
 }

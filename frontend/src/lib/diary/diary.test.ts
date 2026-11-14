@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, freshEntryHtml, hasEntryContent, laterEntryTime, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, dateHeadingKey, formatEntryLong, freshEntryHtml, hasEntryContent, laterEntryTime, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -118,6 +118,20 @@ describe("blank entry", () => {
         const written = new Date(2026, 10, 14, 15, 4);
         const html = freshEntryHtml(written.toISOString());
         assert.equal(html, `<h2>${formatEntryLong(written.toISOString())}</h2><p><br></p>`);
+        const label = formatEntryLong(written.toISOString());
+        assert.equal(separateGluedDateHeading(`<h2>${label}Kept</h2>`), `<h2>${label}</h2><p>Kept</p>`);
+        assert.equal(separateGluedDateHeading(`<h2>${label}</h2><p>Hello</p>`), `<h2>${label}</h2><p>Hello</p>`);
+        assert.equal(separateGluedDateHeading("<h2>Notaday, November 14, 2026</h2><p>Kept</p>"), "<h2>Notaday, November 14, 2026</h2><p>Kept</p>");
+        const plain = { altKey: false, ctrlKey: false, metaKey: false };
+        assert.equal(dateHeadingKey({ ...plain, key: "K", where: "heading" }), "write");
+        assert.equal(dateHeadingKey({ ...plain, key: "Enter", where: "heading" }), "write");
+        assert.equal(dateHeadingKey({ ...plain, key: "Backspace", where: "heading" }), "leave");
+        assert.equal(dateHeadingKey({ ...plain, key: "Delete", where: "heading" }), "leave");
+        assert.equal(dateHeadingKey({ ...plain, key: "Backspace", where: "after", atStart: true }), "hold");
+        assert.equal(dateHeadingKey({ ...plain, key: "Delete", where: "after", atStart: true, empty: true }), "hold");
+        assert.equal(dateHeadingKey({ ...plain, key: "Delete", where: "after", atStart: true, empty: false }), "pass");
+        assert.equal(dateHeadingKey({ ...plain, key: "Backspace", where: "after", atStart: false }), "pass");
+        assert.equal(dateHeadingKey({ ...plain, key: "k", ctrlKey: true, where: "heading" }), "pass");
         assert.equal(hasEntryContent(html), false);
     });
 });
