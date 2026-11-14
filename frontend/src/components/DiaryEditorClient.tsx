@@ -63,7 +63,7 @@ const TOOLBAR: ToolButton[][] = [
     ],
     [
         { icon: "🖼", title: "Insert image", kind: "image" },
-        { icon: "⬛", title: "Code block", html: "<pre><code>code here</code></pre><p><br></p>" },
+        { icon: "</>", title: "Code block", html: "<pre><code>code here</code></pre><p><br></p>" },
         { icon: "🔗", title: "Insert link", kind: "link" },
     ],
     [
