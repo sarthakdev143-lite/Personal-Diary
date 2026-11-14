@@ -24,7 +24,7 @@ interface FeatureCardProps {
 
 const FeatureCard = ({ icon: Icon, title, description }: FeatureCardProps) => {
     return (
-        <div className="feature-card p-6 rounded-xl bg-slate-100/5 mix-blend-difference shadow-lg flex flex-col items-center text-white/80 max-w-xs group border border-white/10 hover:border-white/30 transition-[border]">
+        <div className="feature-card p-6 rounded-xl bg-white/5 shadow-lg flex flex-col items-center text-white/80 max-w-xs group border border-white/10 hover:border-white/30 transition-[border]">
             <div className="p-3 rounded-lg bg-white/10 mb-3 group-hover:bg-white/15 transition-[border] border border-white/10 group-hover:border-white/30">
                 <Icon width={35} height={35} className="text-white/90" />
             </div>
@@ -53,8 +53,8 @@ const WhyChooseThis = () => {
     }, []);
 
     return (
-        <section id="features" className="w-full min-h-screen max-sm:pb-32 flex flex-col items-center justify-center px-6 text-center">
-            <h1 className="text-4xl font-bold text-white/80 mix-blend-difference italic">
+        <section id="features" className="relative z-10 flex min-h-screen w-full flex-col items-center justify-center bg-zinc-950 px-6 py-24 text-center max-sm:pb-32">
+            <h1 className="text-4xl font-bold text-white/80 italic">
                 Why Choose This?
             </h1>
             <p className="text-lg text-white/60 mt-2 max-w-2xl">
