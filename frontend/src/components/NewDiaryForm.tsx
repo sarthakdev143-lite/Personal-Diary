@@ -43,8 +43,16 @@ const NewDiaryForm = ({
 
     useEffect(() => {
         if (!formActive) return;
-        document.getElementById("diary-title")?.focus();
-    }, [formActive]);
+        if (!isFullScreen) {
+            document.getElementById("diary-title")?.focus();
+            return;
+        }
+
+        const frame = requestAnimationFrame(() => {
+            document.querySelector<HTMLButtonElement>('#themes button[aria-pressed="true"]')?.focus();
+        });
+        return () => cancelAnimationFrame(frame);
+    }, [formActive, isFullScreen]);
 
     useGSAP(() => {
         gsap.to("#form-parent", {
@@ -261,7 +269,7 @@ const NewDiaryForm = ({
                                 key={index} 
                                 aria-label={elem.name}
                                 aria-pressed={selectedTexture === elem.textureUrl}
-                                className={`w-20 aspect-square bg-gray-400/30 rounded-lg overflow-hidden border-2 border-gray-600 transition-all duration-200 hover:scale-105 hover:border-gray-400 ${
+                                className={`w-20 aspect-square bg-gray-400/30 rounded-lg overflow-hidden border-2 border-gray-600 transition-all duration-200 hover:scale-105 hover:border-gray-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
                                     selectedTexture === elem.textureUrl 
                                         ? 'ring-2 ring-white' 
                                         : ''

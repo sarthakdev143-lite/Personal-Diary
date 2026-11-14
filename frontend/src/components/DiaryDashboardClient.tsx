@@ -22,11 +22,15 @@ const DiaryDashboardClient = () => {
     const [debouncedQuery, setDebouncedQuery] = useState("");
     const [isImporting, setIsImporting] = useState(false);
     const queryRef = useRef(query);
+    const formActiveRef = useRef(newDiaryFormActive);
+    const fullScreenRef = useRef(isFullScreen);
     const importInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         queryRef.current = query;
-    }, [query]);
+        formActiveRef.current = newDiaryFormActive;
+        fullScreenRef.current = isFullScreen;
+    }, [query, newDiaryFormActive, isFullScreen]);
 
     useEffect(() => {
         const timeout = window.setTimeout(() => setDebouncedQuery(query), 250);
@@ -34,10 +38,14 @@ const DiaryDashboardClient = () => {
     }, [query]);
 
     useEffect(() => {
+        if (window.matchMedia("(max-width: 767px)").matches) return;
         searchInputRef.current?.focus();
+    }, []);
 
+    useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.ctrlKey && event.key.toLowerCase() === "i") {
+                if (formActiveRef.current || fullScreenRef.current) return;
                 event.preventDefault();
                 searchInputRef.current?.focus();
             }
@@ -46,7 +54,7 @@ const DiaryDashboardClient = () => {
         const handleFormClose = (event: KeyboardEvent) => {
             if (event.key.toLowerCase() !== "escape") return;
 
-            if (isFullScreen) {
+            if (fullScreenRef.current) {
                 setIsFullScreen(false);
                 return;
             }
@@ -66,7 +74,7 @@ const DiaryDashboardClient = () => {
             window.removeEventListener("keydown", handleFormClose);
             window.removeEventListener("keydown", handleKeyDown);
         };
-    }, [isFullScreen]);
+    }, []);
 
     const importBackup = async (file: File | undefined) => {
         if (!file || isImporting) return;
