@@ -3,14 +3,11 @@
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useDiary } from "@/context/DiaryContext";
 import { useDiaryScene } from "@/context/useDiaryScene";
 import { disposeThreeObject, useSetupScene } from "@/hooks/diary3d/useSetupScene";
-
-import { Button } from "./ui/button";
 
 interface Diary3DProps {
     selectedTexture: string | null;
@@ -180,26 +177,16 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
                 title="Drag to interact with the diary"
                 onTouchStart={handleTouchStart}
             >
-                <div className="absolute bottom-20 left-1/2 flex -translate-x-1/2 gap-4">
+                <div className="absolute bottom-20 left-1/2 z-20 flex -translate-x-1/2">
                     <button
                         onClick={toggleDiary}
                         disabled={isAnimating}
-                        className={`select-none rounded-md bg-slate-800 bg-opacity-40 px-4 py-2 font-sans text-gray-300 transition-opacity duration-300 ${
-                            isAnimating ? "cursor-not-allowed opacity-50" : "hover:bg-opacity-50"
+                        className={`select-none rounded-md border border-white/30 bg-zinc-950/90 px-4 py-2 font-sans text-sm text-zinc-50 shadow-lg ${
+                            isAnimating ? "cursor-not-allowed opacity-50" : "hover:bg-zinc-800"
                         }`}
                     >
                         {isOpened ? "Close Diary" : "Open Diary"}
                     </button>
-                    <Button
-                        asChild
-                        disabled={isAnimating}
-                        size="lg"
-                        className={`cursor-pointer rounded-md bg-slate-800 bg-opacity-40 px-4 py-2 font-sans font-normal tracking-wide text-gray-300 transition-all duration-300 ${
-                            isAnimating ? "cursor-not-allowed opacity-50" : "hover:bg-opacity-50"
-                        }`}
-                    >
-                        <Link href="/diary">Start Writing</Link>
-                    </Button>
                 </div>
             </div>
         </div>

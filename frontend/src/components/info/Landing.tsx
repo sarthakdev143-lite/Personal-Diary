@@ -1,35 +1,49 @@
-import { Button } from "@/components/ui/button";
+"use client";
+
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 
+import { Button } from "@/components/ui/button";
+
 const Landing = () => {
+    const { status } = useSession();
+    const startHref = status === "authenticated" ? "/diary" : "/login";
+    const startReady = status !== "loading";
+
     return (
         <section
-            className="w-full min-h-screen flex flex-col items-center justify-center select-none"
+            className="flex w-full flex-col items-center justify-center select-none"
             style={{ textShadow: "0px 4px 12px rgba(0,0,0,0.2)" }}
         >
-            <h1 className="text-4xl max-xxs:text-3xl font-bold text-center text-white/80 mix-blend-difference italic">
+            <h1 className="text-center text-4xl font-bold italic text-white max-xxs:text-3xl">
                 Your Private Digital Diary. Safe, Secure, and Serene
             </h1>
-            <p className="text-lg max-xxs:text-base text-center text-white/60 mix-blend-difference mt-2">
+            <p className="mt-2 text-center text-lg text-zinc-300 max-xxs:text-base">
                 Scribble your thoughts, ideas, and todos in a clean and minimal interface.
             </p>
 
-            <div className="mt-4 flex gap-2 max-xxs:flex-col max-xxs:gap-3">
-                <Button
-                    className="pointer-events-auto mix-blend-difference bg-white/80 text-black transition-all duration-300 
-                               text-md font-semibold rounded-sm hover:-translate-y-1 hover:bg-white/75 hover:shadow-lg 
-                               hover:shadow-white/15 hover:text-black/90 hover:rounded-md hover:scale-x-100 scale-x-95"
-                    size={'lg'}
-                    asChild
-                >
-                    <Link href='/login'>
+            <div className="mt-6 flex gap-2 max-xxs:flex-col max-xxs:gap-3">
+                {startReady ? (
+                    <Button
+                        className="pointer-events-auto rounded-md bg-white text-base font-semibold text-zinc-950 hover:bg-zinc-200"
+                        size={'lg'}
+                        asChild
+                    >
+                        <Link href={startHref}>
+                            Start Writing
+                        </Link>
+                    </Button>
+                ) : (
+                    <Button
+                        className="pointer-events-auto rounded-md bg-white text-base font-semibold text-zinc-950"
+                        size={'lg'}
+                        disabled
+                    >
                         Start Writing
-                    </Link>
-                </Button>
+                    </Button>
+                )}
                 <Button
-                    className="pointer-events-auto mix-blend-difference border border-white/70 text-white/80 transition-all 
-                               duration-300 text-md font-semibold rounded-sm hover:-translate-y-1 bg-transparent hover:bg-white/15 
-                               hover:shadow-lg hover:shadow-white/15 hover:text-white hover:rounded-md hover:scale-x-100 scale-x-95"
+                    className="pointer-events-auto rounded-md border border-white/70 bg-transparent text-base font-semibold text-white hover:bg-white/10"
                     size={'lg'}
                     asChild
                 >
