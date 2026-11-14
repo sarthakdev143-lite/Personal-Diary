@@ -1,5 +1,5 @@
 import { SEARCH_MAX } from "./constants";
-import { entryListSearchText } from "./text";
+import { entryListSearchText, entryWasRevised, entryWritingText, formatDiaryDate, formatEntryLong, formatEntryTime } from "./text";
 
 type RegexQuery = { $regex: string; $options: "i" };
 
@@ -32,6 +32,51 @@ export function entryMatchesListQuery(entry: {
     updatedAt: string;
 }, rawQuery: string): boolean {
     return diaryFieldsMatch(entryListSearchText(entry), "", rawQuery);
+}
+
+type ListedEntry = {
+    content: string;
+    plainText?: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
+function matchingPiece(entry: ListedEntry, query: string): string {
+    const writing = entry.plainText?.trim() || entryWritingText(entry.content);
+    const clock = formatEntryTime(entry.createdAt);
+    const looseClock = clock.replace(/^0/, "");
+    const pieces = [writing, formatEntryLong(entry.createdAt), formatDiaryDate(entry.createdAt), clock];
+    if (looseClock !== clock) pieces.push(looseClock);
+    if (entryWasRevised(entry.createdAt, entry.updatedAt)) pieces.push("edited");
+    const needle = query.toLowerCase();
+    const piece = pieces.find((item) => item.toLowerCase().includes(needle)) ?? entryListSearchText(entry);
+    if (piece.length <= 90) return piece;
+    const index = piece.toLowerCase().indexOf(needle);
+    const start = Math.max(0, index - 28);
+    const end = Math.min(piece.length, Math.max(index, 0) + query.length + 36);
+    let snippet = piece.slice(start, end).trim();
+    if (start > 0) snippet = `…${snippet}`;
+    if (end < piece.length) snippet = `${snippet}…`;
+    return snippet;
+}
+
+export function diaryListMatch(
+    diary: { title: string; description?: string | null },
+    entries: readonly ListedEntry[],
+    rawQuery: string,
+): { matched: boolean; snippet: string | null } {
+    const query = normalizeSearchQuery(rawQuery);
+    if (!query) return { matched: true, snippet: null };
+    if (diaryFieldsMatch(diary.title, diary.description ?? "", query)) {
+        return { matched: true, snippet: null };
+    }
+
+    const hits = entries
+        .filter((entry) => entryMatchesListQuery(entry, query))
+        .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
+    const newest = hits[0];
+    if (!newest) return { matched: false, snippet: null };
+    return { matched: true, snippet: matchingPiece(newest, query) };
 }
 
 export function buildEntrySearchFilter(userId: string, rawQuery: string): EntrySearchFilter | null {

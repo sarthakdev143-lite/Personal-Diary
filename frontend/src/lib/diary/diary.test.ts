@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
-import { buildEntrySearchFilter, diaryFieldsMatch, entryMatchesListQuery, escapeRegExp, normalizeSearchQuery } from "./search";
+import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, entryMatchesListQuery, escapeRegExp, normalizeSearchQuery } from "./search";
 import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
@@ -267,6 +267,48 @@ describe("search", () => {
         const revisedText = entryListSearchText(revised);
         assert.equal(diaryFieldsMatch(revisedText, "", "edited"), true);
         assert.equal(diaryFieldsMatch(revisedText, "", "09:30"), true);
+    });
+
+    it("shows the note that made a diary match", () => {
+        const created = new Date(2026, 10, 14, 9, 30).toISOString();
+        const older = new Date(2026, 1, 2, 15, 0).toISOString();
+        const entry = {
+            content: "<p>Quiet rain on the window.</p>",
+            plainText: "Quiet rain on the window.",
+            createdAt: created,
+            updatedAt: created,
+        };
+        const garden = {
+            content: "<p>Garden notes from the path.</p>",
+            plainText: "Garden notes from the path.",
+            createdAt: older,
+            updatedAt: older,
+        };
+        const diary = { title: "Window notes", description: "Two mornings" };
+
+        const blank = diaryListMatch(diary, [entry], "   ");
+        assert.equal(blank.matched, true);
+        assert.equal(blank.snippet, null);
+
+        const title = diaryListMatch(diary, [entry], "window");
+        assert.equal(title.matched, true);
+        assert.equal(title.snippet, null);
+
+        const note = diaryListMatch(diary, [garden, entry], "quiet");
+        assert.equal(note.matched, true);
+        assert.match(note.snippet ?? "", /Quiet rain on the window/);
+
+        const dated = diaryListMatch(diary, [entry], "November");
+        assert.equal(dated.matched, true);
+        assert.equal(dated.snippet, formatEntryLong(created));
+
+        const fromOlder = diaryListMatch(diary, [entry, garden], "garden");
+        assert.equal(fromOlder.matched, true);
+        assert.match(fromOlder.snippet ?? "", /Garden notes/);
+
+        const miss = diaryListMatch(diary, [entry], "snow");
+        assert.equal(miss.matched, false);
+        assert.equal(miss.snippet, null);
     });
 
     it("still matches a date search after the writing is saved", () => {

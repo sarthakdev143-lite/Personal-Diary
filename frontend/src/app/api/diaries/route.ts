@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { asRecord, readJsonBody } from "@/lib/diary/json";
-import { buildEntrySearchFilter, diaryFieldsMatch, normalizeSearchQuery } from "@/lib/diary/search";
+import { diaryListMatch, normalizeSearchQuery } from "@/lib/diary/search";
 import { normalizeDescription, normalizeTheme, normalizeTitle } from "@/lib/diary/validation";
 
 import { backfillPlainText, DiaryDocument, DiaryWithId, EntryDocument, getDatabase, getSessionUserId, serializeDiary } from "./_shared";
@@ -25,19 +25,38 @@ export async function GET(request: Request) {
             .sort({ updatedAt: -1, createdAt: -1 })
             .toArray();
 
-        let visible = diaries as DiaryWithId[];
-        if (query) {
-            const entryFilter = buildEntrySearchFilter(userId, query);
-            const hits = entryFilter
-                ? await db.collection<EntryDocument>("entries").find(entryFilter).project({ diaryId: 1 }).toArray()
-                : [];
-            const hitIds = new Set(hits.map((hit) => String(hit.diaryId)));
-            visible = visible.filter((diary) =>
-                diaryFieldsMatch(diary.title, diary.description ?? "", query) || hitIds.has(String(diary._id))
-            );
+        if (!query) {
+            return NextResponse.json((diaries as DiaryWithId[]).map(serializeDiary));
         }
 
-        return NextResponse.json(visible.map(serializeDiary));
+        const notes = await db.collection<EntryDocument>("entries")
+            .find({ userId })
+            .project({ diaryId: 1, content: 1, plainText: 1, createdAt: 1, updatedAt: 1 })
+            .toArray();
+        const byDiary = new Map<string, Array<{ content: string; plainText?: string | null; createdAt: string; updatedAt: string }>>();
+        for (const note of notes) {
+            const id = String(note.diaryId);
+            const group = byDiary.get(id) ?? [];
+            group.push({
+                content: note.content,
+                plainText: note.plainText,
+                createdAt: note.createdAt.toISOString(),
+                updatedAt: note.updatedAt.toISOString(),
+            });
+            byDiary.set(id, group);
+        }
+
+        const visible = (diaries as DiaryWithId[]).flatMap((diary) => {
+            const match = diaryListMatch(
+                { title: diary.title, description: diary.description },
+                byDiary.get(String(diary._id)) ?? [],
+                query,
+            );
+            if (!match.matched) return [];
+            return [{ ...serializeDiary(diary), match: match.snippet }];
+        });
+
+        return NextResponse.json(visible);
     } catch (error) {
         console.error("Failed to fetch diaries", error);
         return NextResponse.json({ error: "Failed to fetch diaries" }, { status: 500 });

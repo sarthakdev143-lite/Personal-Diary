@@ -15,6 +15,7 @@ type Diary = {
     theme: string;
     createdAt: string;
     updatedAt?: string;
+    match?: string | null;
 };
 
 const SKELETON_COUNT = 3;
@@ -154,7 +155,9 @@ const Diaries = ({ query = "", refetchTrigger = 0 }: { query?: string; refetchTr
                         <div className="space-y-2 overflow-hidden">
                             <h2 className="truncate text-lg font-medium text-white">{diary.title}</h2>
                             <p className="line-clamp-2 text-sm leading-6 text-zinc-300">
-                                {truncateDescription(diary.description || "No description")}
+                                {query && diary.match
+                                    ? diary.match
+                                    : truncateDescription(diary.description || "No description")}
                             </p>
                         </div>
                         <p className="text-xs tracking-wide text-zinc-400">
