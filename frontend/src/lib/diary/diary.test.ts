@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryMatchesListQuery, escapeRegExp, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenFromLink, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
     normalizeTheme,
@@ -485,6 +485,16 @@ describe("entry date", () => {
         assert.equal(monthForSavedEntry(february, "2026-02"), "2026-02");
         assert.equal(monthForSavedEntry(february, "2026-11"), "2026-02");
         assert.equal(monthForSavedEntry("nope", "2026-11"), "2026-11");
+    });
+
+    it("opens the newest visible entry when the current one is hidden", () => {
+        const november = { _id: "rain", createdAt: new Date(2026, 10, 14, 15).toISOString() };
+        const february = { _id: "garden", createdAt: new Date(2026, 1, 2, 15).toISOString() };
+        const olderFebruary = { _id: "seed", createdAt: new Date(2026, 1, 1, 15).toISOString() };
+        assert.equal(entryToOpenWhenHidden([november, february], "rain"), null);
+        assert.equal(entryToOpenWhenHidden([february, olderFebruary], "rain")?._id, "garden");
+        assert.equal(entryToOpenWhenHidden([], "rain"), null);
+        assert.equal(entryToOpenWhenHidden([february, olderFebruary], null)?._id, "garden");
     });
 
     it("opens the newest saved entry", () => {

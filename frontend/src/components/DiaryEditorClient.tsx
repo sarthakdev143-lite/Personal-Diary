@@ -11,7 +11,7 @@ import { takeImportNotice } from "@/lib/diary/import";
 import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
 import { entryMatchesListQuery } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenFromLink, entryToShowAfterDelete, entryToShowByStep, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
@@ -1313,7 +1313,18 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 className="de-month"
                                 aria-label="Month"
                                 value={activeMonth}
-                                onChange={(event) => setEntryMonth(event.target.value)}
+                                onChange={(event) => {
+                                    const month = event.target.value;
+                                    setEntryMonth(month);
+                                    const next = entryToOpenWhenHidden(
+                                        entries.filter((entry) =>
+                                            entryInMonth(entry.createdAt, month)
+                                            && entryMatchesListQuery(entry, entryQuery)
+                                        ),
+                                        selectedEntryId,
+                                    );
+                                    if (next) handleEntrySelect(next);
+                                }}
                             >
                                 <option value="">All months</option>
                                 {months.map((month) => (
