@@ -7,7 +7,7 @@ import { useDiary } from "@/context/DiaryContext";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AuthButton } from "./AuthButton";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 
 const Switch = ({
     checked,
@@ -15,8 +15,10 @@ const Switch = ({
 }: { checked: boolean; onCheckedChange: () => void }) => {
     return (
         <button
+            type="button"
             role="switch"
             aria-checked={checked}
+            aria-label="Rotation"
             onClick={onCheckedChange}
             className={`
                 relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer 
@@ -37,16 +39,21 @@ const Switch = ({
 };
 
 const Navbar = () => {
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [openPath, setOpenPath] = useState<string | null>(null);
     const [isMobile, setIsMobile] = useState(false); // Fix for window.innerWidth issue
     const dropdownRef = useRef<HTMLDivElement>(null);
     const pathName = usePathname();
+    const { data: session } = useSession();
     const { isRotating, setIsRotating, resetDiaryPosition } = useDiary();
     const isDiaryDetailPage = /^\/diary\/.+/.test(pathName);
+    const onHome = pathName === "/";
+    const showSignOut = isMobile && !!session;
+    const showMenu = onHome || showSignOut;
+    const menuOpen = showMenu && openPath === pathName;
 
     useEffect(() => {
         if (isDiaryDetailPage) return;
-        const checkScreenSize = () => setIsMobile(window.innerWidth <= 400);
+        const checkScreenSize = () => setIsMobile(window.innerWidth < 400);
         checkScreenSize();
         window.addEventListener("resize", checkScreenSize);
         return () => window.removeEventListener("resize", checkScreenSize);
@@ -61,7 +68,7 @@ const Navbar = () => {
         if (isDiaryDetailPage) return;
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsDropdownOpen(false);
+                setOpenPath(null);
             }
         };
 
@@ -87,41 +94,45 @@ const Navbar = () => {
                 <AuthButton pathName={pathName} />
 
                 {/* Dropdown Trigger */}
-                <Button
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    variant="ghost"
-                    className={`transition-colors duration-500 ease-in-out py-5 text-white hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 ${pathName === "/" ? "" : "max-xxs:hidden"}`}
-                >
-                    {isDropdownOpen ? <X size={16}/> : <Menu size={16}/>}
-                </Button>
+                {showMenu && (
+                    <Button
+                        onClick={() => setOpenPath(menuOpen ? null : pathName)}
+                        variant="ghost"
+                        aria-expanded={menuOpen}
+                        aria-label={onHome ? "Diary settings" : "Account"}
+                        className="border border-zinc-700 bg-zinc-900 py-5 text-white transition-colors duration-500 ease-in-out hover:bg-zinc-800 hover:text-white"
+                    >
+                        {menuOpen ? <X size={16}/> : <Menu size={16}/>}
+                    </Button>
+                )}
 
-                {/* Dropdown Content */}
-                {isDropdownOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-56 bg-zinc-900 rounded-md shadow-lg selection:bg-slate-700">
-                        <div className="px-4 py-2 font-semibold text-base text-white border-b border-gray-700">Settings</div>
-
-                        <div className="px-4 py-3 flex items-center justify-between">
-                            <span className="text-sm text-white">Rotation</span>
-                            <Switch checked={isRotating} onCheckedChange={() => handleToggle("rotation")} />
-                        </div>
-
-                        <div className="px-4 py-3 border-t border-gray-700">
-                            <Button
-                                variant="ghost"
-                                className="w-full justify-start text-sm text-white hover:bg-zinc-800 hover:text-white flex items-center gap-2"
-                                onClick={() => handleToggle("reset")}
-                            >
-                                <RotateCcw className="w-4 h-4" />
-                                Reset Position
-                            </Button>
-                        </div>
-
-                        {isMobile && (
-                            <div className="px-4 py-3 border-t border-gray-700">
+                {menuOpen && (
+                    <div className="absolute top-full right-0 mt-2 w-56 rounded-md bg-zinc-900 shadow-lg selection:bg-slate-700">
+                        {onHome && (
+                            <>
+                                <div className="border-b border-gray-700 px-4 py-2 text-base font-semibold text-white">Settings</div>
+                                <div className="flex items-center justify-between px-4 py-3">
+                                    <span className="text-sm text-white">Rotation</span>
+                                    <Switch checked={isRotating} onCheckedChange={() => handleToggle("rotation")} />
+                                </div>
+                                <div className="border-t border-gray-700 px-4 py-3">
+                                    <Button
+                                        variant="ghost"
+                                        className="flex w-full items-center justify-start gap-2 text-sm text-white hover:bg-zinc-800 hover:text-white"
+                                        onClick={() => handleToggle("reset")}
+                                    >
+                                        <RotateCcw className="h-4 w-4" />
+                                        Reset Position
+                                    </Button>
+                                </div>
+                            </>
+                        )}
+                        {showSignOut && (
+                            <div className={`${onHome ? "border-t border-gray-700" : ""} px-4 py-3`}>
                                 <Button
                                     variant="destructive"
                                     onClick={() => signOut({ callbackUrl: "/" })}
-                                    className="text-white px-4 py-[0.3rem] rounded w-full text-center mt-2"
+                                    className="mt-2 w-full rounded px-4 py-[0.3rem] text-center text-white"
                                 >
                                     Sign Out
                                 </Button>
