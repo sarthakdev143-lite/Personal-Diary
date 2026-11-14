@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, pasteSelectionUndo, selectionDeleteUndo, styledLine, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, styledLine, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -836,6 +836,22 @@ function selectCodeOffsets(code: HTMLElement, start: number, end: number) {
 }
 
 const LINE_BLOCK = /^(P|H1|H2|H3|BLOCKQUOTE|LI)$/;
+
+function cutSelectionHtml(range: Range): string {
+    const holder = document.createElement("div");
+    holder.appendChild(range.cloneContents());
+    let html = holder.innerHTML;
+    let node: Node = range.commonAncestorContainer;
+    const inline = new Set(["A", "B", "CODE", "DEL", "EM", "I", "S", "SPAN", "STRIKE", "STRONG", "SUB", "SUP", "U"]);
+    while (node.parentElement && inline.has(node.parentElement.tagName) && node.parentElement.contains(range.startContainer) && node.parentElement.contains(range.endContainer)) {
+        const wrap = node.parentElement.cloneNode(false);
+        if (!(wrap instanceof HTMLElement)) break;
+        wrap.innerHTML = html;
+        html = wrap.outerHTML;
+        node = node.parentElement;
+    }
+    return html;
+}
 
 function lineBlock(node: Node | null): HTMLElement | null {
     const host = node instanceof Element ? node : node?.parentElement ?? null;
@@ -2262,12 +2278,34 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const selection = window.getSelection();
         if (!editor || !selection) return;
         const touched = selectedDateHeading(editor, selection, dateLineLabel());
-        if (!touched) return;
+        if (touched) {
+            event.preventDefault();
+            event.clipboardData.setData("text/plain", selection.toString());
+            if (datePaste({ touchesDate: true, onlyDate: touched.onlyDate }) !== "replace-writing") return;
+            selectReplaceRange(editor, touched.heading, selection);
+            document.execCommand("delete");
+            setHtmlContent(editor.innerHTML);
+            return;
+        }
+        if (!selection.rangeCount) return;
+        const range = selection.getRangeAt(0);
+        const block = lineBlock(range.startContainer);
+        const single = block instanceof HTMLElement
+            && block === lineBlock(range.endContainer)
+            && editor.contains(block)
+            && !block.closest("figure")
+            && !block.querySelector("img, figure, hr");
+        if (selectionCutUndo({ collapsed: range.collapsed, singleBlock: single }) !== "place") return;
+        const mark = selectionUndo(editor);
+        if (!mark) return;
+        const copied = document.execCommand("copy");
         event.preventDefault();
-        event.clipboardData.setData("text/plain", selection.toString());
-        if (datePaste({ touchesDate: true, onlyDate: touched.onlyDate }) !== "replace-writing") return;
-        selectReplaceRange(editor, touched.heading, selection);
+        if (!copied) {
+            event.clipboardData.setData("text/plain", selection.toString());
+            event.clipboardData.setData("text/html", cutSelectionHtml(range));
+        }
         document.execCommand("delete");
+        keepReplacedSelection(mark);
         setHtmlContent(editor.innerHTML);
     };
 
