@@ -105,6 +105,11 @@ export function captionBreakText(before: string, after: string): { name: string;
     return { name: before.slice(0, before.length - cut.before), next: after.slice(cut.after) };
 }
 
+export function captionUndoCaret(offset: number | null): number | null {
+    if (offset === null || !Number.isFinite(offset) || offset < 0) return null;
+    return Math.floor(offset);
+}
+
 export type PictureClick = "select" | "pass";
 
 export function pictureClick(input: { image: boolean; inEditor: boolean }): PictureClick {

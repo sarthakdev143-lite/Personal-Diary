@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -166,6 +166,11 @@ describe("entry paste", () => {
         assert.deepEqual(captionBreakText("Harbor ", "rain"), { name: "Harbor", next: "rain" });
         assert.deepEqual(captionBreakText("Harbor", "rain"), { name: "Harbor", next: "rain" });
         assert.deepEqual(captionBreakText("Harbor", ""), { name: "Harbor", next: "" });
+        assert.equal(captionUndoCaret(11), 11);
+        assert.equal(captionUndoCaret(6), 6);
+        assert.equal(captionUndoCaret(0), 0);
+        assert.equal(captionUndoCaret(null), null);
+        assert.equal(captionUndoCaret(-1), null);
     });
 
     it("keeps a picture when the selection also holds the writing around it", () => {
