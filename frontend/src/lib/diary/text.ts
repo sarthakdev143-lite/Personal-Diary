@@ -208,6 +208,15 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         const piece = text[index];
         return piece === " " || piece === "\u00a0" || piece === "\t";
     };
+    const word = (index: number) => /[\p{L}\p{N}]/u.test(text[index] ?? "");
+    const hyphen = (index: number) => text[index] === "-" || text[index] === "\u2010" || text[index] === "\u2011" || text[index] === "\u2013" || text[index] === "\u2014";
+    if (start < end) {
+        if (hyphen(start - 1) && word(start - 2) && word(start)) start -= 1;
+        else if (end === start + 1 && hyphen(start) && word(start - 1) && word(end)) {
+            end += 1;
+            while (word(end)) end += 1;
+        } else if (hyphen(end) && word(end - 1) && word(end + 1)) end += 1;
+    }
     const before = text.slice(0, start).replace(/[\u00a0\s]/g, "");
     const after = text.slice(end).replace(/[\u00a0\s]/g, "");
     if (end < text.length && space(end) && (start > 0 && space(start - 1) || before === "")) {
@@ -229,6 +238,7 @@ export function wordDeleteGap(text: string, start: number, end: number): "before
     const space = (piece: string | undefined) => piece === " " || piece === "\u00a0" || piece === "\t";
     if (widened.end > end && word(text[widened.end])) return "after";
     if (widened.start < start && word(text[widened.start - 1])) return "before";
+    if (widened.end > end && word(text[widened.start - 1]) && (widened.end >= text.length || space(text[widened.end]))) return "before";
     const selected = text.slice(start, end);
     if (!/[\u00a0\t ]/.test(selected)) return "none";
     const removedLeading = space(text[start]);
