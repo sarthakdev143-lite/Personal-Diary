@@ -33,6 +33,12 @@ class DiaryMarkdownTest {
     }
 
     @Test
+    void keepsPastedLinesThatWereWrappedInDivs() {
+        String markdown = DiaryMarkdown.htmlToMarkdown("<div>Monday</div><div><b>Walked</b> to the harbor</div>");
+        assertTrue(markdown.contains("Monday\n\n**Walked** to the harbor"));
+    }
+
+    @Test
     void keepsEachLineInsideACodeFence() {
         String markdown = DiaryMarkdown.htmlToMarkdown(
                 "<pre><code>const a = 1;</code><code>const b = 2;</code></pre>");

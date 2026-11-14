@@ -175,6 +175,19 @@ describe("code block", () => {
         if (!marked.ok) return;
         assert.equal(marked.content, "<pre><code>const a = 1;\nconst b = 2;</code></pre>");
     });
+
+    it("keeps pasted lines that were wrapped in divs", () => {
+        const saved = prepareEntryContent("<div>Monday</div><div><b>Walked</b> to the harbor</div>");
+        assert.equal(saved.ok, true);
+        if (!saved.ok) return;
+        assert.equal(saved.content, "<p>Monday</p><p><b>Walked</b> to the harbor</p>");
+        assert.equal(htmlToMarkdown(saved.content), "Monday\n\n**Walked** to the harbor");
+
+        const wrapped = prepareEntryContent('<div class="highlight"><pre><code>const a = 1;\nconst b = 2;</code></pre></div>');
+        assert.equal(wrapped.ok, true);
+        if (!wrapped.ok) return;
+        assert.equal(wrapped.content, "<pre><code>const a = 1;\nconst b = 2;</code></pre>");
+    });
 });
 
 describe("diary ids", () => {

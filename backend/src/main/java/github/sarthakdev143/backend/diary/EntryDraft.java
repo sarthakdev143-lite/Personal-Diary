@@ -25,7 +25,10 @@ public sealed interface EntryDraft permits EntryDraft.Ready, EntryDraft.Rejected
             return new Rejected("Entry is too large. Use fewer or smaller images.");
         }
 
-        Document document = Jsoup.parseBodyFragment(Jsoup.clean(input, safelist()));
+        Document source = Jsoup.parseBodyFragment(input);
+        source.outputSettings().prettyPrint(false);
+        PastedLines.lift(source);
+        Document document = Jsoup.parseBodyFragment(Jsoup.clean(source.body().html(), safelist()));
         document.outputSettings().prettyPrint(false);
         document.select("img").forEach(EntryDraft::keepSafeImage);
         PictureCaptions.align(document);

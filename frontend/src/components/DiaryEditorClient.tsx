@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, dateHeadingKey, datePaste, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
@@ -472,6 +472,14 @@ function placeCaretAtStart(node: HTMLElement) {
     selection.addRange(caret);
 }
 
+function selectionInsideCode(editor: HTMLElement, selection: Selection): boolean {
+    if (!selection.rangeCount) return false;
+    const range = selection.getRangeAt(0);
+    const anchor = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+    const pre = anchor?.closest("pre");
+    return pre instanceof HTMLElement && editor.contains(pre) && pre.contains(range.startContainer) && pre.contains(range.endContainer);
+}
+
 function textOffsetWithin(root: HTMLElement, container: Node, offset: number): number {
     const range = document.createRange();
     range.selectNodeContents(root);
@@ -916,6 +924,15 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (mode === "view") return;
         const data = event.clipboardData;
         const selection = window.getSelection();
+        const editor = editorRef.current;
+        if (editor && selection && data.files.length === 0 && selectionInsideCode(editor, selection)) {
+            const text = data.getData("text/plain");
+            if (text) {
+                event.preventDefault();
+                insertHTML(codePasteHtml(text));
+                return;
+            }
+        }
         const moved = selection ? movePasteOffDate(selection) : "pass";
         if (moved !== "pass") event.preventDefault();
         const decision = decideEntryPaste({

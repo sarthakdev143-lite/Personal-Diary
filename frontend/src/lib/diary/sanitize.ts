@@ -33,7 +33,7 @@ const ALLOWED_TAGS = [
 ];
 
 export function sanitizeEntryHtml(input: string): string {
-    const clean = sanitizeHtml(input, {
+    const clean = sanitizeHtml(liftBlockLines(input), {
         allowedTags: ALLOWED_TAGS,
         allowedAttributes: {
             a: ["href", "target", "rel"],
@@ -75,6 +75,23 @@ export function sanitizeEntryHtml(input: string): string {
         exclusiveFilter: (frame) => frame.tag === "img" && !frame.attribs.src,
     });
     return separateGluedDateHeading(joinCodeLines(alignPictureCaptions(clean).trim()));
+}
+
+function liftBlockLines(html: string): string {
+    const block = /<(?:p|div|section|article|h[1-3]|ul|ol|blockquote|pre|hr|figure|table)\b/i;
+    const wrapper = /<(div|section|article)\b[^>]*>((?:(?!<\/?(?:div|section|article)\b)[\s\S])*)<\/\1>/gi;
+    let current = html;
+    let previous = "";
+    while (current !== previous) {
+        previous = current;
+        current = current.replace(wrapper, (_match, _tag, inner: string) => {
+            if (block.test(inner)) return inner;
+            const visible = inner.replace(/<br\s*\/?>/gi, "").replace(/&nbsp;/gi, " ").replace(/<[^>]+>/g, "").trim();
+            if (!visible) return "<p><br></p>";
+            return `<p>${inner}</p>`;
+        });
+    }
+    return current;
 }
 
 function joinCodeLines(html: string): string {

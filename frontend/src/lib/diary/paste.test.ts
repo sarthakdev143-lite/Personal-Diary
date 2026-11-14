@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -69,6 +69,22 @@ describe("entry paste", () => {
         assert.equal(decision.action, "reject");
         if (decision.action !== "reject") return;
         assert.equal(decision.title, "Image left out");
+    });
+
+    it("keeps pasted code lines inside the code block", () => {
+        assert.equal(codePasteHtml("const a = 1;\r\nconst b = 2;\n"), "const a = 1;&#10;const b = 2;");
+        assert.equal(codePasteHtml("a < b & c"), "a &lt; b &amp; c");
+    });
+
+    it("keeps each line when the pasted notes are wrapped in divs", () => {
+        const decision = decideEntryPaste({
+            files: [],
+            html: "<div>Monday</div><div>Walked to the harbor</div>",
+            text: "Monday\nWalked to the harbor",
+        });
+        assert.equal(decision.action, "html");
+        if (decision.action !== "html") return;
+        assert.equal(decision.html, "<p>Monday</p><p>Walked to the harbor</p>");
     });
 
     it("leaves a plain text paste to the editor", () => {

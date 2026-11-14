@@ -130,6 +130,21 @@ class EntryDraftTest {
     }
 
     @Test
+    void keepsPastedLinesThatWereWrappedInDivs() {
+        EntryDraft draft = EntryDraft.prepare("<div>Monday</div><div><b>Walked</b> to the harbor</div>");
+        EntryDraft.Ready ready = assertInstanceOf(EntryDraft.Ready.class, draft);
+        assertTrue(ready.content().contains("<p>Monday</p>"));
+        assertTrue(ready.content().contains("<p><b>Walked</b> to the harbor</p>"));
+        assertFalse(ready.content().contains("<div"));
+
+        EntryDraft wrapped = EntryDraft.prepare(
+                "<div class=\"highlight\"><pre><code>const a = 1;\nconst b = 2;</code></pre></div>");
+        EntryDraft.Ready code = assertInstanceOf(EntryDraft.Ready.class, wrapped);
+        assertTrue(code.content().contains("const a = 1;\nconst b = 2;"));
+        assertFalse(code.content().contains("<div"));
+    }
+
+    @Test
     void keepsEachLineOfACodeBlock() {
         EntryDraft split = EntryDraft.prepare("<pre><code>const a = 1;</code><code>const b = 2;</code></pre>");
         EntryDraft.Ready ready = assertInstanceOf(EntryDraft.Ready.class, split);

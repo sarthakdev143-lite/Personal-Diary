@@ -149,6 +149,15 @@ export type PasteDecision =
     | { action: "ignore" }
     | { action: "reject"; title: string; description: string };
 
+export function codePasteHtml(text: string): string {
+    const normalized = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n$/, "");
+    return normalized
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\n/g, "&#10;");
+}
+
 export function decideEntryPaste(input: {
     files: { type: string; size: number }[];
     html: string;

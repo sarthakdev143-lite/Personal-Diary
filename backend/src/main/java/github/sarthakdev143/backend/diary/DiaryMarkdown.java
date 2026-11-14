@@ -42,6 +42,7 @@ public final class DiaryMarkdown {
         Document document = Jsoup.parseBodyFragment(html);
         document.outputSettings().prettyPrint(false);
         document.select("script, style").remove();
+        PastedLines.lift(document);
         document.select("img").forEach(DiaryMarkdown::keepSafeImage);
         document.select("a").forEach(DiaryMarkdown::keepSafeLink);
         PictureCaptions.align(document);
