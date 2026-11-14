@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureSelectionMark, selectedPictureKey } from "@/lib/diary/paste";
+import { decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryUndoBody, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
@@ -215,6 +215,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const saveHintRef = useRef<HTMLSpanElement>(null);
     const linkRange = useRef<Range | null>(null);
     const imageRange = useRef<Range | null>(null);
+    const pictureRemoval = useRef<{ before: string; after: string } | null>(null);
     const discardButtonRef = useRef<HTMLButtonElement>(null);
 
     const [diary, setDiary] = useState<Diary | null>(null);
@@ -365,7 +366,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
     // Sync editor DOM -> htmlContent state
     const onInput = useCallback(() => {
-        if (editorRef.current) setHtmlContent(editorRef.current.innerHTML);
+        const editor = editorRef.current;
+        if (!editor) return;
+        const saved = pictureRemoval.current;
+        if (saved && editor.innerHTML !== saved.after) pictureRemoval.current = null;
+        setHtmlContent(editor.innerHTML);
         updateActiveFormats();
     }, [updateActiveFormats]);
 
@@ -393,6 +398,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
     useEffect(() => {
         if (mode !== "view") return;
+        pictureRemoval.current = null;
         setPictureQueue([]);
         setPictureTotal(0);
         setImageAlt("");
@@ -1184,6 +1190,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const figure = image.closest("figure");
         const picture = figure instanceof HTMLElement && editor.contains(figure) ? figure : image;
         if (action === "remove") {
+            editor.querySelectorAll("img.de-selected").forEach((img) => img.classList.remove("de-selected"));
+            const before = editor.innerHTML;
             const next = picture.nextElementSibling;
             picture.remove();
             if (next instanceof HTMLElement && editor.contains(next)) placeCaretAtStart(next);
@@ -1193,6 +1201,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 editor.appendChild(paragraph);
                 placeCaretAtStart(paragraph);
             }
+            pictureRemoval.current = { before, after: editor.innerHTML };
         } else if (action === "name") {
             if (picture instanceof HTMLElement && picture.tagName === "FIGURE") {
                 let caption = picture.querySelector("figcaption");
@@ -1222,6 +1231,29 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             }
         }
         setHtmlContent(editor.innerHTML);
+        return true;
+    };
+
+    const undoRemovedPicture = () => {
+        const editor = editorRef.current;
+        const saved = pictureRemoval.current;
+        const action = pictureUndo({ saved, current: editor?.innerHTML ?? "" });
+        if (!editor || !saved || action !== "restore") {
+            if (saved && editor && editor.innerHTML !== saved.after) pictureRemoval.current = null;
+            return false;
+        }
+        pictureRemoval.current = null;
+        editor.innerHTML = saved.before;
+        setHtmlContent(saved.before);
+        editor.focus();
+        const image = editor.querySelector("img");
+        if (image instanceof HTMLImageElement) {
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNode(image);
+            selection?.removeAllRanges();
+            selection?.addRange(range);
+        }
         return true;
     };
 
@@ -1255,6 +1287,13 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             return;
         }
         if (mode === "view") return;
+        if ((e.key === "z" || e.key === "Z") && (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) {
+            const editor = editorRef.current;
+            if (editor && e.target instanceof Node && editor.contains(e.target) && undoRemovedPicture()) {
+                e.preventDefault();
+                return;
+            }
+        }
         if (editSelectedPicture(e)) return;
         if (keepPictureNameApart(e)) return;
         const editor = editorRef.current;
@@ -1321,6 +1360,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             insertHTML(tool.html);
             return;
         }
+        if (tool.command === "undo" && undoRemovedPicture()) return;
         if (tool.command) exec(tool.command, tool.value);
     };
 

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureSelectionMark, selectedPictureKey } from "./paste";
+import { decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -162,6 +162,16 @@ describe("entry paste", () => {
         assert.equal(pictureClick({ image: true, inEditor: true }), "select");
         assert.equal(pictureClick({ image: false, inEditor: true }), "pass");
         assert.equal(pictureClick({ image: true, inEditor: false }), "pass");
+    });
+
+    it("undoes a picture removal while the page is otherwise unchanged", () => {
+        const saved = {
+            before: '<figure><img alt="Harbor"></figure><p>After</p>',
+            after: "<p>After</p>",
+        };
+        assert.equal(pictureUndo({ saved, current: saved.after }), "restore");
+        assert.equal(pictureUndo({ saved, current: "<p>After!</p>" }), "pass");
+        assert.equal(pictureUndo({ saved: null, current: saved.after }), "pass");
     });
 
     it("marks only the selected picture while editing", () => {

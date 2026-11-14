@@ -79,6 +79,16 @@ export function pictureSelectionMark(input: { editing: boolean; imageSelected: b
     return "plain";
 }
 
+export type PictureUndo = "restore" | "pass";
+
+export function pictureUndo(input: {
+    saved: { before: string; after: string } | null;
+    current: string;
+}): PictureUndo {
+    if (!input.saved || input.current !== input.saved.after) return "pass";
+    return "restore";
+}
+
 export function imageHtml(src: string, alt: string): string {
     const name = imageAltText(alt)
         .replace(/&/g, "&amp;")
