@@ -150,6 +150,20 @@ export function retitleEntryDate(html: string, fromLabel: string, toLabel: strin
     return `<h2>${toLabel}</h2>${html.slice(prefix.length)}`;
 }
 
+export function entryToShowOnOpen<T extends { createdAt: string }>(entries: readonly T[]): T | null {
+    let chosen: T | null = null;
+    let chosenTime = Number.NEGATIVE_INFINITY;
+
+    for (const entry of entries) {
+        const time = Date.parse(entry.createdAt);
+        if (!Number.isFinite(time) || time <= chosenTime) continue;
+        chosen = entry;
+        chosenTime = time;
+    }
+
+    return chosen;
+}
+
 export function formatEntryLong(value: string): string {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "—";

@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, escapeRegExp, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entryPlainText, monthForSavedEntry, monthKey, monthLabel, retitleEntryDate, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entryPlainText, entryToShowOnOpen, monthForSavedEntry, monthKey, monthLabel, retitleEntryDate, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
     normalizeTheme,
@@ -309,6 +309,16 @@ describe("entry date", () => {
         assert.equal(monthForSavedEntry(february, "2026-02"), "2026-02");
         assert.equal(monthForSavedEntry(february, "2026-11"), "2026-02");
         assert.equal(monthForSavedEntry("nope", "2026-11"), "2026-11");
+    });
+
+    it("opens the newest saved entry", () => {
+        const older = { id: "older", createdAt: new Date(2026, 1, 2, 15).toISOString() };
+        const newer = { id: "newer", createdAt: new Date(2026, 10, 14, 15).toISOString() };
+        assert.equal(entryToShowOnOpen([]), null);
+        assert.equal(entryToShowOnOpen([{ id: "bad", createdAt: "nope" }]), null);
+        assert.equal(entryToShowOnOpen([older, newer])?.id, "newer");
+        assert.equal(entryToShowOnOpen([newer, older])?.id, "newer");
+        assert.equal(entryToShowOnOpen([older, { ...older, id: "same" }])?.id, "older");
     });
 });
 

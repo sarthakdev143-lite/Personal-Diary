@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { DESCRIPTION_MAX, DIARY_THEMES, MAX_IMAGE_BYTES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
 import { diaryFieldsMatch } from "@/lib/diary/search";
-import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entryPlainText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entryPlainText, entryToShowOnOpen, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
@@ -107,7 +107,19 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 if (!res.ok) throw new Error(data.error || "Failed to load.");
                 if (!mounted) return;
                 setDiary(data.diary!);
-                setEntries(data.entries!);
+                const loaded = data.entries ?? [];
+                setEntries(loaded);
+                const latest = entryToShowOnOpen(loaded);
+                if (latest) {
+                    setSelectedEntryId(latest._id);
+                    setMode("view");
+                    setConfirmDelete(null);
+                    const day = calendarDate(new Date(latest.createdAt));
+                    setEntryDate(day);
+                    setSavedDate(day);
+                    setBaseline(latest.content);
+                    setHtmlContent(latest.content);
+                }
                 setDiaryDraft({
                     title: data.diary?.title ?? "",
                     description: data.diary?.description ?? "",
@@ -200,6 +212,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         setHtmlContent(html);
         if (editorRef.current) editorRef.current.innerHTML = html;
     }, []);
+
+    useLayoutEffect(() => {
+        if (isLoading || !editorRef.current || !htmlContent) return;
+        if (editorRef.current.innerHTML) return;
+        editorRef.current.innerHTML = htmlContent;
+    }, [isLoading, htmlContent]);
 
     const isDirty = mode !== "view" && (htmlContent !== baseline || entryDate !== savedDate);
 
