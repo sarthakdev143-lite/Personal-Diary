@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -162,6 +162,10 @@ describe("entry paste", () => {
         assert.equal(pictureCaptionKey({ key: "Delete", collapsed: true, atStart: false, atEnd: true }), "hold");
         assert.equal(pictureCaptionKey({ key: "Delete", collapsed: false, atStart: false, atEnd: true }), "pass");
         assert.equal(pictureCaptionKey({ key: "a", collapsed: true, atStart: true, atEnd: false }), "pass");
+        assert.deepEqual(captionBreakText("Harbor", " rain"), { name: "Harbor", next: "rain" });
+        assert.deepEqual(captionBreakText("Harbor ", "rain"), { name: "Harbor", next: "rain" });
+        assert.deepEqual(captionBreakText("Harbor", "rain"), { name: "Harbor", next: "rain" });
+        assert.deepEqual(captionBreakText("Harbor", ""), { name: "Harbor", next: "" });
     });
 
     it("keeps the next line from joining the picture name", () => {

@@ -1,5 +1,6 @@
 import { MAX_IMAGE_BYTES } from "./constants";
 import { sanitizeEntryHtml } from "./sanitize";
+import { boundarySpaceCut } from "./text";
 
 const IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/gif", "image/webp"]);
 
@@ -63,6 +64,12 @@ export function selectedPictureKey(input: {
     if (input.key === "Enter") return "after";
     if (input.key.length === 1) return "name";
     return "pass";
+}
+
+export function captionBreakText(before: string, after: string): { name: string; next: string } {
+    const cut = boundarySpaceCut(before, after);
+    if (!cut) return { name: before, next: after };
+    return { name: before.slice(0, before.length - cut.before), next: after.slice(cut.after) };
 }
 
 export type PictureClick = "select" | "pass";

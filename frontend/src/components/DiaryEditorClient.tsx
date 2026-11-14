@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionBreakText, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, joinNeedsSpace, lineJoinKey, listCommand, listEdgeKey, listLeaveKey, quoteLeaveKey, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
@@ -1046,13 +1046,20 @@ function continueAfterPicture(caption: HTMLElement) {
     after.selectNodeContents(caption);
     after.setStart(range.endContainer, range.endOffset);
     const rest = after.toString();
-    caption.textContent = before.toString();
+    const broken = captionBreakText(before.toString(), rest);
+    caption.textContent = broken.name;
+    const image = figure.querySelector("img");
+    if (image instanceof HTMLImageElement) {
+        const alt = imageAltText(broken.name);
+        if (alt) image.setAttribute("alt", alt);
+        else image.removeAttribute("alt");
+    }
     const paragraph = document.createElement("p");
-    if (rest) paragraph.textContent = rest;
+    if (broken.next) paragraph.textContent = broken.next;
     else paragraph.appendChild(document.createElement("br"));
     figure.after(paragraph);
     const caret = document.createRange();
-    if (rest && paragraph.firstChild) caret.setStart(paragraph.firstChild, 0);
+    if (broken.next && paragraph.firstChild instanceof Text) caret.setStart(paragraph.firstChild, 0);
     else caret.setStart(paragraph, 0);
     caret.collapse(true);
     selection.removeAllRanges();
@@ -2194,8 +2201,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         });
         if (action === "pass") return false;
         e.preventDefault();
+        const before = editor.innerHTML;
+        const path = childPath(editor, line.block);
         if (action === "remove") line.block.remove();
         placeCaretAtEnd(line.caption);
+        if (action === "remove") blankLine.current = { before, after: editor.innerHTML, path };
         setHtmlContent(editor.innerHTML);
         return true;
     };
@@ -2723,7 +2733,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         });
         if (action === "pass") return;
         e.preventDefault();
+        const editorBefore = editor.innerHTML;
+        const path = childPath(editor, caption);
         if (action === "break") continueAfterPicture(caption);
+        if (action === "break") blankLine.current = { before: editorBefore, after: editor.innerHTML, path };
         setHtmlContent(editor.innerHTML);
     };
 
