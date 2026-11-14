@@ -150,6 +150,11 @@ export function styleShortcut(input: {
     return null;
 }
 
+export function styleUndoCaret(offset: number | null): number | null {
+    if (offset === null || !Number.isFinite(offset) || offset < 0) return null;
+    return Math.floor(offset);
+}
+
 const MARK_SPACE = /(<(b|strong|i|em|u|s|strike|del|a)\b([^>]*)>)([^<]*)<\/\2>/gi;
 
 export function plainMarkSpaces(html: string): string {
