@@ -199,6 +199,11 @@ export function selectionTypeUndo(input: {
     return "place";
 }
 
+export function dragSelectionUndo(input: { collapsed: boolean; inWriting: boolean }): "place" | "pass" {
+    if (input.collapsed || !input.inWriting) return "pass";
+    return "place";
+}
+
 export function selectionCutUndo(input: { collapsed: boolean; inWriting: boolean }): "place" | "pass" {
     if (input.collapsed || !input.inWriting) return "pass";
     return "place";
