@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionBreakText, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionBreakText, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, joinNeedsSpace, lineJoinKey, listCommand, listEdgeKey, listLeaveKey, quoteLeaveKey, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
@@ -106,6 +106,18 @@ const TOOLBAR: ToolButton[][] = [
         { icon: "⟶", title: "Redo", command: "redo" },
     ],
 ];
+
+function selectionTouchesPicture(editor: HTMLElement): boolean {
+    const selection = window.getSelection();
+    if (!selection?.rangeCount) return false;
+    const range = selection.getRangeAt(0);
+    const touches = (node: Node) => {
+        const host = node instanceof Element ? node : node.parentElement;
+        const figure = host?.closest("figure");
+        return Boolean(figure && editor.contains(figure));
+    };
+    return touches(range.startContainer) || touches(range.endContainer);
+}
 
 function captionCaret(caption: HTMLElement, selection: Selection): { collapsed: boolean; atStart: boolean; atEnd: boolean } | null {
     if (!selection.rangeCount) return null;
@@ -2741,6 +2753,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     };
 
     const runTool = (tool: ToolButton) => {
+        const editorForTool = editorRef.current;
+        if (pictureFormat({
+            inPicture: Boolean(editorForTool && selectionTouchesPicture(editorForTool)),
+            command: tool.command,
+            kind: tool.kind,
+        }) === "keep") return;
         if (tool.kind === "image") {
             fileInputRef.current?.click();
             return;

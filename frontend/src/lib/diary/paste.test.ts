@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -166,6 +166,24 @@ describe("entry paste", () => {
         assert.deepEqual(captionBreakText("Harbor ", "rain"), { name: "Harbor", next: "rain" });
         assert.deepEqual(captionBreakText("Harbor", "rain"), { name: "Harbor", next: "rain" });
         assert.deepEqual(captionBreakText("Harbor", ""), { name: "Harbor", next: "" });
+    });
+
+    it("leaves the picture together when a heading or a list is chosen", () => {
+        assert.equal(pictureFormat({ inPicture: true, command: "formatBlock" }), "keep");
+        assert.equal(pictureFormat({ inPicture: true, command: "insertUnorderedList" }), "keep");
+        assert.equal(pictureFormat({ inPicture: true, command: "insertOrderedList" }), "keep");
+        assert.equal(pictureFormat({ inPicture: true, kind: "code" }), "keep");
+        assert.equal(pictureFormat({ inPicture: true, kind: "image" }), "keep");
+        assert.equal(pictureFormat({ inPicture: true }), "keep");
+        assert.equal(pictureFormat({ inPicture: true, command: "bold" }), "pass");
+        assert.equal(pictureFormat({ inPicture: true, command: "italic" }), "pass");
+        assert.equal(pictureFormat({ inPicture: true, command: "underline" }), "pass");
+        assert.equal(pictureFormat({ inPicture: true, command: "strikeThrough" }), "pass");
+        assert.equal(pictureFormat({ inPicture: true, command: "undo" }), "pass");
+        assert.equal(pictureFormat({ inPicture: true, command: "redo" }), "pass");
+        assert.equal(pictureFormat({ inPicture: true, kind: "link" }), "pass");
+        assert.equal(pictureFormat({ inPicture: false, command: "formatBlock" }), "pass");
+        assert.equal(pictureFormat({ inPicture: false, kind: "code" }), "pass");
     });
 
     it("keeps the next line from joining the picture name", () => {

@@ -66,6 +66,22 @@ export function selectedPictureKey(input: {
     return "pass";
 }
 
+export type PictureFormat = "keep" | "pass";
+
+export function pictureFormat(input: { inPicture: boolean; command?: string; kind?: string }): PictureFormat {
+    if (!input.inPicture) return "pass";
+    if (input.kind === "link") return "pass";
+    if (
+        input.command === "bold"
+        || input.command === "italic"
+        || input.command === "underline"
+        || input.command === "strikeThrough"
+        || input.command === "undo"
+        || input.command === "redo"
+    ) return "pass";
+    return "keep";
+}
+
 export function captionBreakText(before: string, after: string): { name: string; next: string } {
     const cut = boundarySpaceCut(before, after);
     if (!cut) return { name: before, next: after };
