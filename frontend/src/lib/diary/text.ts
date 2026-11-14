@@ -123,8 +123,28 @@ export function breakJoinKey(input: {
 
 export function plainSpacesAfterMarks(html: string): string {
     return html
-        .replace(/(<\/(?:b|strong|i|em|u|s|strike|del|a)>)(?:&nbsp;|\u00a0)/gi, "$1 ")
+        .replace(/(<\/(?:b|strong|i|em|u|s|strike|del|a)>)((?:&nbsp;|\u00a0)+)(?=[^<\s])/gi, (_match, close: string, gaps: string) => {
+            const count = gaps.match(/&nbsp;|\u00a0/g)?.length ?? 0;
+            return close + " ".repeat(count);
+        })
         .replace(/(<(?:p|h1|h2|h3|li|blockquote|figcaption)\b[^>]*>)(?:&nbsp;|\u00a0)(?=[^\s<])/gi, "$1 ");
+}
+
+export type StyledSpace = "outside" | "pass";
+
+export function styledSpace(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    atMarkEnd: boolean;
+    outsideText: boolean;
+}): StyledSpace {
+    if (input.altKey || input.ctrlKey || input.metaKey || !input.collapsed) return "pass";
+    if (input.key !== " " || !input.atMarkEnd || !input.outsideText) return "pass";
+    return "outside";
 }
 
 export function joinNeedsSpace(previous: string, next: string): boolean {

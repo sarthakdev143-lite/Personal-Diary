@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, styledSpace, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -367,12 +367,27 @@ describe("code block", () => {
         assert.equal(splitSpace({ ...between, ctrlKey: true }), "keep");
     });
 
+    it("puts a space after a styled word outside that style", () => {
+        const after = { key: " ", collapsed: true, atMarkEnd: true, outsideText: true };
+        assert.equal(styledSpace(after), "outside");
+        assert.equal(styledSpace({ ...after, shiftKey: true }), "outside");
+        assert.equal(styledSpace({ ...after, outsideText: false }), "pass");
+        assert.equal(styledSpace({ ...after, atMarkEnd: false }), "pass");
+        assert.equal(styledSpace({ ...after, collapsed: false }), "pass");
+        assert.equal(styledSpace({ ...after, key: "t" }), "pass");
+        assert.equal(styledSpace({ ...after, ctrlKey: true }), "pass");
+        assert.equal(styledSpace({ ...after, altKey: true }), "pass");
+        assert.equal(styledSpace({ ...after, metaKey: true }), "pass");
+    });
+
     it("keeps the space when backspace removes the last letter of a bold word", () => {
         assert.equal(plainSpacesAfterMarks("<p><b>Harbo</b>&nbsp;rain</p>"), "<p><b>Harbo</b> rain</p>");
         assert.equal(plainSpacesAfterMarks("<p><i>Harbo</i>\u00a0rain</p>"), "<p><i>Harbo</i> rain</p>");
         assert.equal(plainSpacesAfterMarks('<p>See <a href="https://example.com">Harbo</a>&nbsp;rain</p>'), '<p>See <a href="https://example.com">Harbo</a> rain</p>');
         assert.equal(plainSpacesAfterMarks("<p>&nbsp;rain</p>"), "<p> rain</p>");
         assert.equal(plainSpacesAfterMarks("<p><b>Harbo</b> rain</p>"), "<p><b>Harbo</b> rain</p>");
+        assert.equal(plainSpacesAfterMarks("<p><b>Harbo</b>&nbsp;</p>"), "<p><b>Harbo</b>&nbsp;</p>");
+        assert.equal(plainSpacesAfterMarks("<p><b>Harbo</b>&nbsp;&nbsp;rain</p>"), "<p><b>Harbo</b>  rain</p>");
         assert.equal(plainSpacesAfterMarks("<p>&nbsp;</p>"), "<p>&nbsp;</p>");
     });
 

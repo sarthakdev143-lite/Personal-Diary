@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, joinNeedsSpace, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -867,10 +867,86 @@ function writingHost(block: HTMLElement): HTMLElement {
     return nested instanceof HTMLElement ? nested : block;
 }
 
+const STYLE_MARK = "b, strong, i, em, u, s, strike, del, a";
+
+function styleElement(node: Node | null): HTMLElement | null {
+    const host = node instanceof Element ? node : node?.parentElement ?? null;
+    const mark = host?.closest(STYLE_MARK);
+    return mark instanceof HTMLElement ? mark : null;
+}
+
+function caretEndsMark(mark: HTMLElement, range: Range): boolean {
+    if (!mark.contains(range.startContainer)) return false;
+    const after = range.cloneRange();
+    after.selectNodeContents(mark);
+    after.setStart(range.startContainer, range.startOffset);
+    return after.toString().replace(/[\u200b\u00a0\s]/g, "") === "" && !after.cloneContents().querySelector("img, br");
+}
+
+function markBeforeCaret(range: Range): HTMLElement | null {
+    let node: Node | null = null;
+    if (range.startContainer instanceof Element) node = range.startContainer.childNodes[range.startOffset - 1] ?? null;
+    else if (range.startContainer instanceof Text) {
+        if (range.startContainer.data.slice(0, range.startOffset).replace(/[\u200b\u00a0\s]/g, "") !== "") return null;
+        node = range.startContainer.previousSibling;
+    }
+    while (node instanceof Text && node.data.replace(/[\u200b\u00a0\s]/g, "") === "") node = node.previousSibling;
+    return node instanceof HTMLElement && node.matches(STYLE_MARK) ? node : null;
+}
+
+function textOutsideMark(mark: HTMLElement): boolean {
+    const block = mark.parentElement;
+    if (!block) return false;
+    const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    while (node) {
+        if (!mark.contains(node) && node.data.replace(/[\u200b\u00a0\s]/g, "") !== "") return true;
+        node = walker.nextNode();
+    }
+    return false;
+}
+
+function spaceMark(selection: Selection): HTMLElement | null {
+    if (!selection.rangeCount || !selection.isCollapsed) return null;
+    const range = selection.getRangeAt(0);
+    let mark = styleElement(range.startContainer);
+    if (!mark || !caretEndsMark(mark, range)) mark = markBeforeCaret(range);
+    if (!mark || mark.closest("pre")) return null;
+    let parent = mark.parentElement;
+    while (parent?.matches(STYLE_MARK) && caretEndsMark(parent, range) && !textOutsideMark(mark)) {
+        mark = parent;
+        parent = mark.parentElement;
+    }
+    if (!textOutsideMark(mark)) return null;
+    return mark;
+}
+
 function restoreMarkSpaces(root: HTMLElement) {
-    root.querySelectorAll("b, strong, i, em, u, s, strike, del, a").forEach((mark) => {
+    const selection = window.getSelection();
+    const anchor = selection?.rangeCount ? selection.anchorNode : null;
+    const offset = selection?.anchorOffset ?? 0;
+    root.querySelectorAll(STYLE_MARK).forEach((mark) => {
         const next = mark.nextSibling;
-        if (next instanceof Text && next.data.startsWith("\u00a0")) next.data = ` ${next.data.slice(1)}`;
+        if (!(next instanceof Text)) return;
+        const gap = next.data.match(/^[\u00a0\s\u200b]*/)?.[0] ?? "";
+        if (!gap.includes("\u00a0")) return;
+        const rest = next.data.slice(gap.length);
+        let followed = rest.replace(/[\u200b\u00a0\s]/g, "") !== "";
+        let sibling = next.nextSibling;
+        while (!followed && sibling) {
+            const visible = sibling instanceof Text ? sibling.data : sibling.textContent ?? "";
+            followed = visible.replace(/[\u200b\u00a0\s]/g, "") !== "";
+            sibling = sibling.nextSibling;
+        }
+        if (!followed) return;
+        next.data = `${gap.replace(/\u00a0/g, " ")}${rest}`;
+        if (selection && anchor === next) {
+            const range = document.createRange();
+            range.setStart(next, Math.min(offset, next.data.length));
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
     });
     root.querySelectorAll("p, h1, h2, h3, li, blockquote, figcaption").forEach((block) => {
         const first = block.firstChild;
@@ -2916,6 +2992,45 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const keepStyledSpace = (e: React.KeyboardEvent) => {
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection?.rangeCount || mode === "view") return false;
+        const anchor = selection.anchorNode;
+        if (!anchor || !editor.contains(anchor)) return false;
+        const mark = spaceMark(selection);
+        const action = styledSpace({
+            key: e.key,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            collapsed: selection.isCollapsed,
+            atMarkEnd: Boolean(mark),
+            outsideText: Boolean(mark),
+        });
+        if (action !== "outside" || !mark) return false;
+        e.preventDefault();
+        const before = editor.innerHTML;
+        const range = document.createRange();
+        if (anchor instanceof Text && !mark.contains(anchor)) {
+            const at = Math.min(selection.anchorOffset, anchor.data.length);
+            anchor.insertData(at, "\u00a0");
+            range.setStart(anchor, at + 1);
+        } else {
+            const space = document.createTextNode("\u00a0");
+            mark.after(space);
+            range.setStart(space, space.data.length);
+        }
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        const block = mark.parentElement instanceof HTMLElement ? mark.parentElement : mark;
+        keepBlank({ before, after: editor.innerHTML, path: childPath(editor, block) });
+        setHtmlContent(editor.innerHTML);
+        return true;
+    };
+
     const keepCodeLine = (e: React.KeyboardEvent) => {
         const editor = editorRef.current;
         const selection = window.getSelection();
@@ -3414,6 +3529,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (keepDateLine(e)) return;
         if (keepHeadingLine(e)) return;
         if (keepCodeLine(e)) return;
+        if (keepStyledSpace(e)) return;
         if (keepListLine(e)) return;
         if (keepQuoteLine(e)) return;
         if (editSelectedPicture(e)) return;
