@@ -311,6 +311,11 @@ export function sameEditingPage(left: string, right: string): boolean {
     return plain(left) === plain(right);
 }
 
+export function joinUndoCaret(input: { forward: boolean; offset: number }): number | null {
+    if (!input.forward || !Number.isFinite(input.offset) || input.offset < 0) return null;
+    return Math.floor(input.offset);
+}
+
 export function blankUndoCaret(saved: { caret?: number } | null): number | null {
     if (!saved || typeof saved.caret !== "number" || !Number.isFinite(saved.caret) || saved.caret < 0) return null;
     return Math.floor(saved.caret);
