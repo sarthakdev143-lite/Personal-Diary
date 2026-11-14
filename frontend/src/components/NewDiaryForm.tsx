@@ -2,7 +2,8 @@ import { useGSAP } from "@gsap/react";
 import { RiCloseCircleFill } from "@remixicon/react";
 import gsap from "gsap";
 import { Button } from "./ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import DiaryPreview from "./DiaryPreview";
 
@@ -28,6 +29,7 @@ const NewDiaryForm = ({
 }) => {
     const { selectedTexture, setSelectedTexture } = useDiary();
     const { toast } = useToast();
+    const router = useRouter();
     const [formData, setFormData] = useState({
         title: "",
         description: "",
@@ -35,6 +37,11 @@ const NewDiaryForm = ({
     const [errors, setErrors] = useState<{ title?: string }>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const selectedTheme = themes.find((theme) => theme.textureUrl === selectedTexture);
+
+    useEffect(() => {
+        if (!formActive) return;
+        document.getElementById("diary-title")?.focus();
+    }, [formActive]);
 
     useGSAP(() => {
         gsap.to("#form-parent", {
@@ -120,9 +127,9 @@ const NewDiaryForm = ({
                 }),
             });
 
-            const data = await response.json().catch(() => null) as { error?: string } | null;
+            const data = await response.json().catch(() => null) as { error?: string; _id?: string } | null;
 
-            if (!response.ok) {
+            if (!response.ok || !data?._id) {
                 throw new Error(data?.error || "Failed to create diary.");
             }
 
@@ -130,6 +137,7 @@ const NewDiaryForm = ({
             setIsFullScreen(false);
             setFormActive(false);
             onDiaryCreated?.();
+            router.push(`/diary/${data._id}`);
         } catch (error) {
             toast({
                 title: "Unable to create diary",
@@ -143,18 +151,24 @@ const NewDiaryForm = ({
 
     return (
         <>
+            {formActive && (
+                <button
+                    type="button"
+                    aria-label="Dismiss new diary"
+                    className="fixed inset-0 z-40 bg-black/70"
+                    onClick={() => setFormActive(false)}
+                />
+            )}
             <div
                 id="form-parent"
-                className="w-full xs:max-w-[29rem] max-w-[95%] bg-zinc-500/20 backdrop-blur-xl fixed z-50 
-                transition duration-300 ease-in-out left-1/2 
-                p-3 rounded-3xl shadow-xl"
-                style={{ bottom: 0, transform: "translate(-50%, 100%)", opacity: 0 }}
+                className="fixed bottom-0 left-1/2 z-50 w-full max-w-[95%] rounded-3xl border border-white/10 bg-zinc-950 p-3 text-zinc-100 shadow-2xl xs:max-w-[29rem]"
+                style={{ transform: "translate(-50%, 100%)", opacity: 0 }}
             >
                 <button
                     type="button"
                     aria-label="Close new diary"
                     onClick={() => setFormActive(false)}
-                    className="absolute top-6 right-6 text-2xl"
+                    className="absolute top-6 right-6 text-2xl text-zinc-300"
                 >
                     <RiCloseCircleFill size={23} />
                 </button>
@@ -172,12 +186,10 @@ const NewDiaryForm = ({
                                 maxLength={TITLE_MAX}
                                 aria-invalid={Boolean(errors.title)}
                                 aria-describedby={errors.title ? "diary-title-error" : undefined}
-                                className="w-full p-2 px-3 rounded-lg bg-zinc-200/20 
-                                focus:outline-none focus:ring-1 focus:ring-white/70 
-                                placeholder:text-zinc-300 tracking-wide"
+                                className="w-full rounded-lg border border-white/15 bg-zinc-900 p-2 px-3 tracking-wide text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/70"
                                 placeholder="Enter your diary's name..."
                             />
-                            {errors.title && <p id="diary-title-error" className="text-red-500 text-sm mt-1">{errors.title}</p>}
+                            {errors.title && <p id="diary-title-error" className="mt-1 text-sm text-red-300">{errors.title}</p>}
                         </div>
                         <div>
                             <label htmlFor="diary-description" className="block text-lg mb-2">Description</label>
@@ -187,10 +199,8 @@ const NewDiaryForm = ({
                                 value={formData.description}
                                 onChange={handleChange}
                                 maxLength={DESCRIPTION_MAX}
-                                className="w-full max-h-40 min-h-16 p-2 px-3 rounded-lg bg-zinc-200/20 
-                                focus:outline-none focus:ring-1 focus:ring-white/70 
-                                placeholder:text-zinc-300 tracking-wide"
-                                placeholder="Describe what you're gonna write..."
+                                className="max-h-40 min-h-16 w-full rounded-lg border border-white/15 bg-zinc-900 p-2 px-3 tracking-wide text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/70"
+                                placeholder="What is this diary for?"
                                 rows={4}
                             />
                         </div>
@@ -208,20 +218,19 @@ const NewDiaryForm = ({
             </div>
             <div
                 id="theme-selection"
-                className="fixed w-full h-full top-0 left-0 bg-black/50 items-center justify-center 
-                lg:justify-between gap-4 lg:p-6 z-[60] hidden"
+                className="fixed inset-0 z-[60] hidden flex-col items-stretch gap-4 overflow-y-auto bg-zinc-950 p-4 text-zinc-100 xl:flex-row xl:items-center xl:overflow-hidden xl:p-6"
             >
                 <button
                     type="button"
                     aria-label="Close theme selection"
                     onClick={handleCloseThemeSelection}
-                    className="absolute top-6 right-6 z-[70] text-2xl"
+                    className="absolute right-6 top-6 z-[70] text-2xl text-zinc-300"
                 >
                     <RiCloseCircleFill size={23} />
                 </button>
                 
                 {/* 3D Preview Area */}
-                <div className="relative h-3/4 w-full overflow-hidden rounded-lg bg-white/30 shadow-lg backdrop-blur-sm lg:h-full lg:w-2/3">
+                <div className="relative h-64 w-full min-w-0 overflow-hidden rounded-lg bg-zinc-900 shadow-lg xl:h-full xl:flex-1">
                     <div className="absolute top-4 left-4 z-10 bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2">
                         <h3 className="text-lg font-semibold text-white">Preview</h3>
                         <p className="text-sm text-gray-300">{formData.title || "Your Diary"}</p>
@@ -241,7 +250,7 @@ const NewDiaryForm = ({
                 </div>
 
                 {/* Theme Selection Panel */}
-                <div className="w-auto flex-1 flex flex-col items-center h-3/4 min-w-[320px]">
+                <div className="flex w-full shrink-0 flex-col items-center xl:h-full xl:w-80">
                     <h2 className="text-2xl font-bold mb-4">Choose a Theme</h2>
                     <div id="themes" className="p-4 grid grid-cols-3 gap-4 justify-center max-w-80 max-h-[48rem] overflow-y-auto my-3">
                         {themes.map((elem, index) => (
