@@ -2375,7 +2375,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         });
         if (action === "pass") return false;
         e.preventDefault();
+        const before = editor.innerHTML;
+        const path = childPath(editor, item);
         leaveListItem(item);
+        blankLine.current = { before, after: editor.innerHTML, path };
         setHtmlContent(editor.innerHTML);
         return true;
     };
@@ -2401,7 +2404,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         });
         if (action === "pass") return false;
         e.preventDefault();
+        const before = editor.innerHTML;
+        const path = childPath(editor, quote);
         leaveQuote(quote);
+        blankLine.current = { before, after: editor.innerHTML, path };
         setHtmlContent(editor.innerHTML);
         return true;
     };
@@ -2437,7 +2443,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             });
             if (action !== "pull" || !neighbor) return false;
             e.preventDefault();
+            const before = editor.innerHTML;
+            const path = childPath(editor, pre);
             pullFirstCodeLine(neighbor, pre);
+            blankLine.current = { before, after: editor.innerHTML, path };
             setHtmlContent(editor.innerHTML);
             return true;
         }
@@ -2459,7 +2468,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         });
         if (action !== "pull" || !code) return false;
         e.preventDefault();
+        const before = editor.innerHTML;
+        const path = childPath(editor, block);
         pullFirstCodeLine(block, code);
+        blankLine.current = { before, after: editor.innerHTML, path };
         setHtmlContent(editor.innerHTML);
         return true;
     };

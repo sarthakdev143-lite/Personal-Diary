@@ -184,6 +184,7 @@ describe("code block", () => {
         assert.equal(codePullKey({ key: "Delete", collapsed: true, atStart: false, atEnd: true, neighbor: "code" }), "pull");
         assert.equal(codePullKey({ key: "Delete", collapsed: true, atStart: false, atEnd: true, neighbor: "text" }), "pass");
         assert.equal(codePullKey({ key: "Delete", collapsed: true, atStart: false, atEnd: false, neighbor: "code" }), "pass");
+        assert.equal(headingSplitUndo({ saved: { before: "<p>Harbor</p><pre><code>const a = 1;</code></pre>", after: "<p>Harbor const a = 1;</p>" }, current: "<p>Harbor const a = 1;</p>" }), "restore");
     });
 
     it("starts the next line when Enter is pressed in the code", () => {
@@ -205,6 +206,7 @@ describe("code block", () => {
         assert.equal(listLeaveKey({ ...blank, key: "a" }), "pass");
         assert.equal(listLeaveKey({ ...blank, shiftKey: true }), "pass");
         assert.equal(listLeaveKey({ ...blank, ctrlKey: true }), "pass");
+        assert.equal(headingSplitUndo({ saved: { before: "<ul><li>one</li><li><br></li></ul>", after: "<ul><li>one</li></ul><p><br></p>" }, current: "<ul><li>one</li></ul><p><br></p>" }), "restore");
     });
 
     it("leaves a quote when Enter is pressed on a blank quote", () => {
@@ -216,6 +218,7 @@ describe("code block", () => {
         assert.equal(quoteLeaveKey({ ...blank, key: "a" }), "pass");
         assert.equal(quoteLeaveKey({ ...blank, shiftKey: true }), "pass");
         assert.equal(quoteLeaveKey({ ...blank, ctrlKey: true }), "pass");
+        assert.equal(headingSplitUndo({ saved: { before: "<blockquote>Quiet</blockquote><blockquote><br></blockquote>", after: "<blockquote>Quiet</blockquote><p><br></p>" }, current: "<blockquote>Quiet</blockquote><p><br></p>" }), "restore");
     });
 
     it("keeps a space when two lines join", () => {
