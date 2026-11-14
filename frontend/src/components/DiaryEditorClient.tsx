@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, dateHeadingKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, dateHeadingKey, datePaste, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -368,6 +368,61 @@ function dateHeadingHoldsSelection(editor: HTMLElement, selection: Selection | n
     if (!leadingDateLabel(text) || heading.querySelector("img")) return false;
     const range = selection.getRangeAt(0);
     return heading.contains(range.startContainer) && heading.contains(range.endContainer);
+}
+
+function selectedDateHeading(editor: HTMLElement, selection: Selection | null, label: string): { heading: HTMLElement; onlyDate: boolean } | null {
+    if (!label || !selection?.rangeCount) return null;
+    const heading = editor.firstElementChild;
+    if (!(heading instanceof HTMLElement) || heading.tagName !== "H2") return null;
+    const text = (heading.textContent ?? "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+    if (text !== label && !text.startsWith(label)) return null;
+    const range = selection.getRangeAt(0);
+    let touches = false;
+    try {
+        touches = range.intersectsNode(heading);
+    } catch {
+        touches = false;
+    }
+    if (!touches) return null;
+    const onlyDate = heading.contains(range.startContainer) && heading.contains(range.endContainer);
+    return { heading, onlyDate };
+}
+
+function pointAfterDate(heading: HTMLElement, container: Node, offset: number): boolean {
+    const parent = heading.parentElement;
+    if (!parent) return false;
+    if (container === parent) return offset > [...parent.childNodes].indexOf(heading) + 1;
+    if (heading.contains(container)) return false;
+    const node = container instanceof Element ? container : container.parentElement;
+    if (!node || node === heading) return false;
+    return (heading.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+}
+
+function deleteSelectedAfterDate(heading: HTMLElement, selection: Selection) {
+    if (!selection.rangeCount) return;
+    const range = selection.getRangeAt(0);
+    if (!pointAfterDate(heading, range.endContainer, range.endOffset)) return;
+    const clipped = document.createRange();
+    if (pointAfterDate(heading, range.startContainer, range.startOffset)) {
+        clipped.setStart(range.startContainer, range.startOffset);
+    } else {
+        clipped.setStartAfter(heading);
+    }
+    clipped.setEnd(range.endContainer, range.endOffset);
+    clipped.deleteContents();
+}
+
+function placeWritingCaret(heading: HTMLElement, onlyDate: boolean) {
+    const next = heading.nextElementSibling;
+    const nextText = next instanceof HTMLElement ? (next.textContent ?? "").replace(/\u00a0/g, " ").trim() : "";
+    if (onlyDate && next instanceof HTMLElement && nextText) {
+        const paragraph = document.createElement("p");
+        paragraph.appendChild(document.createElement("br"));
+        heading.after(paragraph);
+        placeCaretAtStart(paragraph);
+        return;
+    }
+    placeCaretAtStart(writingLineAfter(heading));
 }
 
 function settleDateHeading(editor: HTMLElement) {
@@ -729,15 +784,36 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         insertImageFile(file);
     }, [toast]);
 
+    const dateLineLabel = () => {
+        const instant = instantFor(entryDate);
+        return instant ? fmtLong(instant.toISOString()) : "";
+    };
+
+    const movePasteOffDate = (selection: Selection) => {
+        const editor = editorRef.current;
+        const touched = editor ? selectedDateHeading(editor, selection, dateLineLabel()) : null;
+        if (!touched) return "pass" as const;
+        const action = datePaste({ touchesDate: true, onlyDate: touched.onlyDate });
+        if (action === "replace-writing") deleteSelectedAfterDate(touched.heading, selection);
+        placeWritingCaret(touched.heading, action === "writing");
+        return action;
+    };
+
     const onPaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
         if (mode === "view") return;
         const data = event.clipboardData;
+        const selection = window.getSelection();
+        const moved = selection ? movePasteOffDate(selection) : "pass";
+        if (moved !== "pass") event.preventDefault();
         const decision = decideEntryPaste({
             files: Array.from(data.files, (file) => ({ type: file.type, size: file.size })),
             html: data.getData("text/html"),
             text: data.getData("text/plain"),
         });
-        if (decision.action === "default") return;
+        if (decision.action === "default") {
+            if (moved !== "pass") insertText(data.getData("text/plain"));
+            return;
+        }
         event.preventDefault();
         if (decision.action === "reject") {
             toast({ title: decision.title, description: decision.description, variant: "destructive" });
@@ -765,6 +841,21 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             return file ? [file] : [];
         });
         if (chosen.length) startPictureQueue(chosen);
+    };
+
+    const onCut = (event: React.ClipboardEvent<HTMLDivElement>) => {
+        if (mode === "view") return;
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection) return;
+        const touched = selectedDateHeading(editor, selection, dateLineLabel());
+        if (!touched) return;
+        event.preventDefault();
+        event.clipboardData.setData("text/plain", selection.toString());
+        if (datePaste({ touchesDate: true, onlyDate: touched.onlyDate }) !== "replace-writing") return;
+        deleteSelectedAfterDate(touched.heading, selection);
+        placeWritingCaret(touched.heading, false);
+        setHtmlContent(editor.innerHTML);
     };
 
     const onEditorDragOver = (event: React.DragEvent<HTMLDivElement>) => {
@@ -2574,6 +2665,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 onMouseUp={updateActiveFormats}
                                 spellCheck={false}
                                 onPaste={onPaste}
+                                onCut={onCut}
                                 onDragOver={onEditorDragOver}
                                 onDrop={onEditorDrop}
                                 data-gramm="false"

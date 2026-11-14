@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, dateHeadingKey, formatEntryLong, freshEntryHtml, hasEntryContent, laterEntryTime, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, dateHeadingKey, datePaste, formatEntryLong, freshEntryHtml, hasEntryContent, laterEntryTime, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -133,6 +133,9 @@ describe("blank entry", () => {
         assert.equal(dateHeadingKey({ ...plain, key: "Backspace", where: "after", atStart: false }), "pass");
         assert.equal(dateHeadingKey({ ...plain, key: "k", ctrlKey: true, where: "heading" }), "pass");
         assert.equal(dateHeadingKey({ ...plain, key: "b", ctrlKey: true, where: "heading" }), "hold");
+        assert.equal(datePaste({ touchesDate: false, onlyDate: false }), "pass");
+        assert.equal(datePaste({ touchesDate: true, onlyDate: true }), "writing");
+        assert.equal(datePaste({ touchesDate: true, onlyDate: false }), "replace-writing");
         assert.equal(dateHeadingKey({ ...plain, key: "i", metaKey: true, where: "heading" }), "hold");
         assert.equal(hasEntryContent(html), false);
     });

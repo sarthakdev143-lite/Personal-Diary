@@ -79,6 +79,13 @@ export function separateGluedDateHeading(html: string): string {
     return `${heading}<p>${escaped}</p>${rest}`;
 }
 
+export type DatePaste = "writing" | "replace-writing" | "pass";
+
+export function datePaste(input: { touchesDate: boolean; onlyDate: boolean }): DatePaste {
+    if (!input.touchesDate) return "pass";
+    return input.onlyDate ? "writing" : "replace-writing";
+}
+
 export type DateHeadingKey = "write" | "leave" | "hold" | "pass";
 
 export function dateHeadingKey(input: {
