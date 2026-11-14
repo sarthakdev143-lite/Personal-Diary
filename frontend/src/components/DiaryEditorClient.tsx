@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, wordGapInsert, wordGapKey, stickyUndo, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, stickyUndo, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -2408,7 +2408,31 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             event.clipboardData.setData("text/plain", selection.toString());
             event.clipboardData.setData("text/html", cutSelectionHtml(range));
         }
+        const block = wordBlock(range.startContainer);
+        const endBlock = wordBlock(range.endContainer);
+        let gap: "before" | "after" | "none" = "none";
+        if (block instanceof HTMLElement && block === endBlock) {
+            const rawStart = textOffsetWithin(block, range.startContainer, range.startOffset);
+            const rawEnd = textOffsetWithin(block, range.endContainer, range.endOffset);
+            const removal = cutRemoval(block.textContent ?? "", rawStart, rawEnd);
+            gap = removal.gap;
+            const widened = selectTextSpan(block, removal.start, removal.end);
+            if (widened) {
+                selection.removeAllRanges();
+                selection.addRange(widened);
+            }
+        }
         document.execCommand("delete");
+        if (block instanceof HTMLElement && block === endBlock) {
+            dropEmptyMarks(block);
+            block.normalize();
+            if (blockIsEmpty(block)) {
+                block.replaceChildren(document.createElement("br"));
+                placeCaretAtStart(block);
+                gap = "none";
+            } else relaxBlockSpaces(block);
+        }
+        rememberWordGap(editor, block instanceof HTMLElement && block === endBlock ? block : null, gap);
         keepReplacedSelection(mark);
         setHtmlContent(editor.innerHTML);
     };

@@ -217,6 +217,11 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
     return { start, end };
 }
 
+export function cutRemoval(text: string, start: number, end: number): { start: number; end: number; gap: "before" | "after" | "none" } {
+    const span = wordDeleteSpan(text, start, end);
+    return { start: span.start, end: span.end, gap: wordDeleteGap(text, start, end) };
+}
+
 export function wordDeleteGap(text: string, start: number, end: number): "before" | "after" | "none" {
     if (start >= end) return "none";
     const widened = wordDeleteSpan(text, start, end);
