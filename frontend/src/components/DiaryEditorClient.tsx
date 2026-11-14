@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, dateHeadingKey, datePaste, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, listLeaveKey, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, dateHeadingKey, datePaste, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, listLeaveKey, quoteLeaveKey, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -617,6 +617,13 @@ function selectCodeOffsets(code: HTMLElement, start: number, end: number) {
         filled = next;
         node = walker.nextNode();
     }
+}
+
+function leaveQuote(quote: HTMLElement) {
+    const paragraph = document.createElement("p");
+    paragraph.appendChild(document.createElement("br"));
+    quote.replaceWith(paragraph);
+    placeCaretAtStart(paragraph);
 }
 
 function leaveListItem(item: HTMLElement) {
@@ -1971,6 +1978,32 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const keepQuoteLine = (e: React.KeyboardEvent) => {
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection?.rangeCount || mode === "view") return false;
+        const anchor = selection.anchorNode;
+        const host = anchor instanceof Element ? anchor : anchor?.parentElement ?? null;
+        const quote = host?.closest("blockquote");
+        if (!(quote instanceof HTMLElement) || !editor.contains(quote)) return false;
+        const text = (quote.textContent ?? "").replace(/[\u200b\u00a0]/g, "").trim();
+        const action = quoteLeaveKey({
+            key: e.key,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            inQuote: true,
+            collapsed: selection.isCollapsed,
+            empty: text.length === 0 && !quote.querySelector("img"),
+        });
+        if (action === "pass") return false;
+        e.preventDefault();
+        leaveQuote(quote);
+        setHtmlContent(editor.innerHTML);
+        return true;
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (saveEntryShortcut(e)) {
             e.preventDefault();
@@ -1978,6 +2011,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             return;
         }
         if (mode === "view") return;
+        document.execCommand("defaultParagraphSeparator", false, "p");
         if ((e.key === "z" || e.key === "Z") && (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey) {
             const editor = editorRef.current;
             if (editor && e.target instanceof Node && editor.contains(e.target) && undoRemovedPicture()) {
@@ -1988,6 +2022,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (keepDateLine(e)) return;
         if (keepCodeLine(e)) return;
         if (keepListLine(e)) return;
+        if (keepQuoteLine(e)) return;
         if (editSelectedPicture(e)) return;
         if (keepPictureNameApart(e)) return;
         if (moveAroundPicture(e)) return;
