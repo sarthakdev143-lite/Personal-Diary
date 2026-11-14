@@ -190,6 +190,16 @@ export function retitleEntryDate(html: string, fromLabel: string, toLabel: strin
     return `<h2>${toLabel}</h2>${html.slice(prefix.length)}`;
 }
 
+export function entrySelectionAction(
+    currentId: string | null,
+    mode: "compose" | "view" | "edit",
+    clickedId: string,
+): "stay" | "revert" | "open" {
+    if (currentId === clickedId && mode === "view") return "stay";
+    if (currentId === clickedId && mode === "edit") return "revert";
+    return "open";
+}
+
 export function entryToShowOnOpen<T extends { createdAt: string }>(entries: readonly T[]): T | null {
     let chosen: T | null = null;
     let chosenTime = Number.NEGATIVE_INFINITY;

@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, escapeRegExp, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entryPlainText, entryToShowOnOpen, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, retitleEntryDate, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entryPlainText, entrySelectionAction, entryToShowOnOpen, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, retitleEntryDate, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
     normalizeTheme,
@@ -348,6 +348,15 @@ describe("entry date", () => {
         assert.equal(entryToShowOnOpen([older, newer])?.id, "newer");
         assert.equal(entryToShowOnOpen([newer, older])?.id, "newer");
         assert.equal(entryToShowOnOpen([older, { ...older, id: "same" }])?.id, "older");
+    });
+
+    it("keeps the open entry open and returns a revision to that entry", () => {
+        assert.equal(entrySelectionAction("newest", "view", "newest"), "stay");
+        assert.equal(entrySelectionAction("newest", "edit", "newest"), "revert");
+        assert.equal(entrySelectionAction("newest", "view", "older"), "open");
+        assert.equal(entrySelectionAction("newest", "edit", "older"), "open");
+        assert.equal(entrySelectionAction(null, "compose", "newest"), "open");
+        assert.equal(entrySelectionAction("newest", "compose", "newest"), "open");
     });
 });
 

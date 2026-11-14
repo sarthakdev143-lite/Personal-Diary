@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { DESCRIPTION_MAX, DIARY_THEMES, MAX_IMAGE_BYTES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
 import { diaryFieldsMatch } from "@/lib/diary/search";
-import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entryToShowOnOpen, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryMonths, entrySelectionAction, entryToShowOnOpen, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
@@ -285,10 +285,20 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
     };
 
+    const revertToSaved = (entry: Entry) => {
+        if (!discardIfDirty()) return;
+        setSelectedEntryId(entry._id);
+        setMode("view");
+        setConfirmDelete(null);
+        rememberDate(calendarDate(new Date(entry.createdAt)));
+        writeEditor(entry.content);
+    };
+
     const handleEntrySelect = (entry: Entry) => {
-        if (selectedEntryId === entry._id && mode !== "compose") {
-            if (!discardIfDirty()) return;
-            resetComposer();
+        const action = entrySelectionAction(selectedEntryId, mode, entry._id);
+        if (action === "stay") return;
+        if (action === "revert") {
+            revertToSaved(entry);
             return;
         }
         if (!discardIfDirty()) return;
@@ -1076,12 +1086,26 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                     )}
                                 </div>
                             ) : (
-                                <button type="button" onClick={handleSave} disabled={!canSave || isSaving} className="de-save-btn">
-                                    {isSaving
-                                        ? <><span style={{ width: 10, height: 10, borderRadius: "50%", border: "1px solid #c4a882", borderTopColor: "transparent", animation: "spin 1s linear infinite", display: "inline-block" }} />saving</>
-                                        : mode === "edit" ? "update entry" : "save entry"
-                                    }
-                                </button>
+                                <div className="de-footer-actions">
+                                    {mode === "edit" && selectedEntryId && (
+                                        <button
+                                            type="button"
+                                            className="de-ghost-btn"
+                                            onClick={() => {
+                                                const entry = entries.find((item) => item._id === selectedEntryId);
+                                                if (entry) revertToSaved(entry);
+                                            }}
+                                        >
+                                            cancel
+                                        </button>
+                                    )}
+                                    <button type="button" onClick={handleSave} disabled={!canSave || isSaving} className="de-save-btn">
+                                        {isSaving
+                                            ? <><span style={{ width: 10, height: 10, borderRadius: "50%", border: "1px solid #c4a882", borderTopColor: "transparent", animation: "spin 1s linear infinite", display: "inline-block" }} />saving</>
+                                            : mode === "edit" ? "update entry" : "save entry"
+                                        }
+                                    </button>
+                                </div>
                             )}
                         </div>
                     </section>
