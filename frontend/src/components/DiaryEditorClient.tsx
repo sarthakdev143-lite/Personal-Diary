@@ -3710,8 +3710,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const cut = boundarySpaceCut(raw.slice(0, offset), raw.slice(offset));
         if (action !== "trim" || !cut) return false;
         e.preventDefault();
+        const before = editor.innerHTML;
+        const path = childPath(editor, block);
         selectTextRange(nodes, offset - cut.before, offset + cut.after);
         document.execCommand(e.shiftKey ? "insertLineBreak" : "insertParagraph", false);
+        keepBlank({ before, after: editor.innerHTML, path, caret: offset });
         setHtmlContent(editor.innerHTML);
         return true;
     };
