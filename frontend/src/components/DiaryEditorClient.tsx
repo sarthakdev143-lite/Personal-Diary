@@ -153,7 +153,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const [entryDate, setEntryDate] = useState(() => calendarDate(new Date()));
     const [savedDate, setSavedDate] = useState(() => calendarDate(new Date()));
     const [linkOpen, setLinkOpen] = useState(false);
-    const [pendingImage, setPendingImage] = useState<string | null>(null);
+    const [pictureQueue, setPictureQueue] = useState<string[]>([]);
+    const [pictureTotal, setPictureTotal] = useState(0);
+    const pendingImage = pictureQueue[0] ?? null;
+    const pictureIndex = pictureQueue.length === 0 ? 0 : pictureTotal - pictureQueue.length + 1;
+    const pictureLabel = pictureTotal > 1 ? `Picture ${pictureIndex} of ${pictureTotal}` : "Picture";
     const [imageAlt, setImageAlt] = useState("");
     const [linkDraft, setLinkDraft] = useState("");
     const [linkError, setLinkError] = useState<string | null>(null);
@@ -290,11 +294,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     useEffect(() => {
         if (!pendingImage) return;
         imageAltRef.current?.focus();
-    }, [pendingImage]);
+    }, [pendingImage, pictureIndex]);
 
     useEffect(() => {
         if (mode !== "view") return;
-        setPendingImage(null);
+        setPictureQueue([]);
+        setPictureTotal(0);
         setImageAlt("");
     }, [mode]);
 
@@ -324,22 +329,39 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         updateActiveFormats();
     }, [updateActiveFormats]);
 
-    const insertImageFile = useCallback((file: File) => {
+    const startPictureQueue = (files: File[]) => {
+        if (!files.length) return;
         const editor = editorRef.current;
         const selection = window.getSelection();
         imageRange.current = selection && selection.rangeCount > 0 && editor?.contains(selection.anchorNode)
             ? selection.getRangeAt(0).cloneRange()
             : null;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            const src = ev.target?.result;
-            if (typeof src !== "string") return;
+        let remaining = files.length;
+        const sources = new Array<string>(files.length).fill("");
+        const finish = () => {
+            remaining -= 1;
+            if (remaining > 0) return;
+            const next = sources.filter((src) => src.length > 0);
+            if (!next.length) return;
             setLinkOpen(false);
             setImageAlt("");
-            setPendingImage(src);
+            setPictureTotal(next.length);
+            setPictureQueue(next);
         };
-        reader.readAsDataURL(file);
-    }, []);
+        files.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                sources[index] = typeof reader.result === "string" ? reader.result : "";
+                finish();
+            };
+            reader.onerror = () => finish();
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const insertImageFile = (file: File) => {
+        startPictureQueue([file]);
+    };
 
     const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -351,7 +373,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             return;
         }
         insertImageFile(file);
-    }, [insertImageFile, toast]);
+    }, [toast]);
 
     const onPaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
         if (mode === "view") return;
@@ -379,8 +401,16 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             return;
         }
         if (decision.action === "ignore") return;
-        const file = Array.from(data.files).find((item) => item.type.startsWith("image/"));
-        if (file) insertImageFile(file);
+        if (decision.action !== "image") return;
+        if (decision.warning) {
+            toast({ title: decision.warning.title, description: decision.warning.description, variant: "destructive" });
+        }
+        const imageFiles = Array.from(data.files).filter((item) => item.type.startsWith("image/"));
+        const chosen = (decision.indexes ?? []).flatMap((index) => {
+            const file = imageFiles[index];
+            return file ? [file] : [];
+        });
+        if (chosen.length) startPictureQueue(chosen);
     };
 
     const onEditorDragOver = (event: React.DragEvent<HTMLDivElement>) => {
@@ -399,8 +429,14 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             return;
         }
         if (decision.action !== "image") return;
-        const file = files.find((item) => item.type.startsWith("image/"));
-        if (file) insertImageFile(file);
+        if (decision.warning) {
+            toast({ title: decision.warning.title, description: decision.warning.description, variant: "destructive" });
+        }
+        const chosen = (decision.indexes ?? []).flatMap((index) => {
+            const file = files[index];
+            return file ? [file] : [];
+        });
+        if (chosen.length) startPictureQueue(chosen);
     };
 
     const writeEditor = (html: string) => {
@@ -914,7 +950,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         setLinkDraft(parsed?.ok ? parsed.href : "");
         setLinkError(null);
         setLinkOpen(true);
-        setPendingImage(null);
+        setPictureQueue([]);
+        setPictureTotal(0);
         setImageAlt("");
     };
 
@@ -972,7 +1009,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     };
 
     const insertPendingImage = () => {
-        if (!pendingImage) return;
+        const current = pictureQueue[0];
+        if (!current) return;
         const editor = editorRef.current;
         editor?.focus();
         const selection = window.getSelection();
@@ -988,9 +1026,14 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 selection.addRange(range);
             }
         }
-        imageRange.current = null;
-        insertHTML(imageHtml(pendingImage, imageAlt));
-        setPendingImage(null);
+        insertHTML(imageHtml(current, imageAlt));
+        const nextSelection = window.getSelection();
+        imageRange.current = nextSelection && nextSelection.rangeCount > 0 && editor?.contains(nextSelection.anchorNode)
+            ? nextSelection.getRangeAt(0).cloneRange()
+            : null;
+        const rest = pictureQueue.slice(1);
+        setPictureQueue(rest);
+        if (!rest.length) setPictureTotal(0);
         setImageAlt("");
     };
 
@@ -1728,7 +1771,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             insertPendingImage();
                         }}
                     >
-                        <label htmlFor="entry-image-alt">Picture</label>
+                        <label htmlFor="entry-image-alt">{pictureLabel}</label>
                         <input
                             id="entry-image-alt"
                             ref={imageAltRef}
@@ -1738,7 +1781,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             onKeyDown={(event) => {
                                 if (event.key === "Escape") {
                                     event.preventDefault();
-                                    setPendingImage(null);
+                                    setPictureQueue([]);
+                                    setPictureTotal(0);
                                     setImageAlt("");
                                 }
                             }}
@@ -1748,7 +1792,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             type="button"
                             className="de-ghost-btn"
                             onClick={() => {
-                                setPendingImage(null);
+                                setPictureQueue([]);
+                                setPictureTotal(0);
                                 setImageAlt("");
                             }}
                         >

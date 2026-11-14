@@ -40,7 +40,7 @@ export function imageFileIssue(file: { type: string; size: number }): ImageFileI
 }
 
 export type PasteDecision =
-    | { action: "image" }
+    | { action: "image"; indexes?: number[]; warning?: ImageFileIssue }
     | { action: "html"; html: string; warning?: ImageFileIssue }
     | { action: "plain"; text: string }
     | { action: "default" }
@@ -52,12 +52,8 @@ export function decideEntryPaste(input: {
     html: string;
     text: string;
 }): PasteDecision {
-    const image = input.files.find((file) => file.type.startsWith("image/"));
-    if (image) {
-        const issue = imageFileIssue(image);
-        if (issue) return { action: "reject", ...issue };
-        return { action: "image" };
-    }
+    const imageFiles = input.files.filter((file) => file.type.startsWith("image/"));
+    if (imageFiles.length) return decideEntryDrop(imageFiles);
 
     const html = input.html.trim();
     if (!html) return { action: "default" };
@@ -74,15 +70,24 @@ export function decideEntryPaste(input: {
 
 export function decideEntryDrop(files: { type: string; size: number }[]): PasteDecision {
     if (!files.length) return { action: "default" };
-    const image = files.find((file) => file.type.startsWith("image/"));
-    if (!image) {
+    const indexes: number[] = [];
+    let warning: ImageFileIssue | undefined;
+    files.forEach((file, index) => {
+        if (!file.type.startsWith("image/")) return;
+        const issue = imageFileIssue(file);
+        if (issue) {
+            warning ??= issue;
+            return;
+        }
+        indexes.push(index);
+    });
+    if (!indexes.length) {
+        if (warning) return { action: "reject", ...warning };
         return {
             action: "reject",
             title: "Not an image",
             description: "Choose a PNG, JPEG, GIF, or WebP image.",
         };
     }
-    const issue = imageFileIssue(image);
-    if (issue) return { action: "reject", ...issue };
-    return { action: "image" };
+    return { action: "image", indexes, ...(warning ? { warning } : {}) };
 }

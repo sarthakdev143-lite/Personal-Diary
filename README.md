@@ -36,7 +36,7 @@ npm run lint
 ## What you can do
 
 - Create a diary and choose one of the built-in covers. Change that cover later from the diary details.
-- Date an entry today or on a past day. Drop a picture onto the page, or add one from the toolbar, and name it so the entry card and search use that name.
+- Date an entry today or on a past day. Drop pictures onto the page, or add one from the toolbar, and name each one so the entry card and search use that name.
 - Search diaries by title, description, or the text of an entry. Inside a diary, narrow the list to one month.
 - Edit or delete an entry, and rename or delete a diary.
 - Download a diary as Markdown, or as a JSON backup from its details. Import that backup from the diary list. A pin comes back with the backup.

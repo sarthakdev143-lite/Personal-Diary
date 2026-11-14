@@ -25,7 +25,7 @@ describe("entry paste", () => {
             files: [{ type: "image/png", size: 40 }],
             html: "",
             text: "",
-        }), { action: "image" });
+        }), { action: "image", indexes: [0] });
 
         assert.deepEqual(decideEntryPaste({
             files: [{ type: "image/png", size: MAX_IMAGE_BYTES + 1 }],
@@ -83,7 +83,22 @@ describe("entry paste", () => {
         assert.deepEqual(decideEntryDrop([
             { type: "text/plain", size: 12 },
             { type: "image/webp", size: 80 },
-        ]), { action: "image" });
+        ]), { action: "image", indexes: [1] });
+        assert.deepEqual(decideEntryDrop([
+            { type: "image/png", size: 10 },
+            { type: "image/jpeg", size: 20 },
+        ]), { action: "image", indexes: [0, 1] });
+        assert.deepEqual(decideEntryDrop([
+            { type: "image/gif", size: MAX_IMAGE_BYTES + 1 },
+            { type: "image/png", size: 40 },
+        ]), {
+            action: "image",
+            indexes: [1],
+            warning: {
+                title: "Image is too large",
+                description: "Choose an image under 150 KB.",
+            },
+        });
         assert.deepEqual(decideEntryDrop([]), { action: "default" });
         assert.deepEqual(decideEntryDrop([{ type: "application/pdf", size: 20 }]), {
             action: "reject",
