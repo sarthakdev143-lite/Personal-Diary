@@ -301,6 +301,24 @@ export function entryToShowAfterDelete<T extends { _id: string }>(
     return entries[index + 1] ?? entries[index - 1] ?? null;
 }
 
+export function entryFindKeyAction(event: {
+    key: string;
+    altKey: boolean;
+    ctrlKey: boolean;
+    metaKey: boolean;
+    shiftKey: boolean;
+    inField: boolean;
+    searchFocused: boolean;
+    query: string;
+}): "focus" | "clear" | null {
+    if (event.altKey || event.ctrlKey || event.metaKey) return null;
+    if (event.key === "Escape") {
+        return event.searchFocused && event.query ? "clear" : null;
+    }
+    if (event.key !== "/" || event.shiftKey || event.searchFocused || event.inField) return null;
+    return "focus";
+}
+
 export function entryToShowByStep<T extends { _id: string }>(
     entries: readonly T[],
     currentId: string | null,

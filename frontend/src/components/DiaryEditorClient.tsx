@@ -10,7 +10,7 @@ import { DESCRIPTION_MAX, DIARY_THEMES, TITLE_MAX, coverForTheme, isAllowedTheme
 import { takeImportNotice } from "@/lib/diary/import";
 import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
 import { entryMatchesListQuery } from "@/lib/diary/search";
-import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryMonths, entrySelectionAction, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLinkUrl, entryMonths, entrySelectionAction, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
@@ -75,6 +75,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const entryClock = useRef(new Date());
     const linkInputRef = useRef<HTMLInputElement>(null);
+    const entrySearchRef = useRef<HTMLInputElement>(null);
     const linkRange = useRef<Range | null>(null);
     const discardButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -711,13 +712,36 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (mode !== "view" || detailsOpen || linkOpen || confirmDelete || pendingDiscard) return;
 
         const onKey = (event: KeyboardEvent) => {
-            if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
-            if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
             const target = event.target;
-            if (target instanceof HTMLElement) {
-                const tag = target.tagName;
-                if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable) return;
+            const inField = target instanceof HTMLElement && (
+                target.tagName === "INPUT"
+                || target.tagName === "TEXTAREA"
+                || target.tagName === "SELECT"
+                || target.isContentEditable
+            );
+            const findAction = entryFindKeyAction({
+                key: event.key,
+                altKey: event.altKey,
+                ctrlKey: event.ctrlKey,
+                metaKey: event.metaKey,
+                shiftKey: event.shiftKey,
+                inField,
+                searchFocused: target === entrySearchRef.current,
+                query: entryQuery,
+            });
+            if (findAction === "clear") {
+                event.preventDefault();
+                setEntryQuery("");
+                return;
             }
+            if (findAction === "focus") {
+                if (!entrySearchRef.current) return;
+                event.preventDefault();
+                entrySearchRef.current.focus();
+                return;
+            }
+            if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+            if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || inField) return;
             const next = entryToShowByStep(
                 visibleEntries,
                 selectedEntryId,
@@ -733,7 +757,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
-    }, [mode, detailsOpen, linkOpen, confirmDelete, pendingDiscard, visibleEntries, selectedEntryId]);
+    }, [mode, detailsOpen, linkOpen, confirmDelete, pendingDiscard, visibleEntries, selectedEntryId, entryQuery]);
 
     if (isLoading) return (
         <div style={{ position: "fixed", inset: 0, zIndex: 10, background: "#0d0b09", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1251,6 +1275,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         </div>
                         {entries.length > 0 && (
                             <input
+                                ref={entrySearchRef}
                                 className="de-entry-search"
                                 type="search"
                                 value={entryQuery}
@@ -1385,6 +1410,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                     <>
                                         <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
                                         <span style={{ color: "#9b8b78", fontStyle: "italic" }}>read only</span>
+                                        {entries.length > 0 && (
+                                            <>
+                                                <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
+                                                <span className="de-kbd-hint">/ find</span>
+                                            </>
+                                        )}
                                         {visibleEntries.length > 1 && (
                                             <>
                                                 <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />

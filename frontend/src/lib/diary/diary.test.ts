@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, entryMatchesListQuery, escapeRegExp, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entryFindKeyAction, entryInMonth, entryInstant, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
     normalizeTheme,
@@ -487,6 +487,21 @@ describe("entry date", () => {
         assert.equal(entryToShowByStep(entries, "missing", "next")?._id, "newest");
         assert.equal(entryToShowByStep(entries, "missing", "previous")?._id, "oldest");
         assert.equal(entryToShowByStep([], "newest", "next"), null);
+    });
+
+    it("focuses entry search with slash and clears it with escape", () => {
+        const plain = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false, inField: false, searchFocused: false, query: "" };
+        assert.equal(entryFindKeyAction({ ...plain, key: "/" }), "focus");
+        assert.equal(entryFindKeyAction({ ...plain, key: "/", inField: true }), null);
+        assert.equal(entryFindKeyAction({ ...plain, key: "/", searchFocused: true, query: "rain" }), null);
+        assert.equal(entryFindKeyAction({ ...plain, key: "/", ctrlKey: true }), null);
+        assert.equal(entryFindKeyAction({ ...plain, key: "/", metaKey: true }), null);
+        assert.equal(entryFindKeyAction({ ...plain, key: "/", altKey: true }), null);
+        assert.equal(entryFindKeyAction({ ...plain, key: "/", shiftKey: true }), null);
+        assert.equal(entryFindKeyAction({ ...plain, key: "Escape", searchFocused: true, query: "rain" }), "clear");
+        assert.equal(entryFindKeyAction({ ...plain, key: "Escape", searchFocused: true, query: "" }), null);
+        assert.equal(entryFindKeyAction({ ...plain, key: "Escape", query: "rain" }), null);
+        assert.equal(entryFindKeyAction({ ...plain, key: "ArrowDown" }), null);
     });
 
     it("keeps the clock time when only the date changes and marks a rewrite", () => {
