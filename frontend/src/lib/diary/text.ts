@@ -107,7 +107,7 @@ export function calendarDate(date: Date): string {
     return `${year}-${month}-${day}`;
 }
 
-export function entryInstant(value: string, now = new Date()): Date | null {
+export function entryInstant(value: string, now = new Date(), clock: Date = now): Date | null {
     const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
     if (!match) return null;
 
@@ -125,10 +125,17 @@ export function entryInstant(value: string, now = new Date()): Date | null {
         return null;
     }
 
-    if (chosenDay.getTime() === today.getTime()) return new Date(now.getTime());
-
-    const chosen = new Date(year, month - 1, day, now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+    const chosen = new Date(
+        year,
+        month - 1,
+        day,
+        clock.getHours(),
+        clock.getMinutes(),
+        clock.getSeconds(),
+        clock.getMilliseconds(),
+    );
     if (chosen.getTime() < Date.UTC(1970, 0, 1)) return null;
+    if (chosen.getTime() > now.getTime()) return new Date(now.getTime());
     return chosen;
 }
 

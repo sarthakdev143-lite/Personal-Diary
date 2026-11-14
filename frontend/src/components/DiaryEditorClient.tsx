@@ -71,6 +71,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const { toast } = useToast();
     const editorRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const entryClock = useRef(new Date());
 
     const [diary, setDiary] = useState<Diary | null>(null);
     const [entries, setEntries] = useState<Entry[]>([]);
@@ -108,9 +109,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     setSelectedEntryId(latest._id);
                     setMode("view");
                     setConfirmDelete(null);
-                    const day = calendarDate(new Date(latest.createdAt));
+                    const created = new Date(latest.createdAt);
+                    const day = calendarDate(created);
                     setEntryDate(day);
                     setSavedDate(day);
+                    entryClock.current = created;
                     setBaseline(latest.content);
                     setHtmlContent(latest.content);
                 }
@@ -232,18 +235,21 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return window.confirm("Discard unsaved changes?");
     };
 
-    const rememberDate = (value: string) => {
+    const rememberDate = (value: string, clock?: Date) => {
         setEntryDate(value);
         setSavedDate(value);
+        if (clock) entryClock.current = clock;
     };
 
+    const instantFor = (value: string) => entryInstant(value, new Date(), entryClock.current);
+
     const changeEntryDate = (next: string) => {
-        const nextInstant = entryInstant(next);
+        const nextInstant = instantFor(next);
         if (!nextInstant) {
             toast({ title: "Check the date", description: "Use today or a past day.", variant: "destructive" });
             return;
         }
-        const previousInstant = entryInstant(entryDate);
+        const previousInstant = instantFor(entryDate);
         const previousLabel = previousInstant ? fmtLong(previousInstant.toISOString()) : "";
         const updated = retitleEntryDate(htmlContent, previousLabel, fmtLong(nextInstant.toISOString()));
         setEntryDate(next);
@@ -256,14 +262,15 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         setSelectedEntryId(null);
         setMode("compose");
         setConfirmDelete(null);
-        rememberDate(calendarDate(new Date()));
+        const now = new Date();
+        rememberDate(calendarDate(now), now);
         writeEditor("");
     };
 
     const handleNewEntry = () => {
         if (!discardIfDirty()) return;
         const now = new Date();
-        rememberDate(calendarDate(now));
+        rememberDate(calendarDate(now), now);
         const html = headingFor(now.toISOString());
         setSelectedEntryId(null);
         setMode("compose");
@@ -284,7 +291,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         setSelectedEntryId(entry._id);
         setMode("view");
         setConfirmDelete(null);
-        rememberDate(calendarDate(new Date(entry.createdAt)));
+        const created = new Date(entry.createdAt);
+        rememberDate(calendarDate(created), created);
         writeEditor(entry.content);
     };
 
@@ -299,13 +307,14 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         setSelectedEntryId(entry._id);
         setMode("view");
         setConfirmDelete(null);
-        rememberDate(calendarDate(new Date(entry.createdAt)));
+        const created = new Date(entry.createdAt);
+        rememberDate(calendarDate(created), created);
         writeEditor(entry.content);
     };
 
     const handleSave = async () => {
         if (!hasEntryContent(htmlContent) || isSaving || mode === "view") return;
-        const instant = entryInstant(entryDate);
+        const instant = instantFor(entryDate);
         if (!instant) {
             toast({ title: "Check the date", description: "Use today or a past day.", variant: "destructive" });
             return;
@@ -336,7 +345,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             setSelectedEntryId(data._id);
             setMode("view");
             setConfirmDelete(null);
-            rememberDate(calendarDate(new Date(data.createdAt)));
+            const created = new Date(data.createdAt);
+            rememberDate(calendarDate(created), created);
             writeEditor(data.content);
             toast({ title: editing ? "Updated" : "Saved", description: fmtLong(data.createdAt) });
         } catch (e) {

@@ -304,6 +304,20 @@ describe("entry date", () => {
         assert.equal(past?.getDate(), 2);
         assert.equal(past?.getHours(), 15);
         assert.equal(past?.getMinutes(), 8);
+
+        const clock = new Date(2026, 1, 13, 9, 30, 0);
+        const kept = entryInstant("2026-02-02", now, clock);
+        assert.equal(kept?.getHours(), 9);
+        assert.equal(kept?.getMinutes(), 30);
+        assert.equal(kept?.getDate(), 2);
+
+        const earlierToday = entryInstant("2026-03-14", now, clock);
+        assert.equal(earlierToday?.getDate(), 14);
+        assert.equal(earlierToday?.getHours(), 9);
+        assert.equal(earlierToday?.getMinutes(), 30);
+
+        const laterToday = entryInstant("2026-03-14", now, new Date(2026, 2, 14, 18, 0, 0));
+        assert.equal(laterToday?.getTime(), now.getTime());
     });
 
     it("rejects a future day, a day that does not exist, and updates only a matching heading", () => {
