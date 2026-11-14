@@ -6,8 +6,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
-import { DESCRIPTION_MAX, DIARY_THEMES, MAX_IMAGE_BYTES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
+import { DESCRIPTION_MAX, DIARY_THEMES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
 import { diaryFieldsMatch } from "@/lib/diary/search";
+import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
 import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryListSearchText, entryMonths, entrySelectionAction, entryToShowOnOpen, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
@@ -207,25 +208,64 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         updateActiveFormats();
     }, [updateActiveFormats]);
 
+    const insertText = useCallback((text: string) => {
+        editorRef.current?.focus();
+        document.execCommand("insertText", false, text);
+        if (editorRef.current) setHtmlContent(editorRef.current.innerHTML);
+        updateActiveFormats();
+    }, [updateActiveFormats]);
+
+    const insertImageFile = useCallback((file: File) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const src = ev.target?.result;
+            if (typeof src !== "string") return;
+            insertHTML(`<img src="${src}" alt="" /><p><br></p>`);
+        };
+        reader.readAsDataURL(file);
+    }, [insertHTML]);
+
     const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         e.target.value = "";
         if (!file) return;
-        if (!file.type.startsWith("image/")) {
-            toast({ title: "Not an image", description: "Choose a PNG, JPEG, GIF, or WebP image.", variant: "destructive" });
+        const issue = imageFileIssue(file);
+        if (issue) {
+            toast({ title: issue.title, description: issue.description, variant: "destructive" });
             return;
         }
-        if (file.size > MAX_IMAGE_BYTES) {
-            toast({ title: "Image is too large", description: "Choose an image under 150 KB.", variant: "destructive" });
+        insertImageFile(file);
+    }, [insertImageFile, toast]);
+
+    const onPaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
+        if (mode === "view") return;
+        const data = event.clipboardData;
+        const decision = decideEntryPaste({
+            files: Array.from(data.files, (file) => ({ type: file.type, size: file.size })),
+            html: data.getData("text/html"),
+            text: data.getData("text/plain"),
+        });
+        if (decision.action === "default") return;
+        event.preventDefault();
+        if (decision.action === "reject") {
+            toast({ title: decision.title, description: decision.description, variant: "destructive" });
             return;
         }
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            const src = ev.target?.result as string;
-            insertHTML(`<img src="${src}" alt="" /><p><br></p>`);
-        };
-        reader.readAsDataURL(file);
-    }, [insertHTML, toast]);
+        if (decision.action === "html") {
+            if (decision.warning) {
+                toast({ title: decision.warning.title, description: decision.warning.description, variant: "destructive" });
+            }
+            insertHTML(decision.html);
+            return;
+        }
+        if (decision.action === "plain") {
+            insertText(decision.text);
+            return;
+        }
+        if (decision.action === "ignore") return;
+        const file = Array.from(data.files).find((item) => item.type.startsWith("image/"));
+        if (file) insertImageFile(file);
+    };
 
     const writeEditor = (html: string) => {
         setBaseline(html);
@@ -1237,6 +1277,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 onKeyUp={updateActiveFormats}
                                 onMouseUp={updateActiveFormats}
                                 spellCheck={false}
+                                onPaste={onPaste}
                                 data-gramm="false"
                                 data-gramm_editor="false"
                                 data-enable-grammarly="false"
@@ -1337,7 +1378,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/png,image/jpeg,image/gif,image/webp"
                 style={{ display: "none" }}
                 onChange={handleImageUpload}
             />
