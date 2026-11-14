@@ -121,6 +121,29 @@ export function breakJoinKey(input: {
     return "pass";
 }
 
+export function styleEdgeCut(text: string): { leading: number; trailing: number } | null {
+    if (!text.replace(/[\u00a0\s\u200b]/g, "")) return null;
+    const leading = text.match(/^[\u00a0\s\u200b]*/)?.[0].length ?? 0;
+    const trailing = text.slice(leading).match(/[\u00a0\s\u200b]*$/)?.[0].length ?? 0;
+    if (leading === 0 && trailing === 0) return null;
+    return { leading, trailing };
+}
+
+export function styleShortcut(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+}): "bold" | "italic" | "underline" | null {
+    if (input.shiftKey || input.altKey || (!input.ctrlKey && !input.metaKey)) return null;
+    const key = input.key.toLowerCase();
+    if (key === "b") return "bold";
+    if (key === "i") return "italic";
+    if (key === "u") return "underline";
+    return null;
+}
+
 const MARK_SPACE = /(<(b|strong|i|em|u|s|strike|del|a)\b([^>]*)>)([^<]*)<\/\2>/gi;
 
 export function plainMarkSpaces(html: string): string {
