@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { CONTENT_MAX, DEFAULT_DIARY_THEME, MAX_IMPORT_ENTRIES } from "./constants";
 import { diaryToBackup } from "./export";
-import { parseDiaryBackup } from "./import";
+import { importNotice, importedDiaryPath, parseDiaryBackup } from "./import";
 
 const now = Date.parse("2026-03-02T00:00:00.000Z");
 
@@ -14,6 +14,24 @@ describe("import backup", () => {
         createdAt: "2026-01-01T12:00:00.000Z",
         updatedAt: "2026-01-02T12:00:00.000Z",
     };
+
+    it("opens a saved import and says what was kept", () => {
+        assert.equal(importedDiaryPath("507f1f77bcf86cd799439011"), "/diary/507f1f77bcf86cd799439011");
+        assert.equal(importedDiaryPath("not-an-id"), null);
+        assert.equal(importedDiaryPath(undefined), null);
+
+        const opened = importNotice({
+            title: "Morning Pages",
+            importedEntries: 1,
+            skippedEntries: 2,
+            opened: true,
+        });
+        assert.equal(opened.title, "Diary imported");
+        assert.equal(opened.description, "Morning Pages is open. 1 entry saved. 2 empty entries were left out.");
+
+        const listed = importNotice({ title: "   ", importedEntries: 0, skippedEntries: 1, opened: false });
+        assert.equal(listed.description, "Diary is in your list. 1 empty entry was left out.");
+    });
 
     it("reads a backup this app wrote and drops a script", () => {
         const backup = diaryToBackup(diary, [entry], "2026-03-01T00:00:00.000Z");

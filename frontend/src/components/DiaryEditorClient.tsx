@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { DESCRIPTION_MAX, DIARY_THEMES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
+import { takeImportNotice } from "@/lib/diary/import";
 import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
 import { entryMatchesListQuery } from "@/lib/diary/search";
 import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryMonths, entrySelectionAction, entryToShowAfterDelete, entryToShowOnOpen, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
@@ -281,6 +282,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     }, [isLoading, htmlContent]);
 
     const isDirty = mode !== "view" && (htmlContent !== baseline || entryDate !== savedDate);
+
+    useEffect(() => {
+        if (isLoading) return;
+        const notice = takeImportNotice();
+        if (notice) toast(notice);
+    }, [isLoading, toast]);
 
     useEffect(() => {
         if (!isDirty) return;

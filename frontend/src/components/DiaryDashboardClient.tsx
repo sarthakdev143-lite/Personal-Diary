@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { RiAddCircleLine } from "@remixicon/react";
 
 import LenisProvider from "@/components/LenisProvider";
@@ -10,8 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
+import { importNotice, importedDiaryPath, rememberImportNotice } from "@/lib/diary/import";
 
 const DiaryDashboardClient = () => {
+    const router = useRouter();
     const { toast } = useToast();
     const infoParentRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -104,7 +107,7 @@ const DiaryDashboardClient = () => {
             });
             const data = await response.json().catch(() => null) as {
                 error?: string;
-                diary?: { title?: string };
+                diary?: { _id?: string; title?: string };
                 importedEntries?: number;
                 skippedEntries?: number;
             } | null;
@@ -113,12 +116,19 @@ const DiaryDashboardClient = () => {
             }
 
             setRefetchTrigger((value) => value + 1);
-            const imported = data?.importedEntries ?? 0;
-            const skipped = data?.skippedEntries ?? 0;
-            const details = [`${data?.diary?.title || "Diary"} is in your list.`];
-            if (imported) details.push(`${imported} ${imported === 1 ? "entry" : "entries"} saved.`);
-            if (skipped) details.push(`${skipped} empty ${skipped === 1 ? "entry was" : "entries were"} left out.`);
-            toast({ title: "Diary imported", description: details.join(" ") });
+            const path = importedDiaryPath(data?.diary?._id);
+            const notice = importNotice({
+                title: data?.diary?.title,
+                importedEntries: data?.importedEntries,
+                skippedEntries: data?.skippedEntries,
+                opened: Boolean(path),
+            });
+            if (path) {
+                rememberImportNotice(notice);
+                router.push(path);
+                return;
+            }
+            toast(notice);
         } catch (importError) {
             toast({
                 title: "Not imported",

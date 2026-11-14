@@ -1,5 +1,6 @@
 import { DEFAULT_DIARY_THEME, MAX_IMPORT_ENTRIES, isAllowedTheme } from "./constants";
 import { prepareEntryContent } from "./content";
+import { isObjectId } from "./ids";
 import { asRecord } from "./json";
 import { normalizeDescription, normalizeTitle, parseEntryDate } from "./validation";
 
@@ -17,6 +18,48 @@ export type ImportedDiary = {
     entries: ImportedEntry[];
     skipped: number;
 };
+
+export function importedDiaryPath(id: unknown): string | null {
+    if (typeof id !== "string" || !isObjectId(id)) return null;
+    return `/diary/${id}`;
+}
+
+export function importNotice(input: {
+    title?: string | null;
+    importedEntries?: number;
+    skippedEntries?: number;
+    opened: boolean;
+}): { title: string; description: string } {
+    const name = input.title?.trim() || "Diary";
+    const imported = input.importedEntries ?? 0;
+    const skipped = input.skippedEntries ?? 0;
+    const details = [input.opened ? `${name} is open.` : `${name} is in your list.`];
+    if (imported > 0) details.push(`${imported} ${imported === 1 ? "entry" : "entries"} saved.`);
+    if (skipped > 0) details.push(`${skipped} empty ${skipped === 1 ? "entry was" : "entries were"} left out.`);
+    return { title: "Diary imported", description: details.join(" ") };
+}
+
+const IMPORT_NOTICE_KEY = "diary-import-notice";
+
+export function rememberImportNotice(notice: { title: string; description: string }) {
+    if (typeof sessionStorage === "undefined") return;
+    sessionStorage.setItem(IMPORT_NOTICE_KEY, JSON.stringify(notice));
+}
+
+export function takeImportNotice(): { title: string; description: string } | null {
+    if (typeof sessionStorage === "undefined") return null;
+    const raw = sessionStorage.getItem(IMPORT_NOTICE_KEY);
+    if (!raw) return null;
+    sessionStorage.removeItem(IMPORT_NOTICE_KEY);
+    try {
+        const parsed = JSON.parse(raw) as { title?: unknown; description?: unknown };
+        if (typeof parsed.title !== "string" || typeof parsed.description !== "string") return null;
+        if (!parsed.title || !parsed.description) return null;
+        return { title: parsed.title, description: parsed.description };
+    } catch {
+        return null;
+    }
+}
 
 export function parseDiaryBackup(
     value: unknown,
