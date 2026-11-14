@@ -138,6 +138,7 @@ const DiaryDashboardClient = () => {
                 ref={infoParentRef}
                 className="relative flex min-h-screen w-full flex-col bg-zinc-950 px-4 pt-32 text-base text-zinc-100 max-xs:px-3"
             >
+                <h1 className="sr-only">Your diaries</h1>
                 <div className="sticky top-[16%] mx-auto mb-6 flex w-full items-center gap-3 xs:w-[80%] md:w-[55%]">
                     <div className="relative min-w-0 flex-1">
                     <Input

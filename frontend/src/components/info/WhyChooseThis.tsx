@@ -52,9 +52,9 @@ const WhyChooseThis = () => {
 
     return (
         <section id="features" className="relative z-10 flex min-h-screen w-full flex-col items-center justify-center bg-zinc-950 px-6 py-24 text-center max-sm:pb-32">
-            <h1 className="text-4xl font-bold text-white/80 italic">
+            <h2 className="text-4xl font-bold text-white/80 italic">
                 Why Choose This?
-            </h1>
+            </h2>
             <p className="text-lg text-white/60 mt-2 max-w-2xl">
                 Turn your reflections into a daily habit in your own private journal.
             </p>

@@ -10,7 +10,7 @@ import Google from './Google.png'
 import Github from './Github.png'
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import Image from "next/image"
@@ -70,7 +70,7 @@ export default function LoginPage() {
                                 <LogIn className="h-6 w-6 text-indigo-400" />
                             </div>
                         </div>
-                        <CardTitle className="text-2xl font-bold text-center">Welcome!</CardTitle>
+                        <h1 className="text-center text-2xl font-bold leading-none tracking-tight">Welcome!</h1>
                         <CardDescription className="text-center text-muted-foreground/80">
                             Sign in with Google or GitHub to open your diaries.
                         </CardDescription>
