@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import { importNotice, importedDiaryPath, rememberImportNotice } from "@/lib/diary/import";
+import { diarySearchShortcut, searchShortcutLabel } from "@/lib/diary/keys";
 
 const DiaryDashboardClient = () => {
     const router = useRouter();
@@ -22,6 +23,7 @@ const DiaryDashboardClient = () => {
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [refetchTrigger, setRefetchTrigger] = useState(0);
     const [query, setQuery] = useState("");
+    const searchKeyRef = useRef<HTMLSpanElement>(null);
     const [debouncedQuery, setDebouncedQuery] = useState("");
     const [isImporting, setIsImporting] = useState(false);
     const queryRef = useRef(query);
@@ -41,17 +43,19 @@ const DiaryDashboardClient = () => {
     }, [query]);
 
     useEffect(() => {
+        if (searchKeyRef.current) {
+            searchKeyRef.current.textContent = searchShortcutLabel(navigator.platform);
+        }
         if (window.matchMedia("(max-width: 767px)").matches) return;
         searchInputRef.current?.focus();
     }, []);
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.ctrlKey && event.key.toLowerCase() === "i") {
-                if (formActiveRef.current || fullScreenRef.current) return;
-                event.preventDefault();
-                searchInputRef.current?.focus();
-            }
+            if (!diarySearchShortcut(event)) return;
+            if (formActiveRef.current || fullScreenRef.current) return;
+            event.preventDefault();
+            searchInputRef.current?.focus();
         };
 
         const handleFormClose = (event: KeyboardEvent) => {
@@ -163,7 +167,7 @@ const DiaryDashboardClient = () => {
                         className="rounded-xl border border-white/15 bg-zinc-900 p-6 py-[1.65rem] text-lg text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/50 md:pr-24"
                     />
                     <div id="keyboard-key" className="absolute right-6 top-1/2 flex -translate-y-1/2 gap-1 max-md:hidden">
-                        <span className="rounded-md bg-zinc-700/70 px-[0.4rem] font-mono text-base text-zinc-400/90">ctrl</span>
+                        <span ref={searchKeyRef} className="rounded-md bg-zinc-700/70 px-[0.4rem] font-mono text-base text-zinc-400/90">ctrl</span>
                         <span className="rounded-md bg-zinc-700/70 px-[0.4rem] font-mono text-base text-zinc-400/90">I</span>
                     </div>
                     </div>
