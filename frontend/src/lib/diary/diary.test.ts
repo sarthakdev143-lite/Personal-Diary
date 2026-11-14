@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, dateHeadingKey, datePaste, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, joinNeedsSpace, laterEntryTime, lineJoinKey, listLeaveKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, joinNeedsSpace, laterEntryTime, lineJoinKey, listLeaveKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -140,6 +140,16 @@ describe("blank entry", () => {
         assert.equal(datePaste({ touchesDate: false, onlyDate: false }), "pass");
         assert.equal(datePaste({ touchesDate: true, onlyDate: true }), "writing");
         assert.equal(datePaste({ touchesDate: true, onlyDate: false }), "replace-writing");
+        const selected = { ...plain, collapsed: false, touchesDate: true, writingSelected: true };
+        assert.equal(dateSelectionKey({ ...selected, key: "Backspace" }), "clear");
+        assert.equal(dateSelectionKey({ ...selected, key: "Delete" }), "clear");
+        assert.equal(dateSelectionKey({ ...selected, key: "Backspace", writingSelected: false }), "leave");
+        assert.equal(dateSelectionKey({ ...selected, key: "Delete", writingSelected: false }), "leave");
+        assert.equal(dateSelectionKey({ ...selected, key: "Backspace", collapsed: true }), "pass");
+        assert.equal(dateSelectionKey({ ...selected, key: "Backspace", touchesDate: false }), "pass");
+        assert.equal(dateSelectionKey({ ...selected, key: "Backspace", ctrlKey: true }), "pass");
+        assert.equal(dateSelectionKey({ ...selected, key: "Backspace", metaKey: true }), "pass");
+        assert.equal(dateSelectionKey({ ...selected, key: "Enter" }), "pass");
         assert.equal(dateHeadingKey({ ...plain, key: "i", metaKey: true, where: "heading" }), "hold");
         assert.equal(hasEntryContent(html), false);
     });

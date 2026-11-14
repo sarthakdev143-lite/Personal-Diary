@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codePullKey, dateHeadingKey, datePaste, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, joinNeedsSpace, lineJoinKey, listLeaveKey, quoteLeaveKey, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, joinNeedsSpace, lineJoinKey, listLeaveKey, quoteLeaveKey, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -401,6 +401,47 @@ function pointAfterDate(heading: HTMLElement, container: Node, offset: number): 
     const node = container instanceof Element ? container : container.parentElement;
     if (!node || node === heading) return false;
     return (heading.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+}
+
+function keepBoundarySpace(block: HTMLElement) {
+    const text = document.createTreeWalker(block, NodeFilter.SHOW_TEXT).nextNode();
+    if (text instanceof Text && text.data.startsWith(" ")) text.data = `\u00a0${text.data.slice(1)}`;
+}
+
+function clearWritingSelection(editor: HTMLElement, heading: HTMLElement, selection: Selection): number[] | undefined {
+    const first = heading.nextElementSibling;
+    const path = first instanceof HTMLElement ? childPath(editor, first) : undefined;
+    const range = selection.getRangeAt(0).cloneRange();
+    if (!pointAfterDate(heading, range.startContainer, range.startOffset)) range.setStartAfter(heading);
+    range.deleteContents();
+    const next = heading.nextElementSibling;
+    if (!(next instanceof HTMLElement)) {
+        const paragraph = document.createElement("p");
+        paragraph.appendChild(document.createElement("br"));
+        heading.after(paragraph);
+        placeCaretAtStart(paragraph);
+        return path;
+    }
+    const container = range.startContainer;
+    const host = container instanceof Element ? container : container.parentElement;
+    const block = host?.closest("p, h1, h2, h3, li, blockquote, pre");
+    const keptText = container instanceof Text
+        && editor.contains(container)
+        && !heading.contains(container)
+        && container.data.length > 0;
+    if (keptText) {
+        if (range.startOffset === 0) keepBoundarySpace(container.parentElement instanceof HTMLElement ? container.parentElement : next);
+        range.setStart(container, range.startOffset);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        return path;
+    }
+    const line = block instanceof HTMLElement && editor.contains(block) && !heading.contains(block) ? block : next;
+    keepBoundarySpace(line);
+    if (blockIsEmpty(line) && !line.querySelector("br")) line.appendChild(document.createElement("br"));
+    placeCaretAtStart(line);
+    return path;
 }
 
 function selectReplaceRange(editor: HTMLElement, heading: HTMLElement, selection: Selection) {
@@ -2191,6 +2232,36 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (!editor || !selection || mode === "view") return false;
         const instant = instantFor(entryDate);
         const label = instant ? fmtLong(instant.toISOString()) : "";
+        const touched = selectedDateHeading(editor, selection, label);
+        if (touched && selection.rangeCount) {
+            const range = selection.getRangeAt(0);
+            const action = dateSelectionKey({
+                key: e.key,
+                altKey: e.altKey,
+                ctrlKey: e.ctrlKey,
+                metaKey: e.metaKey,
+                collapsed: selection.isCollapsed,
+                touchesDate: true,
+                writingSelected: pointAfterDate(touched.heading, range.endContainer, range.endOffset),
+            });
+            if (action === "leave") {
+                e.preventDefault();
+                const before = editor.innerHTML;
+                const next = touched.heading.nextElementSibling;
+                if (next instanceof HTMLElement) placeCaretAtStart(next);
+                else placeCaretAtStart(writingLineAfter(touched.heading));
+                if (editor.innerHTML !== before) setHtmlContent(editor.innerHTML);
+                return true;
+            }
+            if (action === "clear") {
+                e.preventDefault();
+                const before = editor.innerHTML;
+                const path = clearWritingSelection(editor, touched.heading, selection);
+                blankLine.current = { before, after: editor.innerHTML, path };
+                setHtmlContent(editor.innerHTML);
+                return true;
+            }
+        }
         const line = dateLineContext(editor, selection, label);
         if (!line) return false;
         const action = dateHeadingKey({

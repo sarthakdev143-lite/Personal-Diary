@@ -277,6 +277,22 @@ export function datePaste(input: { touchesDate: boolean; onlyDate: boolean }): D
     return input.onlyDate ? "writing" : "replace-writing";
 }
 
+export type DateSelectionKey = "clear" | "leave" | "pass";
+
+export function dateSelectionKey(input: {
+    key: string;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    touchesDate: boolean;
+    writingSelected: boolean;
+}): DateSelectionKey {
+    if (input.altKey || input.ctrlKey || input.metaKey || input.collapsed || !input.touchesDate) return "pass";
+    if (input.key !== "Backspace" && input.key !== "Delete") return "pass";
+    return input.writingSelected ? "clear" : "leave";
+}
+
 export type DateHeadingKey = "write" | "leave" | "hold" | "drop" | "pass";
 
 export function dateHeadingKey(input: {
