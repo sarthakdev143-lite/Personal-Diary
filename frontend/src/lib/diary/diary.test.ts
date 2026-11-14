@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
-import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchesListQuery, entryPageAddress, escapeRegExp, normalizeSearchQuery } from "./search";
+import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, escapeRegExp, normalizeSearchQuery } from "./search";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, laterEntryTime, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
@@ -369,6 +369,19 @@ describe("search", () => {
         assert.match(matched, /hidden lantern by the gate/);
         assert.equal(matched.startsWith("…"), true);
         assert.equal(entryCardPreview(entry, "   "), opening);
+    });
+
+    it("moves through each match and wraps around", () => {
+        const text = "first lantern then another lantern";
+        assert.equal(entryMatchCount(text, "lantern"), 2);
+        assert.equal(entryMatchCount(text, "Lantern"), 2);
+        assert.equal(entryMatchCount("lanternlantern", "lantern"), 2);
+        assert.equal(entryMatchCount(text, ""), 0);
+        assert.equal(entryMatchCount(text, "   "), 0);
+        assert.equal(entryMatchCursor(2, 0, "next"), 1);
+        assert.equal(entryMatchCursor(2, 1, "next"), 0);
+        assert.equal(entryMatchCursor(2, 0, "previous"), 1);
+        assert.equal(entryMatchCursor(0, 4, "next"), 0);
     });
 
     it("still matches a date search after the writing is saved", () => {

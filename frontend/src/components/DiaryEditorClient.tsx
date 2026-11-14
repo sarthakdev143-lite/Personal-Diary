@@ -11,7 +11,7 @@ import { DESCRIPTION_MAX, DIARY_THEMES, TITLE_MAX, coverForTheme, isAllowedTheme
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
 import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
-import { entryCardPreview, entryMatchesListQuery, entryPageAddress } from "@/lib/diary/search";
+import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryUndoBody, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
@@ -26,31 +26,42 @@ const fmtTime = formatEntryTime;
 const fmtLong = formatEntryLong;
 const headingFor = (iso: string) => `<h2>${fmtLong(iso)}</h2><p><br></p>`;
 
-function showFindMark(root: HTMLElement, query: string): HTMLElement | null {
+function showFindMarks(root: HTMLElement, query: string, activeIndex: number): HTMLElement | null {
     const needle = query.trim();
     if (!needle) return null;
     const lower = needle.toLowerCase();
+    const hits: { node: Text; index: number }[] = [];
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     let node = walker.nextNode();
     while (node) {
-        const text = node.textContent ?? "";
-        const index = text.toLowerCase().indexOf(lower);
-        if (index >= 0) {
-            const range = document.createRange();
-            range.setStart(node, index);
-            range.setEnd(node, index + needle.length);
-            const mark = document.createElement("mark");
-            mark.className = "de-find";
-            try {
-                range.surroundContents(mark);
-            } catch {
-                return null;
-            }
-            return mark;
+        const text = (node.textContent ?? "").toLowerCase();
+        let from = 0;
+        while (from <= text.length - needle.length) {
+            const index = text.indexOf(lower, from);
+            if (index < 0) break;
+            hits.push({ node: node as Text, index });
+            from = index + needle.length;
         }
         node = walker.nextNode();
     }
-    return null;
+    if (!hits.length) return null;
+    const current = ((activeIndex % hits.length) + hits.length) % hits.length;
+    let currentMark: HTMLElement | null = null;
+    for (let hitIndex = hits.length - 1; hitIndex >= 0; hitIndex -= 1) {
+        const hit = hits[hitIndex];
+        const range = document.createRange();
+        range.setStart(hit.node, hit.index);
+        range.setEnd(hit.node, hit.index + needle.length);
+        const mark = document.createElement("mark");
+        mark.className = hitIndex === current ? "de-find de-find-current" : "de-find";
+        try {
+            range.surroundContents(mark);
+        } catch {
+            continue;
+        }
+        if (hitIndex === current) currentMark = mark;
+    }
+    return currentMark;
 }
 
 // Toolbar button definition
@@ -121,6 +132,15 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const [confirmDelete, setConfirmDelete] = useState<"entry" | "diary" | null>(null);
     const [baseline, setBaseline] = useState("");
     const [entryQuery, setEntryQuery] = useState("");
+    const [matchAt, setMatchAt] = useState(0);
+    const [matchCount, setMatchCount] = useState(0);
+    const matchCountRef = useRef(0);
+    const matchKey = `${selectedEntryId ?? ""}:${entryQuery}`;
+    const [matchKeySeen, setMatchKeySeen] = useState(matchKey);
+    if (matchKey !== matchKeySeen) {
+        setMatchKeySeen(matchKey);
+        setMatchAt(0);
+    }
     const [entryMonth, setEntryMonth] = useState("");
     const [isExporting, setIsExporting] = useState<"md" | "json" | null>(null);
     const [entryDate, setEntryDate] = useState(() => calendarDate(new Date()));
@@ -982,12 +1002,21 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (!root || isLoading || !entryOnScreen) return;
         if (mode !== "view") {
             if (root.querySelector("mark.de-find")) root.innerHTML = htmlContent;
+            if (matchCountRef.current !== 0) {
+                matchCountRef.current = 0;
+                setMatchCount(0);
+            }
             return;
         }
         if (htmlContent) root.innerHTML = htmlContent;
-        const mark = showFindMark(root, entryQuery);
+        const mark = showFindMarks(root, entryQuery, matchAt);
+        const count = root.querySelectorAll("mark.de-find").length;
+        if (matchCountRef.current !== count) {
+            matchCountRef.current = count;
+            setMatchCount(count);
+        }
         mark?.scrollIntoView({ block: "nearest" });
-    }, [isLoading, entryOnScreen, mode, htmlContent, entryQuery]);
+    }, [isLoading, entryOnScreen, mode, htmlContent, entryQuery, matchAt]);
 
     if (isLoading) return (
         <div style={{ position: "fixed", inset: 0, zIndex: 10, background: "#0d0b09", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1106,6 +1135,15 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     background:#0d0b09;border:1px solid #2a2520;border-radius:3px;padding:8px 10px;
                 }
                 .de-entry-search:focus,.de-month:focus{outline:none;border-color:#6a5a48;}
+                .de-find-nav{
+                    display:flex;align-items:center;gap:8px;margin:0 16px 8px;
+                    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.08em;color:#a79f93;
+                }
+                .de-find-nav button{
+                    font:inherit;letter-spacing:0.08em;text-transform:lowercase;color:#c4a882;
+                    background:transparent;border:1px solid #3a3020;border-radius:3px;padding:2px 6px;cursor:pointer;
+                }
+                .de-find-nav button:hover{border-color:#c4a882;}
                 .de-month{
                     display:block;width:calc(100% - 32px);margin:0 16px 8px;
                     font-family:'Lora',Georgia,serif;font-size:13px;color:#ede5d8;
@@ -1156,7 +1194,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 }
                 #de-editor::selection,
                 #de-editor *::selection{background:#3a3020;color:#ede5d8;}
-                #de-editor mark.de-find{background:#4a3b24;color:#f4ead8;padding:0 2px;border-radius:2px;}
+                #de-editor mark.de-find{background:#3a3020;color:#f4ead8;padding:0 2px;border-radius:2px;}
+                #de-editor mark.de-find-current{background:#c4a882;color:#1a140e;box-shadow:0 0 0 1px #e7d3b0;}
 
                 /* Typography inside editor */
                 #de-editor h1{font-size:26px;font-weight:500;color:#ede5d8;margin:24px 0 12px;letter-spacing:-0.01em;line-height:1.3;}
@@ -1536,7 +1575,32 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 placeholder="Find an entry"
                                 aria-label="Find an entry"
                                 maxLength={80}
+                                onKeyDown={(event) => {
+                                    if (event.key !== "Enter" || event.altKey || event.ctrlKey || event.metaKey) return;
+                                    if (matchCount < 2) return;
+                                    event.preventDefault();
+                                    setMatchAt((current) => entryMatchCursor(matchCount, current, event.shiftKey ? "previous" : "next"));
+                                }}
                             />
+                        )}
+                        {mode === "view" && matchCount > 1 && (
+                            <div className="de-find-nav" role="group" aria-label="Matches in this entry">
+                                <span>{(((matchAt % matchCount) + matchCount) % matchCount) + 1} of {matchCount}</span>
+                                <button
+                                    type="button"
+                                    aria-label="Previous match"
+                                    onClick={() => setMatchAt((current) => entryMatchCursor(matchCount, current, "previous"))}
+                                >
+                                    previous
+                                </button>
+                                <button
+                                    type="button"
+                                    aria-label="Next match"
+                                    onClick={() => setMatchAt((current) => entryMatchCursor(matchCount, current, "next"))}
+                                >
+                                    next
+                                </button>
+                            </div>
                         )}
                         {months.length > 1 && (
                             <select

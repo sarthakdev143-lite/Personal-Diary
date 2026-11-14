@@ -73,6 +73,29 @@ export function entryCardPreview(entry: {
     return matchingPiece(entry, query);
 }
 
+export function entryMatchCount(text: string, rawQuery: string): number {
+    const query = normalizeSearchQuery(rawQuery);
+    if (!query) return 0;
+    const haystack = text.toLowerCase();
+    const needle = query.toLowerCase();
+    let count = 0;
+    let from = 0;
+    while (from <= haystack.length - needle.length) {
+        const index = haystack.indexOf(needle, from);
+        if (index < 0) break;
+        count += 1;
+        from = index + needle.length;
+    }
+    return count;
+}
+
+export function entryMatchCursor(count: number, current: number, direction: "next" | "previous"): number {
+    if (count <= 0) return 0;
+    const index = ((current % count) + count) % count;
+    if (direction === "next") return (index + 1) % count;
+    return (index - 1 + count) % count;
+}
+
 export function diaryListMatch(
     diary: { title: string; description?: string | null },
     entries: readonly ListedEntry[],
