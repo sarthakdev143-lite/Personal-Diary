@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, joinNeedsSpace, lineJoinKey, listCommand, listEdgeKey, listLeaveKey, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, joinNeedsSpace, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, listLeaveKey, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -1038,6 +1038,141 @@ function joinBlock(target: HTMLElement, source: HTMLElement) {
     }
     removeJoined(source);
     placeCaretOn(start, into);
+}
+
+const INLINE_MARK = /^(?:B|STRONG|I|EM|U|S|STRIKE|DEL|A|SPAN|FONT)$/;
+
+function skipEmptyText(node: Node | null, direction: "previous" | "next"): Node | null {
+    let current = node;
+    while (current instanceof Text && current.data.replace(/\u200b/g, "") === "") {
+        current = direction === "previous" ? current.previousSibling : current.nextSibling;
+    }
+    return current;
+}
+
+function unwrapBreakEdge(node: Node | null, direction: "previous" | "next"): Node | null {
+    const current = skipEmptyText(node, direction);
+    if (!current) return null;
+    if (current instanceof HTMLBRElement) return current;
+    if (current instanceof Element && INLINE_MARK.test(current.tagName)) {
+        const child = direction === "previous" ? current.lastChild : current.firstChild;
+        if (!child) return null;
+        return unwrapBreakEdge(child, direction);
+    }
+    return null;
+}
+
+function neighborBreak(node: Node, direction: "previous" | "next"): Node | null {
+    let current: Node | null = node;
+    while (current) {
+        const sibling = skipEmptyText(
+            direction === "previous" ? current.previousSibling : current.nextSibling,
+            direction,
+        );
+        if (sibling) return unwrapBreakEdge(sibling, direction);
+        const parent = current.parentElement;
+        if (!parent || !INLINE_MARK.test(parent.tagName)) return null;
+        current = parent;
+    }
+    return null;
+}
+
+function breakBesideCaret(selection: Selection, key: string): { br: HTMLBRElement; side: "before" | "after" } | null {
+    if (!selection.rangeCount || !selection.isCollapsed) return null;
+    const range = selection.getRangeAt(0);
+    const look = (direction: "previous" | "next") => {
+        const container = range.startContainer;
+        const offset = range.startOffset;
+        if (container instanceof Text) {
+            if (direction === "previous" && offset > 0) return null;
+            if (direction === "next" && offset < container.data.length) return null;
+            return neighborBreak(container, direction);
+        }
+        if (container instanceof Element) {
+            const child = direction === "previous" ? container.childNodes[offset - 1] : container.childNodes[offset];
+            if (child) return unwrapBreakEdge(child, direction);
+            return neighborBreak(container, direction);
+        }
+        return null;
+    };
+    if (key === "Backspace" || key === "Enter") {
+        const before = look("previous");
+        if (before instanceof HTMLBRElement) return { br: before, side: "after" };
+    }
+    if (key === "Delete" || key === "Enter") {
+        const after = look("next");
+        if (after instanceof HTMLBRElement) return { br: after, side: "before" };
+    }
+    return null;
+}
+
+function textBesideBreak(br: HTMLBRElement, direction: "previous" | "next"): string {
+    let text = "";
+    let current = direction === "previous" ? br.previousSibling : br.nextSibling;
+    while (current && !(current instanceof HTMLBRElement)) {
+        const piece = current.textContent ?? "";
+        text = direction === "previous" ? piece + text : text + piece;
+        current = direction === "previous" ? current.previousSibling : current.nextSibling;
+    }
+    return text;
+}
+
+function firstTextAfter(br: HTMLBRElement): Text | null {
+    let current = br.nextSibling;
+    while (current && !(current instanceof HTMLBRElement)) {
+        if (current instanceof Text && current.data.replace(/\u200b/g, "") !== "") return current;
+        if (current instanceof Element) {
+            const walker = document.createTreeWalker(current, NodeFilter.SHOW_TEXT);
+            let text = walker.nextNode();
+            while (text instanceof Text) {
+                if (text.data.replace(/\u200b/g, "") !== "") return text;
+                text = walker.nextNode();
+            }
+        }
+        current = current.nextSibling;
+    }
+    return null;
+}
+
+function placeCaretAfter(node: Node) {
+    const selection = window.getSelection();
+    if (!selection) return;
+    const caret = document.createRange();
+    caret.setStartAfter(node);
+    caret.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(caret);
+}
+
+function joinBrokenLine(br: HTMLBRElement) {
+    const block = br.closest("p, li, h1, h2, h3, blockquote");
+    const before = textBesideBreak(br, "previous");
+    const after = textBesideBreak(br, "next");
+    const following = firstTextAfter(br);
+    const marker = br.nextSibling;
+    if (joinNeedsSpace(before, after)) {
+        const previous = br.previousSibling;
+        if (previous instanceof Text) previous.data = `${previous.data} `;
+        else br.before(document.createTextNode(" "));
+    }
+    br.remove();
+    const fallback = block instanceof HTMLElement ? block : following?.parentElement;
+    if (following?.isConnected && fallback instanceof HTMLElement) placeCaretOn(following, fallback);
+    else if (marker?.parentNode) {
+        const caret = document.createRange();
+        caret.setStartBefore(marker);
+        caret.collapse(true);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(caret);
+    } else if (block instanceof HTMLElement) placeCaretAtEnd(block);
+}
+
+function openBlankLine(br: HTMLBRElement, side: "before" | "after") {
+    const blank = document.createElement("br");
+    if (side === "before") br.before(blank);
+    else br.after(blank);
+    placeCaretAfter(side === "before" ? blank : br);
 }
 
 function textPieces(root: HTMLElement): Text[] {
@@ -2850,6 +2985,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const raw = nodes.map((node) => node.data).join("");
         const offset = caretTextOffset(nodes, range.startContainer, range.startOffset);
         if (offset === null) return false;
+        const beside = breakBesideCaret(selection, e.key);
         const split = quoteEnterKey({
             key: e.key,
             shiftKey: e.shiftKey,
@@ -2860,13 +2996,45 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             collapsed: true,
             before: raw.slice(0, offset),
             after: raw.slice(offset),
+            besideBreak: Boolean(beside),
         });
-        if (split !== "break") return false;
+        if (split === "pass") return false;
         e.preventDefault();
         const before = editor.innerHTML;
         const quoteText = quote.textContent ?? "";
-        breakQuote(quote, selection);
+        if (split === "blank" && beside) openBlankLine(beside.br, beside.side);
+        else breakQuote(quote, selection);
         keepSplit({ before, after: editor.innerHTML, tag: quote.tagName, text: quoteText, offset });
+        setHtmlContent(editor.innerHTML);
+        return true;
+    };
+
+    const keepBrokenLine = (e: React.KeyboardEvent) => {
+        if (e.key !== "Backspace" && e.key !== "Delete") return false;
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection?.rangeCount || mode === "view" || !selection.isCollapsed) return false;
+        const anchor = selection.anchorNode;
+        const host = anchor instanceof Element ? anchor : anchor?.parentElement ?? null;
+        if (host?.closest("pre") || host?.closest("figcaption")) return false;
+        const beside = breakBesideCaret(selection, e.key);
+        if (!beside || beside.br.closest("pre") || beside.br.closest("figcaption")) return false;
+        const action = breakJoinKey({
+            key: e.key,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            collapsed: true,
+            atBreak: beside.side,
+        });
+        if (action !== "join") return false;
+        e.preventDefault();
+        const before = editor.innerHTML;
+        const block = beside.br.closest("p, li, h1, h2, h3, blockquote");
+        const path = block instanceof HTMLElement ? childPath(editor, block) : undefined;
+        joinBrokenLine(beside.br);
+        keepBlank({ before, after: editor.innerHTML, path });
         setHtmlContent(editor.innerHTML);
         return true;
     };
@@ -3188,6 +3356,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (keepPictureNameApart(e)) return;
         if (moveAroundPicture(e)) return;
         if (pullCodeEdge(e)) return;
+        if (keepBrokenLine(e)) return;
         if (joinLines(e)) return;
         if (trimSplit(e)) return;
         const editor = editorRef.current;

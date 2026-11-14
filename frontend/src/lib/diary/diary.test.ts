@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, joinNeedsSpace, laterEntryTime, lineJoinKey, listCommand, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -253,8 +253,24 @@ describe("code block", () => {
         assert.equal(quoteEnterKey({ ...middle, key: "a" }), "pass");
         assert.equal(quoteEnterKey({ ...middle, shiftKey: true }), "pass");
         assert.equal(quoteEnterKey({ ...middle, ctrlKey: true }), "pass");
+        assert.equal(quoteEnterKey({ ...middle, besideBreak: true }), "blank");
         assert.equal(wordCount("<blockquote><b>Harbor</b><br><b>rain</b></blockquote>"), 2);
         assert.equal(entryWritingText("<blockquote><b>Harbor</b><br><b>rain</b></blockquote>"), "Harbor rain");
+    });
+
+    it("keeps a space when backspace joins a line inside a quote", () => {
+        const nextLine = { key: "Backspace", collapsed: true, atBreak: "after" as const };
+        assert.equal(breakJoinKey(nextLine), "join");
+        assert.equal(breakJoinKey({ ...nextLine, key: "Delete", atBreak: "before" }), "join");
+        assert.equal(breakJoinKey({ ...nextLine, key: "Delete" }), "pass");
+        assert.equal(breakJoinKey({ key: "Backspace", collapsed: true, atBreak: "before" }), "pass");
+        assert.equal(breakJoinKey({ ...nextLine, atBreak: "none" }), "pass");
+        assert.equal(breakJoinKey({ ...nextLine, collapsed: false }), "pass");
+        assert.equal(breakJoinKey({ ...nextLine, shiftKey: true }), "pass");
+        assert.equal(breakJoinKey({ ...nextLine, ctrlKey: true }), "pass");
+        assert.equal(joinNeedsSpace("Harbor", "rain today"), true);
+        assert.equal(joinNeedsSpace("Harbor ", "rain today"), false);
+        assert.equal(joinNeedsSpace("Harbor", " rain today"), false);
     });
 
     it("keeps a space when two lines join", () => {

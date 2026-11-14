@@ -104,6 +104,23 @@ export function lineJoinKey(input: {
     return "pass";
 }
 
+export type BreakJoin = "join" | "pass";
+
+export function breakJoinKey(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    atBreak: "before" | "after" | "none";
+}): BreakJoin {
+    if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey || !input.collapsed) return "pass";
+    if (input.key === "Backspace" && input.atBreak === "after") return "join";
+    if (input.key === "Delete" && input.atBreak === "before") return "join";
+    return "pass";
+}
+
 export function plainSpacesAfterMarks(html: string): string {
     return html
         .replace(/(<\/(?:b|strong|i|em|u|s|strike|del|a)>)(?:&nbsp;|\u00a0)/gi, "$1 ")
@@ -214,7 +231,7 @@ export function dividerCaret(input: {
     return "stay";
 }
 
-export type QuoteEnter = "break" | "pass";
+export type QuoteEnter = "break" | "blank" | "pass";
 
 export function quoteEnterKey(input: {
     key: string;
@@ -226,12 +243,13 @@ export function quoteEnterKey(input: {
     collapsed: boolean;
     before: string;
     after: string;
+    besideBreak?: boolean;
 }): QuoteEnter {
     if (input.key !== "Enter" || input.shiftKey || input.altKey || input.ctrlKey || input.metaKey) return "pass";
     if (!input.inQuote || !input.collapsed) return "pass";
     const before = input.before.replace(/\u00a0/g, " ");
     const after = input.after.replace(/\u00a0/g, " ");
-    if (before.trim() && after.trim()) return "break";
+    if (before.trim() && after.trim()) return input.besideBreak ? "blank" : "break";
     return "pass";
 }
 
