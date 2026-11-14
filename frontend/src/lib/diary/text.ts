@@ -311,6 +311,11 @@ export function sameEditingPage(left: string, right: string): boolean {
     return plain(left) === plain(right);
 }
 
+export function blankUndoCaret(saved: { caret?: number } | null): number | null {
+    if (!saved || typeof saved.caret !== "number" || !Number.isFinite(saved.caret) || saved.caret < 0) return null;
+    return Math.floor(saved.caret);
+}
+
 export type HeadingSplitUndo = "restore" | "pass";
 
 export function headingSplitUndo(input: {
