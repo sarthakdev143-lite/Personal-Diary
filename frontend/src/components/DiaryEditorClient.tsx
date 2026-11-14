@@ -682,7 +682,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         <div style={{ position: "fixed", inset: 0, zIndex: 10, background: "#0d0b09", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid #4a4030", borderTopColor: "#c4a882", animation: "spin 1s linear infinite" }} />
             <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-            <Toaster />
+            <Toaster viewportClassName="bottom-24 top-auto flex-col sm:bottom-16" />
         </div>
     );
 
@@ -690,7 +690,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         <div style={{ position: "fixed", inset: 0, zIndex: 10, background: "#0d0b09", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
             <p style={{ fontFamily: "Georgia,serif", color: "#a09080", fontSize: 14 }}>{error}</p>
             <button onClick={() => router.push("/diary")} style={{ fontFamily: "monospace", color: "#8a7860", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", borderBottom: "1px solid #5a4a38", background: "none", cursor: "pointer" }}>← return</button>
-            <Toaster />
+            <Toaster viewportClassName="bottom-24 top-auto flex-col sm:bottom-16" />
         </div>
     );
 
@@ -1382,7 +1382,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 onChange={handleImageUpload}
             />
 
-            <Toaster />
+            <Toaster viewportClassName="bottom-24 top-auto flex-col sm:bottom-16" />
         </>
     );
 };
