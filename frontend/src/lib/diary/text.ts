@@ -242,9 +242,21 @@ export function stickyUndo(input: { sticky: boolean; matches: boolean; sameLine:
 export function wordGapInsert(gap: "before" | "after", typed: string): { text: string; caret: number; pull: boolean } | null {
     if (typed === " " || typed === "\u00a0") return null;
     if (gap === "after" && /^[,.;:!?]$/.test(typed)) return { text: typed, caret: typed.length, pull: true };
-    if (!/^[\p{L}\p{N}][\p{L}\p{N}'’\-]*$/u.test(typed)) return null;
-    if (gap === "after") return { text: `${typed} `, caret: typed.length, pull: false };
-    return { text: ` ${typed}`, caret: typed.length + 1, pull: false };
+    if (/[\r\n]/.test(typed) || !/[\p{L}\p{N}]/u.test(typed)) return null;
+    const body = typed.replace(/^[\t \u00a0]+|[\t \u00a0]+$/gu, "");
+    if (!body) return null;
+    if (gap === "after") return { text: `${body} `, caret: body.length, pull: false };
+    return { text: ` ${body}`, caret: body.length + 1, pull: false };
+}
+
+export function wordGapKey(input: { key: string; shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean }): "keep" | "clear" {
+    const key = input.key.toLowerCase();
+    if (key === "control" || key === "meta" || key === "shift" || key === "os") return "keep";
+    if (input.altKey || key === "alt") return "clear";
+    if ((input.ctrlKey || input.metaKey) && key === "v") return "keep";
+    if (input.shiftKey && key === "insert" && !input.ctrlKey && !input.metaKey) return "keep";
+    if (input.key.length !== 1 || input.ctrlKey || input.metaKey) return "clear";
+    return "keep";
 }
 
 export function dragSelectionUndo(input: { collapsed: boolean; inWriting: boolean }): "place" | "pass" {
