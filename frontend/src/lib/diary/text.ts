@@ -121,13 +121,20 @@ export function breakJoinKey(input: {
     return "pass";
 }
 
+export function plainGaps(text: string): string {
+    return text.replace(/(\S)((?:&nbsp;|\u00a0| )*(?:&nbsp;|\u00a0)(?:&nbsp;|\u00a0| )*)(?=\S)/g, (_match, before: string, gaps: string) => {
+        return before + gaps.replace(/&nbsp;|\u00a0/g, " ");
+    });
+}
+
 export function plainSpacesAfterMarks(html: string): string {
     return html
-        .replace(/(<\/(?:b|strong|i|em|u|s|strike|del|a)>)((?:&nbsp;|\u00a0)+)(?=[^<\s])/gi, (_match, close: string, gaps: string) => {
-            const count = gaps.match(/&nbsp;|\u00a0/g)?.length ?? 0;
-            return close + " ".repeat(count);
+        .replace(/(<\/(?:b|strong|i|em|u|s|strike|del|a)>)((?:&nbsp;|\u00a0| )+)(?=[^<\s])/gi, (match, close: string, gaps: string) => {
+            if (!/(?:&nbsp;|\u00a0)/.test(gaps)) return match;
+            return close + gaps.replace(/&nbsp;|\u00a0/g, " ");
         })
-        .replace(/(<(?:p|h1|h2|h3|li|blockquote|figcaption)\b[^>]*>)(?:&nbsp;|\u00a0)(?=[^\s<])/gi, "$1 ");
+        .replace(/(<(?:p|h1|h2|h3|li|blockquote|figcaption)\b[^>]*>)(?:&nbsp;|\u00a0)(?=[^\s<])/gi, "$1 ")
+        .replace(/>([^<]*)</g, (_match, text: string) => `>${plainGaps(text)}<`);
 }
 
 export function styledLine(input: {

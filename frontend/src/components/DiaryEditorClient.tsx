@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainSpacesAfterMarks, styledLine, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainSpacesAfterMarks, styledLine, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -989,7 +989,37 @@ function restoreMarkSpaces(root: HTMLElement) {
     root.querySelectorAll("p, h1, h2, h3, li, blockquote, figcaption").forEach((block) => {
         const first = block.firstChild;
         if (first instanceof Text && first.data.startsWith("\u00a0") && /^[^\s<]/.test(first.data.slice(1))) first.data = ` ${first.data.slice(1)}`;
+        relaxBlockSpaces(block);
     });
+}
+
+function relaxBlockSpaces(block: HTMLElement) {
+    const nodes: Text[] = [];
+    const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+    let current = walker.nextNode();
+    while (current) {
+        if (current instanceof Text && !current.parentElement?.closest("pre")) nodes.push(current);
+        current = walker.nextNode();
+    }
+    if (!nodes.length) return;
+    const combined = nodes.map((node) => node.data).join("");
+    const next = plainGaps(combined);
+    if (next === combined) return;
+    const selection = window.getSelection();
+    const anchor = selection?.anchorNode ?? null;
+    const offset = selection?.anchorOffset ?? 0;
+    let cursor = 0;
+    for (const node of nodes) {
+        const slice = next.slice(cursor, cursor + node.data.length);
+        cursor += node.data.length;
+        if (slice !== node.data) node.data = slice;
+    }
+    if (!(selection && anchor instanceof Text && nodes.includes(anchor))) return;
+    const range = document.createRange();
+    range.setStart(anchor, Math.min(offset, anchor.data.length));
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
 }
 
 function caretEdges(block: HTMLElement, selection: Selection): { collapsed: boolean; atStart: boolean; atEnd: boolean } | null {

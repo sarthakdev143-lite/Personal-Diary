@@ -423,6 +423,10 @@ describe("code block", () => {
         assert.equal(plainSpacesAfterMarks("<p><b>Harbo</b>&nbsp;</p>"), "<p><b>Harbo</b>&nbsp;</p>");
         assert.equal(plainSpacesAfterMarks("<p><b>Harbo</b>&nbsp;&nbsp;rain</p>"), "<p><b>Harbo</b>  rain</p>");
         assert.equal(plainSpacesAfterMarks("<p>&nbsp;</p>"), "<p>&nbsp;</p>");
+        assert.equal(plainSpacesAfterMarks("<p>See &nbsp;rain</p>"), "<p>See  rain</p>");
+        assert.equal(plainSpacesAfterMarks("<p>See\u00a0rain</p>"), "<p>See rain</p>");
+        assert.equal(plainSpacesAfterMarks("<p><b>Harbor</b>&nbsp; rain</p>"), "<p><b>Harbor</b>  rain</p>");
+        assert.equal(plainSpacesAfterMarks("<p><b>Harbor</b>&nbsp; </p>"), "<p><b>Harbor</b>&nbsp; </p>");
     });
 
     it("undo of a split line puts the space back", () => {
