@@ -49,7 +49,7 @@ export function lineAfterPictureKey(input: {
     return input.empty ? "remove" : "move";
 }
 
-export type SelectedPictureKey = "remove" | "pass";
+export type SelectedPictureKey = "remove" | "name" | "after" | "pass";
 
 export function selectedPictureKey(input: {
     key: string;
@@ -60,6 +60,15 @@ export function selectedPictureKey(input: {
 }): SelectedPictureKey {
     if (!input.imageSelected || input.altKey || input.ctrlKey || input.metaKey) return "pass";
     if (input.key === "Backspace" || input.key === "Delete") return "remove";
+    if (input.key === "Enter") return "after";
+    if (input.key.length === 1) return "name";
+    return "pass";
+}
+
+export type PictureClick = "select" | "pass";
+
+export function pictureClick(input: { image: boolean; inEditor: boolean }): PictureClick {
+    if (input.image && input.inEditor) return "select";
     return "pass";
 }
 

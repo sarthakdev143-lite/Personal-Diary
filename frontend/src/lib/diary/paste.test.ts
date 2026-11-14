@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, selectedPictureKey } from "./paste";
+import { decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -152,6 +152,15 @@ describe("entry paste", () => {
         assert.equal(selectedPictureKey({ key: "Backspace", imageSelected: true }), "remove");
         assert.equal(selectedPictureKey({ key: "Delete", imageSelected: false }), "pass");
         assert.equal(selectedPictureKey({ key: "Delete", ctrlKey: true, imageSelected: true }), "pass");
-        assert.equal(selectedPictureKey({ key: "Enter", imageSelected: true }), "pass");
+        assert.equal(selectedPictureKey({ key: "Enter", imageSelected: true }), "after");
+        assert.equal(selectedPictureKey({ key: "s", imageSelected: true }), "name");
+        assert.equal(selectedPictureKey({ key: "s", imageSelected: false }), "pass");
+        assert.equal(selectedPictureKey({ key: "ArrowDown", imageSelected: true }), "pass");
+    });
+
+    it("selects a picture when it is clicked", () => {
+        assert.equal(pictureClick({ image: true, inEditor: true }), "select");
+        assert.equal(pictureClick({ image: false, inEditor: true }), "pass");
+        assert.equal(pictureClick({ image: true, inEditor: false }), "pass");
     });
 });

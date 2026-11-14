@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, selectedPictureKey } from "@/lib/diary/paste";
+import { decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryUndoBody, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
@@ -147,16 +147,14 @@ function lineAfterPicture(editor: HTMLElement, selection: Selection): { block: H
     };
 }
 
-function selectedFigure(editor: HTMLElement, selection: Selection): HTMLElement | null {
+function selectedImage(editor: HTMLElement, selection: Selection): HTMLImageElement | null {
     if (!selection.rangeCount || selection.isCollapsed) return null;
     const range = selection.getRangeAt(0);
     if (range.startContainer !== range.endContainer || range.startContainer.nodeType !== Node.ELEMENT_NODE) return null;
     const parent = range.startContainer as HTMLElement;
     const node = parent.childNodes[range.startOffset];
-    if (!(node instanceof HTMLImageElement) || range.endOffset !== range.startOffset + 1) return null;
-    const figure = node.closest("figure");
-    if (!(figure instanceof HTMLElement) || !editor.contains(figure)) return null;
-    return figure;
+    if (!(node instanceof HTMLImageElement) || range.endOffset !== range.startOffset + 1 || !editor.contains(node)) return null;
+    return node;
 }
 
 function placeCaretAtStart(node: HTMLElement) {
@@ -1134,29 +1132,75 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         setImageAlt("");
     };
 
-    const removeSelectedPicture = (e: React.KeyboardEvent) => {
+    const selectClickedPicture = (event: React.MouseEvent) => {
+        const editor = editorRef.current;
+        const target = event.target;
+        if (mode === "view" || event.button !== 0 || !editor || !(target instanceof Node) || !editor.contains(target)) return;
+        if (pictureClick({ image: target instanceof HTMLImageElement, inEditor: true }) !== "select") return;
+        if (!(target instanceof HTMLImageElement)) return;
+        event.preventDefault();
+        editor.focus();
+        const selection = window.getSelection();
+        if (!selection) return;
+        const range = document.createRange();
+        range.selectNode(target);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    };
+
+    const editSelectedPicture = (e: React.KeyboardEvent) => {
         const editor = editorRef.current;
         const selection = window.getSelection();
         if (!editor || !selection || mode === "view") return false;
-        const figure = selectedFigure(editor, selection);
+        const image = selectedImage(editor, selection);
         const action = selectedPictureKey({
             key: e.key,
             altKey: e.altKey,
             ctrlKey: e.ctrlKey,
             metaKey: e.metaKey,
-            imageSelected: Boolean(figure),
+            imageSelected: Boolean(image),
         });
-        if (action !== "remove" || !figure) return false;
+        if (action === "pass" || !image) return false;
         e.preventDefault();
-        const next = figure.nextElementSibling;
-        figure.remove();
-        if (next instanceof HTMLElement && editor.contains(next)) {
-            placeCaretAtStart(next);
+        const figure = image.closest("figure");
+        const picture = figure instanceof HTMLElement && editor.contains(figure) ? figure : image;
+        if (action === "remove") {
+            const next = picture.nextElementSibling;
+            picture.remove();
+            if (next instanceof HTMLElement && editor.contains(next)) placeCaretAtStart(next);
+            else {
+                const paragraph = document.createElement("p");
+                paragraph.appendChild(document.createElement("br"));
+                editor.appendChild(paragraph);
+                placeCaretAtStart(paragraph);
+            }
+        } else if (action === "name") {
+            if (picture instanceof HTMLElement && picture.tagName === "FIGURE") {
+                let caption = picture.querySelector("figcaption");
+                if (!(caption instanceof HTMLElement)) {
+                    caption = document.createElement("figcaption");
+                    picture.appendChild(caption);
+                }
+                caption.textContent = `${caption.textContent ?? ""}${e.key}`;
+                placeCaretAtEnd(caption);
+            } else {
+                const text = document.createTextNode(e.key);
+                image.after(text);
+                const caret = document.createRange();
+                caret.setStart(text, text.length);
+                caret.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(caret);
+            }
         } else {
-            const paragraph = document.createElement("p");
-            paragraph.appendChild(document.createElement("br"));
-            editor.appendChild(paragraph);
-            placeCaretAtStart(paragraph);
+            const next = picture.nextElementSibling;
+            if (next instanceof HTMLElement && editor.contains(next)) placeCaretAtStart(next);
+            else {
+                const paragraph = document.createElement("p");
+                paragraph.appendChild(document.createElement("br"));
+                picture.after(paragraph);
+                placeCaretAtStart(paragraph);
+            }
         }
         setHtmlContent(editor.innerHTML);
         return true;
@@ -1192,7 +1236,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             return;
         }
         if (mode === "view") return;
-        if (removeSelectedPicture(e)) return;
+        if (editSelectedPicture(e)) return;
         if (keepPictureNameApart(e)) return;
         const editor = editorRef.current;
         const selection = window.getSelection();
@@ -2130,6 +2174,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 aria-label="Diary entry"
                                 suppressContentEditableWarning
                                 onInput={onInput}
+                                onMouseDown={selectClickedPicture}
                                 onFocus={updateActiveFormats}
                                 onKeyUp={updateActiveFormats}
                                 onMouseUp={updateActiveFormats}
