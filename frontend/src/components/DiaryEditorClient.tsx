@@ -515,6 +515,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     background:#0f0d0b;
                     border-bottom:1px solid #1e1c18;
                 }
+                .de-header-actions{
+                    display:flex;align-items:center;gap:12px;flex-shrink:0;
+                }
 
                 /* Toolbar */
                 .de-toolbar{
@@ -656,6 +659,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     background:#0f0d0b;
                     border-top:1px solid #1a1814;
                 }
+                .de-footer-actions{display:flex;gap:8px;align-items:center;}
 
                 /* Buttons */
                 .de-save-btn{
@@ -711,7 +715,21 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 .de-covers img{width:100%;height:100%;object-fit:cover;display:block;}
                 .de-cover-mark{width:28px;height:36px;object-fit:cover;border-radius:2px;border:1px solid #3a362e;flex-shrink:0;}
                 .de-details-actions{grid-column:1 / -1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;color:#a79f93;font-size:12px;}
-                @media (max-width:720px){.de-details{grid-template-columns:1fr;}}
+                @media (max-width:720px){
+                    .de-details{grid-template-columns:1fr;}
+                    .de-header{flex-wrap:wrap;align-items:flex-start;gap:10px;padding:10px 14px;}
+                    .de-header-actions{width:100%;justify-content:flex-start;flex-wrap:wrap;gap:8px;}
+                    .de-ghost-btn{padding:6px 10px;letter-spacing:0.12em;}
+                    .de-body{flex-direction:column;}
+                    .de-left{
+                        width:100%;max-height:min(280px,36vh);flex-shrink:0;
+                        border-right:none;border-bottom:1px solid #1a1814;
+                    }
+                    #de-editor{padding:28px 18px 48px;}
+                    .de-footer{padding:9px 14px;gap:8px;flex-wrap:wrap;}
+                    .de-save-btn,.de-footer-actions{margin-left:auto;}
+                    .de-kbd-hint{display:none;}
+                }
 
                 /* Back link */
                 .de-back{
@@ -779,7 +797,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             )}
                         </div>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+                    <div className="de-header-actions">
                         <span className="de-mono" style={{ fontSize: 10, color: "#8f8679", letterSpacing: "0.15em" }}>
                             {entries.length} {entries.length === 1 ? "entry" : "entries"}
                         </span>
@@ -1004,7 +1022,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 {mode !== "view" && (
                                     <>
                                         <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
-                                        <span style={{ color: "#8f8679" }}>ctrl+s to save</span>
+                                        <span className="de-kbd-hint">ctrl+s to save</span>
                                     </>
                                 )}
                                 {mode === "view" && (
@@ -1015,7 +1033,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             </div>
 
                             {mode === "view" ? (
-                                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                                <div className="de-footer-actions">
                                     {confirmDelete === "entry" ? (
                                         <>
                                             <span className="de-mono" style={{ fontSize: 10, color: "#c4a882" }}>Delete this entry?</span>
