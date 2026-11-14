@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, styledLine, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, styledLine, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -2059,6 +2059,15 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         styleRedo.current = null;
     };
 
+    const selectionUndo = (host: HTMLElement | null) => {
+        if (!host) return null;
+        const selection = window.getSelection();
+        if (!selection?.rangeCount || !host.contains(selection.anchorNode)) return null;
+        const range = selection.getRangeAt(0);
+        if (replacedSelectionUndo({ collapsed: range.collapsed }) !== "place") return null;
+        return rememberSelectionUndo(host, range);
+    };
+
     const exec = useCallback((cmd: string, value?: string) => {
         const editor = editorRef.current;
         if (editor && dateHeadingHoldsSelection(editor, window.getSelection())) return;
@@ -3943,6 +3952,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 selection.removeAllRanges();
                 selection.addRange(range);
             }
+            const replaced = selectionUndo(editor);
             insertHTML(codeBlockHtml());
             const fresh = editor?.querySelector("code[data-fresh]");
             if (fresh) {
@@ -3954,10 +3964,18 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 nextSelection?.addRange(range);
                 setHtmlContent(editor?.innerHTML ?? "");
             }
+            if (replaced && editor && editor.innerHTML !== replaced.before) {
+                keepBlank({ before: replaced.before, after: editor.innerHTML, path: replaced.path, caret: replaced.caret });
+            }
             return;
         }
         if (tool.html) {
+            const editor = editorRef.current;
+            const replaced = selectionUndo(editor);
             insertHTML(tool.html);
+            if (replaced && editor && editor.innerHTML !== replaced.before) {
+                keepBlank({ before: replaced.before, after: editor.innerHTML, path: replaced.path, caret: replaced.caret });
+            }
             return;
         }
         if (tool.command === "redo") {
