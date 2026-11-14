@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 
+import { MatchedText } from "@/components/MatchedText";
 import { coverForTheme } from "@/lib/diary/constants";
 import { diaryListKeyAction } from "@/lib/diary/keys";
 import { diaryMatchPath } from "@/lib/diary/search";
@@ -203,10 +204,14 @@ const Diaries = ({ query = "", refetchTrigger = 0, paused = false }: { query?: s
                     )}
                     <div className="flex min-w-0 flex-1 flex-col justify-between p-4">
                         <div className="space-y-2 overflow-hidden">
-                            <h2 className="truncate text-lg font-medium text-white">{diary.title}</h2>
+                            <h2 className="truncate text-lg font-medium text-white">
+                                {query
+                                    ? <MatchedText text={diary.title} query={query} className="rounded-sm bg-amber-950/80 px-0.5 text-amber-100" />
+                                    : diary.title}
+                            </h2>
                             <p className="line-clamp-2 text-sm leading-6 text-zinc-300">
-                                {query && diary.match
-                                    ? diary.match
+                                {query
+                                    ? <MatchedText text={diary.match || truncateDescription(diary.description || "No description")} query={query} className="rounded-sm bg-amber-950/80 px-0.5 text-amber-100" />
                                     : truncateDescription(diary.description || "No description")}
                             </p>
                         </div>

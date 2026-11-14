@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
-import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, normalizeSearchQuery } from "./search";
+import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, laterEntryTime, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
@@ -371,6 +371,22 @@ describe("search", () => {
         assert.match(matched, /hidden lantern by the gate/);
         assert.equal(matched.startsWith("…"), true);
         assert.equal(entryCardPreview(entry, "   "), opening);
+    });
+
+    it("marks each matched word without changing its letters", () => {
+        assert.deepEqual(matchedTextParts("the Quiet rain", "quiet"), [
+            { text: "the ", match: false },
+            { text: "Quiet", match: true },
+            { text: " rain", match: false },
+        ]);
+        assert.deepEqual(matchedTextParts("lantern and lantern", "Lantern").filter((part) => part.match), [
+            { text: "lantern", match: true },
+            { text: "lantern", match: true },
+        ]);
+        assert.deepEqual(matchedTextParts("no match", "   "), [
+            { text: "no match", match: false },
+        ]);
+        assert.deepEqual(matchedTextParts("", "rain"), []);
     });
 
     it("moves through each match and wraps around", () => {

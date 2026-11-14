@@ -73,6 +73,27 @@ export function entryCardPreview(entry: {
     return matchingPiece(entry, query);
 }
 
+export function matchedTextParts(text: string, rawQuery: string): { text: string; match: boolean }[] {
+    const query = normalizeSearchQuery(rawQuery);
+    if (!text) return [];
+    if (!query) return [{ text, match: false }];
+    const haystack = text.toLowerCase();
+    const needle = query.toLowerCase();
+    const parts: { text: string; match: boolean }[] = [];
+    let from = 0;
+    while (from < text.length) {
+        const index = haystack.indexOf(needle, from);
+        if (index < 0) {
+            parts.push({ text: text.slice(from), match: false });
+            break;
+        }
+        if (index > from) parts.push({ text: text.slice(from, index), match: false });
+        parts.push({ text: text.slice(index, index + needle.length), match: true });
+        from = index + needle.length;
+    }
+    return parts;
+}
+
 export function entryMatchCount(text: string, rawQuery: string): number {
     const query = normalizeSearchQuery(rawQuery);
     if (!query) return 0;

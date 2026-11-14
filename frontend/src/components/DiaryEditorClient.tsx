@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { ToastAction } from "@/components/ui/toast";
+import { MatchedText } from "@/components/MatchedText";
 import { DESCRIPTION_MAX, DIARY_THEMES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
 import { entryShareMarkdown } from "@/lib/diary/export";
 import { takeImportNotice } from "@/lib/diary/import";
@@ -1176,6 +1177,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 .de-entry-card:hover{background:#131109;}
                 .de-entry-card.active{background:#161208;border-left-color:#c4a882;}
                 .de-entry-card:focus-visible{outline:1px solid #c4a882;outline-offset:-2px;}
+                .de-entry-card mark{background:#4a3b24;color:#f4ead8;padding:0 2px;border-radius:2px;font-style:inherit;}
 
                 /* Right panel */
                 .de-right{
@@ -1684,7 +1686,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                             </span>
                                         </div>
                                         <p style={{ fontFamily: "'Lora',Georgia,serif", fontStyle: "italic", fontSize: 12, lineHeight: 1.65, color: active ? "#e0d6c8" : "#bfb6aa", margin: 0, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>
-                                            {preview || "—"}
+                                            {preview ? <MatchedText text={preview} query={entryQuery} /> : "—"}
                                         </p>
                                     </button>
                                 );
