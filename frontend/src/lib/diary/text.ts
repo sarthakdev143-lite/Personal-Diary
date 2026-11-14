@@ -79,6 +79,24 @@ export function separateGluedDateHeading(html: string): string {
     return `${heading}<p>${escaped}</p>${rest}`;
 }
 
+export type ListLeaveKey = "leave" | "pass";
+
+export function listLeaveKey(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    inItem: boolean;
+    collapsed: boolean;
+    empty: boolean;
+}): ListLeaveKey {
+    if (!input.inItem || !input.collapsed || !input.empty) return "pass";
+    if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.key !== "Enter") return "pass";
+    return "leave";
+}
+
 export type CodeLineKey = "newline" | "leave" | "pass";
 
 export function codeLineKey(input: {

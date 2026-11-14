@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, dateHeadingKey, datePaste, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, dateHeadingKey, datePaste, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, listLeaveKey, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -617,6 +617,29 @@ function selectCodeOffsets(code: HTMLElement, start: number, end: number) {
         filled = next;
         node = walker.nextNode();
     }
+}
+
+function leaveListItem(item: HTMLElement) {
+    const list = item.parentElement;
+    if (!(list instanceof HTMLUListElement || list instanceof HTMLOListElement)) return;
+    const following = [...list.children].filter((child) => {
+        return child.tagName === "LI" && (item.compareDocumentPosition(child) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+    });
+    const paragraph = document.createElement("p");
+    paragraph.appendChild(document.createElement("br"));
+    item.remove();
+    const remaining = [...list.children].some((child) => child.tagName === "LI");
+    if (!remaining) {
+        list.replaceWith(paragraph);
+    } else if (following.length) {
+        const rest = document.createElement(list.tagName.toLowerCase());
+        for (const next of following) rest.appendChild(next);
+        list.after(paragraph);
+        paragraph.after(rest);
+    } else {
+        list.after(paragraph);
+    }
+    placeCaretAtStart(paragraph);
 }
 
 function leaveCodeBlock(pre: HTMLElement, code: HTMLElement) {
@@ -1922,6 +1945,32 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const keepListLine = (e: React.KeyboardEvent) => {
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection?.rangeCount || mode === "view") return false;
+        const anchor = selection.anchorNode;
+        const host = anchor instanceof Element ? anchor : anchor?.parentElement ?? null;
+        const item = host?.closest("li");
+        if (!(item instanceof HTMLElement) || !editor.contains(item)) return false;
+        const text = (item.textContent ?? "").replace(/[\u200b\u00a0]/g, "").trim();
+        const action = listLeaveKey({
+            key: e.key,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            inItem: true,
+            collapsed: selection.isCollapsed,
+            empty: text.length === 0 && !item.querySelector("img"),
+        });
+        if (action === "pass") return false;
+        e.preventDefault();
+        leaveListItem(item);
+        setHtmlContent(editor.innerHTML);
+        return true;
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (saveEntryShortcut(e)) {
             e.preventDefault();
@@ -1938,6 +1987,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
         if (keepDateLine(e)) return;
         if (keepCodeLine(e)) return;
+        if (keepListLine(e)) return;
         if (editSelectedPicture(e)) return;
         if (keepPictureNameApart(e)) return;
         if (moveAroundPicture(e)) return;

@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, dateHeadingKey, datePaste, formatEntryLong, freshEntryHtml, hasEntryContent, laterEntryTime, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, dateHeadingKey, datePaste, formatEntryLong, freshEntryHtml, hasEntryContent, laterEntryTime, listLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -156,6 +156,17 @@ describe("code block", () => {
         assert.equal(codeLineKey({ ...typing, inCode: false }), "pass");
         assert.equal(codeLineKey({ ...typing, key: "a" }), "pass");
         assert.equal(codeLineKey({ ...typing, ctrlKey: true }), "pass");
+    });
+
+    it("leaves a list when Enter is pressed on a blank item", () => {
+        const blank = { key: "Enter", inItem: true, collapsed: true, empty: true };
+        assert.equal(listLeaveKey(blank), "leave");
+        assert.equal(listLeaveKey({ ...blank, empty: false }), "pass");
+        assert.equal(listLeaveKey({ ...blank, collapsed: false }), "pass");
+        assert.equal(listLeaveKey({ ...blank, inItem: false }), "pass");
+        assert.equal(listLeaveKey({ ...blank, key: "a" }), "pass");
+        assert.equal(listLeaveKey({ ...blank, shiftKey: true }), "pass");
+        assert.equal(listLeaveKey({ ...blank, ctrlKey: true }), "pass");
     });
 
     it("keeps each line when the page is saved and exported", () => {
