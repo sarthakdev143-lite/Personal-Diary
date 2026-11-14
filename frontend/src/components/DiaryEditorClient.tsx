@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, wordGapInsert, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -888,13 +888,14 @@ function removeTextSpan(block: HTMLElement, start: number, end: number) {
     if (!live) return false;
     live.deleteContents();
     dropEmptyMarks(block);
-    const selection = window.getSelection();
-    if (selection) {
-        selection.removeAllRanges();
-        if (live.startContainer.isConnected) selection.addRange(live);
-        else placeCaretAtStart(block);
+    block.normalize();
+    if (blockIsEmpty(block)) {
+        block.replaceChildren(document.createElement("br"));
+        placeCaretAtStart(block);
+        return true;
     }
     relaxBlockSpaces(block);
+    placeCaretAtTextOffset(block, start);
     return true;
 }
 
@@ -1889,6 +1890,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const selectionTypeStart = useRef<number | null>(null);
     const selectionTypeLine = useRef<HTMLElement | null>(null);
     const dragUndo = useRef<{ before: string; path: number[]; caret: number } | null>(null);
+    const wordGap = useRef<{ path: number[]; offset: number; gap: "before" | "after" } | null>(null);
     const styleUndo = useRef<{ before: string; after: string; path: number[]; caret: number } | null>(null);
     const styleRedo = useRef<{ undone: string; redone: string; path: number[]; caret: number } | null>(null);
     const redoPage = useRef<{
@@ -4047,6 +4049,58 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const rememberWordGap = (editor: HTMLElement, block: HTMLElement | null, gap: "before" | "after" | "none") => {
+        const selection = window.getSelection();
+        if (gap === "none" || !block || !selection?.rangeCount || !selection.isCollapsed || !selection.anchorNode || !block.contains(selection.anchorNode)) {
+            wordGap.current = null;
+            return;
+        }
+        wordGap.current = {
+            path: childPath(editor, block),
+            offset: textOffsetWithin(block, selection.anchorNode, selection.anchorOffset),
+            gap,
+        };
+    };
+    const applyWordGap = (event: InputEvent) => {
+        const pending = wordGap.current;
+        if (!pending) return;
+        wordGap.current = null;
+        if (event.inputType !== "insertText") return;
+        const typed = event.data ?? "";
+        const decision = wordGapInsert(pending.gap, typed);
+        if (!decision) return;
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection?.rangeCount || !selection.isCollapsed || !selection.anchorNode) return;
+        const block = nodeAtPath(editor, pending.path);
+        if (!(block instanceof HTMLElement) || !block.contains(selection.anchorNode)) return;
+        const offset = textOffsetWithin(block, selection.anchorNode, selection.anchorOffset);
+        if (offset !== pending.offset) return;
+        event.preventDefault();
+        if (decision.pull) {
+            const text = block.textContent ?? "";
+            const previous = text[offset - 1];
+            if (offset > 0 && (previous === " " || previous === "\u00a0" || previous === "\t")) {
+                const live = selectTextSpan(block, offset - 1, offset);
+                const next = text[offset];
+                const needsSpace = Boolean(next && /[\p{L}\p{N}]/u.test(next));
+                if (live) {
+                    selection.removeAllRanges();
+                    selection.addRange(live);
+                    document.execCommand("insertText", false, needsSpace ? `${decision.text} ` : decision.text);
+                    placeCaretAtTextOffset(block, offset - 1 + decision.text.length);
+                    setHtmlContent(editor.innerHTML);
+                }
+                return;
+            }
+        }
+        document.execCommand("insertText", false, decision.text);
+        placeCaretAtTextOffset(block, offset + decision.caret);
+        setHtmlContent(editor.innerHTML);
+    };
+    const applyWordGapRef = useRef(applyWordGap);
+    applyWordGapRef.current = applyWordGap;
+
     const keepSelectionDelete = (e: React.KeyboardEvent) => {
         const editor = editorRef.current;
         const selection = window.getSelection();
@@ -4067,8 +4121,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const end = wordBlock(range.endContainer);
         const instant = instantFor(entryDate);
         const label = instant ? fmtLong(instant.toISOString()) : "";
+        let gap: "before" | "after" | "none" = "none";
         if (block instanceof HTMLElement && block === end && !selectedDateHeading(editor, selection, label)) {
-            const span = wordDeleteSpan(block.textContent ?? "", textOffsetWithin(block, range.startContainer, range.startOffset), textOffsetWithin(block, range.endContainer, range.endOffset));
+            const rawStart = textOffsetWithin(block, range.startContainer, range.startOffset);
+            const rawEnd = textOffsetWithin(block, range.endContainer, range.endOffset);
+            gap = wordDeleteGap(block.textContent ?? "", rawStart, rawEnd);
+            const span = wordDeleteSpan(block.textContent ?? "", rawStart, rawEnd);
             const widened = selectTextSpan(block, span.start, span.end);
             if (widened) {
                 selection.removeAllRanges();
@@ -4078,8 +4136,14 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         document.execCommand("delete");
         if (block instanceof HTMLElement) {
             dropEmptyMarks(block);
-            relaxBlockSpaces(block);
+            block.normalize();
+            if (blockIsEmpty(block)) {
+                block.replaceChildren(document.createElement("br"));
+                placeCaretAtStart(block);
+                gap = "none";
+            } else relaxBlockSpaces(block);
         }
+        rememberWordGap(editor, block instanceof HTMLElement ? block : null, gap);
         keepReplacedSelection(mark);
         setHtmlContent(editor.innerHTML);
         return true;
@@ -4113,11 +4177,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             setHtmlContent(editor.innerHTML);
             return;
         }
-        const span = wordDeleteSpan(
-            block.textContent ?? "",
-            textOffsetWithin(block, target.startContainer, target.startOffset),
-            textOffsetWithin(block, target.endContainer, target.endOffset),
-        );
+        const rawStart = textOffsetWithin(block, target.startContainer, target.startOffset);
+        const rawEnd = textOffsetWithin(block, target.endContainer, target.endOffset);
+        const gap = wordDeleteGap(block.textContent ?? "", rawStart, rawEnd);
+        const span = wordDeleteSpan(block.textContent ?? "", rawStart, rawEnd);
         const caret = styleUndoCaret(textOffsetWithin(block, range.endContainer, range.endOffset));
         if (caret === null || !selectTextSpan(block, span.start, span.end)) return;
         event.preventDefault();
@@ -4126,6 +4189,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         removeTextSpan(block, span.start, span.end);
         if (editor.innerHTML === before) return;
         keepBlank({ before, after: editor.innerHTML, path, caret });
+        rememberWordGap(editor, block, blockIsEmpty(block) ? "none" : gap);
         setHtmlContent(editor.innerHTML);
     };
     const keepWordDeleteRef = useRef(keepWordDelete);
@@ -4134,6 +4198,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const onBefore = (event: Event) => {
             const editor = editorRef.current;
             if (!(event instanceof InputEvent) || !editor || !(event.target instanceof Node) || !editor.contains(event.target)) return;
+            if (event.inputType === "insertText") applyWordGapRef.current(event);
+            else wordGap.current = null;
+            if (event.defaultPrevented) return;
             keepWordDeleteRef.current({
                 nativeEvent: event,
                 target: event.target,
@@ -4153,6 +4220,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             return;
         }
         if (mode === "view") return;
+        if (wordGap.current && (e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey)) wordGap.current = null;
         const styleCommand = styleShortcut({
             key: e.key,
             shiftKey: e.shiftKey,
