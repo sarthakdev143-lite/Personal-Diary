@@ -121,6 +121,12 @@ export function breakJoinKey(input: {
     return "pass";
 }
 
+export function breakUndoMark(input: { index: number; side: "before" | "after" }): { index: number; side: "before" | "after" } | null {
+    if (!Number.isFinite(input.index) || input.index < 0) return null;
+    if (input.side !== "before" && input.side !== "after") return null;
+    return { index: Math.floor(input.index), side: input.side };
+}
+
 export function styleEdgeCut(text: string): { leading: number; trailing: number } | null {
     if (!text.replace(/[\u00a0\s\u200b]/g, "")) return null;
     const leading = text.match(/^[\u00a0\s\u200b]*/)?.[0].length ?? 0;
