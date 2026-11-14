@@ -132,6 +132,8 @@ describe("blank entry", () => {
         assert.equal(dateHeadingKey({ ...plain, key: "Delete", where: "after", atStart: true, empty: false }), "pass");
         assert.equal(dateHeadingKey({ ...plain, key: "Backspace", where: "after", atStart: false }), "pass");
         assert.equal(dateHeadingKey({ ...plain, key: "k", ctrlKey: true, where: "heading" }), "pass");
+        assert.equal(dateHeadingKey({ ...plain, key: "b", ctrlKey: true, where: "heading" }), "hold");
+        assert.equal(dateHeadingKey({ ...plain, key: "i", metaKey: true, where: "heading" }), "hold");
         assert.equal(hasEntryContent(html), false);
     });
 });
@@ -333,6 +335,13 @@ describe("entry html", () => {
         assert.equal(entryWritingText(note), "Newest snow.");
         assert.equal(wordCount(note), 2);
         assert.deepEqual(prepareEntryContent(blank), { ok: false, error: "Content is required." });
+        assert.deepEqual(prepareEntryContent(`<h2><b>${label}</b></h2>`), { ok: false, error: "Content is required." });
+        const styled = prepareEntryContent(`<h1><em>${label}</em> Kept</h1>`);
+        assert.equal(styled.ok, true);
+        if (styled.ok) {
+            assert.equal(styled.content, `<h2>${label}</h2><p>Kept</p>`);
+            assert.equal(styled.plainText, "Kept");
+        }
 
         const saved = prepareEntryContent(note);
         assert.equal(saved.ok, true);

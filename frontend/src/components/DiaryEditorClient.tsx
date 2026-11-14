@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, dateHeadingKey, entryUndoBody, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, dateHeadingKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -360,6 +360,39 @@ function peelDateLine(heading: HTMLElement, label: string): { paragraph: HTMLEle
     return { paragraph, offset: extra.length };
 }
 
+function dateHeadingHoldsSelection(editor: HTMLElement, selection: Selection | null): boolean {
+    if (!selection?.rangeCount || !selection.anchorNode) return false;
+    const heading = editor.firstElementChild;
+    if (!(heading instanceof HTMLElement) || !/^H[1-3]$/.test(heading.tagName)) return false;
+    const text = (heading.textContent ?? "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+    if (!leadingDateLabel(text) || heading.querySelector("img")) return false;
+    const range = selection.getRangeAt(0);
+    return heading.contains(range.startContainer) && heading.contains(range.endContainer);
+}
+
+function settleDateHeading(editor: HTMLElement) {
+    const heading = editor.firstElementChild;
+    if (!(heading instanceof HTMLElement) || !/^H[1-3]$/.test(heading.tagName) || heading.querySelector("img")) return;
+    const text = (heading.textContent ?? "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+    const label = leadingDateLabel(text);
+    if (!label) return;
+    const extra = text.slice(label.length).trim();
+    const alreadyPlain = heading.tagName === "H2"
+        && !extra
+        && heading.childNodes.length === 1
+        && heading.firstChild instanceof Text
+        && heading.firstChild.data === label;
+    if (alreadyPlain) return;
+    const plain = document.createElement("h2");
+    plain.textContent = label;
+    heading.replaceWith(plain);
+    if (!extra) return;
+    const paragraph = writingLineAfter(plain);
+    const current = (paragraph.textContent ?? "").replace(/\u00a0/g, " ").trim();
+    if (current === extra || current.startsWith(`${extra} `)) return;
+    paragraph.textContent = current ? `${extra} ${current}` : extra;
+}
+
 function placeCaretIn(paragraph: HTMLElement, offset: number) {
     if (offset <= 0 || !(paragraph.firstChild instanceof Text)) {
         placeCaretAtStart(paragraph);
@@ -585,6 +618,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const onInput = useCallback(() => {
         const editor = editorRef.current;
         if (!editor) return;
+        settleDateHeading(editor);
         const saved = pictureRemoval.current;
         if (saved && editor.innerHTML !== saved.after) pictureRemoval.current = null;
         setHtmlContent(editor.innerHTML);
@@ -627,7 +661,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     }, [pendingDiscard]);
 
     const exec = useCallback((cmd: string, value?: string) => {
-        editorRef.current?.focus();
+        const editor = editorRef.current;
+        if (editor && dateHeadingHoldsSelection(editor, window.getSelection())) return;
+        editor?.focus();
         document.execCommand(cmd, false, value);
         if (editorRef.current) setHtmlContent(editorRef.current.innerHTML);
         updateActiveFormats();

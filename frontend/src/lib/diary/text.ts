@@ -59,13 +59,24 @@ export function withoutGeneratedDateHeading(html: string): string {
     return html.slice(match[0].length);
 }
 
+export function leadingDateLabel(text: string): string | null {
+    const match = /^([A-Za-z]+, [A-Za-z]+ \d{1,2}, \d{4})/.exec(text.replace(/\s+/g, " ").trim());
+    if (!match || !isGeneratedDateLabel(match[1])) return null;
+    return match[1];
+}
+
 export function separateGluedDateHeading(html: string): string {
-    const match = /^<h2>([A-Za-z]+, [A-Za-z]+ \d{1,2}, \d{4})([\s\S]*?)<\/h2>/.exec(html);
-    if (!match || !isGeneratedDateLabel(match[1])) return html;
-    const extra = decodeEntryText((match[2] ?? "").replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
-    if (!extra) return html;
+    const match = /^<(h[1-3])\b[^>]*>([\s\S]*?)<\/\1>/i.exec(html);
+    if (!match) return html;
+    const text = decodeEntryText((match[2] ?? "").replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
+    const label = leadingDateLabel(text);
+    if (!label) return html;
+    const extra = text.slice(label.length).trim();
+    const heading = `<h2>${label}</h2>`;
+    const rest = html.slice(match[0].length);
+    if (!extra) return match[0] === heading ? html : `${heading}${rest}`;
     const escaped = extra.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    return `<h2>${match[1]}</h2><p>${escaped}</p>${html.slice(match[0].length)}`;
+    return `${heading}<p>${escaped}</p>${rest}`;
 }
 
 export type DateHeadingKey = "write" | "leave" | "hold" | "pass";
@@ -79,6 +90,11 @@ export function dateHeadingKey(input: {
     atStart?: boolean;
     empty?: boolean;
 }): DateHeadingKey {
+    const formatsDate = input.where === "heading"
+        && (input.ctrlKey || input.metaKey)
+        && !input.altKey
+        && ["b", "i", "u"].includes(input.key.toLowerCase());
+    if (formatsDate) return "hold";
     if (input.altKey || input.ctrlKey || input.metaKey) return "pass";
     if (input.where === "heading") {
         if (input.key.length === 1 || input.key === "Enter") return "write";

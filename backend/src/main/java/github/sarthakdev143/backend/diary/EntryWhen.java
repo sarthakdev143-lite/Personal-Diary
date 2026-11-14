@@ -15,8 +15,9 @@ public final class EntryWhen {
     public static final long DAY_MS = 86_400_000L;
     public static final long REVISION_GAP_MS = 2_000L;
     private static final Pattern DATE_HEADING = Pattern.compile("^<h2>([A-Za-z]+, [A-Za-z]+ \\d{1,2}, \\d{4})</h2>");
-    private static final Pattern GLUED_DATE_HEADING = Pattern.compile(
-            "^<h2>([A-Za-z]+, [A-Za-z]+ \\d{1,2}, \\d{4})([\\s\\S]*?)</h2>");
+    private static final Pattern LEADING_HEADING = Pattern.compile(
+            "^<(h[1-3])\\b[^>]*>([\\s\\S]*?)</\\1>", Pattern.CASE_INSENSITIVE);
+    private static final Pattern DATE_PREFIX = Pattern.compile("^([A-Za-z]+, [A-Za-z]+ \\d{1,2}, \\d{4})");
     private static final DateTimeFormatter LONG_DATE = DateTimeFormatter.ofPattern("EEEE, MMMM d, uuuu", Locale.US)
             .withResolverStyle(ResolverStyle.STRICT);
 
@@ -114,16 +115,31 @@ public final class EntryWhen {
         if (html == null || html.isEmpty()) {
             return html == null ? "" : html;
         }
-        Matcher match = GLUED_DATE_HEADING.matcher(html);
-        if (!match.find() || !isGeneratedDateLabel(match.group(1))) {
+        Matcher match = LEADING_HEADING.matcher(html);
+        if (!match.find()) {
             return html;
         }
-        String extra = decodeHeadingText(match.group(2).replaceAll("<[^>]+>", " ")).replaceAll("\\s+", " ").trim();
-        if (extra.isEmpty()) {
+        String text = decodeHeadingText(match.group(2).replaceAll("<[^>]+>", " ")).replaceAll("\\s+", " ").trim();
+        String label = datePrefix(text);
+        if (label == null) {
             return html;
+        }
+        String extra = text.substring(label.length()).trim();
+        String heading = "<h2>" + label + "</h2>";
+        String rest = html.substring(match.end());
+        if (extra.isEmpty()) {
+            return match.group(0).equals(heading) ? html : heading + rest;
         }
         String escaped = extra.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
-        return "<h2>" + match.group(1) + "</h2><p>" + escaped + "</p>" + html.substring(match.end());
+        return heading + "<p>" + escaped + "</p>" + rest;
+    }
+
+    private static String datePrefix(String text) {
+        Matcher match = DATE_PREFIX.matcher(text);
+        if (!match.find() || !isGeneratedDateLabel(match.group(1))) {
+            return null;
+        }
+        return match.group(1);
     }
 
     private static String decodeHeadingText(String value) {

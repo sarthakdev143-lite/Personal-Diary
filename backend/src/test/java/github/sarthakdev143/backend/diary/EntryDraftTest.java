@@ -77,6 +77,16 @@ class EntryDraftTest {
         EntryDraft.Ready kept = assertInstanceOf(EntryDraft.Ready.class, own);
         assertTrue(kept.content().contains("<h2>Notaday, November 14, 2026</h2>"));
         assertEquals("Notaday, November 14, 2026 Kept", kept.plainText());
+
+        EntryDraft styled = EntryDraft.prepare("<h2><b>Saturday, November 14, 2026</b></h2><p>Kept</p>");
+        EntryDraft.Ready plain = assertInstanceOf(EntryDraft.Ready.class, styled);
+        assertTrue(plain.content().contains("<h2>Saturday, November 14, 2026</h2>"));
+        assertTrue(plain.content().contains("<p>Kept</p>"));
+        assertFalse(plain.content().contains("<b>"));
+        assertEquals("Kept", plain.plainText());
+
+        EntryDraft onlyDate = EntryDraft.prepare("<h1><em>Saturday, November 14, 2026</em></h1>");
+        assertInstanceOf(EntryDraft.Rejected.class, onlyDate);
     }
 
     @Test
