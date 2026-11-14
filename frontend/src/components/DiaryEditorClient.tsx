@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, styledLine, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, styledLine, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -2055,6 +2055,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const caret = editor && range && block instanceof HTMLElement
             ? { fromList: block.tagName === "LI", text: (block.textContent ?? "").replace(/\u00a0/g, " "), offset: textOffsetWithin(block, range.endContainer, range.endOffset) }
             : null;
+        const lifting = Boolean(editor && listCommand(cmd) === "lift");
+        const listBefore = lifting && editor ? editor.innerHTML : null;
+        const listCaret = lifting && editor && range && block instanceof HTMLElement && editor.contains(block)
+            ? listUndoCaret(textOffsetWithin(block, range.endContainer, range.endOffset))
+            : null;
+        const listPath = listCaret !== null && editor && block instanceof HTMLElement ? childPath(editor, block) : undefined;
         if (selection?.rangeCount && !selection.isCollapsed && STYLE_COMMANDS.has(cmd)) excludeStyleEdges(selection.getRangeAt(0));
         const styleRange = editor && selection?.rangeCount && !selection.isCollapsed && STYLE_COMMANDS.has(cmd) ? selection.getRangeAt(0) : null;
         const styleBlock = styleRange ? lineBlock(styleRange.endContainer) : null;
@@ -2069,8 +2075,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             styleUndo.current = { before: styleBefore, after: styleHost.innerHTML, path: stylePath, caret: styleCaret };
             styleRedo.current = null;
         }
-        if (editor && listCommand(cmd) === "lift") liftNestedLists(editor);
+        if (editor && lifting) liftNestedLists(editor);
         if (editor && caret) placeListCaret(editor, caret.fromList, caret.text, caret.offset);
+        if (listBefore !== null && editor && editor.innerHTML !== listBefore) {
+            keepBlank({ before: listBefore, after: editor.innerHTML, path: listPath, caret: listCaret ?? undefined });
+        }
         if (editorRef.current) setHtmlContent(editorRef.current.innerHTML);
         updateActiveFormats();
     }, [updateActiveFormats]);
