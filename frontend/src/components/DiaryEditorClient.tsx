@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainSpacesAfterMarks, styledLine, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styledLine, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, listCommand, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -959,7 +959,29 @@ function spaceMark(selection: Selection): HTMLElement | null {
     return mark;
 }
 
+function moveTrailingMarkSpaces(root: HTMLElement) {
+    const marks = [...root.querySelectorAll(STYLE_MARK)].reverse();
+    for (const mark of marks) {
+        if (!(mark instanceof HTMLElement) || mark.closest("pre") || !textOutsideMark(mark)) continue;
+        const last = mark.lastChild;
+        if (!(last instanceof Text)) continue;
+        const trailing = last.data.match(/[\u00a0\s\u200b]+$/);
+        if (!trailing) continue;
+        if (!(mark.textContent ?? "").replace(/[\u00a0\s\u200b]/g, "")) continue;
+        const spaces = trailing[0].replace(/\u00a0/g, " ");
+        if (trailing[0].length === last.data.length) {
+            last.data = spaces;
+            mark.after(last);
+        } else {
+            const cut = last.splitText(last.data.length - trailing[0].length);
+            cut.data = spaces;
+            mark.after(cut);
+        }
+    }
+}
+
 function restoreMarkSpaces(root: HTMLElement) {
+    moveTrailingMarkSpaces(root);
     const selection = window.getSelection();
     const anchor = selection?.rangeCount ? selection.anchorNode : null;
     const offset = selection?.anchorOffset ?? 0;
@@ -1872,7 +1894,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const onInput = useCallback(() => {
         const editor = editorRef.current;
         if (!editor) return;
-        if (plainSpacesAfterMarks(editor.innerHTML) !== editor.innerHTML) restoreMarkSpaces(editor);
+        const plain = plainMarkSpaces(plainSpacesAfterMarks(editor.innerHTML));
+        if (plain !== editor.innerHTML) restoreMarkSpaces(editor);
         settleDateHeading(editor);
         const saved = pictureRemoval.current;
         if (saved && editor.innerHTML !== saved.after) pictureRemoval.current = null;
