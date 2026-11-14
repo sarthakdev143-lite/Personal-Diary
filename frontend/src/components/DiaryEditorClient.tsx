@@ -10,7 +10,7 @@ import { DESCRIPTION_MAX, DIARY_THEMES, TITLE_MAX, coverForTheme, isAllowedTheme
 import { takeImportNotice } from "@/lib/diary/import";
 import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
 import { entryMatchesListQuery } from "@/lib/diary/search";
-import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryMonths, entrySelectionAction, entryToShowAfterDelete, entryToShowOnOpen, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryMonths, entrySelectionAction, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
@@ -702,6 +702,39 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         && entryMatchesListQuery(entry, entryQuery)
     );
 
+    const selectEntryRef = useRef(handleEntrySelect);
+    useEffect(() => {
+        selectEntryRef.current = handleEntrySelect;
+    });
+
+    useEffect(() => {
+        if (mode !== "view" || detailsOpen || linkOpen || confirmDelete || pendingDiscard) return;
+
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+            if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+            const target = event.target;
+            if (target instanceof HTMLElement) {
+                const tag = target.tagName;
+                if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable) return;
+            }
+            const next = entryToShowByStep(
+                visibleEntries,
+                selectedEntryId,
+                event.key === "ArrowDown" ? "next" : "previous",
+            );
+            if (!next) return;
+            event.preventDefault();
+            selectEntryRef.current(next);
+            window.requestAnimationFrame(() => {
+                document.querySelector(".de-entry-card.active")?.scrollIntoView({ block: "nearest" });
+            });
+        };
+
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [mode, detailsOpen, linkOpen, confirmDelete, pendingDiscard, visibleEntries, selectedEntryId]);
+
     if (isLoading) return (
         <div style={{ position: "fixed", inset: 0, zIndex: 10, background: "#0d0b09", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid #4a4030", borderTopColor: "#c4a882", animation: "spin 1s linear infinite" }} />
@@ -1349,8 +1382,15 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                     </>
                                 )}
                                 {mode === "view" && (
-                                    <><span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
+                                    <>
+                                        <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
                                         <span style={{ color: "#9b8b78", fontStyle: "italic" }}>read only</span>
+                                        {visibleEntries.length > 1 && (
+                                            <>
+                                                <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
+                                                <span className="de-kbd-hint">↑↓ entries</span>
+                                            </>
+                                        )}
                                     </>
                                 )}
                             </div>

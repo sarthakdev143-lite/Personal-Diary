@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, entryMatchesListQuery, escapeRegExp, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToShowAfterDelete, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
     normalizeTheme,
@@ -431,6 +431,20 @@ describe("entry date", () => {
         assert.equal(entryToShowAfterDelete([newest], "newest"), null);
         assert.equal(entryToShowAfterDelete(entries, "missing"), null);
         assert.equal(entryToShowAfterDelete([], "newest"), null);
+    });
+
+    it("moves up and down the entry list", () => {
+        const newest = { _id: "newest" };
+        const middle = { _id: "middle" };
+        const oldest = { _id: "oldest" };
+        const entries = [newest, middle, oldest];
+        assert.equal(entryToShowByStep(entries, "newest", "next")?._id, "middle");
+        assert.equal(entryToShowByStep(entries, "middle", "previous")?._id, "newest");
+        assert.equal(entryToShowByStep(entries, "oldest", "next"), null);
+        assert.equal(entryToShowByStep(entries, "newest", "previous"), null);
+        assert.equal(entryToShowByStep(entries, "missing", "next")?._id, "newest");
+        assert.equal(entryToShowByStep(entries, "missing", "previous")?._id, "oldest");
+        assert.equal(entryToShowByStep([], "newest", "next"), null);
     });
 
     it("keeps the clock time when only the date changes and marks a rewrite", () => {

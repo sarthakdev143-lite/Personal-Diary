@@ -301,6 +301,18 @@ export function entryToShowAfterDelete<T extends { _id: string }>(
     return entries[index + 1] ?? entries[index - 1] ?? null;
 }
 
+export function entryToShowByStep<T extends { _id: string }>(
+    entries: readonly T[],
+    currentId: string | null,
+    direction: "next" | "previous",
+): T | null {
+    if (!entries.length) return null;
+    const index = currentId ? entries.findIndex((entry) => entry._id === currentId) : -1;
+    if (index < 0) return direction === "next" ? entries[0] : entries[entries.length - 1];
+    const step = direction === "next" ? index + 1 : index - 1;
+    return entries[step] ?? null;
+}
+
 export function formatEntryLong(value: string): string {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "—";
