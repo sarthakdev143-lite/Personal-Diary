@@ -55,10 +55,7 @@ function ensureIndexes(db: Db): Promise<void> {
         indexPromise = Promise.all([
             db.collection("diaries").createIndex({ userId: 1, updatedAt: -1 }),
             db.collection("entries").createIndex({ diaryId: 1, userId: 1, createdAt: -1 }),
-            db.collection("entries").createIndex(
-                { userId: 1 },
-                { partialFilterExpression: { plainText: { $exists: false } }, name: "entries_missing_plaintext" }
-            ),
+            db.collection("entries").createIndex({ userId: 1 }),
         ]).then(() => undefined).catch((error: unknown) => {
             indexPromise = null;
             throw error;
