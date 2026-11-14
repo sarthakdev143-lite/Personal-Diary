@@ -13,6 +13,7 @@ export const TITLE_MAX = 120;
 export const DESCRIPTION_MAX = 500;
 export const CONTENT_MAX = 400_000;
 export const SEARCH_MAX = 80;
+export const MAX_IMPORT_ENTRIES = 500;
 export const MAX_IMAGE_BYTES = 150 * 1024;
 export const MAX_DATA_IMAGE_LENGTH = 220_000;
 

@@ -12,7 +12,7 @@ const features = [
     { icon: PenLine, title: "Rich entries", description: "Write with headings, lists, links, and images, then revise an entry later." },
     { icon: PaintBucket, title: "Cover themes", description: "Pick a cover when you create a diary." },
     { icon: Search, title: "Search", description: "Find a diary from its title, description, or the words in an entry." },
-    { icon: Clock, title: "Your history", description: "Past entries stay in the diary. Download them as Markdown or a JSON backup." },
+    { icon: Clock, title: "Your history", description: "Past entries stay in the diary. Download a JSON backup and import it back into your account." },
     { icon: Code2, title: "Open source", description: "The project is public. You can read how it works and run it yourself." },
 ];
 
