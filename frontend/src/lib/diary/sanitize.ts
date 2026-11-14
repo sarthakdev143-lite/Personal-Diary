@@ -33,7 +33,7 @@ export function sanitizeEntryHtml(input: string): string {
     return sanitizeHtml(input, {
         allowedTags: ALLOWED_TAGS,
         allowedAttributes: {
-            a: ["href"],
+            a: ["href", "target", "rel"],
             img: ["src", "alt"],
         },
         allowedSchemes: ["http", "https", "mailto"],
@@ -45,6 +45,16 @@ export function sanitizeEntryHtml(input: string): string {
         disallowedTagsMode: "discard",
         parseStyleAttributes: false,
         transformTags: {
+            a: (tagName, attribs) => {
+                const href = attribs.href ?? "";
+                const safeAttribs: Record<string, string> = {};
+                if (href) {
+                    safeAttribs.href = href;
+                    safeAttribs.target = "_blank";
+                    safeAttribs.rel = "noopener noreferrer";
+                }
+                return { tagName, attribs: safeAttribs };
+            },
             img: (_tagName, attribs) => {
                 const src = attribs.src ?? "";
                 const alt = (attribs.alt ?? "").replace(/\s+/g, " ").trim().slice(0, 180);

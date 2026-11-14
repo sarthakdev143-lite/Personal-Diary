@@ -104,6 +104,23 @@ describe("entry html", () => {
         assert.doesNotMatch(result.plainText, /alert/);
     });
 
+    it("opens a saved link in a new tab", () => {
+        const result = prepareEntryContent('<p><a href="https://example.com/glass" target="_self" rel="opener">window</a></p>');
+        assert.equal(result.ok, true);
+        if (!result.ok) return;
+        assert.match(result.content, /href="https:\/\/example.com\/glass"/);
+        assert.match(result.content, /target="_blank"/);
+        assert.match(result.content, /rel="noopener noreferrer"/);
+        assert.doesNotMatch(result.content, /_self|rel="opener"/);
+        assert.equal(result.plainText, "window");
+
+        const shown = presentEntry({ content: '<p><a href="mailto:rain@example.com">rain</a>.</p>', plainText: "rain ." });
+        assert.match(shown.content, /href="mailto:rain@example.com"/);
+        assert.match(shown.content, /target="_blank"/);
+        assert.match(shown.content, /rel="noopener noreferrer"/);
+        assert.equal(shown.plainText, "rain.");
+    });
+
     it("allows a small image data url and drops other data urls", () => {
         const png = `<img src="data:image/png;base64,aaaa" alt="sketch">`;
         const kept = prepareEntryContent(`<p>Look</p>${png}`);
