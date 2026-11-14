@@ -10,6 +10,7 @@ import { ToastAction } from "@/components/ui/toast";
 import { MatchedText } from "@/components/MatchedText";
 import { DESCRIPTION_MAX, DIARY_THEMES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
 import { entryShareMarkdown } from "@/lib/diary/export";
+import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
@@ -19,7 +20,7 @@ import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryUndoBody, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
-type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
+type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
 type Entry = { _id: string; diaryId: string; content: string; plainText?: string; createdAt: string; updatedAt: string; };
 type DiaryResponse = { diary: Diary; entries: Entry[]; };
 type EditorMode = "compose" | "view" | "edit";
@@ -127,6 +128,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isSavingDiary, setIsSavingDiary] = useState(false);
+    const [isPinningDiary, setIsPinningDiary] = useState(false);
+    const [pinError, setPinError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
     const [detailsOpen, setDetailsOpen] = useState(false);
@@ -732,6 +735,28 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             toast({ title: "Not updated", description: e instanceof Error ? e.message : "Error", variant: "destructive" });
         } finally {
             setIsSavingDiary(false);
+        }
+    };
+
+    const toggleDiaryPin = async () => {
+        if (!diary || isPinningDiary) return;
+        const requested = diary.pinned !== true;
+        setIsPinningDiary(true);
+        setPinError(null);
+        try {
+            const response = await fetch(`/api/diaries/${diaryId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ pinned: requested }),
+            });
+            const saved: unknown = await response.json().catch(() => null);
+            if (!response.ok) {
+                setPinError(pinFailureMessage(saved));
+                return;
+            }
+            setDiary(appliedPin(diary, saved && typeof saved === "object" ? saved : null, requested));
+        } finally {
+            setIsPinningDiary(false);
         }
     };
 
@@ -1537,6 +1562,16 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             ))}
                         </div>
                         <div className="de-details-actions">
+                            <button
+                                type="button"
+                                className="de-ghost-btn"
+                                onClick={() => void toggleDiaryPin()}
+                                disabled={isPinningDiary || !diary}
+                                aria-pressed={diary?.pinned === true}
+                            >
+                                {diary?.pinned === true ? "Unpin" : "Pin"}
+                            </button>
+                            {pinError && <p className="de-field-error" role="alert">{pinError}</p>}
                             <button type="submit" className="de-save-btn" disabled={!canSaveDetails || isSavingDiary}>
                                 {isSavingDiary ? "saving" : "save details"}
                             </button>

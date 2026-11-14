@@ -9,6 +9,7 @@ import { MatchedText } from "@/components/MatchedText";
 import { coverForTheme } from "@/lib/diary/constants";
 import { diaryListKeyAction } from "@/lib/diary/keys";
 import { compareDiaries } from "@/lib/diary/order";
+import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { diaryMatchPath } from "@/lib/diary/search";
 import { entryToShowByStep, formatDiaryDate } from "@/lib/diary/text";
 
@@ -35,6 +36,7 @@ const Diaries = ({ query = "", refetchTrigger = 0, paused = false }: { query?: s
     const { status } = useSession();
     const [attempt, setAttempt] = useState(0);
     const [pinningId, setPinningId] = useState<string | null>(null);
+    const [pinError, setPinError] = useState<{ id: string; message: string } | null>(null);
     const visibleRef = useRef<Diary[]>([]);
     const [result, setResult] = useState<{
         key: string;
@@ -139,23 +141,25 @@ const Diaries = ({ query = "", refetchTrigger = 0, paused = false }: { query?: s
         if (pinningId === diary._id) return;
         const pinned = diary.pinned !== true;
         setPinningId(diary._id);
+        setPinError((current) => current?.id === diary._id ? null : current);
         try {
             const response = await fetch(`/api/diaries/${diary._id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ pinned }),
             });
-            if (!response.ok) return;
             const saved: unknown = await response.json().catch(() => null);
-            const nextPinned = saved && typeof saved === "object" && "pinned" in saved
-                ? saved.pinned === true
-                : pinned;
+            if (!response.ok) {
+                setPinError({ id: diary._id, message: pinFailureMessage(saved) });
+                return;
+            }
+            const next = appliedPin(diary, saved && typeof saved === "object" ? saved : null, pinned);
             setResult((current) => {
                 if (!current?.diaries.some((item) => item._id === diary._id)) return current;
                 return {
                     ...current,
                     diaries: current.diaries
-                        .map((item) => item._id === diary._id ? { ...item, pinned: nextPinned } : item)
+                        .map((item) => item._id === diary._id ? { ...item, pinned: next.pinned, updatedAt: next.updatedAt } : item)
                         .sort(compareDiaries),
                 };
             });
@@ -256,14 +260,21 @@ const Diaries = ({ query = "", refetchTrigger = 0, paused = false }: { query?: s
                             </p>
                         </div>
                     </Link>
-                    <button
-                        type="button"
-                        onClick={() => void togglePin(diary)}
-                        disabled={pinningId === diary._id}
-                        className="mb-4 mr-4 shrink-0 self-end text-xs tracking-wide text-zinc-200 underline decoration-white/30 underline-offset-4 hover:text-white focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70 disabled:opacity-50"
-                    >
-                        {pinned ? "Unpin" : "Pin"}
-                    </button>
+                    <div className="mb-4 mr-4 flex shrink-0 flex-col items-end gap-1 self-end">
+                        <button
+                            type="button"
+                            onClick={() => void togglePin(diary)}
+                            disabled={pinningId === diary._id}
+                            aria-pressed={pinned}
+                            aria-label={`${pinned ? "Unpin" : "Pin"} ${diary.title}`}
+                            className="text-xs tracking-wide text-zinc-200 underline decoration-white/30 underline-offset-4 hover:text-white focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70 disabled:opacity-50"
+                        >
+                            {pinned ? "Unpin" : "Pin"}
+                        </button>
+                        {pinError?.id === diary._id && (
+                            <p className="max-w-24 text-right text-xs leading-4 text-red-200" role="alert">{pinError.message}</p>
+                        )}
+                    </div>
                 </article>
                 );
             })}

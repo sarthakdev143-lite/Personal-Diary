@@ -5,6 +5,7 @@ import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, freshEntryHtml, hasEntryContent, laterEntryTime, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
+import { appliedPin, pinFailureMessage } from "./pin";
 import {
     normalizeDescription,
     normalizePinned,
@@ -96,6 +97,19 @@ describe("pinned diaries", () => {
         assert.equal(normalizePinned("true").ok, false);
         assert.equal(normalizePinned(1).ok, false);
         assert.equal(normalizePinned(null).ok, false);
+    });
+
+    it("keeps the diary date when a pin is saved and names a failed pin", () => {
+        const diary = { title: "Cedar Notes", pinned: false, updatedAt: "2026-01-02T00:00:00.000Z" };
+        assert.deepEqual(appliedPin(diary, { pinned: true, updatedAt: "2026-01-02T00:00:00.000Z" }, true), {
+            title: "Cedar Notes",
+            pinned: true,
+            updatedAt: "2026-01-02T00:00:00.000Z",
+        });
+        assert.equal(appliedPin(diary, null, true).pinned, true);
+        assert.equal(pinFailureMessage({ error: "Diary not found" }), "Diary not found");
+        assert.equal(pinFailureMessage(null), "Could not change the pin.");
+        assert.equal(pinFailureMessage({}), "Could not change the pin.");
     });
 });
 
