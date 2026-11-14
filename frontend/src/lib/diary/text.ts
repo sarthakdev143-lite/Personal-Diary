@@ -217,6 +217,32 @@ export function quoteLeaveKey(input: {
     return "leave";
 }
 
+export type ListCommand = "lift" | "pass";
+
+export function listCommand(command: string): ListCommand {
+    if (command === "insertUnorderedList" || command === "insertOrderedList") return "lift";
+    return "pass";
+}
+
+export type ListEdge = "outdent" | "pass";
+
+export function listEdgeKey(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    atStart: boolean;
+    inItem: boolean;
+    neighbor: "date" | "none" | "text";
+}): ListEdge {
+    if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (!input.inItem || !input.collapsed || !input.atStart || input.key !== "Backspace") return "pass";
+    if (input.neighbor === "text") return "pass";
+    return "outdent";
+}
+
 export type ListLeaveKey = "leave" | "pass";
 
 export function listLeaveKey(input: {

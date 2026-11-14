@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { codePasteHtml, decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, lineAfterPictureKey, pictureCaptionKey, pictureClick, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, joinNeedsSpace, lineJoinKey, listLeaveKey, quoteLeaveKey, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codePullKey, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, joinNeedsSpace, lineJoinKey, listCommand, listEdgeKey, listLeaveKey, quoteLeaveKey, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -956,6 +956,21 @@ function leaveQuote(quote: HTMLElement) {
     placeCaretAtStart(paragraph);
 }
 
+function outdentListItem(item: HTMLElement) {
+    const list = item.parentElement;
+    if (!(list instanceof HTMLUListElement || list instanceof HTMLOListElement)) return;
+    const paragraph = document.createElement("p");
+    while (item.firstChild) paragraph.appendChild(item.firstChild);
+    if (blockIsEmpty(paragraph)) paragraph.appendChild(document.createElement("br"));
+    const following = [...list.children].some((child) => child !== item && child.tagName === "LI" && (item.compareDocumentPosition(child) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0);
+    item.remove();
+    const remaining = [...list.children].some((child) => child.tagName === "LI");
+    if (!remaining) list.replaceWith(paragraph);
+    else if (following) list.before(paragraph);
+    else list.after(paragraph);
+    placeCaretAtStart(paragraph);
+}
+
 function leaveListItem(item: HTMLElement) {
     const list = item.parentElement;
     if (!(list instanceof HTMLUListElement || list instanceof HTMLOListElement)) return;
@@ -1270,10 +1285,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             ? { fromList: block.tagName === "LI", text: (block.textContent ?? "").replace(/\u00a0/g, " "), offset: textOffsetWithin(block, range.endContainer, range.endOffset) }
             : null;
         document.execCommand(cmd, false, value);
-        if (editor && caret) {
-            liftNestedLists(editor);
-            placeListCaret(editor, caret.fromList, caret.text, caret.offset);
-        }
+        if (editor && listCommand(cmd) === "lift") liftNestedLists(editor);
+        if (editor && caret) placeListCaret(editor, caret.fromList, caret.text, caret.offset);
         if (editorRef.current) setHtmlContent(editorRef.current.innerHTML);
         updateActiveFormats();
     }, [updateActiveFormats]);
@@ -2490,6 +2503,26 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (!edges) return false;
         const backward = e.key === "Backspace";
         const neighbor = adjacentTextBlock(block, backward ? "previous" : "next");
+        const edge = listEdgeKey({
+            key: e.key,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            collapsed: edges.collapsed,
+            atStart: edges.atStart,
+            inItem: block.tagName === "LI",
+            neighbor: neighbor === dateHeading ? "date" : neighbor ? "text" : "none",
+        });
+        if (edge === "outdent") {
+            e.preventDefault();
+            const before = editor.innerHTML;
+            const path = childPath(editor, block);
+            outdentListItem(block);
+            blankLine.current = { before, after: editor.innerHTML, path };
+            setHtmlContent(editor.innerHTML);
+            return true;
+        }
         if (neighbor === dateHeading) return false;
         const action = lineJoinKey({
             key: e.key,
