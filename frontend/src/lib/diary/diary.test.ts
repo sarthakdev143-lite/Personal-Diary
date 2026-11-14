@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, escapeRegExp, normalizeSearchQuery } from "./search";
-import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryMonths, entryPlainText, entrySelectionAction, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToShowOnOpen, entryWasRevised, entryWritingChanged, entryWritingText, formatEntryLong, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, storedPlainText, wordCount } from "./text";
 import {
     normalizeDescription,
     normalizeTheme,
@@ -245,6 +245,28 @@ describe("search", () => {
 
     it("caps a very long query", () => {
         assert.equal(normalizeSearchQuery("a".repeat(200)).length, 80);
+    });
+
+    it("finds an entry by the date and time on its card", () => {
+        const created = new Date(2026, 10, 14, 9, 30).toISOString();
+        const entry = {
+            content: "<p>Quiet rain</p>",
+            plainText: "Quiet rain",
+            createdAt: created,
+            updatedAt: created,
+        };
+        const text = entryListSearchText(entry);
+        assert.equal(diaryFieldsMatch(text, "", "November"), true);
+        assert.equal(diaryFieldsMatch(text, "", "09:30"), true);
+        assert.equal(diaryFieldsMatch(text, "", "9:30"), true);
+        assert.equal(diaryFieldsMatch(text, "", "quiet"), true);
+        assert.equal(diaryFieldsMatch(text, "", "edited"), false);
+        assert.equal(diaryFieldsMatch(text, "", "garden"), false);
+
+        const revised = { ...entry, updatedAt: new Date(new Date(created).getTime() + 5000).toISOString() };
+        const revisedText = entryListSearchText(revised);
+        assert.equal(diaryFieldsMatch(revisedText, "", "edited"), true);
+        assert.equal(diaryFieldsMatch(revisedText, "", "09:30"), true);
     });
 });
 

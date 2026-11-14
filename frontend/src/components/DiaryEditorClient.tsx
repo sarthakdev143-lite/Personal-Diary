@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { DESCRIPTION_MAX, DIARY_THEMES, MAX_IMAGE_BYTES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
 import { diaryFieldsMatch } from "@/lib/diary/search";
-import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryMonths, entrySelectionAction, entryToShowOnOpen, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryInMonth, entryInstant, entryLinkUrl, entryListSearchText, entryMonths, entrySelectionAction, entryToShowOnOpen, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, monthForSavedEntry, retitleEntryDate, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; createdAt: string; updatedAt: string; };
@@ -636,7 +636,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const activeMonth = months.some((month) => month.key === entryMonth) ? entryMonth : "";
     const visibleEntries = entries.filter((entry) =>
         entryInMonth(entry.createdAt, activeMonth)
-        && diaryFieldsMatch(entry.plainText || entryWritingText(entry.content), "", entryQuery)
+        && diaryFieldsMatch(entryListSearchText(entry), "", entryQuery)
     );
 
     if (isLoading) return (
