@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { decideEntryPaste, imageFileIssue } from "./paste";
+import { decideEntryPaste, imageAltText, imageFileIssue, imageHtml } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -77,5 +77,18 @@ describe("entry paste", () => {
             html: "",
             text: "Morning light",
         }), { action: "default" });
+    });
+
+    it("names a pasted picture and keeps the name out of the markup", () => {
+        assert.equal(imageAltText("  sketch   of rain  "), "sketch of rain");
+        assert.equal(imageAltText("a".repeat(200)).length, 180);
+        assert.equal(
+            imageHtml("data:image/png;base64,aaaa", 'sketch "one"'),
+            '<img src="data:image/png;base64,aaaa" alt="sketch &quot;one&quot;" /><p><br></p>',
+        );
+        assert.equal(
+            imageHtml("data:image/png;base64,aaaa", "   "),
+            '<img src="data:image/png;base64,aaaa" /><p><br></p>',
+        );
     });
 });

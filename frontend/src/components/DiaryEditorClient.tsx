@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { decideEntryPaste, imageFileIssue } from "@/lib/diary/paste";
+import { decideEntryPaste, imageFileIssue, imageHtml } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryUndoBody, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
@@ -115,9 +115,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const entryClock = useRef(new Date());
     const restoreEntryRef = useRef<(entry: Entry) => void>(() => {});
     const linkInputRef = useRef<HTMLInputElement>(null);
+    const imageAltRef = useRef<HTMLInputElement>(null);
     const entrySearchRef = useRef<HTMLInputElement>(null);
     const saveHintRef = useRef<HTMLSpanElement>(null);
     const linkRange = useRef<Range | null>(null);
+    const imageRange = useRef<Range | null>(null);
     const discardButtonRef = useRef<HTMLButtonElement>(null);
 
     const [diary, setDiary] = useState<Diary | null>(null);
@@ -151,6 +153,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const [entryDate, setEntryDate] = useState(() => calendarDate(new Date()));
     const [savedDate, setSavedDate] = useState(() => calendarDate(new Date()));
     const [linkOpen, setLinkOpen] = useState(false);
+    const [pendingImage, setPendingImage] = useState<string | null>(null);
+    const [imageAlt, setImageAlt] = useState("");
     const [linkDraft, setLinkDraft] = useState("");
     const [linkError, setLinkError] = useState<string | null>(null);
     const [linkHasAnchor, setLinkHasAnchor] = useState(false);
@@ -284,6 +288,17 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     }, [linkOpen, linkHasAnchor]);
 
     useEffect(() => {
+        if (!pendingImage) return;
+        imageAltRef.current?.focus();
+    }, [pendingImage]);
+
+    useEffect(() => {
+        if (mode !== "view") return;
+        setPendingImage(null);
+        setImageAlt("");
+    }, [mode]);
+
+    useEffect(() => {
         if (!pendingDiscard) return;
         discardButtonRef.current?.focus();
     }, [pendingDiscard]);
@@ -310,14 +325,21 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     }, [updateActiveFormats]);
 
     const insertImageFile = useCallback((file: File) => {
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        imageRange.current = selection && selection.rangeCount > 0 && editor?.contains(selection.anchorNode)
+            ? selection.getRangeAt(0).cloneRange()
+            : null;
         const reader = new FileReader();
         reader.onload = (ev) => {
             const src = ev.target?.result;
             if (typeof src !== "string") return;
-            insertHTML(`<img src="${src}" alt="" /><p><br></p>`);
+            setLinkOpen(false);
+            setImageAlt("");
+            setPendingImage(src);
         };
         reader.readAsDataURL(file);
-    }, [insertHTML]);
+    }, []);
 
     const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -872,6 +894,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         setLinkDraft(parsed?.ok ? parsed.href : "");
         setLinkError(null);
         setLinkOpen(true);
+        setPendingImage(null);
+        setImageAlt("");
     };
 
     const writeLinkChange = () => {
@@ -925,6 +949,29 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
         editAnchor(anchor, "unlink");
         writeLinkChange();
+    };
+
+    const insertPendingImage = () => {
+        if (!pendingImage) return;
+        const editor = editorRef.current;
+        editor?.focus();
+        const selection = window.getSelection();
+        if (editor && selection) {
+            selection.removeAllRanges();
+            const saved = imageRange.current;
+            if (saved && editor.contains(saved.startContainer)) {
+                selection.addRange(saved);
+            } else {
+                const range = document.createRange();
+                range.selectNodeContents(editor);
+                range.collapse(false);
+                selection.addRange(range);
+            }
+        }
+        imageRange.current = null;
+        insertHTML(imageHtml(pendingImage, imageAlt));
+        setPendingImage(null);
+        setImageAlt("");
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -1650,6 +1697,43 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         )}
                         <button type="button" className="de-ghost-btn" onClick={closeLinkField}>cancel</button>
                         {linkError && <p id="entry-link-error" className="de-link-error">{linkError}</p>}
+                    </form>
+                )}
+
+                {pendingImage && mode !== "view" && (
+                    <form
+                        className="de-link"
+                        onSubmit={(event) => {
+                            event.preventDefault();
+                            insertPendingImage();
+                        }}
+                    >
+                        <label htmlFor="entry-image-alt">Picture</label>
+                        <input
+                            id="entry-image-alt"
+                            ref={imageAltRef}
+                            value={imageAlt}
+                            placeholder="Description, optional"
+                            onChange={(event) => setImageAlt(event.target.value)}
+                            onKeyDown={(event) => {
+                                if (event.key === "Escape") {
+                                    event.preventDefault();
+                                    setPendingImage(null);
+                                    setImageAlt("");
+                                }
+                            }}
+                        />
+                        <button type="submit" className="de-save-btn">insert picture</button>
+                        <button
+                            type="button"
+                            className="de-ghost-btn"
+                            onClick={() => {
+                                setPendingImage(null);
+                                setImageAlt("");
+                            }}
+                        >
+                            cancel
+                        </button>
                     </form>
                 )}
 

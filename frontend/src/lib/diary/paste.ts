@@ -10,6 +10,19 @@ const LEFT_OUT: ImageFileIssue = {
     description: "Use a PNG, JPEG, GIF, or WebP under 150 KB.",
 };
 
+export function imageAltText(value: string): string {
+    return value.replace(/\s+/g, " ").trim().slice(0, 180);
+}
+
+export function imageHtml(src: string, alt: string): string {
+    const name = imageAltText(alt)
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;");
+    const altAttr = name ? ` alt="${name}"` : "";
+    return `<img src="${src}"${altAttr} /><p><br></p>`;
+}
+
 export function imageFileIssue(file: { type: string; size: number }): ImageFileIssue | null {
     if (!IMAGE_TYPES.has(file.type)) {
         return {
