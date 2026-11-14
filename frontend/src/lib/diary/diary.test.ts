@@ -441,6 +441,19 @@ describe("code block", () => {
         assert.equal(htmlToMarkdown("<p><b>See Harbor </b></p>"), "**See Harbor**");
     });
 
+    it("moves a leading space out of a styled word when the line has other writing", () => {
+        assert.equal(plainMarkSpaces("<p>See<b> Harbor</b> rain</p>"), "<p>See <b>Harbor</b> rain</p>");
+        assert.equal(plainMarkSpaces("<p>See<b>&nbsp;Harbor</b> rain</p>"), "<p>See <b>Harbor</b> rain</p>");
+        assert.equal(plainMarkSpaces("<p>See<i> Harbor</i></p>"), "<p>See <i>Harbor</i></p>");
+        assert.equal(plainMarkSpaces('<p>See<a href="https://example.com"> Harbor</a> today</p>'), '<p>See <a href="https://example.com">Harbor</a> today</p>');
+        assert.equal(plainMarkSpaces("<p>See<b> Harbor </b>rain</p>"), "<p>See <b>Harbor</b> rain</p>");
+        assert.equal(plainMarkSpaces("<p><b> Harbor</b></p>"), "<p><b> Harbor</b></p>");
+        assert.equal(htmlToMarkdown("<p>See<b> Harbor</b> rain</p>"), "See **Harbor** rain");
+        assert.equal(htmlToMarkdown("<p>See<i> Harbor</i> today</p>"), "See *Harbor* today");
+        assert.equal(htmlToMarkdown('<p>See<a href="https://example.com"> Harbor</a> today</p>'), "See [Harbor](https://example.com) today");
+        assert.equal(htmlToMarkdown("<p><b> Harbor</b></p>"), "**Harbor**");
+    });
+
     it("undo of a split line puts the space back", () => {
         assert.deepEqual(boundarySpaceCut("Harbor", " rain"), { before: 0, after: 1 });
         assert.deepEqual(boundarySpaceCut("Harbor ", "rain"), { before: 1, after: 0 });

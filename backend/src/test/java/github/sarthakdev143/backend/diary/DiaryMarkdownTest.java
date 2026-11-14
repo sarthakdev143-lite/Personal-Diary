@@ -79,6 +79,10 @@ class DiaryMarkdownTest {
         assertEquals("See *Harbor* today", DiaryMarkdown.htmlToMarkdown("<p>See <i>Harbor </i>today</p>"));
         assertEquals("See [Harbor](https://example.com) today", DiaryMarkdown.htmlToMarkdown("<p>See <a href=\"https://example.com\">Harbor </a>today</p>"));
         assertEquals("**See Harbor**", DiaryMarkdown.htmlToMarkdown("<p><b>See Harbor </b></p>"));
+        assertEquals("See **Harbor** rain", DiaryMarkdown.htmlToMarkdown("<p>See<b> Harbor</b> rain</p>"));
+        assertEquals("See *Harbor* today", DiaryMarkdown.htmlToMarkdown("<p>See<i> Harbor</i> today</p>"));
+        assertEquals("See [Harbor](https://example.com) today", DiaryMarkdown.htmlToMarkdown("<p>See<a href=\"https://example.com\"> Harbor</a> today</p>"));
+        assertEquals("**Harbor**", DiaryMarkdown.htmlToMarkdown("<p><b> Harbor</b></p>"));
     }
 
     @Test
