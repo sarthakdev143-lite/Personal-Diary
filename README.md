@@ -4,7 +4,16 @@ A private diary in the browser. Sign in with Google or GitHub, keep more than on
 
 The running app is the Next.js project in `frontend/`. Entries are stored in MongoDB and are visible only on the account that created them. They are not end-to-end encrypted: anyone with access to the database can read them.
 
-`backend/` is an unfinished Spring Boot sketch. The website does not call it.
+`backend/` is a Spring Boot API for the same diaries. It reads the website's `next-auth.session-token` cookie and stores its own copy of the diaries in the `personal-diary-api` database, so it does not write into the website's database. The website still uses its Next.js routes.
+
+## Run the API
+
+```bash
+cd backend
+./mvnw spring-boot:run
+```
+
+The API listens on http://localhost:8080. `GET /api/diaries` and `POST /api/diaries` require that session cookie. `./mvnw test` runs the diary tests.
 
 ## Run the website
 
