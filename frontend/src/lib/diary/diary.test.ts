@@ -350,6 +350,15 @@ describe("entry html", () => {
             1,
         );
 
+        const pulled = prepareEntryContent('<figure><img src="https://example.com/sunset.png" alt="Harbor"><span>Harbor</span></figure>');
+        assert.equal(pulled.ok, true);
+        if (pulled.ok) {
+            assert.match(pulled.content, /alt="Harbor"/);
+            assert.equal(pulled.content.replace(/<[^>]+>/g, "").includes("Harbor"), true);
+            assert.equal(pulled.content.includes("<figure"), false);
+            assert.equal(pulled.plainText, "Harbor");
+        }
+
         const renamed = prepareEntryContent('<figure><img src="https://example.com/sunset.png" alt="Harbor"><figcaption>Bay</figcaption></figure>');
         assert.equal(renamed.ok, true);
         if (renamed.ok) {

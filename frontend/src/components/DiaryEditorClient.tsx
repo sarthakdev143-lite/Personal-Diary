@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml } from "@/lib/diary/paste";
+import { decideEntryDrop, decideEntryPaste, imageFileIssue, imageHtml, pictureCaptionKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryUndoBody, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, hasEntryContent, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
@@ -106,6 +106,48 @@ const TOOLBAR: ToolButton[][] = [
         { icon: "⟶", title: "Redo", command: "redo" },
     ],
 ];
+
+function captionCaret(caption: HTMLElement, selection: Selection): { collapsed: boolean; atStart: boolean; atEnd: boolean } | null {
+    if (!selection.rangeCount) return null;
+    const range = selection.getRangeAt(0);
+    if (!caption.contains(range.startContainer) || !caption.contains(range.endContainer)) return null;
+    const before = document.createRange();
+    before.selectNodeContents(caption);
+    before.setEnd(range.startContainer, range.startOffset);
+    const after = document.createRange();
+    after.selectNodeContents(caption);
+    after.setStart(range.endContainer, range.endOffset);
+    return {
+        collapsed: range.collapsed,
+        atStart: before.toString().length === 0,
+        atEnd: after.toString().length === 0,
+    };
+}
+
+function continueAfterPicture(caption: HTMLElement) {
+    const figure = caption.closest("figure");
+    const selection = window.getSelection();
+    if (!figure || !selection || !selection.rangeCount) return;
+    const range = selection.getRangeAt(0);
+    const before = document.createRange();
+    before.selectNodeContents(caption);
+    before.setEnd(range.startContainer, range.startOffset);
+    const after = document.createRange();
+    after.selectNodeContents(caption);
+    after.setStart(range.endContainer, range.endOffset);
+    const rest = after.toString();
+    caption.textContent = before.toString();
+    const paragraph = document.createElement("p");
+    if (rest) paragraph.textContent = rest;
+    else paragraph.appendChild(document.createElement("br"));
+    figure.after(paragraph);
+    const caret = document.createRange();
+    if (rest && paragraph.firstChild) caret.setStart(paragraph.firstChild, 0);
+    else caret.setStart(paragraph, 0);
+    caret.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(caret);
+}
 
 const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const router = useRouter();
@@ -1041,7 +1083,31 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (saveEntryShortcut(e)) {
             e.preventDefault();
             void handleSave();
+            return;
         }
+        if (mode === "view") return;
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        const anchor = selection?.anchorNode;
+        const host = anchor instanceof Element ? anchor : anchor?.parentElement ?? null;
+        const caption = host?.closest("figcaption");
+        if (!editor || !caption || !editor.contains(caption) || !selection) return;
+        const caret = captionCaret(caption, selection);
+        if (!caret) return;
+        const action = pictureCaptionKey({
+            key: e.key,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            collapsed: caret.collapsed,
+            atStart: caret.atStart,
+            atEnd: caret.atEnd,
+        });
+        if (action === "pass") return;
+        e.preventDefault();
+        if (action === "break") continueAfterPicture(caption);
+        setHtmlContent(editor.innerHTML);
     };
 
     const runTool = (tool: ToolButton) => {

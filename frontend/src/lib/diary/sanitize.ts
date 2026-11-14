@@ -81,7 +81,8 @@ function alignPictureCaptions(html: string): string {
         const imageMatch = figure.match(/<img\b[^>]*>/i);
         if (!imageMatch) return figure.replace(/<\/?figure\b[^>]*>/gi, "");
         const captionMatch = figure.match(/<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/i);
-        const name = decodeCaption(captionMatch?.[1] ?? "");
+        if (!captionMatch) return figure.replace(/<\/?figure\b[^>]*>/gi, "");
+        const name = decodeCaption(captionMatch[1] ?? "");
         const image = imageWithAlt(imageMatch[0], name);
         if (!name) return image;
         const escaped = name.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");

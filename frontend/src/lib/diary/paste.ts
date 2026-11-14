@@ -14,6 +14,25 @@ export function imageAltText(value: string): string {
     return value.replace(/\s+/g, " ").trim().slice(0, 180);
 }
 
+export type PictureCaptionKey = "break" | "hold" | "pass";
+
+export function pictureCaptionKey(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    atStart: boolean;
+    atEnd: boolean;
+}): PictureCaptionKey {
+    if (input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.key === "Enter") return "break";
+    if (input.key === "Backspace" && input.collapsed && input.atStart) return "hold";
+    if (input.key === "Delete" && input.collapsed && input.atEnd) return "hold";
+    return "pass";
+}
+
 export function imageHtml(src: string, alt: string): string {
     const name = imageAltText(alt)
         .replace(/&/g, "&amp;")
