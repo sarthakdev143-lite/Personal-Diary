@@ -26,3 +26,9 @@ export function prepareEntryContent(input: unknown): PreparedEntryResult {
 
     return { ok: true, content, plainText: plainText || "Image" };
 }
+
+export function presentEntry(entry: { content: string; plainText?: string | null }): { content: string; plainText: string } {
+    const content = sanitizeEntryHtml(typeof entry.content === "string" ? entry.content : "");
+    const plainText = entryPlainText(content);
+    return { content, plainText: plainText || (hasEntryContent(content) ? "Image" : "") };
+}

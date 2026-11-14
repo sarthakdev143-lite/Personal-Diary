@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { DESCRIPTION_MAX, MAX_IMAGE_BYTES, TITLE_MAX } from "@/lib/diary/constants";
+import { diaryFieldsMatch } from "@/lib/diary/search";
 import { entryPlainText, formatEntryLong, formatEntryTime, formatDiaryDate, hasEntryContent, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
@@ -90,6 +91,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const [diaryDraft, setDiaryDraft] = useState({ title: "", description: "" });
     const [confirmDelete, setConfirmDelete] = useState<"entry" | "diary" | null>(null);
     const [baseline, setBaseline] = useState("");
+    const [entryQuery, setEntryQuery] = useState("");
+    const [isExporting, setIsExporting] = useState<"md" | "json" | null>(null);
 
     useEffect(() => {
         let mounted = true;
@@ -346,6 +349,41 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
     };
 
+    const downloadExport = async (format: "md" | "json") => {
+        if (isExporting) return;
+        setIsExporting(format);
+        try {
+            const res = await fetch(`/api/diaries/${diaryId}/export?format=${format}`, { cache: "no-store" });
+            if (!res.ok) {
+                const data = await res.json().catch(() => null) as { error?: string } | null;
+                throw new Error(data?.error || "Could not export this diary.");
+            }
+            const blob = await res.blob();
+            const header = res.headers.get("Content-Disposition") ?? "";
+            const named = /filename="([^"]+)"/.exec(header);
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = named?.[1] || (format === "json" ? "diary.json" : "diary.md");
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+            toast({
+                title: format === "json" ? "Backup downloaded" : "Markdown downloaded",
+                description: "This file includes saved entries.",
+            });
+        } catch (downloadError) {
+            toast({
+                title: "Not exported",
+                description: downloadError instanceof Error ? downloadError.message : "Could not export this diary.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsExporting(null);
+        }
+    };
+
     const insertLink = () => {
         const url = window.prompt("Link URL");
         if (!url) return;
@@ -386,6 +424,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const wc = wordCount(htmlContent);
     const canSave = hasEntryContent(htmlContent) && mode !== "view";
     const selectedEntry = entries.find((entry) => entry._id === selectedEntryId);
+    const visibleEntries = entries.filter((entry) =>
+        diaryFieldsMatch(entry.plainText || entryPlainText(entry.content), "", entryQuery)
+    );
 
     if (isLoading) return (
         <div style={{ position: "fixed", inset: 0, zIndex: 10, background: "#0d0b09", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -408,7 +449,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400;1,500&family=JetBrains+Mono:wght@300;400&display=swap');
 
-                *{box-sizing:border-box;margin:0;padding:0;}
+                .de-root,.de-root *{box-sizing:border-box;}
 
                 .de-root{
                     position:fixed;inset:0;z-index:10;
@@ -479,6 +520,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     background:transparent;cursor:pointer;
                     transition:background 0.12s,border-left-color 0.12s;
                 }
+                .de-entry-search{
+                    display:block;width:calc(100% - 32px);margin:0 16px 8px;
+                    font-family:'Lora',Georgia,serif;font-size:13px;color:#ede5d8;
+                    background:#0d0b09;border:1px solid #2a2520;border-radius:3px;padding:8px 10px;
+                }
+                .de-entry-search:focus{outline:none;border-color:#6a5a48;}
                 .de-entry-card:hover{background:#131109;}
                 .de-entry-card.active{background:#161208;border-left-color:#c4a882;}
 
@@ -582,6 +629,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     cursor:pointer;transition:all 0.15s;
                 }
                 .de-ghost-btn:hover{color:#e0d6c8;border-color:#6a5a48;}
+                .de-ghost-btn:disabled{opacity:0.4;cursor:not-allowed;}
                 .de-danger-btn{
                     font-family:'JetBrains Mono',monospace;
                     font-size:9px;letter-spacing:0.18em;text-transform:uppercase;
@@ -659,6 +707,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         <span className="de-mono" style={{ fontSize: 10, color: "#8f8679", letterSpacing: "0.15em" }}>
                             {entries.length} {entries.length === 1 ? "entry" : "entries"}
                         </span>
+                        <button type="button" onClick={() => void downloadExport("md")} className="de-ghost-btn" disabled={isExporting !== null}>
+                            {isExporting === "md" ? "exporting" : "export"}
+                        </button>
                         <button type="button" onClick={() => setDetailsOpen((open) => !open)} className="de-ghost-btn">
                             {detailsOpen ? "close details" : "details"}
                         </button>
@@ -694,6 +745,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         <div className="de-details-actions">
                             <button type="submit" className="de-save-btn" disabled={isSavingDiary}>
                                 {isSavingDiary ? "saving" : "save details"}
+                            </button>
+                            <button type="button" className="de-ghost-btn" onClick={() => void downloadExport("json")} disabled={isExporting !== null}>
+                                {isExporting === "json" ? "exporting" : "json backup"}
                             </button>
                             {confirmDelete === "diary" ? (
                                 <>
@@ -748,14 +802,29 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         <div className="de-mono" style={{ padding: "16px 16px 10px", fontSize: 9, letterSpacing: "0.35em", textTransform: "uppercase", color: "#a79f93" }}>
                             Past Entries
                         </div>
+                        {entries.length > 0 && (
+                            <input
+                                className="de-entry-search"
+                                type="search"
+                                value={entryQuery}
+                                onChange={(event) => setEntryQuery(event.target.value)}
+                                placeholder="Find an entry"
+                                aria-label="Find an entry"
+                                maxLength={80}
+                            />
+                        )}
                         {entries.length === 0 ? (
                             <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 20px 48px" }}>
                                 <p style={{ fontFamily: "'Lora',Georgia,serif", fontStyle: "italic", color: "#a79f93", fontSize: 13, textAlign: "center", lineHeight: 1.8 }}>
                                     Nothing written yet.
                                 </p>
                             </div>
+                        ) : visibleEntries.length === 0 ? (
+                            <p style={{ padding: "8px 20px 24px", fontFamily: "'Lora',Georgia,serif", fontStyle: "italic", color: "#a79f93", fontSize: 13, lineHeight: 1.8 }}>
+                                No entries match “{entryQuery.trim()}”.
+                            </p>
                         ) : (
-                            entries.map((entry, i) => {
+                            visibleEntries.map((entry, i) => {
                                 const active = selectedEntryId === entry._id;
                                 const preview = entryPreview(entry);
                                 return (

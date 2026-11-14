@@ -4,7 +4,8 @@ import { Db, ObjectId } from "mongodb";
 
 import { authOptions } from "@/lib/auth";
 import { isObjectId } from "@/lib/diary/ids";
-import { entryPlainText, storedPlainText } from "@/lib/diary/text";
+import { presentEntry } from "@/lib/diary/content";
+import { storedPlainText } from "@/lib/diary/text";
 import clientPromise from "@/lib/mongodb";
 
 export type DiaryDocument = {
@@ -112,12 +113,13 @@ export function serializeDiary(diary: DiaryWithId) {
 }
 
 export function serializeEntry(entry: EntryWithId) {
+    const presented = presentEntry(entry);
     return {
         _id: entry._id.toString(),
         diaryId: entry.diaryId.toString(),
         userId: entry.userId,
-        content: entry.content,
-        plainText: entry.plainText ?? entryPlainText(entry.content),
+        content: presented.content,
+        plainText: presented.plainText,
         createdAt: entry.createdAt,
         updatedAt: entry.updatedAt,
     };

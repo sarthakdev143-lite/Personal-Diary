@@ -11,7 +11,8 @@ import {
     normalizeTitle,
     parseEntryDate,
 } from "./validation";
-import { prepareEntryContent } from "./content";
+import { prepareEntryContent, presentEntry } from "./content";
+import { buildDiaryExport, diaryToMarkdown, exportFilename, htmlToMarkdown } from "./export";
 import { readJsonBody } from "./json";
 import { CONTENT_MAX, DEFAULT_DIARY_THEME, MAX_DATA_IMAGE_LENGTH } from "./constants";
 
@@ -149,6 +150,19 @@ describe("entry html", () => {
         });
     });
 
+    it("returns stored html without scripts", () => {
+        const presented = presentEntry({
+            content: `<p onclick="alert(1)">Hi</p><script>alert(1)</script><img src="https://example.com/a.png" alt="sketch">`,
+            plainText: "alert(1) Hi sketch",
+        });
+        assert.equal(presented.content.includes("script"), false);
+        assert.equal(presented.content.includes("onclick"), false);
+        assert.match(presented.content, /Hi/);
+        assert.equal(presented.plainText.includes("alert"), false);
+        assert.match(presented.plainText, /Hi/);
+        assert.match(presented.plainText, /sketch/);
+    });
+
     it("counts words from visible text", () => {
         assert.equal(entryPlainText("<p>one&nbsp;two &amp; three</p>"), "one two & three");
         assert.equal(wordCount("<p>one two <strong>three</strong></p>"), 3);
@@ -176,6 +190,69 @@ describe("search", () => {
 
     it("caps a very long query", () => {
         assert.equal(normalizeSearchQuery("a".repeat(200)).length, 80);
+    });
+});
+
+describe("export", () => {
+    const diary = { title: "Morning Pages!", description: "Quiet notes", theme: "/textures/leather-texture.jpg" };
+    const older = {
+        content: "<h2>Dawn</h2><p>Hello <strong>there</strong> &amp; welcome</p><ul><li>one</li><li>two</li></ul><blockquote><p>quoted</p></blockquote><pre><code>const a = 1;</code></pre><p><a href=\"https://example.com\">site</a></p><img src=\"data:image/png;base64,aaaa\" alt=\"sketch\"><script>alert(1)</script>",
+        createdAt: "2026-01-01T12:00:00.000Z",
+        updatedAt: "2026-01-01T12:00:00.000Z",
+    };
+    const newer = {
+        content: "<p>Later</p>",
+        createdAt: "2026-02-01T12:00:00.000Z",
+        updatedAt: "2026-02-01T12:00:00.000Z",
+    };
+
+    it("turns an entry into markdown and drops scripts", () => {
+        const markdown = htmlToMarkdown(older.content);
+        assert.match(markdown, /^## Dawn/);
+        assert.match(markdown, /Hello \*\*there\*\* & welcome/);
+        assert.match(markdown, /- one\n- two/);
+        assert.match(markdown, /> quoted/);
+        assert.match(markdown, /```\nconst a = 1;\n```/);
+        assert.match(markdown, /\[site\]\(https:\/\/example.com\)/);
+        assert.match(markdown, /!\[sketch\]\(image\)/);
+        assert.equal(markdown.includes("script"), false);
+        assert.equal(markdown.includes("alert"), false);
+    });
+
+    it("writes the diary in chronological order", () => {
+        const markdown = diaryToMarkdown(diary, [newer, older]);
+        assert.match(markdown, /^# Morning Pages!\n\nQuiet notes\n\n/);
+        assert.ok(markdown.indexOf("Dawn") < markdown.indexOf("Later"));
+        assert.equal(exportFilename(diary.title, "md"), "morning-pages.md");
+        assert.equal(exportFilename("!!!", "json"), "diary.json");
+    });
+
+    it("builds a markdown or json download and rejects an unknown format", () => {
+        const markdown = buildDiaryExport(diary, [older], "markdown", "2026-03-01T00:00:00.000Z");
+        assert.equal(markdown.ok, true);
+        if (markdown.ok) {
+            assert.equal(markdown.export.contentType, "text/markdown; charset=utf-8");
+            assert.equal(markdown.export.filename, "morning-pages.md");
+            assert.match(markdown.export.body, /Hello \*\*there\*\*/);
+        }
+
+        const json = buildDiaryExport(diary, [older], "json", "2026-03-01T00:00:00.000Z");
+        assert.equal(json.ok, true);
+        if (json.ok) {
+            const parsed = JSON.parse(json.export.body) as { format: string; exportedAt: string; entries: { content: string }[] };
+            assert.equal(parsed.format, "personal-diary-backup");
+            assert.equal(parsed.exportedAt, "2026-03-01T00:00:00.000Z");
+            assert.equal(parsed.entries[0].content.includes("script"), false);
+            assert.match(parsed.entries[0].content, /Hello/);
+        }
+
+        assert.deepEqual(buildDiaryExport(diary, [], "pdf", "2026-03-01T00:00:00.000Z"), {
+            ok: false,
+            error: "Use format=md or format=json.",
+        });
+        const empty = buildDiaryExport({ title: "Empty" }, [], "md", "2026-03-01T00:00:00.000Z");
+        assert.equal(empty.ok, true);
+        if (empty.ok) assert.match(empty.export.body, /_No entries yet\._/);
     });
 });
 
