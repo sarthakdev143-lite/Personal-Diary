@@ -7124,6 +7124,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const selection = window.getSelection();
         if (!editor || !selection || mode === "view") return false;
         const beside = inlinePictureBesideCaret(editor, selection);
+        const anchor = selection.anchorNode;
+        const host = anchor instanceof Element ? anchor : anchor?.parentElement ?? null;
+        const block = host?.closest("p, li, h1, h2, h3, blockquote, td, th");
+        const edges = block instanceof HTMLElement ? caretEdges(block, selection) : null;
         const action = pictureInlineEnter({
             key: e.key,
             shiftKey: e.shiftKey,
@@ -7132,12 +7136,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             metaKey: e.metaKey,
             collapsed: selection.isCollapsed,
             besidePicture: Boolean(beside),
+            side: beside?.side,
+            atStart: Boolean(edges?.atStart),
+            line: block instanceof HTMLElement ? pictureNameLine(block.tagName) : "page",
         });
-        if (action !== "split" || !beside) return false;
-        const anchor = selection.anchorNode;
-        const host = anchor instanceof Element ? anchor : anchor?.parentElement ?? null;
-        const block = host?.closest("p, li, h1, h2, h3, blockquote, td, th");
-        if (!(block instanceof HTMLElement) || !editor.contains(block)) return false;
+        if (action !== "split" || !beside || !(block instanceof HTMLElement) || !editor.contains(block)) return false;
         e.preventDefault();
         const before = editor.innerHTML;
         const path = childPath(editor, block);
