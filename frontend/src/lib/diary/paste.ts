@@ -151,6 +151,15 @@ export function pictureBoundsKey(input: {
     return "pass";
 }
 
+export type PictureNameLine = "page" | "item" | "break" | "paragraph";
+
+export function pictureNameLine(tag: string): PictureNameLine {
+    if (tag === "LI") return "item";
+    if (tag === "BLOCKQUOTE" || tag === "TD" || tag === "TH") return "break";
+    if (tag === "DIV") return "page";
+    return "paragraph";
+}
+
 export function captionBreakText(before: string, after: string): { name: string; next: string } {
     const cut = boundarySpaceCut(before, after);
     if (!cut) return { name: before, next: after };

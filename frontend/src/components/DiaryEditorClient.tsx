@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -4679,9 +4679,63 @@ function continueAfterPicture(caption: HTMLElement): number | null {
         if (alt) image.setAttribute("alt", alt);
         else image.removeAttribute("alt");
     }
-    figure.after(paragraph);
-    placeCaretAtStart(paragraph);
+    placeNameContinuation(figure, paragraph);
     return offset;
+}
+
+function placeNameContinuation(figure: HTMLElement, block: HTMLElement) {
+    const parent = figure.parentElement;
+    const line = pictureNameLine(parent?.tagName ?? "DIV");
+    if (!parent || line === "page") {
+        figure.after(block);
+        placeCaretAtStart(block);
+        return;
+    }
+    if (line === "break") {
+        const br = document.createElement("br");
+        figure.after(br);
+        const onlyBreak = block.childNodes.length === 1 && block.firstChild instanceof HTMLBRElement;
+        if (!onlyBreak) {
+            let anchor: ChildNode = br;
+            while (block.firstChild) {
+                const child = block.firstChild;
+                anchor.after(child);
+                anchor = child;
+            }
+            if (anchor.nextSibling && !(anchor.nextSibling instanceof HTMLBRElement)) {
+                const split = document.createElement("br");
+                anchor.after(split);
+            }
+        }
+        const caret = document.createRange();
+        caret.setStartAfter(br);
+        caret.collapse(true);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(caret);
+        return;
+    }
+    const following: ChildNode[] = [];
+    let node = figure.nextSibling;
+    while (node) {
+        const next: ChildNode | null = node.nextSibling;
+        following.push(node);
+        node = next;
+    }
+    const remainder = (block.textContent ?? "").replace(/[\u200b\u00a0\s]/g, "") !== "";
+    if (!remainder && following.length) block.replaceChildren();
+    const continued = line === "item" ? document.createElement("li") : block;
+    if (line === "item") while (block.firstChild) continued.append(block.firstChild);
+    if (!continued.childNodes.length && following.length === 0) continued.append(document.createElement("br"));
+    parent.after(continued);
+    if (remainder && following.length) {
+        const rest = document.createElement(line === "item" ? "li" : "p");
+        for (const child of following) rest.append(child);
+        continued.after(rest);
+    } else {
+        for (const child of following) continued.append(child);
+    }
+    placeCaretAtStart(continued);
 }
 
 const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
@@ -6382,6 +6436,37 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const keepPictureNameEnter = (e: React.KeyboardEvent) => {
+        if (e.key !== "Enter") return false;
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection || mode === "view") return false;
+        const anchor = selection.anchorNode;
+        const host = anchor instanceof Element ? anchor : anchor?.parentElement ?? null;
+        const caption = host?.closest("figcaption");
+        if (!(caption instanceof HTMLElement) || !editor.contains(caption)) return false;
+        const caret = captionCaret(caption, selection);
+        if (!caret) return false;
+        const action = pictureCaptionKey({
+            key: e.key,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            collapsed: caret.collapsed,
+            atStart: caret.atStart,
+            atEnd: caret.atEnd,
+        });
+        if (action !== "break") return false;
+        e.preventDefault();
+        const before = editor.innerHTML;
+        const path = childPath(editor, caption);
+        const offset = captionUndoCaret(continueAfterPicture(caption)) ?? undefined;
+        keepBlank({ before, after: editor.innerHTML, path, caret: offset });
+        setHtmlContent(editor.innerHTML);
+        return true;
+    };
+
     const keepPictureAhead = (e: React.KeyboardEvent) => {
         const editor = editorRef.current;
         const selection = window.getSelection();
@@ -7912,6 +7997,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (keepPictureBounds(e)) return;
         if (keepDateLine(e)) return;
         if (keepPictureAhead(e)) return;
+        if (keepPictureNameEnter(e)) return;
         if (keepInlinePictureEnter(e)) return;
         if (keepHeadingLine(e)) return;
         if (keepCodeLine(e)) return;
