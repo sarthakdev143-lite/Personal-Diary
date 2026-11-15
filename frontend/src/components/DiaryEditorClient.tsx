@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameSelection, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -216,6 +216,20 @@ function syncPictureAlt(figure: HTMLElement) {
     const alt = imageAltText(caption.textContent ?? "");
     if (alt) image.setAttribute("alt", alt);
     else image.removeAttribute("alt");
+}
+
+function selectedPictureName(editor: HTMLElement, selection: Selection): HTMLElement | null {
+    if (!selection.rangeCount || selection.isCollapsed) return null;
+    const range = selection.getRangeAt(0);
+    const captionFor = (node: Node) => {
+        const host = node instanceof Element ? node : node.parentElement;
+        const caption = host?.closest("figcaption");
+        return caption instanceof HTMLElement ? caption : null;
+    };
+    const start = captionFor(range.startContainer);
+    const end = captionFor(range.endContainer);
+    if (!start || start !== end || !editor.contains(start)) return null;
+    return start;
 }
 
 function separatePictureSelection(editor: HTMLElement, selection: Selection, typing: boolean): HTMLElement | null {
@@ -6467,6 +6481,39 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const keepPictureNameSelection = (e: React.KeyboardEvent) => {
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection || mode === "view") return false;
+        const caption = selectedPictureName(editor, selection);
+        const action = pictureNameSelection({
+            key: e.key,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            collapsed: selection.isCollapsed,
+            inName: Boolean(caption),
+        });
+        if (action !== "edit" || !caption || !selection.rangeCount) return false;
+        e.preventDefault();
+        const before = editor.innerHTML;
+        const path = childPath(editor, caption);
+        const range = selection.getRangeAt(0);
+        const caret = textOffsetWithin(caption, range.startContainer, range.startOffset);
+        const cutting = ((e.ctrlKey || e.metaKey) && (e.key === "x" || e.key === "X")) || (e.shiftKey && e.key === "Delete");
+        if (cutting) document.execCommand("copy");
+        range.deleteContents();
+        dropEmptyMarks(caption);
+        caption.normalize();
+        if (!imageAltText(caption.textContent ?? "")) caption.replaceChildren(document.createElement("br"));
+        const figure = caption.closest("figure");
+        if (figure instanceof HTMLElement) syncPictureAlt(figure);
+        placeCaretAtTextOffset(caption, caret);
+        keepBlank({ before, after: editor.innerHTML, path, caret });
+        setHtmlContent(editor.innerHTML);
+        return true;
+    };
+
     const keepPictureAhead = (e: React.KeyboardEvent) => {
         const editor = editorRef.current;
         const selection = window.getSelection();
@@ -7998,6 +8045,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (keepDateLine(e)) return;
         if (keepPictureAhead(e)) return;
         if (keepPictureNameEnter(e)) return;
+        if (keepPictureNameSelection(e)) return;
         if (keepInlinePictureEnter(e)) return;
         if (keepHeadingLine(e)) return;
         if (keepCodeLine(e)) return;

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameSelection, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -250,6 +250,18 @@ describe("entry paste", () => {
         assert.equal(pictureNameLine("BLOCKQUOTE"), "break");
         assert.equal(pictureNameLine("TD"), "break");
         assert.equal(pictureNameLine("DIV"), "page");
+    });
+
+    it("edits a selected picture name and leaves the picture in the line", () => {
+        const selected = { collapsed: false, inName: true };
+        assert.equal(pictureNameSelection({ key: "Delete", ...selected }), "edit");
+        assert.equal(pictureNameSelection({ key: "Backspace", ...selected }), "edit");
+        assert.equal(pictureNameSelection({ key: "Delete", collapsed: true, inName: true }), "pass");
+        assert.equal(pictureNameSelection({ key: "Delete", ctrlKey: true, ...selected }), "pass");
+        assert.equal(pictureNameSelection({ key: "Delete", collapsed: false, inName: false }), "pass");
+        assert.equal(pictureNameSelection({ key: "x", ...selected }), "pass");
+        assert.equal(pictureNameSelection({ key: "x", ctrlKey: true, ...selected }), "edit");
+        assert.equal(pictureNameSelection({ key: "X", metaKey: true, ...selected }), "edit");
     });
 
     it("keeps a picture when the selection also holds the writing around it", () => {
