@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -244,6 +244,12 @@ describe("entry paste", () => {
         assert.equal(captionUndoCaret(0), 0);
         assert.equal(captionUndoCaret(null), null);
         assert.equal(captionUndoCaret(-1), null);
+        assert.equal(pictureNameLine("LI"), "item");
+        assert.equal(pictureNameLine("H1"), "paragraph");
+        assert.equal(pictureNameLine("P"), "paragraph");
+        assert.equal(pictureNameLine("BLOCKQUOTE"), "break");
+        assert.equal(pictureNameLine("TD"), "break");
+        assert.equal(pictureNameLine("DIV"), "page");
     });
 
     it("keeps a picture when the selection also holds the writing around it", () => {
