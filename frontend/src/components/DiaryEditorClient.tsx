@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureForwardDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBackspaceFollows, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, pictureCutText, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureForwardDelete, pictureGapDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBackspaceFollows, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, pictureCutText, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -250,6 +250,22 @@ function selectedPictureName(editor: HTMLElement, selection: Selection): HTMLEle
     const end = captionFor(range.endContainer);
     if (!start || start !== end || !editor.contains(start)) return null;
     return start;
+}
+
+function pictureGapNext(figure: HTMLElement): "writing" | "empty" | "none" {
+    let node: ChildNode | null = figure.nextSibling;
+    while (node instanceof Text && !node.data.replace(/[\u00a0\s\u200b]/g, "")) node = node.nextSibling;
+    if (!node) return "none";
+    if (node instanceof Text) return "writing";
+    if (node instanceof HTMLElement) return (node.textContent ?? "").replace(/[\u00a0\s\u200b]/g, "") ? "writing" : "empty";
+    return "none";
+}
+
+function placeCaretAfterGap(figure: HTMLElement) {
+    let node: ChildNode | null = figure.nextSibling;
+    while (node instanceof Text && !node.data.replace(/[\u00a0\s\u200b]/g, "")) node = node.nextSibling;
+    if (node instanceof Text) placeCaretInText(node, 0);
+    else if (node instanceof HTMLElement) placeCaretAtStart(node);
 }
 
 function typeAfterPicture(range: Range): HTMLElement | null {
@@ -7461,6 +7477,27 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const keepPictureGapDelete = (e: React.KeyboardEvent) => {
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection?.rangeCount || mode === "view") return false;
+        const figure = typeAfterPicture(selection.getRangeAt(0));
+        if (!(figure instanceof HTMLElement) || !editor.contains(figure)) return false;
+        const action = pictureGapDelete({
+            key: e.key,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            collapsed: selection.isCollapsed,
+            gap: true,
+            next: pictureGapNext(figure),
+        });
+        if (action !== "into") return false;
+        e.preventDefault();
+        placeCaretAfterGap(figure);
+        return true;
+    };
+
     const keepInlinePictureBackspace = (e: React.KeyboardEvent) => {
         const editor = editorRef.current;
         const selection = window.getSelection();
@@ -9060,6 +9097,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (keepPictureAfterEnter(e)) return;
         if (editSelectedPicture(e)) return;
         if (keepPictureLetter(e)) return;
+        if (keepPictureGapDelete(e)) return;
         if (keepInlinePictureBackspace(e)) return;
         if (keepPictureNameApart(e)) return;
         if (moveAroundPicture(e)) return;
