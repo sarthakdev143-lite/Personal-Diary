@@ -549,12 +549,29 @@ function splitBesidePicture(block: HTMLElement, figure: HTMLElement, side: "befo
                 : neighbor instanceof HTMLElement && neighbor.tagName !== "BR"
                     ? "block"
                     : "none";
-        if (pictureBreakLine({ next }) === "paragraph") {
+        const lineBreak = pictureBreakLine({ next });
+        if (lineBreak === "paragraph") {
             const paragraph = document.createElement("p");
             paragraph.appendChild(document.createElement("br"));
             if (side === "after") figure.after(paragraph);
             else figure.before(paragraph);
             placeCaretAtStart(paragraph);
+            return;
+        }
+        if (lineBreak === "apart" && neighbor instanceof Text) {
+            const opening = document.createElement("br");
+            const closing = document.createElement("br");
+            if (side === "after") neighbor.before(opening, closing);
+            else neighbor.after(opening, closing);
+            const parent = opening.parentNode;
+            if (parent) {
+                const caret = document.createRange();
+                caret.setStart(parent, [...parent.childNodes].indexOf(closing));
+                caret.collapse(true);
+                const selection = window.getSelection();
+                selection?.removeAllRanges();
+                selection?.addRange(caret);
+            }
             return;
         }
         const br = document.createElement("br");

@@ -180,10 +180,12 @@ export function pictureAfterEnter(input: {
     return input.next === "empty" ? "into" : "line";
 }
 
-export type PictureBreakLine = "paragraph" | "break";
+export type PictureBreakLine = "paragraph" | "apart" | "break";
 
 export function pictureBreakLine(input: { next: "block" | "text" | "picture" | "none" }): PictureBreakLine {
-    return input.next === "block" ? "paragraph" : "break";
+    if (input.next === "block") return "paragraph";
+    if (input.next === "text") return "apart";
+    return "break";
 }
 
 export type PictureInlineBackspace = "name" | "remove" | "pass";
