@@ -2047,6 +2047,33 @@ describe("search", () => {
         assert.equal(entryMatchesListQuery(revised, clockSeam), false);
         assert.equal(entryMatchesListQuery(revised, "edited"), true);
     });
+
+    it("finds a note in the entry list when a space sits before the period", () => {
+        const created = new Date(2026, 10, 15, 9, 30).toISOString();
+        const spaced = {
+            content: "<p>See rain .</p>",
+            plainText: "See rain .",
+            createdAt: created,
+            updatedAt: created,
+        };
+        assert.equal(entryMatchesListQuery(spaced, "rain."), true);
+        assert.equal(entryMatchesListQuery(spaced, "rain. Nov"), false);
+        const doubled = { ...spaced, plainText: "Quiet  rain", content: "<p>Quiet  rain</p>" };
+        assert.equal(entryMatchesListQuery(doubled, "Quiet rain"), true);
+        const held = { ...spaced, plainText: "Quiet\u00a0rain", content: "<p>Quiet&nbsp;rain</p>" };
+        assert.equal(entryMatchesListQuery(held, "Quiet rain"), true);
+        const long = `${"word ".repeat(30)}rain .`;
+        assert.equal(entryCardPreview({ ...spaced, plainText: long, content: `<p>${long}</p>` }, "rain.").includes("rain"), true);
+        const shown = presentEntry({ content: "<p>See <b>Har</b>bor rain.</p>", plainText: "Har bor rain." });
+        assert.equal(shown.plainText, "See Harbor rain.");
+        assert.equal(entryMatchesListQuery({
+            content: shown.content,
+            plainText: shown.plainText,
+            createdAt: created,
+            updatedAt: created,
+        }, "Harbor"), true);
+        assert.equal(wordCount("<p>See <b>Har</b>bor rain.</p>"), 3);
+    });
 });
 
 describe("export", () => {

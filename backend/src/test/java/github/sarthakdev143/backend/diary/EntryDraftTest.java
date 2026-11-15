@@ -22,6 +22,14 @@ class EntryDraftTest {
     }
 
     @Test
+    void keepsAWordTogetherWhenBoldSplitsIt() {
+        EntryDraft.Ready ready = assertInstanceOf(
+                EntryDraft.Ready.class,
+                EntryDraft.prepare("<p>See <b>Har</b>bor rain.</p>"));
+        assertEquals("See Harbor rain.", ready.plainText());
+    }
+
+    @Test
     void keepsTheWritingAndDropsAScript() {
         EntryDraft draft = EntryDraft.prepare("<p>Hello <strong>there</strong></p><script>alert(1)</script>");
 
