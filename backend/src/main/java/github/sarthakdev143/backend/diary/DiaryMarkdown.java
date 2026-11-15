@@ -223,10 +223,7 @@ public final class DiaryMarkdown {
                 for (int index = 0; index < items.size(); index += 1) {
                     Element item = items.get(index);
                     String marker = tag.equals("ul") ? "-" : orderedItemNumber(element, items, index) + ".";
-                    String text = renderInline(item.childNodes()).trim();
-                    if (text.isEmpty()) {
-                        text = renderBlocks(item.childNodes()).trim();
-                    }
+                    String text = listItemBody(item, marker.length() + 1);
                     lines.add(marker + " " + text);
                 }
                 if (!lines.isEmpty()) {
@@ -267,6 +264,50 @@ public final class DiaryMarkdown {
             }
         }
         return String.join("\n\n", parts);
+    }
+
+    private static boolean listBlock(String tag) {
+        return tag.equals("p")
+                || tag.equals("div")
+                || tag.equals("section")
+                || tag.equals("article")
+                || tag.equals("h1")
+                || tag.equals("h2")
+                || tag.equals("h3")
+                || tag.equals("ul")
+                || tag.equals("ol")
+                || tag.equals("blockquote")
+                || tag.equals("pre")
+                || tag.equals("hr")
+                || tag.equals("figure")
+                || tag.equals("table");
+    }
+
+    private static String listItemBody(Element item, int indent) {
+        boolean block = false;
+        for (Element child : item.children()) {
+            if (listBlock(child.normalName())) {
+                block = true;
+                break;
+            }
+        }
+        String text = (block ? renderBlocks(item.childNodes()) : renderInline(item.childNodes())).trim();
+        if (!block) {
+            return text;
+        }
+        String pad = " ".repeat(indent);
+        String[] lines = text.split("\n", -1);
+        StringBuilder body = new StringBuilder();
+        for (int index = 0; index < lines.length; index += 1) {
+            if (index > 0) {
+                body.append('\n');
+            }
+            if (index > 0 && !lines[index].isEmpty()) {
+                body.append(pad);
+            }
+            body.append(lines[index]);
+        }
+        return body.toString();
     }
 
     private static boolean isGap(char value) {
