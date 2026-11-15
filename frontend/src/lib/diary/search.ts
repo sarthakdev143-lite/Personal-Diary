@@ -106,18 +106,20 @@ function matchWindow(text: string, query: string): string {
     return snippet;
 }
 
-function textWindow(text: string, query: string): string {
-    if (text.length <= 90) return text;
+function textWindow(text: string, query: string, visible = 90): string {
+    const range = matchRange(text, query);
+    const index = range ? range.start : text.toLowerCase().indexOf(query.toLowerCase());
+    if (text.length <= 90 && index < visible) return text;
     return matchWindow(text, query);
 }
 
-function matchingPiece(entry: ListedEntry, query: string): string {
+function matchingPiece(entry: ListedEntry, query: string, visible = 90): string {
     const writing = entry.plainText?.trim() || entryWritingText(entry.content);
     const needle = query.toLowerCase();
     const date = formatEntryLong(entry.createdAt);
     const page = date && date !== "—" && writing ? `${date} ${writing}` : writing;
     const piece = entrySearchParts(entry).find((item) => item.toLowerCase().includes(needle)) ?? page;
-    return textWindow(piece, query);
+    return textWindow(piece, query, visible);
 }
 
 function descriptionSnippet(description: string, query: string): string | null {
@@ -296,7 +298,7 @@ export function diaryListMatch(
     if (newest) {
         return {
             matched: true,
-            snippet: matchingPiece(newest, query),
+            snippet: matchingPiece(newest, query, CARD_OPENING),
             entryId: newest.id || null,
             entryAt: newest.createdAt,
             count: hits.length,

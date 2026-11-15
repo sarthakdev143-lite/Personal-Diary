@@ -71,6 +71,17 @@ class DiarySearchTest {
         assertTrue(shortMatch.snippet().contains("lantern"));
         assertTrue(shortMatch.snippet().replaceFirst("^…", "").toLowerCase().indexOf("lantern") <= 32);
 
+        DiarySearch.Note shortNote = new DiarySearch.Note(
+                "rain",
+                "<p>The morning stayed ordinary and quiet beside the old glass before lantern.</p>",
+                "The morning stayed ordinary and quiet beside the old glass before lantern.",
+                NOVEMBER,
+                NOVEMBER);
+        DiarySearch.Hit shortNoteHit = DiarySearch.match("Window notes", "", List.of(shortNote), "lantern", ZoneOffset.UTC);
+        assertTrue(shortNoteHit.matched());
+        assertEquals("rain", shortNoteHit.entryId());
+        assertTrue(shortNoteHit.snippet().replaceFirst("^…", "").toLowerCase().indexOf("lantern") <= 32);
+
         DiarySearch.Hit titled = DiarySearch.match("Harbor", lateDescription, List.of(), "harbor", ZoneOffset.UTC);
         assertNull(titled.snippet());
 
