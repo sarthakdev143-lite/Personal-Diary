@@ -1042,6 +1042,11 @@ export function dateHeadingKey(input: {
     return "pass";
 }
 
+export function dateHeadingCommand(command: string, inDate: boolean): "run" | "hold" {
+    if (!inDate || command === "undo" || command === "redo") return "run";
+    return "hold";
+}
+
 export function entryWritingText(html: string): string {
     return entryPlainText(withoutGeneratedDateHeading(html));
 }
