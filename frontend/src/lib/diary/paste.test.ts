@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -137,6 +137,13 @@ describe("entry paste", () => {
             title: "Image is too large",
             description: "Choose an image under 150 KB.",
         });
+    });
+
+    it("keeps a picture on its own line in a list and puts the next picture after it", () => {
+        assert.equal(pictureInsert({ inPicture: false, inItem: true }), "line");
+        assert.equal(pictureInsert({ inPicture: true, inItem: true }), "after");
+        assert.equal(pictureInsert({ inPicture: true, inItem: false }), "after");
+        assert.equal(pictureInsert({ inPicture: false, inItem: false }), "pass");
     });
 
     it("names a pasted picture and keeps the name out of the markup", () => {

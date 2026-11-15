@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -2681,6 +2681,77 @@ function placeListBlock(nodes: HTMLElement[], slot: { before: HTMLElement | null
     }
 }
 
+function anchoredPicture(range: Range, editor: HTMLElement): HTMLElement | null {
+    const fromNode = (node: Node | null) => {
+        const element = node instanceof Element ? node : node?.parentElement ?? null;
+        if (!(element instanceof HTMLElement) || !editor.contains(element)) return null;
+        if (element.tagName === "IMG") return element;
+        const figure = element.closest("figure");
+        return figure instanceof HTMLElement && editor.contains(figure) ? figure : null;
+    };
+    const inside = fromNode(range.startContainer);
+    if (inside) return inside;
+    if (range.startContainer instanceof Element) {
+        const selected = fromNode(range.startContainer.childNodes[range.startOffset] ?? null);
+        if (selected) return selected;
+    }
+    return null;
+}
+
+function buildPicture(src: string, name: string): HTMLElement {
+    const alt = imageAltText(name);
+    if (!alt) {
+        const image = document.createElement("img");
+        image.src = src;
+        return image;
+    }
+    const figure = document.createElement("figure");
+    const image = document.createElement("img");
+    image.src = src;
+    image.alt = alt;
+    const caption = document.createElement("figcaption");
+    caption.textContent = alt;
+    figure.append(image, caption);
+    return figure;
+}
+
+function placeCaretInPicture(picture: HTMLElement) {
+    const caption = picture.querySelector("figcaption");
+    const range = document.createRange();
+    if (caption instanceof HTMLElement) {
+        range.selectNodeContents(caption);
+        range.collapse(false);
+    } else {
+        range.selectNode(picture);
+    }
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+}
+
+function openPicture(editor: HTMLElement, range: Range, src: string, name: string): { before: string; path: number[] } | null {
+    const anchor = anchoredPicture(range, editor);
+    const host = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+    const item = host?.closest("li");
+    const inItem = item instanceof HTMLElement && editor.contains(item);
+    const action = pictureInsert({ inPicture: Boolean(anchor), inItem });
+    if (action === "pass") return null;
+    const before = editor.innerHTML;
+    const picture = buildPicture(src, name);
+    if (action === "after" && anchor) {
+        const path = childPath(editor, anchor);
+        anchor.after(picture);
+        placeCaretInPicture(picture);
+        return { before, path };
+    }
+    if (!(item instanceof HTMLElement) || !inItem) return null;
+    const slot = splitListAtCaret(item, range);
+    if (!slot) return null;
+    placeListBlock([picture], slot);
+    placeCaretInPicture(picture);
+    return { before, path: slot.path };
+}
+
 function outdentListItem(item: HTMLElement) {
     const list = item.parentElement;
     if (!(list instanceof HTMLUListElement || list instanceof HTMLOListElement)) return;
@@ -4488,7 +4559,16 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 selection.addRange(range);
             }
         }
-        insertHTML(imageHtml(current, imageAlt));
+        const opened = editor && selection?.rangeCount
+            ? openPicture(editor, selection.getRangeAt(0), current, imageAlt)
+            : null;
+        if (opened && editor) {
+            keepBlank({ before: opened.before, after: editor.innerHTML, path: opened.path });
+            setHtmlContent(editor.innerHTML);
+            updateActiveFormats();
+        } else {
+            insertHTML(imageHtml(current, imageAlt));
+        }
         const nextSelection = window.getSelection();
         imageRange.current = nextSelection && nextSelection.rangeCount > 0 && editor?.contains(nextSelection.anchorNode)
             ? nextSelection.getRangeAt(0).cloneRange()
