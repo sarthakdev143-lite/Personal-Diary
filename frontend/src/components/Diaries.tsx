@@ -10,7 +10,6 @@ import { coverForTheme } from "@/lib/diary/constants";
 import { diaryListKeyAction, diaryListStep } from "@/lib/diary/keys";
 import { compareDiaryMatches } from "@/lib/diary/order";
 import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
-import { diaryFindCountLabel } from "@/lib/diary/text";
 import { diaryCardWhen, diaryMatchPath } from "@/lib/diary/search";
 
 type Diary = {
@@ -34,7 +33,7 @@ const truncateDescription = (description: string, maxLength = 110) => {
     return `${description.slice(0, maxLength).trimEnd()}...`;
 };
 
-const Diaries = ({ query = "", refetchTrigger = 0, paused = false }: { query?: string; refetchTrigger?: number; paused?: boolean }) => {
+const Diaries = ({ query = "", refetchTrigger = 0, paused = false, onMatchCount }: { query?: string; refetchTrigger?: number; paused?: boolean; onMatchCount?: (count: number | null) => void }) => {
     const { status } = useSession();
     const [attempt, setAttempt] = useState(0);
     const [pinningId, setPinningId] = useState<string | null>(null);
@@ -190,6 +189,10 @@ const Diaries = ({ query = "", refetchTrigger = 0, paused = false }: { query?: s
     const error = isCurrent ? result.error : null;
     const isLoading = status === "loading" || (status === "authenticated" && !isCurrent);
 
+    useEffect(() => {
+        onMatchCount?.(query.trim() && isCurrent && !error ? diaries.length : null);
+    }, [onMatchCount, query, isCurrent, error, diaries.length]);
+
     if (isLoading) {
         return (
             <>
@@ -218,8 +221,6 @@ const Diaries = ({ query = "", refetchTrigger = 0, paused = false }: { query?: s
         );
     }
 
-    const findCountLabel = diaryFindCountLabel(diaries.length, query);
-
     if (!diaries.length && query) {
         return (
             <p className="w-full max-w-xs rounded-xl border border-white/10 bg-zinc-600/10 p-6 text-base text-zinc-300" role="status">
@@ -234,9 +235,6 @@ const Diaries = ({ query = "", refetchTrigger = 0, paused = false }: { query?: s
 
     return (
         <>
-            {findCountLabel && (
-                <p id="diary-find-count" className="w-full text-sm tracking-wide text-zinc-400" role="status">{findCountLabel}</p>
-            )}
             {diaries.map((diary) => {
                 const cover = coverForTheme(diary.theme);
                 const pinned = diary.pinned === true;
