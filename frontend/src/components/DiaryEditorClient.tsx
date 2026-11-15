@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -657,8 +657,26 @@ function lineAfterPicture(editor: HTMLElement, selection: Selection): { block: H
     const host = anchor instanceof Element ? anchor : anchor.parentElement;
     const block = host?.closest("p, h1, h2, h3, li, blockquote, pre");
     if (!(block instanceof HTMLElement) || !editor.contains(block)) return null;
-    const figure = block.previousElementSibling;
-    if (!(figure instanceof HTMLElement) || figure.tagName !== "FIGURE") return null;
+    const sibling = block.previousElementSibling;
+    let tailNode: ChildNode | null = sibling instanceof HTMLElement ? sibling.lastChild : null;
+    while (tailNode instanceof Text && !tailNode.data.replace(/[\u00a0\s\u200b]/g, "")) tailNode = tailNode.previousSibling;
+    const tail = tailNode instanceof HTMLElement && tailNode.tagName === "FIGURE"
+        ? "picture"
+        : tailNode instanceof Text || (tailNode instanceof HTMLElement && (tailNode.textContent ?? "").replace(/[\u00a0\s\u200b]/g, ""))
+            ? "writing"
+            : tailNode
+                ? "empty"
+                : "none";
+    const behind = pictureBehindLine({
+        sibling: sibling instanceof HTMLElement && sibling.tagName === "FIGURE" ? "picture" : sibling instanceof HTMLElement ? "other" : "none",
+        tail,
+    });
+    const figure = sibling instanceof HTMLElement && sibling.tagName === "FIGURE"
+        ? sibling
+        : tailNode instanceof HTMLElement && tailNode.tagName === "FIGURE"
+            ? tailNode
+            : null;
+    if (!behind || !(figure instanceof HTMLElement)) return null;
     const caption = figure.querySelector("figcaption");
     if (!(caption instanceof HTMLElement)) return null;
     if (!block.contains(range.startContainer) || !block.contains(range.endContainer)) return null;

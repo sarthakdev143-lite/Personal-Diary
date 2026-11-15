@@ -50,6 +50,11 @@ export function lineAfterPictureKey(input: {
     return input.empty ? "remove" : "move";
 }
 
+export function pictureBehindLine(input: { sibling: "picture" | "other" | "none"; tail: "picture" | "writing" | "empty" | "none" }): boolean {
+    if (input.sibling === "picture") return true;
+    return input.sibling === "other" && input.tail === "picture";
+}
+
 export type PictureAhead = "picture" | "space" | "none";
 
 export type PictureAheadDelete = "remove" | "clear" | "pass";
