@@ -110,6 +110,39 @@ export function matchedTextParts(text: string, rawQuery: string): { text: string
     return parts;
 }
 
+export type TextPieceSlice = { piece: number; start: number; end: number };
+
+export function textPieceHits(pieces: readonly string[], rawQuery: string): TextPieceSlice[][] {
+    const query = normalizeSearchQuery(rawQuery);
+    if (!query) return [];
+    const needle = query.toLowerCase();
+    const ranges: { piece: number; start: number; end: number }[] = [];
+    let combined = "";
+    pieces.forEach((piece, pieceIndex) => {
+        const start = combined.length;
+        combined += piece;
+        ranges.push({ piece: pieceIndex, start, end: combined.length });
+    });
+    const haystack = combined.toLowerCase();
+    const matches: TextPieceSlice[][] = [];
+    let from = 0;
+    while (from <= haystack.length - needle.length) {
+        const index = haystack.indexOf(needle, from);
+        if (index < 0) break;
+        const end = index + needle.length;
+        const slices: TextPieceSlice[] = [];
+        for (const range of ranges) {
+            if (range.end <= index || range.start >= end) continue;
+            const start = Math.max(index, range.start) - range.start;
+            const stop = Math.min(end, range.end) - range.start;
+            if (stop > start) slices.push({ piece: range.piece, start, end: stop });
+        }
+        matches.push(slices);
+        from = end;
+    }
+    return matches;
+}
+
 export function entryMatchCount(text: string, rawQuery: string): number {
     const query = normalizeSearchQuery(rawQuery);
     if (!query) return 0;

@@ -15,7 +15,7 @@ import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
 import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
-import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
+import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, textPieceHits } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
@@ -29,42 +29,41 @@ const fmtShort = formatDiaryDate;
 const fmtTime = formatEntryTime;
 const fmtLong = formatEntryLong;
 
-function showFindMarks(root: HTMLElement, query: string, activeIndex: number): HTMLElement | null {
-    const needle = query.trim();
-    if (!needle) return null;
-    const lower = needle.toLowerCase();
-    const hits: { node: Text; index: number }[] = [];
+function showFindMarks(root: HTMLElement, query: string, activeIndex: number): { mark: HTMLElement | null; count: number } {
+    const nodes: Text[] = [];
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     let node = walker.nextNode();
     while (node) {
-        const text = (node.textContent ?? "").toLowerCase();
-        let from = 0;
-        while (from <= text.length - needle.length) {
-            const index = text.indexOf(lower, from);
-            if (index < 0) break;
-            hits.push({ node: node as Text, index });
-            from = index + needle.length;
-        }
+        nodes.push(node as Text);
         node = walker.nextNode();
     }
-    if (!hits.length) return null;
-    const current = ((activeIndex % hits.length) + hits.length) % hits.length;
+    const matches = textPieceHits(nodes.map((item) => item.textContent ?? ""), query);
+    if (!matches.length) return { mark: null, count: 0 };
+    const current = ((activeIndex % matches.length) + matches.length) % matches.length;
     let currentMark: HTMLElement | null = null;
-    for (let hitIndex = hits.length - 1; hitIndex >= 0; hitIndex -= 1) {
-        const hit = hits[hitIndex];
-        const range = document.createRange();
-        range.setStart(hit.node, hit.index);
-        range.setEnd(hit.node, hit.index + needle.length);
-        const mark = document.createElement("mark");
-        mark.className = hitIndex === current ? "de-find de-find-current" : "de-find";
-        try {
-            range.surroundContents(mark);
-        } catch {
-            continue;
+    for (let matchIndex = matches.length - 1; matchIndex >= 0; matchIndex -= 1) {
+        const className = matchIndex === current ? "de-find de-find-current" : "de-find";
+        const slices = matches[matchIndex];
+        let first: HTMLElement | null = null;
+        for (let sliceIndex = slices.length - 1; sliceIndex >= 0; sliceIndex -= 1) {
+            const slice = slices[sliceIndex];
+            const textNode = nodes[slice.piece];
+            const parent = textNode?.parentNode;
+            if (!textNode || !parent) continue;
+            const length = textNode.length;
+            if (slice.end > length || slice.end <= slice.start) continue;
+            let target = textNode;
+            if (slice.end < target.length) target.splitText(slice.end);
+            if (slice.start > 0) target = target.splitText(slice.start);
+            const mark = document.createElement("mark");
+            mark.className = className;
+            parent.insertBefore(mark, target);
+            mark.appendChild(target);
+            first = mark;
         }
-        if (hitIndex === current) currentMark = mark;
+        if (matchIndex === current) currentMark = first;
     }
-    return currentMark;
+    return { mark: currentMark, count: matches.length };
 }
 
 // Toolbar button definition
@@ -4660,8 +4659,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             return;
         }
         if (htmlContent) root.innerHTML = htmlContent;
-        const mark = showFindMarks(root, entryQuery, matchAt);
-        const count = root.querySelectorAll("mark.de-find").length;
+        const marked = showFindMarks(root, entryQuery, matchAt);
+        const mark = marked.mark;
+        const count = marked.count;
         if (matchCountRef.current !== count) {
             matchCountRef.current = count;
             setMatchCount(count);
