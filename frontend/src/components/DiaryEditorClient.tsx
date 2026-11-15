@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -2793,7 +2793,7 @@ function trimPictureEdge(block: HTMLElement, edge: "start" | "end") {
     const space = /^[\s\u00a0]/.test(node.data);
     const endSpace = /[\s\u00a0]$/.test(node.data);
     if (edge === "start" ? !space : !endSpace) return;
-    node.data = edge === "start" ? node.data.slice(1) : node.data.slice(0, -1);
+    node.data = pictureListSpace(node.data, edge);
     if (!node.data) node.remove();
 }
 
@@ -3173,6 +3173,10 @@ function openPicture(editor: HTMLElement, range: Range, src: string, name: strin
     const slot = splitListAtCaret(item, range);
     if (!slot) return null;
     placeListBlock([picture], slot);
+    const previous = picture.previousElementSibling;
+    const following = picture.nextElementSibling;
+    if (previous instanceof HTMLElement) trimPictureEdge(previous, "end");
+    if (following instanceof HTMLElement) trimPictureEdge(following, "start");
     placeCaretInPicture(picture);
     return { before, path: slot.path };
 }
