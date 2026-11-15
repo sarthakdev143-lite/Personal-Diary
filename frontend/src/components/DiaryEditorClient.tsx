@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -6734,6 +6734,68 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const keepPictureNameBoundary = (event: React.KeyboardEvent) => {
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection?.rangeCount || selection.isCollapsed || mode === "view" || event.nativeEvent.isComposing) return false;
+        if (!(event.target instanceof Node) || !editor.contains(event.target)) return false;
+        const range = selection.getRangeAt(0);
+        const startHost = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+        const caption = startHost?.closest("figcaption");
+        const startsInName = caption instanceof HTMLElement && editor.contains(caption);
+        const endsInName = Boolean(startsInName && caption instanceof HTMLElement && (caption === range.endContainer || caption.contains(range.endContainer)));
+        let boundaryOnly = false;
+        if (startsInName && caption instanceof HTMLElement && !endsInName) {
+            try {
+                const gap = document.createRange();
+                gap.setStartAfter(caption);
+                gap.setEnd(range.endContainer, range.endOffset);
+                boundaryOnly = gap.toString().replace(/[\u00a0\s]/g, "").length === 0 && gap.cloneContents().querySelector("img") === null;
+            } catch {
+                boundaryOnly = false;
+            }
+        }
+        if (pictureNameBoundary({
+            startsInName,
+            endsInName,
+            boundaryOnly,
+            key: event.key,
+            altKey: event.altKey,
+            ctrlKey: event.ctrlKey,
+            metaKey: event.metaKey,
+        }) !== "name" || !(caption instanceof HTMLElement)) return false;
+        event.preventDefault();
+        const next = document.createRange();
+        next.setStart(range.startContainer, range.startOffset);
+        next.setEnd(caption, caption.childNodes.length);
+        selection.removeAllRanges();
+        selection.addRange(next);
+        if (event.key === "Enter") {
+            const before = editor.innerHTML;
+            const path = childPath(editor, caption);
+            if (!next.collapsed) next.deleteContents();
+            dropEmptyMarks(caption);
+            if (!imageAltText(caption.textContent ?? "")) caption.replaceChildren(document.createElement("br"));
+            const offset = captionUndoCaret(continueAfterPicture(caption)) ?? undefined;
+            keepBlank({ before, after: editor.innerHTML, path, caret: offset });
+        } else if (event.key === "Backspace" || event.key === "Delete") {
+            const before = editor.innerHTML;
+            const path = childPath(editor, caption);
+            if (!next.collapsed) next.deleteContents();
+            dropEmptyMarks(caption);
+            if (!imageAltText(caption.textContent ?? "")) caption.replaceChildren(document.createElement("br"));
+            const figure = caption.closest("figure");
+            if (figure instanceof HTMLElement) syncPictureAlt(figure);
+            keepBlank({ before, after: editor.innerHTML, path, caret: 0 });
+        } else {
+            document.execCommand("insertText", false, event.key);
+            const figure = caption.closest("figure");
+            if (figure instanceof HTMLElement) syncPictureAlt(figure);
+        }
+        setHtmlContent(editor.innerHTML);
+        return true;
+    };
+
     const keepPictureNameEnter = (e: React.KeyboardEvent) => {
         if (e.key !== "Enter") return false;
         const editor = editorRef.current;
@@ -8349,6 +8411,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 return;
             }
         }
+        if (keepPictureNameBoundary(e)) return;
         if (keepPictureBounds(e)) return;
         if (keepDateLine(e)) return;
         if (keepPictureAhead(e)) return;
