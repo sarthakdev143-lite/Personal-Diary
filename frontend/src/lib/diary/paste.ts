@@ -89,6 +89,14 @@ export function pictureRemovalSpace(input: {
     return "between";
 }
 
+export type PictureRemovalHost = "inline" | "block";
+
+const PICTURE_REMOVAL_BLOCKS = new Set(["P", "H1", "H2", "H3", "LI", "BLOCKQUOTE", "TD", "TH", "PRE", "DIV", "UL", "OL", "TABLE", "HR", "FIGURE", "BR", "IMG"]);
+
+export function pictureRemovalHost(tag: string): PictureRemovalHost {
+    return PICTURE_REMOVAL_BLOCKS.has(tag.toUpperCase()) ? "block" : "inline";
+}
+
 export type PictureInlineEnter = "split" | "pass";
 
 export function pictureInlineEnter(input: {
