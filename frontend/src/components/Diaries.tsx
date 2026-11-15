@@ -10,7 +10,7 @@ import { coverForTheme } from "@/lib/diary/constants";
 import { diaryListKeyAction, diaryListStep } from "@/lib/diary/keys";
 import { compareDiaryMatches } from "@/lib/diary/order";
 import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
-import { diaryCardWhen, diaryMatchPath } from "@/lib/diary/search";
+import { diaryCardWhen, diaryMatchPath, titleCardText } from "@/lib/diary/search";
 import { diaryEnterChoice, diaryFieldReady, diaryListView, diaryMatchCount, diaryPendingOpen } from "@/lib/diary/view";
 
 type Diary = {
@@ -303,7 +303,7 @@ const Diaries = ({ query = "", typedQuery = query, refetchTrigger = 0, paused = 
                             <div className="space-y-2 overflow-hidden">
                                 <h2 className="truncate text-lg font-medium text-white">
                                     {query
-                                        ? <MatchedText text={diary.title} query={query} className="rounded-sm bg-amber-950/80 px-0.5 text-amber-100" />
+                                        ? <MatchedText text={titleCardText(diary.title, query)} query={query} className="rounded-sm bg-amber-950/80 px-0.5 text-amber-100" />
                                         : diary.title}
                                 </h2>
                                 <p className="line-clamp-2 text-sm leading-6 text-zinc-300">

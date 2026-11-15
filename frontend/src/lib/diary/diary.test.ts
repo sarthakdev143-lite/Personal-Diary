@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
-import { buildEntrySearchFilter, diaryCardWhen, diaryFieldsMatch, diaryListAddress, diaryListMatch, diaryListNavigation, diaryMatchPath, diaryReturnAddress, diaryReturnQuery, entriesForQuery, entryCardPreview, entryListQueryAddress, entryMonthAddress, openedDiaryQuery, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryFindAddress, entryFromAddress, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery, openedEntryMonth, openedEntryQuery, textPieceHits, textRunHits } from "./search";
+import { buildEntrySearchFilter, diaryCardWhen, diaryFieldsMatch, diaryListAddress, diaryListMatch, diaryListNavigation, diaryMatchPath, diaryReturnAddress, diaryReturnQuery, entriesForQuery, entryCardPreview, entryListQueryAddress, entryMonthAddress, openedDiaryQuery, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryFindAddress, entryFromAddress, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery, openedEntryMonth, openedEntryQuery, textPieceHits, textRunHits, titleCardText } from "./search";
 import { calendarDate, diaryFindCountLabel, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryFindMonths, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatDiaryDate, formatEntryLong, formatEntryTime, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, codePullUndoCaret, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, blankUndoCaret, joinUndoCaret, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries, compareDiaryMatches } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
@@ -1422,6 +1422,15 @@ describe("search", () => {
             matchedTextParts("Harbor  light at the end.", "harbor light").filter((part) => part.match).map((part) => part.text),
             ["Harbor  light"],
         );
+    });
+
+    it("shows a title word the card would cut off", () => {
+        const title = "Morning notes from the harbor road lantern";
+        const shown = titleCardText(title, "lantern").replace(/^…/, "");
+        assert.match(shown, /lantern/i);
+        assert.ok(shown.toLowerCase().indexOf("lantern") <= 12);
+        assert.equal(titleCardText("Lantern notes", "lantern"), "Lantern notes");
+        assert.equal(titleCardText(title, "   "), title);
     });
 
     it("shows the date and the first line when a search crosses them", () => {
