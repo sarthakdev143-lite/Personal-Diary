@@ -264,6 +264,17 @@ export function wordGapInsert(gap: "before" | "after", typed: string): { text: s
     return { text: ` ${body}`, caret: body.length + 1, pull: false };
 }
 
+export function wordGapSpace(input: { text: string; offset: number; gap: "before" | "after" | null }): { action: "hold"; gap: "before" | "after" } | { action: "type" } {
+    const space = (piece: string | undefined) => piece === " " || piece === "\u00a0" || piece === "\t";
+    const word = (piece: string | undefined) => Boolean(piece && /[\p{L}\p{N}]/u.test(piece));
+    const prev = input.text[input.offset - 1];
+    const next = input.text[input.offset];
+    if (space(next) && prev !== undefined && !space(prev)) return { action: "hold", gap: "before" };
+    if (space(prev) && word(next)) return { action: "hold", gap: "after" };
+    if (input.gap && !space(next)) return { action: "hold", gap: input.gap };
+    return { action: "type" };
+}
+
 export function wordGapKey(input: { key: string; shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean }): "keep" | "clear" {
     const key = input.key.toLowerCase();
     if (key === "control" || key === "meta" || key === "shift" || key === "os") return "keep";

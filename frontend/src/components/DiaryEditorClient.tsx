@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, stickyUndo, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -4108,18 +4108,34 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     };
     const applyWordGap = (event: InputEvent) => {
         const pending = wordGap.current;
-        if (!pending) return;
         const pasted = event.inputType === "insertFromPaste";
         if (event.inputType !== "insertText" && !pasted) {
-            wordGap.current = null;
+            if (pending) wordGap.current = null;
             return;
         }
-        wordGap.current = null;
         const typed = pasted ? (event.data ?? event.dataTransfer?.getData("text/plain") ?? "") : (event.data ?? "");
-        const decision = wordGapInsert(pending.gap, typed);
-        if (!decision) return;
         const editor = editorRef.current;
         const selection = window.getSelection();
+        if (editor && selection?.rangeCount && selection.isCollapsed && selection.anchorNode && editor.contains(selection.anchorNode) && !pasted && (typed === " " || typed === "\u00a0")) {
+            const block = wordBlock(selection.anchorNode);
+            const instant = instantFor(entryDate);
+            const label = instant ? fmtLong(instant.toISOString()) : "";
+            const dateLine = Boolean(label) && block?.tagName === "H2" && (block.textContent ?? "") === label;
+            if (block instanceof HTMLElement && editor.contains(block) && !dateLine && !block.closest("pre")) {
+                const offset = textOffsetWithin(block, selection.anchorNode, selection.anchorOffset);
+                const pendingHere = pending && nodeAtPath(editor, pending.path) === block && offset === pending.offset ? pending.gap : null;
+                const space = wordGapSpace({ text: block.textContent ?? "", offset, gap: pendingHere });
+                if (space.action === "hold") {
+                    event.preventDefault();
+                    wordGap.current = { path: childPath(editor, block), offset, gap: space.gap };
+                    return;
+                }
+            }
+        }
+        if (!pending) return;
+        wordGap.current = null;
+        const decision = wordGapInsert(pending.gap, typed);
+        if (!decision) return;
         if (!editor || !selection?.rangeCount || !selection.isCollapsed || !selection.anchorNode) return;
         const block = nodeAtPath(editor, pending.path);
         if (!(block instanceof HTMLElement) || !block.contains(selection.anchorNode)) return;
