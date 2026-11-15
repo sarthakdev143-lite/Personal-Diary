@@ -515,7 +515,7 @@ export function pictureHeadingContinue(input: { heading: boolean; next: "text" |
 }
 
 export function pictureListContinue(input: { item: boolean; next: "text" | "block" | "none" }): PictureHeadingContinue {
-    if (input.item && input.next === "text") return "apart";
+    if (input.item && input.next !== "none") return "apart";
     return "into";
 }
 
