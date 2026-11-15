@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { diaryEnterChoice, diaryFieldReady, diaryListView, diaryPendingOpen } from "./view";
+import { diaryEnterChoice, diaryFieldReady, diaryListView, diaryMatchCount, diaryPendingOpen } from "./view";
 
 describe("diary list while a search loads", () => {
     const rain = { key: "auth:rain:0:0", diaries: [{ _id: "window" }], error: null };
@@ -89,5 +89,16 @@ describe("enter opens the search in the field", () => {
             current: true,
             ids: ["harbor"],
         }), { openId: null, pending: null });
+    });
+});
+
+describe("diary search count", () => {
+    it("waits until the diaries on screen match the words in the field", () => {
+        assert.equal(diaryMatchCount({ typed: "harbor", loaded: "rain", current: true, error: false, count: 1 }), null);
+        assert.equal(diaryMatchCount({ typed: "harbor", loaded: "harbor", current: false, error: false, count: 1 }), null);
+        assert.equal(diaryMatchCount({ typed: "harbor", loaded: "harbor", current: true, error: true, count: 0 }), null);
+        assert.equal(diaryMatchCount({ typed: "  ", loaded: "  ", current: true, error: false, count: 2 }), null);
+        assert.equal(diaryMatchCount({ typed: " harbor ", loaded: "harbor", current: true, error: false, count: 1 }), 1);
+        assert.equal(diaryMatchCount({ typed: "harbor", loaded: "harbor", current: true, error: false, count: 0 }), 0);
     });
 });

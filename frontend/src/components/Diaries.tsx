@@ -11,7 +11,7 @@ import { diaryListKeyAction, diaryListStep } from "@/lib/diary/keys";
 import { compareDiaryMatches } from "@/lib/diary/order";
 import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { diaryCardWhen, diaryMatchPath } from "@/lib/diary/search";
-import { diaryEnterChoice, diaryFieldReady, diaryListView, diaryPendingOpen } from "@/lib/diary/view";
+import { diaryEnterChoice, diaryFieldReady, diaryListView, diaryMatchCount, diaryPendingOpen } from "@/lib/diary/view";
 
 type Diary = {
     _id: string;
@@ -222,13 +222,14 @@ const Diaries = ({ query = "", typedQuery = query, refetchTrigger = 0, paused = 
     }, [typedQuery, query, isCurrent, diaries]);
 
     useEffect(() => {
-        if (!query.trim() || (isCurrent && error)) {
-            onMatchCount?.(null);
-            return;
-        }
-        if (!isCurrent) return;
-        onMatchCount?.(diaries.length);
-    }, [onMatchCount, query, isCurrent, error, diaries.length]);
+        onMatchCount?.(diaryMatchCount({
+            typed: typedQuery,
+            loaded: query,
+            current: isCurrent,
+            error: Boolean(error),
+            count: diaries.length,
+        }));
+    }, [onMatchCount, typedQuery, query, isCurrent, error, diaries.length]);
 
     if (isLoading) {
         return (

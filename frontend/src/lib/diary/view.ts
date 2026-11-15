@@ -18,6 +18,18 @@ export function diaryListView<T>(input: {
     return { diaries: current ? current.diaries : previous ?? [], error: null, loading: false };
 }
 
+export function diaryMatchCount(input: {
+    typed: string;
+    loaded: string;
+    current: boolean;
+    error: boolean;
+    count: number;
+}): number | null {
+    if (!input.loaded.trim() || !input.current || input.error) return null;
+    if (input.typed.trim() !== input.loaded.trim()) return null;
+    return input.count;
+}
+
 export function diaryFieldReady(typed: string, loaded: string, current: boolean): boolean {
     return typed.trim() === loaded.trim() && current;
 }
