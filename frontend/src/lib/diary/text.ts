@@ -1059,10 +1059,11 @@ export function dateCaretLeave(input: {
     inHeading: boolean;
     exact: boolean;
     next: "into" | "past" | "none";
-}): "past" | "peel" | "stay" {
+}): "past" | "peel" | "into" | "stay" {
     if (!input.inHeading) return "stay";
-    if (input.exact && input.next !== "into") return "past";
-    return "peel";
+    if (!input.exact) return "peel";
+    if (input.next === "into") return "into";
+    return "past";
 }
 
 export function dateArrow(input: {
