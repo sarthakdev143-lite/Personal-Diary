@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
-import { buildEntrySearchFilter, diaryFieldsMatch, diaryListAddress, diaryListMatch, diaryListNavigation, diaryMatchPath, entriesForQuery, entryCardPreview, entryMonthAddress, openedDiaryQuery, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryFindAddress, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery, openedEntryMonth, openedEntryQuery, textPieceHits, textRunHits } from "./search";
+import { buildEntrySearchFilter, diaryCardWhen, diaryFieldsMatch, diaryListAddress, diaryListMatch, diaryListNavigation, diaryMatchPath, entriesForQuery, entryCardPreview, entryMonthAddress, openedDiaryQuery, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryFindAddress, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery, openedEntryMonth, openedEntryQuery, textPieceHits, textRunHits } from "./search";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatDiaryDate, formatEntryLong, formatEntryTime, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, codePullUndoCaret, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, blankUndoCaret, joinUndoCaret, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
@@ -1372,17 +1372,42 @@ describe("search", () => {
         const fromOlder = diaryListMatch(diary, [rain, garden], "garden");
         assert.equal(fromOlder.matched, true);
         assert.equal(fromOlder.entryId, "garden");
+        assert.equal(fromOlder.entryAt, older);
         assert.equal(diaryMatchPath("diary1", fromOlder.entryId), "/diary/diary1?entry=garden");
+        assert.equal(diaryCardWhen({
+            query: "garden",
+            matchEntry: fromOlder.entryId,
+            matchAt: fromOlder.entryAt,
+            updatedAt: created,
+            createdAt: created,
+        }), formatDiaryDate(older));
 
         const newest = diaryListMatch(diary, [garden, rain], "rain");
         assert.equal(newest.entryId, "rain");
+        assert.equal(newest.entryAt, created);
 
         const title = diaryListMatch(diary, [rain, garden], "window");
         assert.equal(title.entryId, null);
+        assert.equal(title.entryAt, null);
         assert.equal(diaryMatchPath("diary1", title.entryId), "/diary/diary1");
+        assert.equal(diaryCardWhen({
+            query: "window",
+            matchEntry: title.entryId,
+            matchAt: title.entryAt,
+            updatedAt: created,
+            createdAt: created,
+        }), `Updated ${formatDiaryDate(created)}`);
 
         const blank = diaryListMatch(diary, [garden], " ");
         assert.equal(blank.entryId, null);
+        assert.equal(blank.entryAt, null);
+        assert.equal(diaryCardWhen({
+            query: "",
+            matchEntry: "garden",
+            matchAt: older,
+            updatedAt: created,
+            createdAt: created,
+        }), `Updated ${formatDiaryDate(created)}`);
     });
 
     it("keeps a diary list search in the address", () => {

@@ -10,8 +10,7 @@ import { coverForTheme } from "@/lib/diary/constants";
 import { diaryListKeyAction, diaryListStep } from "@/lib/diary/keys";
 import { compareDiaries } from "@/lib/diary/order";
 import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
-import { diaryMatchPath } from "@/lib/diary/search";
-import { formatDiaryDate } from "@/lib/diary/text";
+import { diaryCardWhen, diaryMatchPath } from "@/lib/diary/search";
 
 type Diary = {
     _id: string;
@@ -23,6 +22,7 @@ type Diary = {
     updatedAt?: string;
     match?: string | null;
     matchEntry?: string | null;
+    matchAt?: string | null;
 };
 
 const SKELETON_COUNT = 3;
@@ -270,7 +270,13 @@ const Diaries = ({ query = "", refetchTrigger = 0, paused = false }: { query?: s
                                 </p>
                             </div>
                             <p className="text-xs tracking-wide text-zinc-400">
-                                Updated {formatDiaryDate(diary.updatedAt || diary.createdAt)}
+                                {diaryCardWhen({
+                                    query,
+                                    matchEntry: diary.matchEntry,
+                                    matchAt: diary.matchAt,
+                                    updatedAt: diary.updatedAt,
+                                    createdAt: diary.createdAt,
+                                })}
                             </p>
                         </div>
                     </Link>
