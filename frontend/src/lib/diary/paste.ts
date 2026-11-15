@@ -66,7 +66,7 @@ export function selectedPictureKey(input: {
     return "pass";
 }
 
-export type PictureFormat = "keep" | "pass" | "lines";
+export type PictureFormat = "keep" | "pass" | "lines" | "block";
 
 export function pictureFormat(input: { inPicture: boolean; command?: string; kind?: string; leavesPicture?: boolean; outsideSelected?: boolean }): PictureFormat {
     if (!input.inPicture) return "pass";
@@ -82,6 +82,7 @@ export function pictureFormat(input: { inPicture: boolean; command?: string; kin
     ) return "pass";
     if (input.outsideSelected && input.command === "formatBlock") return "pass";
     if (input.outsideSelected && (input.command === "insertUnorderedList" || input.command === "insertOrderedList")) return "lines";
+    if (input.outsideSelected && (input.kind === "code" || input.kind === "divider")) return "block";
     return "keep";
 }
 

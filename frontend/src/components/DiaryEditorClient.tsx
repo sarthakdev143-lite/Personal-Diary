@@ -94,7 +94,7 @@ type ToolButton = {
     command?: string;
     value?: string;
     html?: string;
-    kind?: "image" | "link" | "code";
+    kind?: "image" | "link" | "code" | "divider";
 };
 
 const TOOLBAR: ToolButton[][] = [
@@ -113,7 +113,7 @@ const TOOLBAR: ToolButton[][] = [
         { icon: "≡", title: "Bullet list", command: "insertUnorderedList", format: "ul" },
         { icon: "1.", title: "Numbered list", command: "insertOrderedList", format: "ol" },
         { icon: "❝", title: "Blockquote", command: "formatBlock", value: "blockquote", format: "blockquote" },
-        { icon: "—", title: "Divider", html: "<hr/><p><br></p>" },
+        { icon: "—", title: "Divider", html: "<hr/><p><br></p>", kind: "divider" },
     ],
     [
         { icon: "🖼", title: "Insert image", kind: "image" },
@@ -2647,6 +2647,80 @@ function turnListItemsIntoHeadings(items: HTMLElement[], tag: string): HTMLEleme
     }
     if (first) placeCaretAtStart(first);
     return first;
+}
+
+function sidePiece(block: HTMLElement, range: Range, edge: "before" | "after"): DocumentFragment {
+    const piece = document.createRange();
+    piece.selectNodeContents(block);
+    if (edge === "before") {
+        if (block.contains(range.startContainer)) piece.setEnd(range.startContainer, range.startOffset);
+        else piece.collapse(true);
+    } else if (block.contains(range.endContainer)) piece.setStart(range.endContainer, range.endOffset);
+    else piece.collapse(false);
+    return piece.cloneContents();
+}
+
+function pieceKept(fragment: DocumentFragment): boolean {
+    if ((fragment.textContent ?? "").length > 0) return true;
+    return [...fragment.childNodes].some((node) => node instanceof HTMLElement && node.tagName !== "BR");
+}
+
+function placeBlockAroundPicture(editor: HTMLElement, range: Range, kind: "divider" | "code"): boolean {
+    if (range.collapsed) return false;
+    const children = [...editor.childNodes].filter((node): node is HTMLElement => node instanceof HTMLElement);
+    const top = (node: Node) => {
+        const host = node instanceof Element ? node : node.parentElement;
+        if (!(host instanceof HTMLElement) || !editor.contains(host)) return null;
+        let block: HTMLElement = host;
+        while (block.parentElement && block.parentElement !== editor) block = block.parentElement;
+        return block.parentElement === editor ? block : null;
+    };
+    const start = top(range.startContainer);
+    const end = top(range.endContainer);
+    if (!start || !end || !start.matches("p, h1, h2, h3") || !end.matches("p, h1, h2, h3")) return false;
+    const startIndex = children.indexOf(start);
+    const endIndex = children.indexOf(end);
+    if (startIndex < 0 || endIndex <= startIndex) return false;
+    const between = children.slice(startIndex, endIndex + 1);
+    if (between.some((block) => !block.matches("p, h1, h2, h3, figure"))) return false;
+    const figure = between.find((block) => block.tagName === "FIGURE");
+    if (!figure) return false;
+    const prefix = sidePiece(start, range, "before");
+    const suffix = sidePiece(end, range, "after");
+    const keepPrefix = pieceKept(prefix);
+    const keepSuffix = pieceKept(suffix);
+    if (keepPrefix) start.replaceChildren(prefix);
+    else start.remove();
+    for (const block of between.slice(1, -1)) {
+        if (block.tagName !== "FIGURE") block.remove();
+    }
+    if (keepSuffix) end.replaceChildren(suffix);
+    else end.remove();
+    const built = listBlockNodes(kind);
+    if (keepPrefix && start.isConnected) {
+        let point: HTMLElement = start;
+        for (const node of built.nodes) {
+            point.after(node);
+            point = node;
+        }
+    } else {
+        for (const node of built.nodes) figure.before(node);
+    }
+    if (kind === "code") {
+        finishListBlock(editor, kind, built.code, built.caret);
+        return true;
+    }
+    built.caret.remove();
+    if (keepSuffix && end.isConnected) {
+        placeCaretAtStart(end);
+        return true;
+    }
+    const lastFigure = [...between].reverse().find((block) => block.tagName === "FIGURE" && block.isConnected) ?? figure;
+    const paragraph = document.createElement("p");
+    paragraph.appendChild(document.createElement("br"));
+    lastFigure.after(paragraph);
+    placeCaretAtStart(paragraph);
+    return true;
 }
 
 function listWritingAroundPicture(editor: HTMLElement, range: Range, ordered: boolean): boolean {
@@ -6857,6 +6931,20 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             const touched = touchedQuoteBlocks(editorForTool, range);
             const path = touched[0] ? childPath(editorForTool, touched[0]) : undefined;
             if (listWritingAroundPicture(editorForTool, range, tool.command === "insertOrderedList")) {
+                keepBlank({ before, after: editorForTool.innerHTML, path });
+                setHtmlContent(editorForTool.innerHTML);
+                updateActiveFormats();
+            }
+            return;
+        }
+        if (pictureAction === "block" && editorForTool && toolSelection?.rangeCount && (tool.kind === "divider" || tool.kind === "code")) {
+            const before = editorForTool.innerHTML;
+            const range = toolSelection.getRangeAt(0);
+            const host = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+            let block: HTMLElement | null = host instanceof HTMLElement ? host : null;
+            while (block && block.parentElement && block.parentElement !== editorForTool) block = block.parentElement;
+            const path = block && block.parentElement === editorForTool ? childPath(editorForTool, block) : undefined;
+            if (placeBlockAroundPicture(editorForTool, range, tool.kind)) {
                 keepBlank({ before, after: editorForTool.innerHTML, path });
                 setHtmlContent(editorForTool.innerHTML);
                 updateActiveFormats();
