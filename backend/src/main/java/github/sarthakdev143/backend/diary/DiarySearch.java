@@ -168,13 +168,17 @@ public final class DiarySearch {
         if (contains(opening, query)) {
             return null;
         }
-        return textWindow(description, query);
+        return matchWindow(description, query);
     }
 
     private static String textWindow(String text, String query) {
         if (text.length() <= 90) {
             return text;
         }
+        return matchWindow(text, query);
+    }
+
+    private static String matchWindow(String text, String query) {
         Fold folded = fold(text);
         int index = folded.text().toLowerCase(Locale.ROOT).indexOf(query.toLowerCase(Locale.ROOT));
         int origin = index >= 0 ? folded.starts()[index] : text.toLowerCase(Locale.ROOT).indexOf(query.toLowerCase(Locale.ROOT));

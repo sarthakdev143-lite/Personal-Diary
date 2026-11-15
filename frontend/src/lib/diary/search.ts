@@ -80,8 +80,7 @@ type ListedEntry = {
 // Two lines of a diary card fit about this many characters.
 const CARD_OPENING = 48;
 
-function textWindow(text: string, query: string): string {
-    if (text.length <= 90) return text;
+function matchWindow(text: string, query: string): string {
     const range = matchRange(text, query);
     const index = range ? range.start : text.toLowerCase().indexOf(query.toLowerCase());
     const matchLength = range ? range.end - range.start : query.length;
@@ -91,6 +90,11 @@ function textWindow(text: string, query: string): string {
     if (start > 0) snippet = `…${snippet}`;
     if (end < text.length) snippet = `${snippet}…`;
     return snippet;
+}
+
+function textWindow(text: string, query: string): string {
+    if (text.length <= 90) return text;
+    return matchWindow(text, query);
 }
 
 function matchingPiece(entry: ListedEntry, query: string): string {
@@ -105,7 +109,7 @@ function matchingPiece(entry: ListedEntry, query: string): string {
 function descriptionSnippet(description: string, query: string): string | null {
     const opening = description.length <= CARD_OPENING ? description : description.slice(0, CARD_OPENING);
     if (foldedIncludes(opening, query)) return null;
-    return textWindow(description, query);
+    return matchWindow(description, query);
 }
 
 export function entryCardPreview(entry: {
