@@ -458,6 +458,10 @@ export function pictureHeadingContinue(input: { heading: boolean; next: "text" |
     return "into";
 }
 
+export function pictureHeadingBefore(input: { heading: boolean }): PictureHeadingContinue {
+    return input.heading ? "apart" : "into";
+}
+
 export function captionBreakText(before: string, after: string): { name: string; next: string } {
     const cut = boundarySpaceCut(before, after);
     if (!cut) return { name: before, next: after };
