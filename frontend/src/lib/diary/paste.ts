@@ -358,6 +358,13 @@ export function picturePasteWords(input: { collapsed: boolean; touchesPicture: b
     return "keep";
 }
 
+export type PastedPictureLine = "paragraph" | "leave";
+
+export function pastedPictureLine(input: { parent: "page" | "line"; beside: "picture" | "other" }): PastedPictureLine {
+    if (input.parent === "page" && input.beside === "picture") return "paragraph";
+    return "leave";
+}
+
 export type PictureNameSelection = "edit" | "pass";
 
 export function pictureNameSelection(input: {

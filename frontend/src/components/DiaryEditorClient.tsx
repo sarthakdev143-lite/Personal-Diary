@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureForwardDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureForwardDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pastedPictureLine, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -5282,6 +5282,28 @@ function pictureNameHost(editor: HTMLElement, selection: Selection): HTMLElement
     return start;
 }
 
+function settlePastedPictureLine(editor: HTMLElement) {
+    const selection = window.getSelection();
+    if (!selection?.rangeCount) return;
+    const node = selection.anchorNode;
+    if (!(node instanceof Text) || node.parentElement !== editor) return;
+    const next = node.nextSibling;
+    const previous = node.previousSibling;
+    const beside = (next instanceof HTMLElement && next.tagName === "FIGURE")
+        || (previous instanceof HTMLElement && previous.tagName === "FIGURE")
+        ? "picture"
+        : "other";
+    if (pastedPictureLine({ parent: "page", beside }) !== "paragraph") return;
+    const paragraph = document.createElement("p");
+    node.before(paragraph);
+    paragraph.appendChild(node);
+    const caret = document.createRange();
+    caret.setStart(node, node.data.length);
+    caret.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(caret);
+}
+
 function writeCaretText(text: string) {
     if (!text) return;
     const selection = window.getSelection();
@@ -6071,6 +6093,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 else if (decision.action === "html") document.execCommand("insertHTML", false, decision.html);
                 else if (decision.action === "plain") writeCaretText(decision.text);
                 else if (decision.action === "default") writeCaretText(data.getData("text/plain"));
+                settlePastedPictureLine(editor);
                 keepReplacedSelection(mark);
                 setHtmlContent(editor.innerHTML);
                 return;
