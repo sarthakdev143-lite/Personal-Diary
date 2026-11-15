@@ -3,6 +3,7 @@ package github.sarthakdev143.backend.diary;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -96,8 +97,52 @@ public final class DiarySearch {
         return contains(searchText(note, zone), query);
     }
 
+    private record Fold(String text, int[] starts, int[] ends) {
+    }
+
     private static boolean contains(String haystack, String needle) {
-        return haystack != null && haystack.toLowerCase(Locale.ROOT).contains(needle.toLowerCase(Locale.ROOT));
+        if (haystack == null || needle == null) {
+            return false;
+        }
+        return fold(haystack).text().toLowerCase(Locale.ROOT).contains(needle.toLowerCase(Locale.ROOT));
+    }
+
+    private static boolean isSearchSpace(char value) {
+        return Character.isWhitespace(value) || value == '\u00a0';
+    }
+
+    private static Fold fold(String text) {
+        StringBuilder chars = new StringBuilder();
+        int[] starts = new int[text.length()];
+        int[] ends = new int[text.length()];
+        int count = 0;
+        int index = 0;
+        while (index < text.length()) {
+            char current = text.charAt(index);
+            if (!isSearchSpace(current)) {
+                chars.append(current);
+                starts[count] = index;
+                ends[count] = index + 1;
+                count += 1;
+                index += 1;
+                continue;
+            }
+            int next = index + 1;
+            while (next < text.length() && isSearchSpace(text.charAt(next))) {
+                next += 1;
+            }
+            boolean punctuation = next < text.length() && ".,;:!?".indexOf(text.charAt(next)) >= 0;
+            if (next >= text.length() || punctuation || chars.isEmpty()) {
+                index = next;
+                continue;
+            }
+            chars.append(' ');
+            starts[count] = index;
+            ends[count] = next;
+            count += 1;
+            index = next;
+        }
+        return new Fold(chars.toString(), Arrays.copyOf(starts, count), Arrays.copyOf(ends, count));
     }
 
     private static String searchText(Note note, ZoneId zone) {
@@ -129,10 +174,12 @@ public final class DiarySearch {
         if (text.length() <= 90) {
             return text;
         }
-        String needle = query.toLowerCase(Locale.ROOT);
-        int index = text.toLowerCase(Locale.ROOT).indexOf(needle);
-        int start = Math.max(0, index - 28);
-        int end = Math.min(text.length(), Math.max(index, 0) + query.length() + 36);
+        Fold folded = fold(text);
+        int index = folded.text().toLowerCase(Locale.ROOT).indexOf(query.toLowerCase(Locale.ROOT));
+        int origin = index >= 0 ? folded.starts()[index] : text.toLowerCase(Locale.ROOT).indexOf(query.toLowerCase(Locale.ROOT));
+        int matchLength = index >= 0 ? folded.ends()[index + query.length() - 1] - origin : query.length();
+        int start = Math.max(0, origin - 28);
+        int end = Math.min(text.length(), Math.max(origin, 0) + matchLength + 36);
         String window = text.substring(start, end).trim();
         if (start > 0) {
             window = "…" + window;
