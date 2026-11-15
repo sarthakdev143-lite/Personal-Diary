@@ -1151,11 +1151,15 @@ export function monthLabel(key: string): string {
 }
 
 export function entryMonths(dates: string[]): EntryMonth[] {
+    return entryFindMonths(dates.map((createdAt) => ({ createdAt, matches: true })));
+}
+
+export function entryFindMonths(entries: readonly { createdAt: string; matches: boolean }[]): EntryMonth[] {
     const counts = new Map<string, number>();
-    for (const value of dates) {
-        const key = monthKey(value);
+    for (const entry of entries) {
+        const key = monthKey(entry.createdAt);
         if (!key) continue;
-        counts.set(key, (counts.get(key) ?? 0) + 1);
+        counts.set(key, (counts.get(key) ?? 0) + (entry.matches ? 1 : 0));
     }
 
     return [...counts.entries()]
