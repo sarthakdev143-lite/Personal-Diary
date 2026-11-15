@@ -1182,6 +1182,11 @@ export function emptyEntryListMessage(query: string, month: string): string {
     return `No entries in ${when}.`;
 }
 
+export function entryFindCountLabel(count: number, query: string): string | null {
+    if (!query.trim() || count < 1) return null;
+    return count === 1 ? "1 entry" : `${count} entries`;
+}
+
 export function retitleEntryDate(html: string, fromLabel: string, toLabel: string): string {
     if (!fromLabel || !toLabel || fromLabel === toLabel) return html;
     const prefix = `<h2>${fromLabel}</h2>`;
