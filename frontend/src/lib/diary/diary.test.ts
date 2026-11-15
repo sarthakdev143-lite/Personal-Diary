@@ -552,6 +552,17 @@ describe("code block", () => {
         assert.deepEqual(wordDeleteSpan("See Harbor,rain", 4, 10), { start: 4, end: 11 });
         assert.deepEqual(wordDeleteSpan("See Harbor,rain", 10, 11), { start: 4, end: 11 });
         assert.equal(wordDeleteGap("See Harbor,rain", 4, 10), "after");
+        assert.deepEqual(wordDeleteSpan("See Don't rain", 4, 7), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See Don't rain", 4, 8), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See Don't rain", 7, 9), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See Don't rain", 8, 9), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See Don\u2019t rain", 4, 7), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See Harbor's rain", 4, 10), { start: 4, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See Harbor's rain", 10, 12), { start: 4, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See O'Brien rain", 4, 5), { start: 4, end: 12 });
+        assert.deepEqual(wordDeleteSpan("See boys' toys", 4, 8), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See 'Harbor' rain", 5, 11), { start: 4, end: 13 });
+        assert.equal(wordDeleteGap("See Don't rain", 4, 7), "after");
         assert.deepEqual(wordDeleteSpan('See "Harbor" rain', 5, 11), { start: 4, end: 13 });
         assert.deepEqual(wordDeleteSpan("See (Harbor) rain", 5, 11), { start: 4, end: 13 });
         assert.deepEqual(cutRemoval("See Harbor rain", 4, 10), { start: 4, end: 11, gap: "after" });
