@@ -880,6 +880,28 @@ export function italicInQuote(input: { inQuote: boolean; inItalic: boolean; coll
     return "mark";
 }
 
+export function typedQuoteUndoCaret(offset: number): number | null {
+    if (!Number.isFinite(offset) || offset < 0) return null;
+    return Math.floor(offset);
+}
+
+export type QuoteItalicKey = "keep" | "release" | "clear";
+
+export function quoteItalicKey(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    held: boolean;
+}): QuoteItalicKey {
+    const typing = input.key.length === 1 && !input.ctrlKey && !input.metaKey && !input.altKey;
+    const modifier = input.key === "Control" || input.key === "Meta" || input.key === "Alt" || input.key === "Shift";
+    if (typing || modifier || styleShortcut(input) === "italic") return "keep";
+    if (input.held) return "release";
+    return "clear";
+}
+
 export type ListCommand = "lift" | "pass";
 
 export function listCommand(command: string): ListCommand {
