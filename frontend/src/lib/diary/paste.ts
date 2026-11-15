@@ -514,6 +514,11 @@ export function pictureHeadingContinue(input: { heading: boolean; next: "text" |
     return "into";
 }
 
+export function pictureListContinue(input: { item: boolean; next: "text" | "block" | "none" }): PictureHeadingContinue {
+    if (input.item && input.next === "text") return "apart";
+    return "into";
+}
+
 export function pictureHeadingBefore(input: { heading: boolean }): PictureHeadingContinue {
     return input.heading ? "apart" : "into";
 }

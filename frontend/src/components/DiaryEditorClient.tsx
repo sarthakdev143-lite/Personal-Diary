@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureForwardDelete, pictureGapDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBackspaceFollows, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, pictureCutText, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureForwardDelete, pictureGapDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBackspaceFollows, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, pictureCutText, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureListContinue, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -628,6 +628,21 @@ function splitBesidePicture(block: HTMLElement, figure: HTMLElement, side: "befo
             block.after(paragraph);
             paragraph.after(rest);
             placeCaretAtStart(paragraph);
+            return;
+        }
+        if (pictureListContinue({ item: block.tagName === "LI", next: kind }) === "apart" && neighbor instanceof Text) {
+            const opening = document.createElement("li");
+            opening.appendChild(document.createElement("br"));
+            const rest = document.createElement("li");
+            let moving: ChildNode | null = neighbor;
+            while (moving) {
+                const following: ChildNode | null = moving.nextSibling;
+                rest.append(moving);
+                moving = following;
+            }
+            block.after(opening);
+            opening.after(rest);
+            placeCaretAtStart(opening);
             return;
         }
     }
