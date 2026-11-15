@@ -194,7 +194,7 @@ public final class DiaryMarkdown {
                 String heading = renderInline(element.childNodes()).trim();
                 if (!heading.isEmpty()) {
                     String level = tag.equals("h1") ? "#" : tag.equals("h2") ? "##" : "###";
-                    parts.add(level + " " + heading);
+                    parts.add(headingMarkdown(level, heading));
                 }
                 continue;
             }
@@ -303,6 +303,20 @@ public final class DiaryMarkdown {
                 body.append(pad);
             }
             body.append(lines[index]);
+        }
+        return body.toString();
+    }
+
+    private static String headingMarkdown(String level, String text) {
+        String[] lines = text.split("\n", -1);
+        StringBuilder body = new StringBuilder();
+        for (int index = 0; index < lines.length; index += 1) {
+            if (index > 0) {
+                body.append('\n');
+            }
+            if (!lines[index].isEmpty()) {
+                body.append(level).append(' ').append(lines[index]);
+            }
         }
         return body.toString();
     }

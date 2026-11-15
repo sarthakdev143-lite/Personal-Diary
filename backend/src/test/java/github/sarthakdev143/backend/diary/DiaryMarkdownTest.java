@@ -74,6 +74,13 @@ class DiaryMarkdownTest {
     }
 
     @Test
+    void keepsALineBreakInsideAHeadingOnEachLine() {
+        assertEquals("## Harbor\n## rain", DiaryMarkdown.htmlToMarkdown("<h2>Harbor<br>rain</h2>"));
+        assertEquals("# See **Harbor**\n# **rain**", DiaryMarkdown.htmlToMarkdown("<h1>See <b>Harbor<br>rain</b></h1>"));
+        assertEquals("### Harbor\n\n### rain", DiaryMarkdown.htmlToMarkdown("<h3>Harbor<br><br>rain</h3>"));
+    }
+
+    @Test
     void keepsAListThatWasNestedInsideAParagraph() {
         String markdown = DiaryMarkdown.htmlToMarkdown("<p><ol><li>one</li><li>two</li></ol></p>");
         assertTrue(markdown.contains("1. one\n2. two"));
