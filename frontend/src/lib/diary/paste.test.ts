@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -339,6 +339,14 @@ describe("entry paste", () => {
         assert.equal(picturePasteWords({ ...crossed, collapsed: true }), "pass");
         assert.equal(picturePasteWords({ ...crossed, outsideSelected: false }), "pass");
         assert.equal(picturePasteWords({ ...crossed, touchesPicture: false }), "pass");
+    });
+
+    it("leaves a picture when a word delete reaches it", () => {
+        const edge = { word: true, touchesPicture: true, outsideSelected: true };
+        assert.equal(pictureWordEdge(edge), "hold");
+        assert.equal(pictureWordEdge({ ...edge, word: false }), "pass");
+        assert.equal(pictureWordEdge({ ...edge, touchesPicture: false }), "pass");
+        assert.equal(pictureWordEdge({ ...edge, outsideSelected: false }), "pass");
     });
 
     it("cuts the words around a picture and leaves the picture", () => {
