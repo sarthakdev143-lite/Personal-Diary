@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureInlineBackspace, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -287,6 +287,15 @@ describe("entry paste", () => {
         assert.equal(pictureFormat({ inPicture: true, kind: "image" }), "keep");
         assert.equal(pictureInsert({ inPicture: true, inItem: false, leavesPicture: true }), "span");
         assert.equal(pictureInsert({ inPicture: true, inItem: false }), "after");
+    });
+
+    it("starts the next line beside a picture and leaves the picture whole", () => {
+        const beside = { collapsed: true, besidePicture: true };
+        assert.equal(pictureInlineEnter({ key: "Enter", ...beside }), "split");
+        assert.equal(pictureInlineEnter({ key: "Enter", collapsed: true, besidePicture: false }), "pass");
+        assert.equal(pictureInlineEnter({ key: "Enter", collapsed: false, besidePicture: true }), "pass");
+        assert.equal(pictureInlineEnter({ key: "Enter", shiftKey: true, ...beside }), "pass");
+        assert.equal(pictureInlineEnter({ key: "Backspace", ...beside }), "pass");
     });
 
     it("keeps the word after a picture in the line out of the picture name", () => {
