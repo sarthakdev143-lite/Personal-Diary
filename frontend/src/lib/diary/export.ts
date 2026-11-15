@@ -99,6 +99,16 @@ function wrapInline(inner: string, open: string, close: string): string {
     return `${leading}${open}${core}${close}${trailing}`;
 }
 
+function captionHasStyle(node: ElementNode): boolean {
+    const styled = new Set(["b", "strong", "i", "em", "u", "s", "strike", "del", "a", "code"]);
+    const visit = (child: HtmlNode): boolean => {
+        if (child.kind === "text") return false;
+        if (styled.has(child.tag)) return true;
+        return child.children.some(visit);
+    };
+    return node.children.some(visit);
+}
+
 function renderInline(nodes: HtmlNode[]): string {
     return nodes.map((node) => {
         if (node.kind === "text") return node.text.replace(/\s+/g, " ");
@@ -188,8 +198,13 @@ function renderBlocks(nodes: HtmlNode[]): string {
 
         if (node.tag === "figure") {
             const image = node.children.find((child): child is ElementNode => child.kind === "el" && child.tag === "img");
+            const caption = node.children.find((child): child is ElementNode => child.kind === "el" && child.tag === "figcaption");
             if (image) {
                 parts.push(renderInline([image]));
+                if (caption && captionHasStyle(caption)) {
+                    const line = renderInline(caption.children).trim();
+                    if (line) parts.push(line);
+                }
                 continue;
             }
         }
