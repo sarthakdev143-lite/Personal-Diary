@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
-import { buildEntrySearchFilter, diaryCardWhen, diaryFieldsMatch, diaryListAddress, diaryListMatch, diaryListNavigation, diaryMatchPath, diaryReturnAddress, diaryReturnQuery, entriesForQuery, entryCardPreview, entryListQueryAddress, entryMonthAddress, openedDiaryQuery, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryFindAddress, entryFromAddress, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery, openedEntryMonth, openedEntryQuery, textPieceHits, textRunHits, titleCardText } from "./search";
+import { buildEntrySearchFilter, diaryCardWhen, diaryFieldsMatch, diaryListAddress, diaryListMatch, diaryListNavigation, diaryMatchPath, diaryReturnAddress, diaryReturnQuery, entriesForQuery, entryCardClock, entryCardPreview, entryListQueryAddress, entryMonthAddress, openedDiaryQuery, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryFindAddress, entryFromAddress, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery, openedEntryMonth, openedEntryQuery, textPieceHits, textRunHits, titleCardText } from "./search";
 import { calendarDate, diaryFindCountLabel, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryFindMonths, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, dateHeadingCommand, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, formatDiaryDate, formatEntryLong, formatEntryTime, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, codePullUndoCaret, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, blankUndoCaret, joinUndoCaret, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, calendarDateFromLabel, dateFieldAfterEdit, dateRetitleAction, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries, compareDiaryMatches } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
@@ -1764,6 +1764,19 @@ describe("search", () => {
         assert.equal(entryCardPreview(entry, "Sunday"), "Quiet rain.");
         assert.equal(entryCardPreview(entry, "09:30"), "Quiet rain.");
         assert.equal(entryCardPreview(entry, "Quiet"), "Quiet rain.");
+    });
+
+    it("keeps the written time on an edited entry card", () => {
+        const created = new Date(2026, 10, 15, 9, 30).toISOString();
+        const revised = new Date(new Date(created).getTime() + 5000).toISOString();
+        assert.deepEqual(entryCardClock(created, created), { time: formatEntryTime(created), edited: false });
+        assert.deepEqual(entryCardClock(created, revised), { time: formatEntryTime(created), edited: true });
+        assert.equal(entryMatchesListQuery({
+            content: "<p>Quiet rain.</p>",
+            plainText: "Quiet rain.",
+            createdAt: created,
+            updatedAt: revised,
+        }, `${formatEntryTime(created).slice(-2)} edited`), false);
     });
 
     it("marks each matched word without changing its letters", () => {
