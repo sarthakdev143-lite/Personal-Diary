@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -137,6 +137,12 @@ describe("entry paste", () => {
             title: "Image is too large",
             description: "Choose an image under 150 KB.",
         });
+    });
+
+    it("keeps a picture under the date and leaves that date whole", () => {
+        assert.equal(datePicture({ onDate: "only" }), "after");
+        assert.equal(datePicture({ onDate: "with-writing" }), "replace");
+        assert.equal(datePicture({ onDate: "none" }), "pass");
     });
 
     it("keeps a picture on its own line in a list and puts the next picture after it", () => {

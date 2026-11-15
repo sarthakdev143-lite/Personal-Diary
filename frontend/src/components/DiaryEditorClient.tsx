@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -2729,6 +2729,26 @@ function placeCaretInPicture(picture: HTMLElement) {
     selection?.addRange(range);
 }
 
+function openPictureOnDate(editor: HTMLElement, range: Range, src: string, name: string): { before: string; path: number[] } | null {
+    const span = dateSelectionSpan(editor, window.getSelection());
+    const action = datePicture({ onDate: span });
+    if (action === "pass") return null;
+    const heading = editor.firstElementChild;
+    if (!(heading instanceof HTMLElement) || !editor.contains(heading)) return null;
+    const before = editor.innerHTML;
+    if (action === "replace") {
+        const clipped = range.cloneRange();
+        if (!pointAfterDate(heading, range.startContainer, range.startOffset)) clipped.setStartAfter(heading);
+        clipped.deleteContents();
+    }
+    const picture = buildPicture(src, name);
+    const next = heading.nextSibling;
+    if (next) next.before(picture);
+    else heading.after(picture);
+    placeCaretInPicture(picture);
+    return { before, path: childPath(editor, heading) };
+}
+
 function openPicture(editor: HTMLElement, range: Range, src: string, name: string): { before: string; path: number[] } | null {
     const anchor = anchoredPicture(range, editor);
     const host = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
@@ -3110,6 +3130,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const saveHintRef = useRef<HTMLSpanElement>(null);
     const linkRange = useRef<Range | null>(null);
     const imageRange = useRef<Range | null>(null);
+    const pictureRangeSaved = useRef(false);
     const pictureRemoval = useRef<{ before: string; after: string } | null>(null);
     const headingSplit = useRef<{ before: string; after: string; tag: string; text: string; offset: number } | null>(null);
     const blankLine = useRef<{ before: string; after: string; path?: number[]; caret?: number; breakIndex?: number; breakSide?: "before" | "after"; sticky?: boolean; typed?: string; typedCaret?: number; resume?: "plain"; enterStyle?: boolean } | null>(null);
@@ -3681,13 +3702,23 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         updateActiveFormats();
     }, [updateActiveFormats]);
 
-    const startPictureQueue = (files: File[]) => {
-        if (!files.length) return;
+    const rememberPictureRange = () => {
         const editor = editorRef.current;
         const selection = window.getSelection();
-        imageRange.current = selection && selection.rangeCount > 0 && editor?.contains(selection.anchorNode)
-            ? selection.getRangeAt(0).cloneRange()
-            : null;
+        if (!editor || !selection?.rangeCount || !editor.contains(selection.anchorNode)) return false;
+        imageRange.current = selection.getRangeAt(0).cloneRange();
+        return true;
+    };
+
+    const startPictureQueue = (files: File[], saved = false) => {
+        if (!files.length) return;
+        if (!saved) {
+            const editor = editorRef.current;
+            const selection = window.getSelection();
+            imageRange.current = selection && selection.rangeCount > 0 && editor?.contains(selection.anchorNode)
+                ? selection.getRangeAt(0).cloneRange()
+                : null;
+        }
         let remaining = files.length;
         const sources = new Array<string>(files.length).fill("");
         const finish = () => {
@@ -3711,20 +3742,25 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         });
     };
 
-    const insertImageFile = (file: File) => {
-        startPictureQueue([file]);
+    const insertImageFile = (file: File, saved = false) => {
+        startPictureQueue([file], saved);
     };
 
     const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         e.target.value = "";
-        if (!file) return;
+        if (!file) {
+            pictureRangeSaved.current = false;
+            return;
+        }
         const issue = imageFileIssue(file);
         if (issue) {
+            pictureRangeSaved.current = false;
             toast({ title: issue.title, description: issue.description, variant: "destructive" });
             return;
         }
-        insertImageFile(file);
+        insertImageFile(file, pictureRangeSaved.current);
+        pictureRangeSaved.current = false;
     }, [toast]);
 
     const dateLineLabel = () => {
@@ -4559,11 +4595,15 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 selection.addRange(range);
             }
         }
-        const opened = editor && selection?.rangeCount
+        const onDate = editor && selection?.rangeCount
+            ? openPictureOnDate(editor, selection.getRangeAt(0), current, imageAlt)
+            : null;
+        const opened = !onDate && editor && selection?.rangeCount
             ? openPicture(editor, selection.getRangeAt(0), current, imageAlt)
             : null;
-        if (opened && editor) {
-            keepBlank({ before: opened.before, after: editor.innerHTML, path: opened.path });
+        const placed = onDate ?? opened;
+        if (placed && editor) {
+            keepBlank({ before: placed.before, after: editor.innerHTML, path: placed.path });
             setHtmlContent(editor.innerHTML);
             updateActiveFormats();
         } else {
@@ -6164,6 +6204,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             kind: tool.kind,
         }) === "keep") return;
         if (tool.kind === "image") {
+            pictureRangeSaved.current = rememberPictureRange();
             fileInputRef.current?.click();
             return;
         }
