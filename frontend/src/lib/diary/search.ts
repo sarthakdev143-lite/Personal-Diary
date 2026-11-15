@@ -33,17 +33,29 @@ function matchRange(text: string, query: string): { start: number; end: number }
 }
 
 // One line of a diary title fits about this many characters.
-const TITLE_LINE = 18;
+const TITLE_LINE = 21;
+const TITLE_LEAD = 8;
+const TITLE_TAIL = 8;
+const TITLE_WINDOW = 19;
+
+function titleWindow(title: string, range: { start: number; end: number }): string {
+    for (let lead = TITLE_LEAD; lead >= 0; lead -= 1) {
+        const start = Math.max(0, range.start - lead);
+        const body = title.slice(start, Math.min(title.length, range.end + TITLE_TAIL)).trim();
+        const atWord = start === 0 || (/\s/.test(title[start - 1] ?? "") && !/\s/.test(body[0] ?? ""));
+        if ((body.length <= TITLE_WINDOW && atWord) || lead === 0) {
+            return start > 0 ? `…${body}` : body;
+        }
+    }
+    return title;
+}
 
 export function titleCardText(title: string, rawQuery: string): string {
     const query = normalizeSearchQuery(rawQuery);
     if (!query) return title;
     const range = matchRange(title, query);
-    if (!range || range.start < TITLE_LINE) return title;
-    const start = Math.max(0, range.start - 8);
-    let snippet = title.slice(start, Math.min(title.length, range.end + 8)).trim();
-    if (start > 0) snippet = `…${snippet}`;
-    return snippet;
+    if (!range || range.end <= TITLE_LINE) return title;
+    return titleWindow(title, range);
 }
 
 export function diaryFieldsMatch(title: string, description: string, rawQuery: string): boolean {
