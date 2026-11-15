@@ -1337,7 +1337,7 @@ export function showOpenEntry<T extends { _id: string }>(
     confirming = false,
 ): boolean {
     if (mode !== "view" || confirming) return true;
-    if (!currentId) return true;
+    if (!currentId) return visible.length > 0;
     return visible.some((entry) => entry._id === currentId);
 }
 

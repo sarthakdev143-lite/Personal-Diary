@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
-import { buildEntrySearchFilter, diaryCardWhen, diaryFieldsMatch, diaryListAddress, diaryListMatch, diaryListNavigation, diaryMatchPath, entriesForQuery, entryCardPreview, entryMonthAddress, openedDiaryQuery, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryFindAddress, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery, openedEntryMonth, openedEntryQuery, textPieceHits, textRunHits } from "./search";
+import { buildEntrySearchFilter, diaryCardWhen, diaryFieldsMatch, diaryListAddress, diaryListMatch, diaryListNavigation, diaryMatchPath, entriesForQuery, entryCardPreview, entryMonthAddress, openedDiaryQuery, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryFindAddress, entryFromAddress, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery, openedEntryMonth, openedEntryQuery, textPieceHits, textRunHits } from "./search";
 import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryFindMonths, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatDiaryDate, formatEntryLong, formatEntryTime, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, codePullUndoCaret, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, blankUndoCaret, joinUndoCaret, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries, compareDiaryMatches } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
@@ -1949,6 +1949,48 @@ describe("entry date", () => {
         assert.equal(showOpenEntry([], "rain", "edit"), true);
         assert.equal(showOpenEntry([], null, "compose"), true);
         assert.equal(showOpenEntry([garden], "rain", "view", true), true);
+        assert.equal(showOpenEntry([], null, "view"), false);
+        assert.equal(showOpenEntry([garden], null, "view"), true);
+    });
+
+    it("keeps a find that matches nothing in the chosen month", () => {
+        const garden = {
+            _id: "garden",
+            createdAt: new Date(2026, 1, 2, 15).toISOString(),
+            updatedAt: new Date(2026, 1, 2, 15).toISOString(),
+            content: "<p>Garden path.</p>",
+            plainText: "Garden path.",
+        };
+        const rain = {
+            _id: "rain",
+            createdAt: new Date(2026, 10, 14, 15).toISOString(),
+            updatedAt: new Date(2026, 10, 14, 15).toISOString(),
+            content: "<p>Quiet rain.</p>",
+            plainText: "Quiet rain.",
+        };
+        const light = {
+            _id: "light",
+            createdAt: new Date(2026, 10, 15, 9).toISOString(),
+            updatedAt: new Date(2026, 10, 15, 9).toISOString(),
+            content: "<p>Window light.</p>",
+            plainText: "Window light.",
+        };
+
+        const missed = entryFromAddress([garden, rain], "rain", "2026-02", "rain");
+        assert.equal(missed.entry, null);
+        assert.equal(missed.query, "rain");
+
+        const named = entryFromAddress([garden], "garden", "2026-02", "rain");
+        assert.equal(named.entry, null);
+        assert.equal(named.query, "rain");
+
+        const older = entryFromAddress([light, rain], "light", "2026-11", "rain");
+        assert.equal(older.entry?._id, "rain");
+        assert.equal(older.query, "rain");
+
+        const plain = entryFromAddress([garden, rain], "rain", "2026-02", "");
+        assert.equal(plain.entry?._id, "garden");
+        assert.equal(plain.query, "");
     });
 
     it("opens the newest saved entry", () => {
