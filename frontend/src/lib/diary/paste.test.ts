@@ -193,6 +193,12 @@ describe("entry paste", () => {
         assert.equal(pictureInsert({ inPicture: true, inItem: true, separateLists: true }), "after");
     });
 
+    it("keeps a picture on its own line when the selection runs from a list line into its nested line", () => {
+        assert.equal(pictureInsert({ inPicture: false, inItem: true, intoNested: true }), "nested");
+        assert.equal(pictureInsert({ inPicture: false, inItem: true }), "line");
+        assert.equal(pictureInsert({ inPicture: true, inItem: true, intoNested: true }), "after");
+    });
+
     it("names a pasted picture and keeps the name out of the markup", () => {
         assert.equal(imageAltText("  sketch   of rain  "), "sketch of rain");
         assert.equal(imageAltText("a".repeat(200)).length, 180);

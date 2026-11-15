@@ -2899,6 +2899,80 @@ function pictureSeparateLists(editor: HTMLElement, range: Range): HTMLElement | 
     return ends.start;
 }
 
+function pictureIntoNested(editor: HTMLElement, range: Range): HTMLElement | null {
+    if (range.collapsed) return null;
+    const start = listItemFrom(range.startContainer, range.startOffset, "start");
+    const end = listItemFrom(range.endContainer, range.endOffset, "end");
+    if (!start || !end || start === end || !editor.contains(start) || !editor.contains(end)) return null;
+    if (start.contains(end)) return start;
+    if (end.contains(start)) return end;
+    return null;
+}
+
+function placePictureIntoNested(range: Range, picture: HTMLElement) {
+    const start = listItemFrom(range.startContainer, range.startOffset, "start");
+    const end = listItemFrom(range.endContainer, range.endOffset, "end");
+    const outer = start && end && start.contains(end) ? start : end && start && end.contains(start) ? end : null;
+    const inner = outer && start && end ? (outer === start ? end : start) : null;
+    const list = outer?.parentElement ?? null;
+    if (!(outer instanceof HTMLElement) || !(list instanceof HTMLUListElement || list instanceof HTMLOListElement)) return;
+    const atStart = itemCaretEdge(outer, range).atStart;
+    const numbers = orderedListNumbers(list);
+    const nestedNumbers = inner?.parentElement && inner.parentElement !== list ? orderedListNumbers(inner.parentElement) : null;
+    range.deleteContents();
+    if (atStart) outer.prepend(picture);
+    else if (range.startContainer === outer || outer.contains(range.startContainer)) range.insertNode(picture);
+    else outer.append(picture);
+    const lifted: Node[] = [];
+    let sibling = picture.nextSibling;
+    while (sibling) {
+        const next = sibling.nextSibling;
+        lifted.push(sibling);
+        sibling.remove();
+        sibling = next;
+    }
+    const afterList = document.createElement(list.tagName.toLowerCase());
+    sibling = outer.nextSibling;
+    while (sibling) {
+        const next = sibling.nextSibling;
+        afterList.append(sibling);
+        sibling = next;
+    }
+    picture.remove();
+    if (outer.isConnected) trimPictureEdge(outer, "end");
+    clearPictureItem(outer);
+    let point: HTMLElement = picture;
+    if (list.isConnected && listItems(list).length) list.after(picture);
+    else if (list.isConnected) list.replaceWith(picture);
+    else return;
+    for (const node of lifted) {
+        if (node instanceof HTMLUListElement || node instanceof HTMLOListElement) {
+            const first = listItems(node)[0] ?? null;
+            if (first) trimPictureEdge(first, "start");
+            for (const item of [...listItems(node)]) clearPictureItem(item);
+            if (!listItems(node).length) continue;
+            point.after(node);
+            point = node;
+            continue;
+        }
+        if (node instanceof Text && node.data.replace(/[\s\u00a0]/g, "") === "") continue;
+        if (node instanceof Text) {
+            const paragraph = document.createElement("p");
+            paragraph.append(node);
+            point.after(paragraph);
+            point = paragraph;
+            continue;
+        }
+        if (!(node instanceof HTMLElement)) continue;
+        point.after(node);
+        point = node;
+    }
+    if (afterList.childNodes.length) point.after(afterList);
+    if (!listItems(list).length) list.remove();
+    if (numbers) restoreOrderedNumbers(numbers);
+    if (nestedNumbers) restoreOrderedNumbers(nestedNumbers);
+}
+
 function orderedListNumbers(list: HTMLElement | null): Map<HTMLElement, number> | null {
     if (!(list instanceof HTMLOListElement)) return null;
     const items = listItems(list);
@@ -3044,8 +3118,9 @@ function openPicture(editor: HTMLElement, range: Range, src: string, name: strin
     const items = pictureItems(editor, range);
     const lists = pictureAcrossLists(editor, range);
     const separate = pictureSeparateLists(editor, range);
+    const nested = pictureIntoNested(editor, range);
     const leaves = pictureLeaves(editor, range);
-    const action = pictureInsert({ inPicture: Boolean(anchor), inItem, inLine: Boolean(line), inCode: Boolean(code), across: Boolean(across), acrossItems: Boolean(items), acrossLists: Boolean(lists), separateLists: Boolean(separate), leavesPicture: leaves });
+    const action = pictureInsert({ inPicture: Boolean(anchor), inItem, inLine: Boolean(line), inCode: Boolean(code), across: Boolean(across), acrossItems: Boolean(items), acrossLists: Boolean(lists), separateLists: Boolean(separate), intoNested: Boolean(nested), leavesPicture: leaves });
     if (action === "pass") return null;
     const before = editor.innerHTML;
     const picture = buildPicture(src, name);
@@ -3064,6 +3139,12 @@ function openPicture(editor: HTMLElement, range: Range, src: string, name: strin
     if (action === "items" && (items || lists)) {
         const path = childPath(editor, items ?? lists!);
         placePictureBetweenItems(range, picture);
+        placeCaretInPicture(picture);
+        return { before, path };
+    }
+    if (action === "nested" && nested) {
+        const path = childPath(editor, nested);
+        placePictureIntoNested(range, picture);
         placeCaretInPicture(picture);
         return { before, path };
     }

@@ -162,13 +162,14 @@ export function pictureUndo(input: {
     return "restore";
 }
 
-export type PictureInsert = "line" | "after" | "split" | "code" | "span" | "items" | "pass";
+export type PictureInsert = "line" | "after" | "split" | "code" | "span" | "items" | "nested" | "pass";
 
-export function pictureInsert(input: { inPicture: boolean; inItem: boolean; inLine?: boolean; inCode?: boolean; across?: boolean; acrossItems?: boolean; acrossLists?: boolean; separateLists?: boolean; leavesPicture?: boolean }): PictureInsert {
+export function pictureInsert(input: { inPicture: boolean; inItem: boolean; inLine?: boolean; inCode?: boolean; across?: boolean; acrossItems?: boolean; acrossLists?: boolean; separateLists?: boolean; intoNested?: boolean; leavesPicture?: boolean }): PictureInsert {
     if (input.inPicture && input.leavesPicture) return "span";
     if (input.inPicture) return "after";
     if (input.acrossItems || input.acrossLists) return "items";
     if (input.separateLists) return "span";
+    if (input.intoNested) return "nested";
     if (input.inItem) return "line";
     if (input.inCode) return "code";
     if (input.inLine) return "split";
