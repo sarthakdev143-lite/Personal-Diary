@@ -2797,6 +2797,58 @@ function trimPictureEdge(block: HTMLElement, edge: "start" | "end") {
     if (!node.data) node.remove();
 }
 
+function placePictureInCode(block: HTMLElement, range: Range, picture: HTMLElement) {
+    if (!range.collapsed && block.contains(range.startContainer) && block.contains(range.endContainer)) range.deleteContents();
+    if (blockIsEmpty(block) || !block.contains(range.startContainer)) {
+        block.replaceWith(picture);
+        return;
+    }
+    const before = range.cloneRange();
+    before.selectNodeContents(block);
+    before.setEnd(range.startContainer, range.startOffset);
+    const after = range.cloneRange();
+    after.selectNodeContents(block);
+    after.setStart(range.endContainer, range.endOffset);
+    const blank = (value: string) => value.replace(/[\u200b\u00a0]/g, "").trim() === "";
+    if (blank(after.toString())) {
+        block.after(picture);
+        return;
+    }
+    if (blank(before.toString())) {
+        block.before(picture);
+        return;
+    }
+    const next = document.createElement("pre");
+    next.append(after.extractContents());
+    trimPictureEdge(block, "end");
+    trimPictureEdge(next, "start");
+    fillEmptyCode(block);
+    fillEmptyCode(next);
+    block.after(picture);
+    picture.after(next);
+}
+
+function fillEmptyCode(block: HTMLElement) {
+    if (!blockIsEmpty(block)) return;
+    let code = block.querySelector("code");
+    if (!(code instanceof HTMLElement)) {
+        code = document.createElement("code");
+        block.append(code);
+    }
+    if (!code.querySelector("br")) code.appendChild(document.createElement("br"));
+}
+
+function pictureCode(editor: HTMLElement, range: Range): HTMLElement | null {
+    const host = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+    const block = host?.closest("pre");
+    if (!(block instanceof HTMLElement) || !editor.contains(block)) return null;
+    if (!range.collapsed) {
+        const endHost = range.endContainer instanceof Element ? range.endContainer : range.endContainer.parentElement;
+        if (endHost?.closest("pre") !== block) return null;
+    }
+    return block;
+}
+
 function pictureLine(editor: HTMLElement, range: Range): HTMLParagraphElement | null {
     const host = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
     const block = host?.closest("p");
@@ -2815,13 +2867,20 @@ function openPicture(editor: HTMLElement, range: Range, src: string, name: strin
     const item = host?.closest("li");
     const inItem = item instanceof HTMLElement && editor.contains(item);
     const line = pictureLine(editor, range);
-    const action = pictureInsert({ inPicture: Boolean(anchor), inItem, inLine: Boolean(line) });
+    const code = pictureCode(editor, range);
+    const action = pictureInsert({ inPicture: Boolean(anchor), inItem, inLine: Boolean(line), inCode: Boolean(code) });
     if (action === "pass") return null;
     const before = editor.innerHTML;
     const picture = buildPicture(src, name);
     if (action === "after" && anchor) {
         const path = childPath(editor, anchor);
         anchor.after(picture);
+        placeCaretInPicture(picture);
+        return { before, path };
+    }
+    if (action === "code" && code) {
+        const path = childPath(editor, code);
+        placePictureInCode(code, range, picture);
         placeCaretInPicture(picture);
         return { before, path };
     }
