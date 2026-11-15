@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureNameAlt, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -286,6 +286,13 @@ describe("entry paste", () => {
         assert.equal(pictureNamePaste({ inName: true, text: "one\r\ntwo" }), "lines");
         assert.equal(pictureNamePaste({ inName: true, text: "rain" }), "pass");
         assert.equal(pictureNamePaste({ inName: false, text: "one\ntwo" }), "pass");
+    });
+
+    it("keeps a picture name with the words as they change", () => {
+        assert.equal(pictureNameAlt({ inName: true, caption: "Bays", alt: "Bay" }), "sync");
+        assert.equal(pictureNameAlt({ inName: true, caption: "Bay", alt: "Bay" }), "keep");
+        assert.equal(pictureNameAlt({ inName: true, caption: "   ", alt: "Bay" }), "sync");
+        assert.equal(pictureNameAlt({ inName: false, caption: "Bays", alt: "Bay" }), "keep");
     });
 
     it("keeps a picture when the selection also holds the writing around it", () => {

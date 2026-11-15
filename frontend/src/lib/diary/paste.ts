@@ -190,6 +190,13 @@ export function pictureNamePaste(input: { inName: boolean; text: string }): Pict
     return /[\r\n]/.test(input.text) ? "lines" : "pass";
 }
 
+export type PictureNameAlt = "sync" | "keep";
+
+export function pictureNameAlt(input: { inName: boolean; caption: string; alt: string | null }): PictureNameAlt {
+    if (!input.inName) return "keep";
+    return imageAltText(input.caption) === (input.alt ?? "") ? "keep" : "sync";
+}
+
 export type PictureNameEnter = "replace" | "continue" | "pass";
 
 export function pictureNameEnter(input: {

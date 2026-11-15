@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureNameAlt, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -674,6 +674,7 @@ function typePictureName(picture: HTMLElement, image: HTMLImageElement, key: str
             caption.textContent = `${caption.textContent ?? ""}${key}`;
             placeCaretAtEnd(caption);
         }
+        syncPictureAlt(picture);
         return;
     }
     const caret = document.createRange();
@@ -5139,6 +5140,19 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
         const redo = redoPage.current;
         if (redo && editor.innerHTML !== redo.undone && editor.innerHTML !== redo.redone) redoPage.current = null;
+        const selection = window.getSelection();
+        const anchor = selection?.anchorNode;
+        const host = anchor instanceof Element ? anchor : anchor?.parentElement ?? null;
+        const caption = host?.closest("figcaption");
+        const figure = caption?.closest("figure");
+        const image = figure?.querySelector("img");
+        if (
+            caption instanceof HTMLElement
+            && figure instanceof HTMLElement
+            && image instanceof HTMLImageElement
+            && editor.contains(caption)
+            && pictureNameAlt({ inName: true, caption: caption.textContent ?? "", alt: image.getAttribute("alt") }) === "sync"
+        ) syncPictureAlt(figure);
         setHtmlContent(editor.innerHTML);
         const followed = dateFieldAfterEdit(editor.innerHTML, entryDate);
         if (followed !== entryDate) setEntryDate(followed);
