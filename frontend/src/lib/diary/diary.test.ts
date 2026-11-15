@@ -536,6 +536,10 @@ describe("code block", () => {
         assert.deepEqual(wordDeleteSpan("See well-known rain", 9, 14), { start: 8, end: 14 });
         assert.deepEqual(wordDeleteSpan("See well-known rain", 8, 9), { start: 8, end: 14 });
         assert.deepEqual(wordDeleteSpan("See well-known rain", 4, 8), { start: 4, end: 9 });
+        assert.deepEqual(wordDeleteSpan("See and/or rain", 8, 10), { start: 7, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See and/or rain", 7, 8), { start: 7, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See and/or rain", 4, 7), { start: 4, end: 8 });
+        assert.deepEqual(wordDeleteSpan("Open http://example now", 12, 19), { start: 12, end: 19 });
         assert.deepEqual(cutRemoval("See Harbor rain", 4, 10), { start: 4, end: 11, gap: "after" });
         assert.deepEqual(cutRemoval("See Harbor rain", 11, 15), { start: 10, end: 15, gap: "before" });
         assert.deepEqual(cutRemoval("See Harbor rain", 4, 7), { start: 4, end: 7, gap: "none" });
@@ -554,6 +558,9 @@ describe("code block", () => {
         assert.equal(wordDeleteGap("See well-known rain", 9, 14), "before");
         assert.equal(wordDeleteGap("See well-known rain", 8, 9), "before");
         assert.equal(wordDeleteGap("See well-known rain", 4, 8), "after");
+        assert.equal(wordDeleteGap("See and/or rain", 8, 10), "before");
+        assert.equal(wordDeleteGap("See and/or rain", 7, 8), "before");
+        assert.equal(wordDeleteGap("See and/or rain", 4, 7), "after");
         assert.deepEqual(wordGapInsert("after", "B"), { text: "B ", caret: 1, pull: false });
         assert.deepEqual(wordGapInsert("after", "Bay"), { text: "Bay ", caret: 3, pull: false });
         assert.deepEqual(wordGapInsert("before", "B"), { text: " B", caret: 2, pull: false });

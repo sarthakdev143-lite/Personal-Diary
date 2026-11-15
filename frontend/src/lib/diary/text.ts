@@ -209,13 +209,13 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         return piece === " " || piece === "\u00a0" || piece === "\t";
     };
     const word = (index: number) => /[\p{L}\p{N}]/u.test(text[index] ?? "");
-    const hyphen = (index: number) => text[index] === "-" || text[index] === "\u2010" || text[index] === "\u2011" || text[index] === "\u2013" || text[index] === "\u2014";
+    const joiner = (index: number) => text[index] === "/" || text[index] === "-" || text[index] === "\u2010" || text[index] === "\u2011" || text[index] === "\u2013" || text[index] === "\u2014";
     if (start < end) {
-        if (hyphen(start - 1) && word(start - 2) && word(start)) start -= 1;
-        else if (end === start + 1 && hyphen(start) && word(start - 1) && word(end)) {
+        if (joiner(start - 1) && word(start - 2) && word(start)) start -= 1;
+        else if (end === start + 1 && joiner(start) && word(start - 1) && word(end)) {
             end += 1;
             while (word(end)) end += 1;
-        } else if (hyphen(end) && word(end - 1) && word(end + 1)) end += 1;
+        } else if (joiner(end) && word(end - 1) && word(end + 1)) end += 1;
     }
     const before = text.slice(0, start).replace(/[\u00a0\s]/g, "");
     const after = text.slice(end).replace(/[\u00a0\s]/g, "");
