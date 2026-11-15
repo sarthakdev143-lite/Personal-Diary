@@ -113,6 +113,12 @@ export function pictureRemovalCaret(input: { next: "text" | "picture" | "block" 
     return "end";
 }
 
+export type PictureRemovalRoute = "ahead" | "plain";
+
+export function pictureRemovalRoute(input: { selected: boolean }): PictureRemovalRoute {
+    return input.selected ? "ahead" : "plain";
+}
+
 export type PictureInlineEnter = "split" | "pass";
 
 export function pictureInlineEnter(input: {
