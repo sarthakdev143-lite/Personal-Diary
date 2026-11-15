@@ -152,7 +152,26 @@ class DiarySearchTest {
         assertFalse(DiarySearch.match("Window notes", "", List.of(revised), "AM edited", ZoneOffset.UTC).matched());
 
         assertEquals("hello", DiarySearch.normalize("  hello  "));
+        assertEquals("Harbor light", DiarySearch.normalize("Harbor  light"));
+        assertEquals("Hello,", DiarySearch.normalize("Hello ,"));
         assertEquals(80, DiarySearch.normalize("x".repeat(100)).length());
+
+        String spacedQuery = "Notes from the path. ".repeat(8) + "Harbor  light at the end.";
+        DiarySearch.Hit acrossSpaces = DiarySearch.match("Window notes", spacedQuery, List.of(), "Harbor  light", ZoneOffset.UTC);
+        assertTrue(acrossSpaces.matched());
+        assertNull(acrossSpaces.entryId());
+        assertTrue(acrossSpaces.snippet().contains("Harbor  light"));
+
+        DiarySearch.Note hello = new DiarySearch.Note(
+                "hello",
+                "<p>Hello, rain</p>",
+                "Hello, rain",
+                NOVEMBER,
+                NOVEMBER);
+        DiarySearch.Hit punctuated = DiarySearch.match("Window notes", "", List.of(hello), "Hello ,", ZoneOffset.UTC);
+        assertTrue(punctuated.matched());
+        assertEquals("hello", punctuated.entryId());
+        assertTrue(punctuated.snippet().contains("Hello, rain"));
     }
 
     @Test
