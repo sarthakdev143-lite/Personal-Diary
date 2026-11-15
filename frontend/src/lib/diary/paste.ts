@@ -97,6 +97,13 @@ export function pictureRemovalHost(tag: string): PictureRemovalHost {
     return PICTURE_REMOVAL_BLOCKS.has(tag.toUpperCase()) ? "block" : "inline";
 }
 
+export type PictureAheadReach = "picture" | "none";
+
+export function pictureAheadReach(input: { sameBlock: boolean; siblingBlock: boolean }): PictureAheadReach {
+    if (input.sameBlock || input.siblingBlock) return "picture";
+    return "none";
+}
+
 export type PictureInlineEnter = "split" | "pass";
 
 export function pictureInlineEnter(input: {
