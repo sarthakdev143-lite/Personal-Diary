@@ -1,5 +1,6 @@
 package github.sarthakdev143.backend.diary;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -128,6 +129,24 @@ class DiarySearchApiTest {
                 .andExpect(jsonPath("$[0].matchAt").value("2026-11-15T09:30:00Z"))
                 .andExpect(jsonPath("$[1]._id").value(savedLater))
                 .andExpect(jsonPath("$[1].matchCount").value(1));
+    }
+
+    @Test
+    void searchShowsADescriptionWordPastTheOpening() throws Exception {
+        saveSession("token-a", "user-a");
+        String id = create("token-a", "Window notes");
+        String description = "Notes from the path. ".repeat(8) + "Harbor light at the end.";
+        mockMvc.perform(put("/api/diaries/" + id)
+                .cookie(cookie("token-a"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"description\":\"" + description + "\"}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/diaries").param("q", "harbor").cookie(cookie("token-a")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0]._id").value(id))
+                .andExpect(jsonPath("$[0].matchEntry").doesNotExist())
+                .andExpect(jsonPath("$[0].match", containsString("Harbor light")));
     }
 
     private String create(String token, String title) throws Exception {

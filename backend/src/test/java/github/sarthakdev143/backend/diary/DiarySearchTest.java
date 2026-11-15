@@ -49,6 +49,20 @@ class DiarySearchTest {
         assertNull(titleOnly.entryAt());
         assertEquals(0, titleOnly.count());
 
+        String lateDescription = "Notes from the path. ".repeat(8) + "Harbor light at the end.";
+        DiarySearch.Hit late = DiarySearch.match("Window notes", lateDescription, List.of(), "harbor", ZoneOffset.UTC);
+        assertTrue(late.matched());
+        assertTrue(late.snippet().contains("Harbor light"));
+        assertNull(late.entryId());
+        assertEquals(0, late.count());
+
+        DiarySearch.Hit early = DiarySearch.match("Window notes", "Harbor light, then a longer story.", List.of(), "harbor", ZoneOffset.UTC);
+        assertTrue(early.matched());
+        assertNull(early.snippet());
+
+        DiarySearch.Hit titled = DiarySearch.match("Harbor", lateDescription, List.of(), "harbor", ZoneOffset.UTC);
+        assertNull(titled.snippet());
+
         DiarySearch.Hit note = DiarySearch.match("Window notes", "Two mornings", List.of(garden, rain), "quiet", ZoneOffset.UTC);
         assertTrue(note.matched());
         assertEquals("Quiet rain on the window.", note.snippet());

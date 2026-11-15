@@ -64,20 +64,32 @@ type ListedEntry = {
     updatedAt: string;
 };
 
+const CARD_OPENING = 110;
+
+function textWindow(text: string, query: string): string {
+    if (text.length <= 90) return text;
+    const index = text.toLowerCase().indexOf(query.toLowerCase());
+    const start = Math.max(0, index - 28);
+    const end = Math.min(text.length, Math.max(index, 0) + query.length + 36);
+    let snippet = text.slice(start, end).trim();
+    if (start > 0) snippet = `…${snippet}`;
+    if (end < text.length) snippet = `${snippet}…`;
+    return snippet;
+}
+
 function matchingPiece(entry: ListedEntry, query: string): string {
     const writing = entry.plainText?.trim() || entryWritingText(entry.content);
     const needle = query.toLowerCase();
     const date = formatEntryLong(entry.createdAt);
     const page = date && date !== "—" && writing ? `${date} ${writing}` : writing;
     const piece = entrySearchParts(entry).find((item) => item.toLowerCase().includes(needle)) ?? page;
-    if (piece.length <= 90) return piece;
-    const index = piece.toLowerCase().indexOf(needle);
-    const start = Math.max(0, index - 28);
-    const end = Math.min(piece.length, Math.max(index, 0) + query.length + 36);
-    let snippet = piece.slice(start, end).trim();
-    if (start > 0) snippet = `…${snippet}`;
-    if (end < piece.length) snippet = `${snippet}…`;
-    return snippet;
+    return textWindow(piece, query);
+}
+
+function descriptionSnippet(description: string, query: string): string | null {
+    const opening = description.length <= CARD_OPENING ? description : description.slice(0, CARD_OPENING);
+    if (opening.toLowerCase().includes(query.toLowerCase())) return null;
+    return textWindow(description, query);
 }
 
 export function entryCardPreview(entry: {
@@ -253,8 +265,12 @@ export function diaryListMatch(
             count: hits.length,
         };
     }
-    if (diaryFieldsMatch(diary.title, diary.description ?? "", query)) {
+    if (diary.title.toLowerCase().includes(query.toLowerCase())) {
         return { matched: true, snippet: null, entryId: null, entryAt: null, count: 0 };
+    }
+    const description = diary.description ?? "";
+    if (description.toLowerCase().includes(query.toLowerCase())) {
+        return { matched: true, snippet: descriptionSnippet(description, query), entryId: null, entryAt: null, count: 0 };
     }
     return { matched: false, snippet: null, entryId: null, entryAt: null, count: 0 };
 }

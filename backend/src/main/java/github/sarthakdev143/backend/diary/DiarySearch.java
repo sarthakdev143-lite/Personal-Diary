@@ -79,8 +79,11 @@ public final class DiarySearch {
             Note newest = hits.get(0);
             return new Hit(true, snippet(newest, query, zone), newest.id(), newest.createdAt(), hits.size());
         }
-        if (contains(title, query) || contains(description == null ? "" : description, query)) {
+        if (contains(title, query)) {
             return new Hit(true, null, null, null, 0);
+        }
+        if (contains(description, query)) {
+            return new Hit(true, descriptionSnippet(description, query), null, null, 0);
         }
         return new Hit(false, null, null, null, 0);
     }
@@ -114,6 +117,32 @@ public final class DiarySearch {
         return text.toString();
     }
 
+    private static String descriptionSnippet(String description, String query) {
+        String opening = description.length() <= 110 ? description : description.substring(0, 110);
+        if (contains(opening, query)) {
+            return null;
+        }
+        return textWindow(description, query);
+    }
+
+    private static String textWindow(String text, String query) {
+        if (text.length() <= 90) {
+            return text;
+        }
+        String needle = query.toLowerCase(Locale.ROOT);
+        int index = text.toLowerCase(Locale.ROOT).indexOf(needle);
+        int start = Math.max(0, index - 28);
+        int end = Math.min(text.length(), Math.max(index, 0) + query.length() + 36);
+        String window = text.substring(start, end).trim();
+        if (start > 0) {
+            window = "…" + window;
+        }
+        if (end < text.length()) {
+            window = window + "…";
+        }
+        return window;
+    }
+
     private static String snippet(Note note, String query, ZoneId zone) {
         String writing = writing(note);
         String clock = clock(note.createdAt(), zone);
@@ -130,21 +159,7 @@ public final class DiarySearch {
             pieces.add("edited");
         }
         String piece = pieces.stream().filter(item -> contains(item, query)).findFirst().orElse(searchText(note, zone));
-        if (piece.length() <= 90) {
-            return piece;
-        }
-        String needle = query.toLowerCase(Locale.ROOT);
-        int index = piece.toLowerCase(Locale.ROOT).indexOf(needle);
-        int start = Math.max(0, index - 28);
-        int end = Math.min(piece.length(), Math.max(index, 0) + query.length() + 36);
-        String window = piece.substring(start, end).trim();
-        if (start > 0) {
-            window = "…" + window;
-        }
-        if (end < piece.length()) {
-            window = window + "…";
-        }
-        return window;
+        return textWindow(piece, query);
     }
 
     private static void append(StringBuilder text, String piece) {
