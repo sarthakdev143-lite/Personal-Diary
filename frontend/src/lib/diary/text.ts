@@ -1271,6 +1271,12 @@ export function pictureListReach(input: { inList: boolean; outsideList: boolean;
 
 export type PictureStyle = "outside" | "pass";
 
+export type PictureStyleHold = "aside" | "inside";
+
+export function pictureStyleHold(input: { containsEdge: boolean }): PictureStyleHold {
+    return input.containsEdge ? "inside" : "aside";
+}
+
 export function pictureStyle(input: { command?: string; outsideSelected: boolean }): PictureStyle {
     if (!input.outsideSelected) return "pass";
     if (
