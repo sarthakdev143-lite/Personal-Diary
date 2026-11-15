@@ -1268,6 +1268,19 @@ export function listBlockPlace(input: { inItem: boolean; acrossItems?: boolean; 
     return "pass";
 }
 
+export type PictureBlockEnds = "writing" | "list" | "skip";
+
+export function pictureBlockEnds(input: { start: string; end: string; hasPicture: boolean }): PictureBlockEnds {
+    if (!input.hasPicture) return "skip";
+    const name = (tag: string) => tag.toLowerCase();
+    const writing = (tag: string) => name(tag) === "p" || name(tag) === "h1" || name(tag) === "h2" || name(tag) === "h3";
+    const list = (tag: string) => name(tag) === "ul" || name(tag) === "ol";
+    if (!writing(input.start) && !list(input.start)) return "skip";
+    if (!writing(input.end) && !list(input.end)) return "skip";
+    if (list(input.start) || list(input.end)) return "list";
+    return "writing";
+}
+
 export function listBlockNumbers(input: { item: number; following: number[]; split: boolean }): number[] {
     if (!input.split) return input.following;
     const numbers = [input.item + 1];
