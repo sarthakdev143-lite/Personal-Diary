@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryCardWhen, diaryFieldsMatch, diaryListAddress, diaryListMatch, diaryListNavigation, diaryMatchPath, diaryReturnAddress, diaryReturnQuery, entriesForQuery, entryCardClock, entryCardPreview, entryListQueryAddress, entryMonthAddress, openedDiaryQuery, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryFindAddress, entryFromAddress, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery, openedEntryMonth, openedEntryQuery, textPieceHits, textRunHits, titleCardText } from "./search";
-import { calendarDate, diaryFindCountLabel, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryFindMonths, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, dateHeadingCommand, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, formatDiaryDate, formatEntryLong, formatEntryTime, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, codePullUndoCaret, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, blankUndoCaret, joinUndoCaret, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, calendarDateFromLabel, dateFieldAfterEdit, dateRetitleAction, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, diaryFindCountLabel, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryFindMonths, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, dateHeadingCommand, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, formatDiaryDate, formatEntryLong, formatEntryTime, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, codePullUndoCaret, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, blankUndoCaret, joinUndoCaret, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteListPlan, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, calendarDateFromLabel, dateFieldAfterEdit, dateRetitleAction, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries, compareDiaryMatches } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -348,6 +348,48 @@ describe("code block", () => {
         assert.equal(quoteCoveredBlocks({ covered: 2, consecutive: false }), "browser");
         assert.equal(quoteCoveredBlocks({ covered: 1, consecutive: true }), "browser");
         assert.equal(quoteCoveredBlocks({ covered: 0, consecutive: true }), "browser");
+    });
+
+    it("keeps a list together when that list is quoted", () => {
+        assert.deepEqual(quoteListPlan({ ordered: true, start: "5", count: 3, from: 0, to: 2 }), { action: "wrap" });
+        assert.deepEqual(quoteListPlan({ ordered: false, count: 2, from: 0, to: 1 }), { action: "wrap" });
+        assert.deepEqual(quoteListPlan({ ordered: true, count: 3, from: 0, to: 0 }), {
+            action: "split",
+            quoted: { start: null },
+            after: { start: 2 },
+        });
+        assert.deepEqual(quoteListPlan({ ordered: true, count: 3, from: 0, to: 1 }), {
+            action: "split",
+            quoted: { start: null },
+            after: { start: 3 },
+        });
+        assert.deepEqual(quoteListPlan({ ordered: true, start: "3", count: 3, from: 0, to: 0 }), {
+            action: "split",
+            quoted: { start: 3 },
+            after: { start: 4 },
+        });
+        assert.deepEqual(quoteListPlan({ ordered: true, count: 4, from: 1, to: 2 }), {
+            action: "split",
+            quoted: { start: 2 },
+            after: { start: 4 },
+        });
+        assert.deepEqual(quoteListPlan({ ordered: true, count: 3, from: 2, to: 2 }), {
+            action: "split",
+            quoted: { start: 3 },
+            after: null,
+        });
+        assert.deepEqual(quoteListPlan({ ordered: false, count: 3, from: 1, to: 1 }), {
+            action: "split",
+            quoted: { start: null },
+            after: { start: null },
+        });
+        assert.deepEqual(quoteListPlan({ ordered: true, start: "3", values: [null, "10", null], count: 3, from: 1, to: 1 }), {
+            action: "split",
+            quoted: { start: null },
+            after: { start: 11 },
+        });
+        assert.equal(quoteListPlan({ ordered: true, count: 3, from: 2, to: 1 }), null);
+        assert.equal(quoteListPlan({ ordered: true, count: 0, from: 0, to: 0 }), null);
     });
 
     it("leaves a quote when that quote is chosen again", () => {

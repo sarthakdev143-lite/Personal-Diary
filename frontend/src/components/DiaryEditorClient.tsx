@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteListPlan, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -1398,6 +1398,70 @@ function elementFullyInside(range: Range, element: HTMLElement): boolean {
     }
     return range.compareBoundaryPoints(Range.START_TO_START, bounds) <= 0
         && range.compareBoundaryPoints(Range.END_TO_END, bounds) >= 0;
+}
+
+function listItems(list: HTMLElement): HTMLElement[] {
+    return [...list.children].filter((child): child is HTMLElement => child instanceof HTMLElement && child.tagName === "LI");
+}
+
+function quoteListTarget(editor: HTMLElement, range: Range): { list: HTMLElement; items: HTMLElement[]; from: number; to: number } | null {
+    const startHost = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+    const endHost = range.endContainer instanceof Element ? range.endContainer : range.endContainer.parentElement;
+    const startItem = startHost?.closest("li");
+    const endItem = endHost?.closest("li");
+    if (!(startItem instanceof HTMLElement) || !(endItem instanceof HTMLElement)) return null;
+    const list = startItem.parentElement;
+    if (!(list instanceof HTMLElement) || list !== endItem.parentElement) return null;
+    if (list.tagName !== "UL" && list.tagName !== "OL") return null;
+    if (!editor.contains(list) || !list.contains(range.startContainer) || !list.contains(range.endContainer)) return null;
+    const items = listItems(list);
+    const start = items.indexOf(startItem);
+    const end = items.indexOf(endItem);
+    if (start < 0 || end < 0) return null;
+    return { list, items, from: Math.min(start, end), to: Math.max(start, end) };
+}
+
+function applyListStart(list: HTMLElement, start: number | null) {
+    if (list.tagName !== "OL" || start === null || start === 1) list.removeAttribute("start");
+    else list.setAttribute("start", String(start));
+}
+
+function placeInQuotedList(quote: HTMLElement) {
+    const quoted = quote.querySelector(":scope > ul, :scope > ol");
+    const items = quoted instanceof HTMLElement ? listItems(quoted) : [];
+    const item = items[items.length - 1];
+    if (item) placeCaretAtEnd(item);
+}
+
+function applyQuoteList(list: HTMLElement, items: HTMLElement[], from: number, to: number, plan: NonNullable<ReturnType<typeof quoteListPlan>>) {
+    if (plan.action === "wrap") {
+        const quote = document.createElement("blockquote");
+        list.before(quote);
+        quote.append(list);
+        placeInQuotedList(quote);
+        return;
+    }
+    const quotedList = document.createElement(list.tagName.toLowerCase());
+    applyListStart(quotedList, plan.quoted.start);
+    for (const item of items.slice(from, to + 1)) quotedList.append(item);
+    const quote = document.createElement("blockquote");
+    quote.append(quotedList);
+    const after = items.slice(to + 1);
+    if (from > 0) {
+        list.after(quote);
+        if (after.length) {
+            const afterList = document.createElement(list.tagName.toLowerCase());
+            applyListStart(afterList, plan.after?.start ?? null);
+            for (const item of after) afterList.append(item);
+            quote.after(afterList);
+        }
+        placeInQuotedList(quote);
+        return;
+    }
+    if (after.length) applyListStart(list, plan.after?.start ?? null);
+    list.before(quote);
+    if (!listItems(list).length) list.remove();
+    placeInQuotedList(quote);
 }
 
 function coveredQuoteBlocks(editor: HTMLElement, range: Range): HTMLElement[] {
@@ -2985,6 +3049,26 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 setHtmlContent(editor.innerHTML);
                 updateActiveFormats();
                 return;
+            }
+            const listed = quoteListTarget(editor, quoteRange);
+            if (listed) {
+                const plan = quoteListPlan({
+                    ordered: listed.list.tagName === "OL",
+                    start: listed.list.getAttribute("start"),
+                    values: listed.items.map((item) => item.getAttribute("value")),
+                    count: listed.items.length,
+                    from: listed.from,
+                    to: listed.to,
+                });
+                if (plan) {
+                    const before = editor.innerHTML;
+                    const path = childPath(editor, listed.list);
+                    applyQuoteList(listed.list, listed.items, listed.from, listed.to, plan);
+                    keepBlank({ before, after: editor.innerHTML, path });
+                    setHtmlContent(editor.innerHTML);
+                    updateActiveFormats();
+                    return;
+                }
             }
             if (!selection.isCollapsed) {
                 const covered = coveredQuoteBlocks(editor, selection.getRangeAt(0));
