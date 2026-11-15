@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -1015,6 +1015,48 @@ function cutSelectionHtml(range: Range): string {
         node = node.parentElement;
     }
     return html;
+}
+
+function edgeText(element: HTMLElement, edge: "start" | "end"): Text | null {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    let last: Text | null = null;
+    while (node instanceof Text) {
+        if (node.data.length > 0) {
+            if (edge === "start") return node;
+            last = node;
+        }
+        node = walker.nextNode();
+    }
+    return last;
+}
+
+function elementFullyInside(range: Range, element: HTMLElement): boolean {
+    try {
+        if (!range.intersectsNode(element)) return false;
+    } catch {
+        return false;
+    }
+    const start = edgeText(element, "start");
+    const end = edgeText(element, "end");
+    const bounds = document.createRange();
+    if (start && end) {
+        bounds.setStart(start, 0);
+        bounds.setEnd(end, end.data.length);
+    } else {
+        bounds.selectNodeContents(element);
+    }
+    return range.compareBoundaryPoints(Range.START_TO_START, bounds) <= 0
+        && range.compareBoundaryPoints(Range.END_TO_END, bounds) >= 0;
+}
+
+function coveredQuoteBlocks(editor: HTMLElement, range: Range): HTMLElement[] {
+    return [...editor.children].filter((child): child is HTMLElement => {
+        if (!(child instanceof HTMLElement)) return false;
+        const text = (child.textContent ?? "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+        if (child === editor.firstElementChild && child.tagName === "H2" && leadingDateLabel(text) === text && text.length > 0) return false;
+        return elementFullyInside(range, child);
+    });
 }
 
 function lineBlock(node: Node | null): HTMLElement | null {
@@ -2457,6 +2499,23 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (editor && keepFormatOffDate(editor, cmd) === "hold") return;
         editor?.focus();
         const selection = window.getSelection();
+        if (cmd === "formatBlock" && value === "blockquote" && editor && selection?.rangeCount && !selection.isCollapsed) {
+            const covered = coveredQuoteBlocks(editor, selection.getRangeAt(0));
+            const children = [...editor.children];
+            const indexes = covered.map((block) => children.indexOf(block));
+            const consecutive = indexes.every((index, position) => index >= 0 && (position === 0 || index === indexes[position - 1] + 1));
+            if (quoteCoveredBlocks({ covered: covered.length, consecutive }) === "together") {
+                const before = editor.innerHTML;
+                const path = childPath(editor, covered[0]);
+                const quote = document.createElement("blockquote");
+                covered[0].before(quote);
+                for (const block of covered) quote.append(block);
+                keepBlank({ before, after: editor.innerHTML, path });
+                setHtmlContent(editor.innerHTML);
+                updateActiveFormats();
+                return;
+            }
+        }
         const lists = cmd === "insertUnorderedList" || cmd === "insertOrderedList";
         const range = editor && lists && selection?.rangeCount ? selection.getRangeAt(0) : null;
         const block = range ? (range.endContainer instanceof Element ? range.endContainer : range.endContainer.parentElement)?.closest("li, p") : null;
