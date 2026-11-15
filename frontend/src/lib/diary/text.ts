@@ -870,13 +870,36 @@ export function quoteToggle(input: { inside: boolean }): QuoteToggle {
     return "quote";
 }
 
-export type ItalicQuote = "browser" | "mark" | "clear" | "hold";
+export type ItalicQuote = "browser" | "mark" | "clear" | "arm" | "plain" | "disarm";
 
-export function italicInQuote(input: { inQuote: boolean; inItalic: boolean; collapsed: boolean }): ItalicQuote {
+export function italicInQuote(input: { inQuote: boolean; inItalic: boolean; collapsed: boolean; pending: "italic" | "plain" | null }): ItalicQuote {
     if (!input.inQuote) return "browser";
-    if (input.collapsed) return "hold";
+    if (input.collapsed && !input.inItalic) return input.pending === "italic" ? "disarm" : "arm";
+    if (input.collapsed && input.inItalic) return input.pending === "plain" ? "disarm" : "plain";
     if (input.inItalic) return "clear";
     return "mark";
+}
+
+export function typedQuoteUndoCaret(offset: number): number | null {
+    if (!Number.isFinite(offset) || offset < 0) return null;
+    return Math.floor(offset);
+}
+
+export type QuoteItalicKey = "keep" | "release" | "clear";
+
+export function quoteItalicKey(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    held: boolean;
+}): QuoteItalicKey {
+    const typing = input.key.length === 1 && !input.ctrlKey && !input.metaKey && !input.altKey;
+    const modifier = input.key === "Control" || input.key === "Meta" || input.key === "Alt" || input.key === "Shift";
+    if (typing || modifier || styleShortcut(input) === "italic") return "keep";
+    if (input.held) return "release";
+    return "clear";
 }
 
 export type ListCommand = "lift" | "pass";

@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteToggle, italicInQuote, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteToggle, italicInQuote, typedQuoteUndoCaret, quoteItalicKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -1126,6 +1126,79 @@ function applyQuoteItalic(editor: HTMLElement, range: Range, action: "mark" | "c
         }
     }
     return marked;
+}
+
+function placeCaretAt(node: Node, offset: number) {
+    const selection = window.getSelection();
+    if (!selection) return;
+    const range = document.createRange();
+    range.setStart(node, offset);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
+
+function insertItalicCharacter(range: Range, text: string) {
+    const italic = document.createElement("i");
+    italic.textContent = text;
+    const node = range.startContainer;
+    const offset = range.startOffset;
+    if (node instanceof Text) {
+        if (offset > 0 && offset < node.data.length) node.splitText(offset);
+        if (offset === 0) node.before(italic);
+        else node.after(italic);
+        if (node.data.length === 0) node.remove();
+    } else {
+        range.insertNode(italic);
+    }
+    const written = italic.firstChild;
+    if (written) placeCaretAt(written, written.textContent?.length ?? 0);
+}
+
+function insertPlainCharacter(range: Range, text: string) {
+    const node = range.startContainer;
+    const offset = range.startOffset;
+    const host = node instanceof Element ? node : node.parentElement;
+    const italic = host?.closest("i, em");
+    if (!(italic instanceof HTMLElement) || !(node instanceof Text) || !italic.contains(node)) {
+        if (node instanceof Text) {
+            node.insertData(offset, text);
+            placeCaretAt(node, offset + text.length);
+        }
+        return;
+    }
+    if (offset <= 0) {
+        const written = document.createTextNode(text);
+        italic.before(written);
+        placeCaretAt(written, text.length);
+        return;
+    }
+    if (offset >= node.data.length && node === italic.lastChild) {
+        const next = italic.nextSibling;
+        if (next instanceof Text) {
+            next.insertData(0, text);
+            placeCaretAt(next, text.length);
+            return;
+        }
+        const written = document.createTextNode(text);
+        italic.after(written);
+        placeCaretAt(written, text.length);
+        return;
+    }
+    if (offset < node.data.length) node.splitText(offset);
+    const after = document.createElement(italic.tagName.toLowerCase());
+    let sibling = node.nextSibling;
+    while (sibling && italic.contains(sibling)) {
+        const next = sibling.nextSibling;
+        after.append(sibling);
+        sibling = next;
+    }
+    const written = document.createTextNode(text);
+    italic.after(written);
+    if (after.childNodes.length) written.after(after);
+    if (!italic.textContent) italic.remove();
+    if (!after.textContent) after.remove();
+    placeCaretAt(written, text.length);
 }
 
 function edgeText(element: HTMLElement, edge: "start" | "end"): Text | null {
@@ -2276,13 +2349,15 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const imageRange = useRef<Range | null>(null);
     const pictureRemoval = useRef<{ before: string; after: string } | null>(null);
     const headingSplit = useRef<{ before: string; after: string; tag: string; text: string; offset: number } | null>(null);
-    const blankLine = useRef<{ before: string; after: string; path?: number[]; caret?: number; breakIndex?: number; breakSide?: "before" | "after"; sticky?: boolean; typed?: string; typedCaret?: number } | null>(null);
+    const blankLine = useRef<{ before: string; after: string; path?: number[]; caret?: number; breakIndex?: number; breakSide?: "before" | "after"; sticky?: boolean; typed?: string; typedCaret?: number; resume?: "plain" } | null>(null);
     const editingForward = useRef(true);
     const selectionTyping = useRef(false);
     const selectionTypeStart = useRef<number | null>(null);
     const selectionTypeLine = useRef<HTMLElement | null>(null);
     const dragUndo = useRef<{ before: string; path: number[]; caret: number } | null>(null);
     const wordGap = useRef<{ path: number[]; offset: number; gap: "before" | "after" } | null>(null);
+    const quoteItalic = useRef<"italic" | "plain" | null>(null);
+    const quoteItalicHold = useRef(false);
     const styleUndo = useRef<{ before: string; after: string; path: number[]; caret: number } | null>(null);
     const styleRedo = useRef<{ undone: string; redone: string; path: number[]; caret: number } | null>(null);
     const redoPage = useRef<{
@@ -2300,8 +2375,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         breakSide?: "before" | "after";
         sticky?: boolean;
         typedCaret?: number;
+        resume?: "plain";
     } | null>(null);
-    const keepBlank = (page: { before: string; after: string; path?: number[]; caret?: number; breakIndex?: number; breakSide?: "before" | "after"; sticky?: boolean }) => {
+    const keepBlank = (page: { before: string; after: string; path?: number[]; caret?: number; breakIndex?: number; breakSide?: "before" | "after"; sticky?: boolean; resume?: "plain" }) => {
         blankLine.current = page;
         redoPage.current = null;
         selectionTyping.current = false;
@@ -2480,7 +2556,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (inQuote) fmt.add("blockquote");
         const italic = linkHost?.closest("i, em");
         const inItalic = Boolean(italic && editorRef.current.contains(italic));
-        if (inQuote ? inItalic : document.queryCommandState("italic")) fmt.add("italic");
+        if (quoteItalic.current === "italic" || (quoteItalic.current !== "plain" && (inQuote ? inItalic : document.queryCommandState("italic")))) fmt.add("italic");
         setActiveFormats(fmt);
     }, []);
 
@@ -2622,12 +2698,17 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 inQuote: Boolean(quote),
                 inItalic: selectionInOneItalic(editor, italicRange),
                 collapsed: selection.isCollapsed,
+                pending: quoteItalic.current,
             });
-            if (action === "hold") {
+            if (!quote) quoteItalic.current = null;
+            if (action === "arm" || action === "plain" || action === "disarm") {
+                quoteItalic.current = action === "arm" ? "italic" : action === "plain" ? "plain" : null;
+                quoteItalicHold.current = false;
                 updateActiveFormats();
                 return;
             }
             if (action === "mark" || action === "clear") {
+                quoteItalic.current = null;
                 const before = editor.innerHTML;
                 const block = lineBlock(italicRange.startContainer);
                 const path = block instanceof HTMLElement ? childPath(editor, block) : undefined;
@@ -3684,6 +3765,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         breakSide?: "before" | "after";
         sticky?: boolean;
         typedCaret?: number;
+        resume?: "plain";
     }) => {
         const mark = editorRef.current ? caretMark(editorRef.current) : null;
         redoPage.current = { ...page, caretPath: mark?.path, caretOffset: mark?.offset };
@@ -4435,7 +4517,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             if (decision === "clear") blankLine.current = null;
             return false;
         }
-        holdRedo({ undone: saved.before, redone: typedRedo({ redone: saved.after, typed: saved.typed, undone: saved.before }), kind: "blank", path: saved.path, undoCaret: saved.caret, breakIndex: saved.breakIndex, breakSide: saved.breakSide, sticky: saved.sticky, typedCaret: saved.typed ? saved.typedCaret : undefined });
+        holdRedo({ undone: saved.before, redone: typedRedo({ redone: saved.after, typed: saved.typed, undone: saved.before }), kind: "blank", path: saved.path, undoCaret: saved.caret, breakIndex: saved.breakIndex, breakSide: saved.breakSide, sticky: saved.sticky, typedCaret: saved.typed ? saved.typedCaret : undefined, resume: saved.resume });
         blankLine.current = null;
         selectionTyping.current = false;
         selectionTypeStart.current = null;
@@ -4445,9 +4527,19 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         editor.focus();
         const line = saved.path ? nodeAtPath(editor, saved.path) : editor.firstElementChild?.nextElementSibling;
         const caret = blankUndoCaret(saved);
-        if (line instanceof HTMLElement && placeBreakCaret(line, saved.breakIndex, saved.breakSide)) return true;
+        const resumePlain = () => {
+            if (saved.resume !== "plain") return;
+            quoteItalic.current = "plain";
+            quoteItalicHold.current = true;
+            updateActiveFormats();
+        };
+        if (line instanceof HTMLElement && placeBreakCaret(line, saved.breakIndex, saved.breakSide)) {
+            resumePlain();
+            return true;
+        }
         if (line instanceof HTMLElement && caret !== null) placeCaretAtTextOffset(line, caret);
         else if (line instanceof HTMLElement) placeCaretAtStart(line);
+        resumePlain();
         return true;
     };
 
@@ -4473,7 +4565,13 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         editor.innerHTML = saved.redone;
         setHtmlContent(saved.redone);
         editor.focus();
-        if (saved.kind === "blank") blankLine.current = { before: saved.undone, after: saved.redone, path: saved.path, caret: saved.undoCaret, breakIndex: saved.breakIndex, breakSide: saved.breakSide, sticky: saved.sticky };
+        if (saved.kind === "blank") {
+            blankLine.current = { before: saved.undone, after: saved.redone, path: saved.path, caret: saved.undoCaret, breakIndex: saved.breakIndex, breakSide: saved.breakSide, sticky: saved.sticky, resume: saved.resume };
+            if (saved.resume === "plain") {
+                quoteItalic.current = null;
+                quoteItalicHold.current = false;
+            }
+        }
         else if (saved.kind === "heading" && saved.tag && saved.text !== undefined && saved.offset !== undefined) {
             headingSplit.current = { before: saved.undone, after: saved.redone, tag: saved.tag, text: saved.text, offset: saved.offset };
         } else pictureRemoval.current = { before: saved.undone, after: saved.redone };
@@ -4732,8 +4830,34 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         placeCaretAtTextOffset(block, offset + decision.caret);
         setHtmlContent(editor.innerHTML);
     };
+    const applyQuoteItalicType = (event: InputEvent) => {
+        const pending = quoteItalic.current;
+        if (!pending || event.inputType !== "insertText") return;
+        const typed = event.data ?? "";
+        if (!typed) return;
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection?.rangeCount || !selection.isCollapsed || !selection.anchorNode || !editor.contains(selection.anchorNode)) return;
+        const range = selection.getRangeAt(0);
+        if (!quoteHolding(editor, range)) {
+            quoteItalic.current = null;
+            return;
+        }
+        event.preventDefault();
+        quoteItalic.current = null;
+        const before = editor.innerHTML;
+        const block = lineBlock(range.startContainer);
+        const path = block instanceof HTMLElement ? childPath(editor, block) : undefined;
+        const caret = block instanceof HTMLElement ? typedQuoteUndoCaret(textOffsetWithin(block, range.startContainer, range.startOffset)) : null;
+        if (pending === "italic") insertItalicCharacter(range, typed);
+        else insertPlainCharacter(range, typed);
+        keepBlank({ before, after: editor.innerHTML, path, ...(caret !== null ? { caret } : {}), ...(pending === "plain" ? { resume: "plain" as const } : {}) });
+        setHtmlContent(editor.innerHTML);
+    };
     const applyWordGapRef = useRef(applyWordGap);
     applyWordGapRef.current = applyWordGap;
+    const applyQuoteItalicTypeRef = useRef(applyQuoteItalicType);
+    applyQuoteItalicTypeRef.current = applyQuoteItalicType;
 
     const keepSelectionDelete = (e: React.KeyboardEvent) => {
         const editor = editorRef.current;
@@ -4835,6 +4959,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             editingForward.current = event.inputType !== "historyUndo" && event.inputType !== "historyRedo";
             if (event.inputType === "insertText" || event.inputType === "insertFromPaste") applyWordGapRef.current(event);
             else wordGap.current = null;
+            if (event.defaultPrevented) return;
+            if (event.inputType === "insertText") applyQuoteItalicTypeRef.current(event);
+            else if (quoteItalic.current) quoteItalic.current = null;
             if (event.defaultPrevented) return;
             keepWordDeleteRef.current({
                 nativeEvent: event,
@@ -5912,8 +6039,24 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 onInput={onInput}
                                 onMouseDown={selectClickedPicture}
                                 onFocus={updateActiveFormats}
-                                onKeyUp={updateActiveFormats}
-                                onMouseUp={updateActiveFormats}
+                                onKeyUp={(event) => {
+                                    const action = quoteItalicKey({
+                                        key: event.key,
+                                        shiftKey: event.shiftKey,
+                                        altKey: event.altKey,
+                                        ctrlKey: event.ctrlKey,
+                                        metaKey: event.metaKey,
+                                        held: quoteItalicHold.current,
+                                    });
+                                    if (action === "clear") quoteItalic.current = null;
+                                    if (action === "release") quoteItalicHold.current = false;
+                                    updateActiveFormats();
+                                }}
+                                onMouseUp={() => {
+                                    quoteItalic.current = null;
+                                    quoteItalicHold.current = false;
+                                    updateActiveFormats();
+                                }}
                                 spellCheck={false}
                                 onPaste={onPaste}
                                 onCut={onCut}
