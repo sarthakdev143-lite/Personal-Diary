@@ -2849,6 +2849,46 @@ function pictureCode(editor: HTMLElement, range: Range): HTMLElement | null {
     return block;
 }
 
+function pictureItems(editor: HTMLElement, range: Range): HTMLElement | null {
+    if (range.collapsed) return null;
+    const hostOf = (node: Node) => node instanceof Element ? node : node.parentElement;
+    const start = hostOf(range.startContainer)?.closest("li") ?? null;
+    const end = hostOf(range.endContainer)?.closest("li") ?? null;
+    if (!(start instanceof HTMLElement) || !(end instanceof HTMLElement)) return null;
+    if (!editor.contains(start) || !editor.contains(end) || start === end) return null;
+    const list = start.parentElement;
+    if (list !== end.parentElement) return null;
+    if (!(list instanceof HTMLUListElement || list instanceof HTMLOListElement)) return null;
+    return start;
+}
+
+function placePictureBetweenItems(range: Range, picture: HTMLElement) {
+    const host = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+    const start = host?.closest("li");
+    const list = start?.parentElement;
+    if (!(start instanceof HTMLElement) || !(list instanceof HTMLUListElement || list instanceof HTMLOListElement)) return;
+    const numbers = leavingOrderedNumbers(start, null);
+    range.deleteContents();
+    const splitList = range.startContainer instanceof HTMLUListElement || range.startContainer instanceof HTMLOListElement
+        ? range.startContainer
+        : list;
+    const offset = range.startContainer === splitList ? range.startOffset : splitList.childNodes.length;
+    const afterList = document.createElement(splitList.tagName.toLowerCase());
+    for (const node of [...splitList.childNodes].slice(offset)) afterList.append(node);
+    if (afterList.childNodes.length) splitList.after(afterList);
+    if (afterList.parentElement) afterList.before(picture);
+    else splitList.after(picture);
+    const previous = listItems(splitList).at(-1) ?? null;
+    const following = listItems(afterList)[0] ?? null;
+    if (previous) trimPictureEdge(previous, "end");
+    if (following) trimPictureEdge(following, "start");
+    if (previous && blockIsEmpty(previous)) previous.remove();
+    if (following && blockIsEmpty(following)) following.remove();
+    if (!listItems(splitList).length) splitList.remove();
+    if (!listItems(afterList).length) afterList.remove();
+    if (numbers) restoreOrderedNumbers(numbers);
+}
+
 function pictureAcross(editor: HTMLElement, range: Range): HTMLElement | null {
     if (range.collapsed) return null;
     const top = (node: Node) => {
@@ -2904,7 +2944,8 @@ function openPicture(editor: HTMLElement, range: Range, src: string, name: strin
     const line = pictureLine(editor, range);
     const code = pictureCode(editor, range);
     const across = pictureAcross(editor, range);
-    const action = pictureInsert({ inPicture: Boolean(anchor), inItem, inLine: Boolean(line), inCode: Boolean(code), across: Boolean(across) });
+    const items = pictureItems(editor, range);
+    const action = pictureInsert({ inPicture: Boolean(anchor), inItem, inLine: Boolean(line), inCode: Boolean(code), across: Boolean(across), acrossItems: Boolean(items) });
     if (action === "pass") return null;
     const before = editor.innerHTML;
     const picture = buildPicture(src, name);
@@ -2917,6 +2958,12 @@ function openPicture(editor: HTMLElement, range: Range, src: string, name: strin
     if (action === "code" && code) {
         const path = childPath(editor, code);
         placePictureInCode(code, range, picture);
+        placeCaretInPicture(picture);
+        return { before, path };
+    }
+    if (action === "items" && items) {
+        const path = childPath(editor, items);
+        placePictureBetweenItems(range, picture);
         placeCaretInPicture(picture);
         return { before, path };
     }
