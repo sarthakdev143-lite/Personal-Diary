@@ -37,6 +37,7 @@ export function diaryListKeyAction(event: {
         if (!event.searchFocused || event.shiftKey || event.formOpen || event.themeOpen) return null;
         return "open";
     }
+    if (event.key === "ArrowDown" && event.searchFocused && !event.shiftKey && !event.formOpen && !event.themeOpen) return "next";
     if (event.shiftKey || event.inField || event.formOpen || event.themeOpen) return null;
     if (event.key === "ArrowDown") return "next";
     if (event.key === "ArrowUp") return "previous";
