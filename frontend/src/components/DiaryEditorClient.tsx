@@ -15,7 +15,7 @@ import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
 import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
-import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, textRunHits } from "@/lib/diary/search";
+import { entryCardPreview, entryFindAddress, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, openedEntryQuery, textRunHits } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
@@ -2073,12 +2073,14 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 setDiary(data.diary!);
                 const loaded = data.entries ?? [];
                 setEntries(loaded);
-                const requestedId = new URLSearchParams(window.location.search).get("entry");
+                const requested = new URLSearchParams(window.location.search);
+                const requestedId = requested.get("entry");
                 const latest = entryToOpenFromLink(loaded, requestedId);
                 if (latest) {
                     setSelectedEntryId(latest._id);
                     setMode("view");
                     setConfirmDelete(null);
+                    setEntryQuery(openedEntryQuery(requested.get("q"), latest));
                     const created = new Date(latest.createdAt);
                     const day = calendarDate(created);
                     setEntryDate(day);
@@ -2126,11 +2128,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
     useEffect(() => {
         if (isLoading) return;
-        const next = entryPageAddress(diaryId, selectedEntryId, mode);
+        const next = entryFindAddress(entryPageAddress(diaryId, selectedEntryId, mode), mode === "compose" ? "" : entryQuery);
         const current = `${window.location.pathname}${window.location.search}`;
         if (current === next) return;
         window.history.replaceState(window.history.state, "", next);
-    }, [isLoading, diaryId, mode, selectedEntryId]);
+    }, [isLoading, diaryId, mode, selectedEntryId, entryQuery]);
 
     useEffect(() => {
         if (isLoading) return;

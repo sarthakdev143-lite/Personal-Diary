@@ -245,9 +245,30 @@ export function diaryListMatch(
     return { matched: true, snippet: matchingPiece(newest, query), entryId: newest.id || null };
 }
 
-export function diaryMatchPath(diaryId: string, entryId: string | null | undefined): string {
+export function diaryMatchPath(diaryId: string, entryId: string | null | undefined, rawQuery?: string | null): string {
     if (!entryId) return `/diary/${diaryId}`;
-    return `/diary/${diaryId}?entry=${encodeURIComponent(entryId)}`;
+    const path = `/diary/${diaryId}?entry=${encodeURIComponent(entryId)}`;
+    const query = normalizeSearchQuery(rawQuery ?? "");
+    if (!query) return path;
+    return `${path}&q=${encodeURIComponent(query)}`;
+}
+
+export function openedEntryQuery(rawQuery: string | null, entry: {
+    content: string;
+    plainText?: string | null;
+    createdAt: string;
+    updatedAt: string;
+} | null): string {
+    const query = normalizeSearchQuery(rawQuery ?? "");
+    if (!query || !entry || !entryMatchesListQuery(entry, query)) return "";
+    return query;
+}
+
+export function entryFindAddress(path: string, rawQuery: string): string {
+    const query = normalizeSearchQuery(rawQuery);
+    if (!query) return path;
+    const join = path.includes("?") ? "&" : "?";
+    return `${path}${join}q=${encodeURIComponent(query)}`;
 }
 
 export function entryPageAddress(
