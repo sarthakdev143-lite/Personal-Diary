@@ -91,12 +91,31 @@ function escapeLinkText(value: string): string {
 }
 
 function wrapInline(inner: string, open: string, close: string): string {
+    return inner.split("\n").map((line) => wrapInlineLine(line, open, close)).join("\n");
+}
+
+function wrapInlineLine(inner: string, open: string, close: string): string {
     const leading = inner.match(/^\s+/)?.[0] ?? "";
     const rest = inner.slice(leading.length);
     const trailing = rest.match(/\s+$/)?.[0] ?? "";
     const core = trailing ? rest.slice(0, -trailing.length) : rest;
     if (!core.trim()) return inner;
     return `${leading}${open}${core}${close}${trailing}`;
+}
+
+function renderLink(inner: string, href: string): string {
+    const lines = inner.split("\n");
+    return lines.map((line) => {
+        const leading = line.match(/^\s*/)?.[0] ?? "";
+        const rest = line.slice(leading.length);
+        const trailing = rest.match(/\s*$/)?.[0] ?? "";
+        const label = rest.slice(0, rest.length - trailing.length);
+        if (!label) {
+            if (lines.length === 1) return `${leading}[${escapeLinkText(href)}](${href})${trailing}`;
+            return line;
+        }
+        return `${leading}[${escapeLinkText(label)}](${href})${trailing}`;
+    }).join("\n");
 }
 
 function captionHasStyle(node: ElementNode): boolean {
@@ -134,13 +153,10 @@ function renderInline(nodes: HtmlNode[]): string {
         if (node.tag === "em" || node.tag === "i") return wrapInline(inner, "*", "*");
         if (node.tag === "s" || node.tag === "strike" || node.tag === "del") return wrapInline(inner, "~~", "~~");
         if (node.tag === "u") return inner.trim() ? wrapInline(inner, "<u>", "</u>") : inner;
-        if (node.tag === "code") return `\`${inner}\``;
+        if (node.tag === "code") return inner.split("\n").map((line) => line ? `\`${line}\`` : line).join("\n");
         if (node.tag === "a") {
             const href = node.attrs.href ?? "";
-            const leading = inner.match(/^\s*/)?.[0] ?? "";
-            const trailing = inner.match(/\s*$/)?.[0] ?? "";
-            const label = inner.trim() || href;
-            return href ? `${leading}[${escapeLinkText(label)}](${href})${trailing}` : inner;
+            return href ? renderLink(inner, href) : inner;
         }
         return inner;
     }).join("");

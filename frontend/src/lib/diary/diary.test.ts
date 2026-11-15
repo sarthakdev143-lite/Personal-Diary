@@ -1136,6 +1136,26 @@ describe("code block", () => {
         );
     });
 
+    it("keeps a styled line break styled on each line when the entry is copied", () => {
+        assert.equal(
+            htmlToMarkdown("<ul><li><b>Harbor<br>rain</b></li></ul>"),
+            "- **Harbor**\n  **rain**",
+        );
+        assert.equal(
+            htmlToMarkdown("<ol><li><i>Harbor<br>rain</i></li></ol>"),
+            "1. *Harbor*\n   *rain*",
+        );
+        assert.equal(
+            htmlToMarkdown("<blockquote><b>Harbor<br>rain</b></blockquote>"),
+            "> **Harbor**\n> **rain**",
+        );
+        assert.equal(
+            htmlToMarkdown("<p>See <a href=\"https://example.com\">Harbor<br>rain</a> today</p>"),
+            "See [Harbor](https://example.com)\n[rain](https://example.com) today",
+        );
+        assert.equal(htmlToMarkdown("<p><code>Harbor<br>rain</code></p>"), "`Harbor`\n`rain`");
+    });
+
     it("keeps each row of a pasted table", () => {
         const saved = prepareEntryContent("<table><tr><th>Rain</th><th>Harbor</th></tr><tr><td>Bread</td><td><b>Market</b></td></tr></table>");
         assert.equal(saved.ok, true);

@@ -57,6 +57,23 @@ class DiaryMarkdownTest {
     }
 
     @Test
+    void keepsAStyledLineBreakStyledOnEachLine() {
+        assertEquals(
+                "- **Harbor**\n  **rain**",
+                DiaryMarkdown.htmlToMarkdown("<ul><li><b>Harbor<br>rain</b></li></ul>"));
+        assertEquals(
+                "1. *Harbor*\n   *rain*",
+                DiaryMarkdown.htmlToMarkdown("<ol><li><i>Harbor<br>rain</i></li></ol>"));
+        assertEquals(
+                "> **Harbor**\n> **rain**",
+                DiaryMarkdown.htmlToMarkdown("<blockquote><b>Harbor<br>rain</b></blockquote>"));
+        assertEquals(
+                "See [Harbor](https://example.com)\n[rain](https://example.com) today",
+                DiaryMarkdown.htmlToMarkdown("<p>See <a href=\"https://example.com\">Harbor<br>rain</a> today</p>"));
+        assertEquals("`Harbor`\n`rain`", DiaryMarkdown.htmlToMarkdown("<p><code>Harbor<br>rain</code></p>"));
+    }
+
+    @Test
     void keepsAListThatWasNestedInsideAParagraph() {
         String markdown = DiaryMarkdown.htmlToMarkdown("<p><ol><li>one</li><li>two</li></ol></p>");
         assertTrue(markdown.contains("1. one\n2. two"));
