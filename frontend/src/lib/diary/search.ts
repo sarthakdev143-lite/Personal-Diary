@@ -295,11 +295,30 @@ export function diaryListNavigation(currentPath: string, rawQuery: string): stri
 }
 
 export function diaryMatchPath(diaryId: string, entryId: string | null | undefined, rawQuery?: string | null): string {
-    if (!entryId) return `/diary/${diaryId}`;
-    const path = `/diary/${diaryId}?entry=${encodeURIComponent(entryId)}`;
     const query = normalizeSearchQuery(rawQuery ?? "");
+    if (!entryId) {
+        if (!query) return `/diary/${diaryId}`;
+        return `/diary/${diaryId}?list=${encodeURIComponent(query)}`;
+    }
+    const path = `/diary/${diaryId}?entry=${encodeURIComponent(entryId)}`;
     if (!query) return path;
-    return `${path}&q=${encodeURIComponent(query)}`;
+    return `${path}&q=${encodeURIComponent(query)}&list=${encodeURIComponent(query)}`;
+}
+
+export function entryListQueryAddress(path: string, rawQuery: string): string {
+    const query = normalizeSearchQuery(rawQuery);
+    if (!query) return path;
+    const join = path.includes("?") ? "&" : "?";
+    return `${path}${join}list=${encodeURIComponent(query)}`;
+}
+
+export function diaryReturnAddress(entryQuery: string, listQuery: string): string {
+    return diaryListAddress(normalizeSearchQuery(entryQuery) || normalizeSearchQuery(listQuery));
+}
+
+export function diaryReturnQuery(rawSearch: string): string {
+    const params = new URLSearchParams(rawSearch.startsWith("?") ? rawSearch.slice(1) : rawSearch);
+    return normalizeSearchQuery(params.get("q") || params.get("list") || "");
 }
 
 export function entryFromAddress<T extends {

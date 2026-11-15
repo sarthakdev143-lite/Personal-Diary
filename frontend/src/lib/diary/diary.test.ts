@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
-import { buildEntrySearchFilter, diaryCardWhen, diaryFieldsMatch, diaryListAddress, diaryListMatch, diaryListNavigation, diaryMatchPath, entriesForQuery, entryCardPreview, entryMonthAddress, openedDiaryQuery, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryFindAddress, entryFromAddress, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery, openedEntryMonth, openedEntryQuery, textPieceHits, textRunHits } from "./search";
+import { buildEntrySearchFilter, diaryCardWhen, diaryFieldsMatch, diaryListAddress, diaryListMatch, diaryListNavigation, diaryMatchPath, diaryReturnAddress, diaryReturnQuery, entriesForQuery, entryCardPreview, entryListQueryAddress, entryMonthAddress, openedDiaryQuery, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryFindAddress, entryFromAddress, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery, openedEntryMonth, openedEntryQuery, textPieceHits, textRunHits } from "./search";
 import { calendarDate, diaryFindCountLabel, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryFindMonths, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatDiaryDate, formatEntryLong, formatEntryTime, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, codePullUndoCaret, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, blankUndoCaret, joinUndoCaret, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries, compareDiaryMatches } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
@@ -1431,7 +1431,7 @@ describe("search", () => {
         const title = diaryListMatch(diary, [rain, garden], "window");
         assert.equal(title.entryId, null);
         assert.equal(title.entryAt, null);
-        assert.equal(diaryMatchPath("diary1", title.entryId), "/diary/diary1");
+        assert.equal(diaryMatchPath("diary1", title.entryId, "window"), "/diary/diary1?list=window");
         assert.equal(diaryCardWhen({
             query: "window",
             matchEntry: title.entryId,
@@ -1506,9 +1506,17 @@ describe("search", () => {
             createdAt: created,
             updatedAt: created,
         };
-        assert.equal(diaryMatchPath("diary1", "rain", "2026 Quiet"), "/diary/diary1?entry=rain&q=2026%20Quiet");
-        assert.equal(diaryMatchPath("diary1", null, "Window"), "/diary/diary1");
+        assert.equal(diaryMatchPath("diary1", "rain", "2026 Quiet"), "/diary/diary1?entry=rain&q=2026%20Quiet&list=2026%20Quiet");
+        assert.equal(diaryMatchPath("diary1", null, "Window"), "/diary/diary1?list=Window");
         assert.equal(diaryMatchPath("diary1", "rain", "   "), "/diary/diary1?entry=rain");
+        assert.equal(entryListQueryAddress("/diary/diary1?entry=rain", "Window"), "/diary/diary1?entry=rain&list=Window");
+        assert.equal(entryListQueryAddress("/diary/diary1", "   "), "/diary/diary1");
+        assert.equal(diaryReturnAddress("garden", "Window"), "/diary?q=garden");
+        assert.equal(diaryReturnAddress("   ", "Window"), "/diary?q=Window");
+        assert.equal(diaryReturnAddress("", ""), "/diary");
+        assert.equal(diaryReturnQuery("?q=garden&list=Window"), "garden");
+        assert.equal(diaryReturnQuery("list=Window"), "Window");
+        assert.equal(diaryReturnQuery(""), "");
         assert.equal(entryFindAddress("/diary/diary1?entry=rain", "2026 Quiet"), "/diary/diary1?entry=rain&q=2026%20Quiet");
         assert.equal(entryFindAddress("/diary/diary1?entry=rain", "   "), "/diary/diary1?entry=rain");
         assert.equal(openedEntryQuery("2026 Quiet", entry), "2026 Quiet");
