@@ -2903,7 +2903,34 @@ function pictureAcross(editor: HTMLElement, range: Range): HTMLElement | null {
     return start && end && start !== end ? start : null;
 }
 
+function pictureBlock(editor: HTMLElement, node: Node): HTMLElement | null {
+    const host = node instanceof Element ? node : node.parentElement;
+    if (!(host instanceof HTMLElement) || !editor.contains(host)) return null;
+    const figure = host.closest("figure");
+    if (figure instanceof HTMLElement && editor.contains(figure)) return figure;
+    if (host.tagName === "IMG") return host;
+    const image = host.closest("img");
+    return image instanceof HTMLElement && editor.contains(image) ? image : null;
+}
+
+function pictureLeaves(editor: HTMLElement, range: Range): boolean {
+    if (range.collapsed) return false;
+    const start = pictureBlock(editor, range.startContainer);
+    const end = pictureBlock(editor, range.endContainer);
+    if (start && !start.contains(range.endContainer)) return true;
+    if (end && !end.contains(range.startContainer)) return true;
+    return false;
+}
+
+function coverTouchedPictures(editor: HTMLElement, range: Range) {
+    const start = pictureBlock(editor, range.startContainer);
+    if (start && !start.contains(range.endContainer)) range.setStartBefore(start);
+    const end = pictureBlock(editor, range.endContainer);
+    if (end && !end.contains(range.startContainer)) range.setEndAfter(end);
+}
+
 function placePictureAcross(editor: HTMLElement, range: Range, picture: HTMLElement) {
+    coverTouchedPictures(editor, range);
     range.deleteContents();
     const atEditor = range.startContainer === editor;
     const next = atEditor ? editor.childNodes[range.startOffset] ?? null : null;
@@ -2945,7 +2972,8 @@ function openPicture(editor: HTMLElement, range: Range, src: string, name: strin
     const code = pictureCode(editor, range);
     const across = pictureAcross(editor, range);
     const items = pictureItems(editor, range);
-    const action = pictureInsert({ inPicture: Boolean(anchor), inItem, inLine: Boolean(line), inCode: Boolean(code), across: Boolean(across), acrossItems: Boolean(items) });
+    const leaves = pictureLeaves(editor, range);
+    const action = pictureInsert({ inPicture: Boolean(anchor), inItem, inLine: Boolean(line), inCode: Boolean(code), across: Boolean(across), acrossItems: Boolean(items), leavesPicture: leaves });
     if (action === "pass") return null;
     const before = editor.innerHTML;
     const picture = buildPicture(src, name);
@@ -6413,10 +6441,13 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
     const runTool = (tool: ToolButton) => {
         const editorForTool = editorRef.current;
+        const toolSelection = window.getSelection();
+        const leavesPicture = Boolean(editorForTool && toolSelection?.rangeCount && pictureLeaves(editorForTool, toolSelection.getRangeAt(0)));
         if (pictureFormat({
             inPicture: Boolean(editorForTool && selectionTouchesPicture(editorForTool)),
             command: tool.command,
             kind: tool.kind,
+            leavesPicture,
         }) === "keep") return;
         if (tool.kind === "image") {
             pictureRangeSaved.current = rememberPictureRange();

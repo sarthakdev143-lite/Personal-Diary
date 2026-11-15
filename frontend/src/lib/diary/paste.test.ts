@@ -246,6 +246,13 @@ describe("entry paste", () => {
         assert.equal(pictureFormat({ inPicture: false, kind: "code" }), "pass");
     });
 
+    it("replaces a picture when the selection runs from that picture into the next line", () => {
+        assert.equal(pictureFormat({ inPicture: true, kind: "image", leavesPicture: true }), "pass");
+        assert.equal(pictureFormat({ inPicture: true, kind: "image" }), "keep");
+        assert.equal(pictureInsert({ inPicture: true, inItem: false, leavesPicture: true }), "span");
+        assert.equal(pictureInsert({ inPicture: true, inItem: false }), "after");
+    });
+
     it("keeps the next line from joining the picture name", () => {
         const atStart = { collapsed: true, atStart: true, empty: false };
         assert.equal(lineAfterPictureKey({ key: "Backspace", ...atStart }), "move");
