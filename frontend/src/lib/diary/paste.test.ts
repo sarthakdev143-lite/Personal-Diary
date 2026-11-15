@@ -295,7 +295,7 @@ describe("entry paste", () => {
 
     it("keeps the writing after a picture on the next list item", () => {
         assert.equal(pictureListContinue({ item: true, next: "text" }), "apart");
-        assert.equal(pictureListContinue({ item: true, next: "block" }), "into");
+        assert.equal(pictureListContinue({ item: true, next: "block" }), "apart");
         assert.equal(pictureListContinue({ item: true, next: "none" }), "into");
         assert.equal(pictureListContinue({ item: false, next: "text" }), "into");
     });

@@ -630,7 +630,7 @@ function splitBesidePicture(block: HTMLElement, figure: HTMLElement, side: "befo
             placeCaretAtStart(paragraph);
             return;
         }
-        if (pictureListContinue({ item: block.tagName === "LI", next: kind }) === "apart" && neighbor instanceof Text) {
+        if (pictureListContinue({ item: block.tagName === "LI", next: kind }) === "apart" && neighbor) {
             const opening = document.createElement("li");
             opening.appendChild(document.createElement("br"));
             const rest = document.createElement("li");
