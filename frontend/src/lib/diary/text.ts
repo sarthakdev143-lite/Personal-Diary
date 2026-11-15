@@ -1053,6 +1053,35 @@ export function dateLeaveTarget(tag: string): "into" | "past" {
     return DATE_WRITING_TAGS.has(tag) ? "into" : "past";
 }
 
+export type DateArrow = "past" | "pass";
+
+export function dateCaretLeave(input: {
+    inHeading: boolean;
+    exact: boolean;
+    next: "into" | "past" | "none";
+}): "past" | "peel" | "stay" {
+    if (!input.inHeading) return "stay";
+    if (input.exact && input.next !== "into") return "past";
+    return "peel";
+}
+
+export function dateArrow(input: {
+    key: string;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    shiftKey?: boolean;
+    where: "heading" | "after";
+    atEnd: boolean;
+    next: "into" | "past" | "none";
+}): DateArrow {
+    if (input.altKey || input.ctrlKey || input.metaKey || input.shiftKey) return "pass";
+    if (input.where !== "heading" || input.next !== "past") return "pass";
+    if (input.key === "ArrowDown") return "past";
+    if (input.key === "ArrowRight" && input.atEnd) return "past";
+    return "pass";
+}
+
 export function dateLineTyping(input: { writing: boolean; peeled: boolean; paragraph: boolean }): "new-line" | "into-line" {
     if (input.peeled || (input.paragraph && !input.writing)) return "into-line";
     return "new-line";
