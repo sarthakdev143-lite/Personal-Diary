@@ -1250,6 +1250,13 @@ export function listReachBlock(tag: string): ListReachBlock {
     return "skip";
 }
 
+export type PictureCodeList = "beside" | "skip";
+
+export function pictureCodeList(input: { inList: boolean; inCode: boolean; hasPicture: boolean }): PictureCodeList {
+    if (input.inList && input.inCode && input.hasPicture) return "beside";
+    return "skip";
+}
+
 export function pictureListReach(input: { inList: boolean; outsideList: boolean; hasPicture: boolean }): PictureListReach {
     if (input.inList && input.outsideList && input.hasPicture) return "lines";
     return "skip";
