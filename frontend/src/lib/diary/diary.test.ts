@@ -578,6 +578,12 @@ describe("code block", () => {
         assert.deepEqual(wordDeleteSpan("See rock&roll rain", 8, 9), { start: 8, end: 13 });
         assert.deepEqual(wordDeleteSpan("See rock&roll rain", 4, 8), { start: 4, end: 9 });
         assert.deepEqual(wordDeleteSpan("See Harbor, rain", 4, 10), { start: 4, end: 12 });
+        assert.deepEqual(wordDeleteSpan("See 12% rain", 4, 6), { start: 4, end: 8 });
+        assert.deepEqual(wordDeleteSpan("See 12% rain", 6, 7), { start: 4, end: 8 });
+        assert.equal(wordDeleteGap("See 12% rain", 4, 6), "after");
+        assert.deepEqual(wordDeleteSpan("See 72\u00b0 rain", 4, 6), { start: 4, end: 8 });
+        assert.deepEqual(wordDeleteSpan("See 72\u00b0 rain", 6, 7), { start: 4, end: 8 });
+        assert.equal(wordDeleteGap("See 72\u00b0 rain", 4, 6), "after");
         assert.deepEqual(wordDeleteSpan("See Harbor, rain", 10, 11), { start: 4, end: 12 });
         assert.deepEqual(wordDeleteSpan("See Harbor. rain", 4, 10), { start: 4, end: 12 });
         assert.deepEqual(wordDeleteSpan("See Harbor,", 4, 10), { start: 3, end: 11 });

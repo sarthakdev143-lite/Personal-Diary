@@ -235,7 +235,7 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
     };
     const sticky = (index: number) => {
         const piece = text[index];
-        return piece === "," || piece === ";" || piece === "!" || piece === "?" || piece === "\u2026";
+        return piece === "," || piece === ";" || piece === "!" || piece === "?" || piece === "%" || piece === "\u00b0" || piece === "\u2026";
     };
     const held = (index: number) => sticky(index) || ((text[index] === "." || text[index] === ":") && !word(index + 1));
     const apostrophe = (index: number) => text[index] === "'" || text[index] === "\u2019" || text[index] === "\u2018";
