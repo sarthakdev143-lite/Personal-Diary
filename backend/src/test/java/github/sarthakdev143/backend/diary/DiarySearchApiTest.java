@@ -2,6 +2,7 @@ package github.sarthakdev143.backend.diary;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -91,6 +92,42 @@ class DiarySearchApiTest {
 
         mockMvc.perform(get("/api/diaries").param("q", "   ").cookie(cookie("token-a")))
                 .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
+    void searchOrdersByTheNewestMatchingPageAndCountsThosePages() throws Exception {
+        saveSession("token-a", "user-a");
+        String savedLater = create("token-a", "Saved later");
+        mockMvc.perform(post("/api/diaries/" + savedLater + "/entries")
+                .cookie(cookie("token-a"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"content\":\"<p>Quiet rain.</p>\",\"createdAt\":\"2026-02-02T15:00:00Z\"}"))
+                .andExpect(status().isCreated());
+        String newerNote = create("token-a", "Earlier save");
+        mockMvc.perform(post("/api/diaries/" + newerNote + "/entries")
+                .cookie(cookie("token-a"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"content\":\"<p>Garden rain.</p>\",\"createdAt\":\"2026-11-14T09:30:00Z\"}"))
+                .andExpect(status().isCreated());
+        mockMvc.perform(post("/api/diaries/" + newerNote + "/entries")
+                .cookie(cookie("token-a"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"content\":\"<p>More rain.</p>\",\"createdAt\":\"2026-11-15T09:30:00Z\"}"))
+                .andExpect(status().isCreated());
+        mockMvc.perform(put("/api/diaries/" + savedLater)
+                .cookie(cookie("token-a"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"description\":\"Touched\"}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/diaries").param("q", "rain").cookie(cookie("token-a")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0]._id").value(newerNote))
+                .andExpect(jsonPath("$[0].matchCount").value(2))
+                .andExpect(jsonPath("$[0].matchAt").value("2026-11-15T09:30:00Z"))
+                .andExpect(jsonPath("$[1]._id").value(savedLater))
+                .andExpect(jsonPath("$[1].matchCount").value(1));
     }
 
     private String create(String token, String title) throws Exception {

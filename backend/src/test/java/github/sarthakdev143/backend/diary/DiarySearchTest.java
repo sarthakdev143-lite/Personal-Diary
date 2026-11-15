@@ -39,11 +39,15 @@ class DiarySearchTest {
         assertTrue(title.matched());
         assertEquals("Quiet rain on the window.", title.snippet());
         assertEquals("rain", title.entryId());
+        assertEquals(NOVEMBER, title.entryAt());
+        assertEquals(1, title.count());
 
         DiarySearch.Hit titleOnly = DiarySearch.match("Window notes", "Two mornings", List.of(rain), "mornings", ZoneOffset.UTC);
         assertTrue(titleOnly.matched());
         assertNull(titleOnly.snippet());
         assertNull(titleOnly.entryId());
+        assertNull(titleOnly.entryAt());
+        assertEquals(0, titleOnly.count());
 
         DiarySearch.Hit note = DiarySearch.match("Window notes", "Two mornings", List.of(garden, rain), "quiet", ZoneOffset.UTC);
         assertTrue(note.matched());
@@ -81,5 +85,21 @@ class DiarySearchTest {
 
         assertEquals("hello", DiarySearch.normalize("  hello  "));
         assertEquals(80, DiarySearch.normalize("x".repeat(100)).length());
+    }
+
+    @Test
+    void ordersANewerMatchingPageAheadOfADiarySavedLater() {
+        Instant february = Instant.parse("2026-02-02T15:00:00Z");
+        Instant june = Instant.parse("2026-06-01T00:00:00Z");
+        Instant november = Instant.parse("2026-11-14T09:30:00Z");
+        Instant saved = Instant.parse("2026-11-15T00:00:00Z");
+        DiarySearch.Rank savedLater = new DiarySearch.Rank(false, saved, Instant.parse("2026-01-01T00:00:00Z"), february);
+        DiarySearch.Rank newerNote = new DiarySearch.Rank(false, june, Instant.parse("2026-01-01T00:00:00Z"), november);
+        DiarySearch.Rank pinnedOlder = new DiarySearch.Rank(true, saved, Instant.parse("2026-01-01T00:00:00Z"), february);
+        DiarySearch.Rank title = new DiarySearch.Rank(false, saved, Instant.parse("2026-01-01T00:00:00Z"), null);
+
+        assertTrue(DiarySearch.order(newerNote, savedLater) < 0);
+        assertTrue(DiarySearch.order(pinnedOlder, newerNote) < 0);
+        assertTrue(DiarySearch.order(title, newerNote) < 0);
     }
 }

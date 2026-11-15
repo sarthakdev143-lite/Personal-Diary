@@ -139,16 +139,18 @@ public class DiaryController {
             Instant createdAt,
             Instant updatedAt,
             @JsonInclude(JsonInclude.Include.NON_NULL) String match,
-            @JsonInclude(JsonInclude.Include.NON_NULL) String matchEntry) {
+            @JsonInclude(JsonInclude.Include.NON_NULL) String matchEntry,
+            @JsonInclude(JsonInclude.Include.NON_NULL) Instant matchAt,
+            @JsonInclude(JsonInclude.Include.NON_NULL) Integer matchCount) {
         static DiaryResponse from(Diary diary) {
-            return from(diary, null, null);
+            return from(diary, null, null, null, null);
         }
 
         static DiaryResponse from(DiaryService.ListedDiary listed) {
-            return from(listed.diary(), listed.match(), listed.matchEntry());
+            return from(listed.diary(), listed.match(), listed.matchEntry(), listed.matchAt(), listed.matchCount());
         }
 
-        private static DiaryResponse from(Diary diary, String match, String matchEntry) {
+        private static DiaryResponse from(Diary diary, String match, String matchEntry, Instant matchAt, Integer matchCount) {
             return new DiaryResponse(
                     diary.getId(),
                     diary.getUserId(),
@@ -159,7 +161,9 @@ public class DiaryController {
                     diary.getCreatedAt(),
                     diary.getUpdatedAt(),
                     match,
-                    matchEntry);
+                    matchEntry,
+                    matchAt,
+                    matchCount);
         }
     }
 }
