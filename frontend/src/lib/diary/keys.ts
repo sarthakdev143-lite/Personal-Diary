@@ -14,6 +14,10 @@ export function searchShortcutLabel(platform: string): "⌘" | "ctrl" {
     return /Mac|iPhone|iPad|iPod/i.test(platform) ? "⌘" : "ctrl";
 }
 
+export function searchHintVisible(query: string): boolean {
+    return query === "";
+}
+
 function listStep(
     ids: readonly string[],
     currentId: string | null,
