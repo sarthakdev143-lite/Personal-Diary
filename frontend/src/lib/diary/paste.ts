@@ -76,6 +76,19 @@ export function pictureRemovalJoin(input: { before: string; after: string }): Pi
     return "space";
 }
 
+export type PictureRemovalSpace = "between" | "outside" | "none";
+
+export function pictureRemovalSpace(input: {
+    before: string;
+    after: string;
+    beforeStyled: boolean;
+    afterStyled: boolean;
+}): PictureRemovalSpace {
+    if (pictureRemovalJoin(input) !== "space") return "none";
+    if (input.beforeStyled || input.afterStyled) return "outside";
+    return "between";
+}
+
 export type PictureInlineEnter = "split" | "pass";
 
 export function pictureInlineEnter(input: {

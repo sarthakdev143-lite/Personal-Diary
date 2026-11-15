@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureRemovalJoin, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureRemovalSpace, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -402,12 +402,31 @@ function pictureAheadOfCaret(editor: HTMLElement, selection: Selection): { figur
     return null;
 }
 
+function pictureSideText(node: Node | null, edge: "start" | "end"): Text | null {
+    if (node instanceof Text) return node;
+    if (!(node instanceof HTMLElement) || node.matches("figure, br, img, table, pre, hr")) return null;
+    return pictureSideText(edge === "end" ? node.lastChild : node.firstChild, edge);
+}
+
 function removePictureAhead(figure: HTMLElement, editor: HTMLElement) {
     const previous = figure.previousSibling;
     const next = figure.nextSibling;
-    if (previous instanceof Text && next instanceof Text && pictureRemovalJoin({ before: previous.data, after: next.data }) === "space") {
-        previous.data = `${previous.data.replace(/[\u00a0\s]+$/g, "")} `;
-        next.data = next.data.replace(/^[\u00a0\s]+/g, "");
+    const beforeText = pictureSideText(previous, "end");
+    const afterText = pictureSideText(next, "start");
+    if (beforeText && afterText) {
+        const place = pictureRemovalSpace({
+            before: beforeText.data,
+            after: afterText.data,
+            beforeStyled: beforeText.parentElement !== figure.parentElement,
+            afterStyled: afterText.parentElement !== figure.parentElement,
+        });
+        if (place !== "none") {
+            const left = beforeText.data.replace(/[\u00a0\s]+$/g, "");
+            const right = afterText.data.replace(/^[\u00a0\s]+/g, "");
+            beforeText.data = place === "between" ? `${left} ` : left;
+            afterText.data = right;
+            if (place === "outside") figure.parentNode?.insertBefore(document.createTextNode(" "), figure);
+        }
     }
     const parent = figure.parentElement;
     figure.remove();
