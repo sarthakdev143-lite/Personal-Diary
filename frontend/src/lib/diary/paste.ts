@@ -170,6 +170,7 @@ export function pictureInsert(input: { inPicture: boolean; inItem: boolean; inLi
     if (input.acrossItems || input.acrossLists) return "items";
     if (input.separateLists) return "span";
     if (input.intoNested) return "nested";
+    if (input.across && input.inItem) return "span";
     if (input.inItem) return "line";
     if (input.inCode) return "code";
     if (input.inLine) return "split";

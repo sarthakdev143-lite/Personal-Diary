@@ -168,7 +168,7 @@ describe("entry paste", () => {
 
     it("keeps a picture when the selection runs from one line into the next", () => {
         assert.equal(pictureInsert({ inPicture: false, inItem: false, across: true }), "span");
-        assert.equal(pictureInsert({ inPicture: false, inItem: true, across: true }), "line");
+        assert.equal(pictureInsert({ inPicture: false, inItem: true, across: true }), "span");
         assert.equal(pictureInsert({ inPicture: true, inItem: false, across: true }), "after");
         assert.equal(pictureInsert({ inPicture: false, inItem: false, inLine: true, across: true }), "split");
         assert.equal(pictureInsert({ inPicture: false, inItem: false, across: false }), "pass");
@@ -189,8 +189,14 @@ describe("entry paste", () => {
 
     it("keeps a picture on its own line when the selection runs from one list into a later list", () => {
         assert.equal(pictureInsert({ inPicture: false, inItem: true, across: true, separateLists: true }), "span");
-        assert.equal(pictureInsert({ inPicture: false, inItem: true, across: true }), "line");
+        assert.equal(pictureInsert({ inPicture: false, inItem: true, across: true }), "span");
         assert.equal(pictureInsert({ inPicture: true, inItem: true, separateLists: true }), "after");
+    });
+
+    it("keeps a picture on its own line when the selection runs from a list line into the following paragraph", () => {
+        assert.equal(pictureInsert({ inPicture: false, inItem: true, across: true }), "span");
+        assert.equal(pictureInsert({ inPicture: false, inItem: true }), "line");
+        assert.equal(pictureInsert({ inPicture: true, inItem: true, across: true }), "after");
     });
 
     it("keeps a picture on its own line when the selection runs from a list line into its nested line", () => {
