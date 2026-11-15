@@ -455,7 +455,11 @@ function removePictureAhead(figure: HTMLElement, editor: HTMLElement) {
                 ? "block"
                 : "none";
     const inLine = parent instanceof HTMLElement && parent !== editor && pictureNameLine(parent.tagName) !== "page";
-    const caretPlace = pictureRemovalCaret({ next: nextKind, inLine });
+    const caretPlace = pictureRemovalCaret({
+        next: nextKind,
+        inLine,
+        previous: previousBlock instanceof HTMLElement && editor.contains(previousBlock),
+    });
     if (caretPlace === "text" && next instanceof Text) {
         const caret = document.createRange();
         caret.setStart(next, 0);
