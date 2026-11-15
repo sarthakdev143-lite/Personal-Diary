@@ -104,6 +104,15 @@ export function pictureAheadReach(input: { sameBlock: boolean; siblingBlock: boo
     return "none";
 }
 
+export type PictureRemovalCaret = "text" | "before" | "inside" | "previous" | "end";
+
+export function pictureRemovalCaret(input: { next: "text" | "picture" | "block" | "none"; inLine?: boolean }): PictureRemovalCaret {
+    if (input.next === "text") return "text";
+    if (input.next === "picture") return input.inLine ? "before" : "previous";
+    if (input.next === "block") return "inside";
+    return "end";
+}
+
 export type PictureInlineEnter = "split" | "pass";
 
 export function pictureInlineEnter(input: {
