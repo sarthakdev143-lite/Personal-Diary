@@ -183,6 +183,13 @@ export function pictureNameWord(input: { inName: boolean; leavesName?: boolean }
     return input.leavesName ? "hold" : "name";
 }
 
+export type PictureNamePaste = "lines" | "pass";
+
+export function pictureNamePaste(input: { inName: boolean; text: string }): PictureNamePaste {
+    if (!input.inName) return "pass";
+    return /[\r\n]/.test(input.text) ? "lines" : "pass";
+}
+
 export type PictureNameEnter = "replace" | "continue" | "pass";
 
 export function pictureNameEnter(input: {

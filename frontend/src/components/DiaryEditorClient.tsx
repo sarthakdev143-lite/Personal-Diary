@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -4785,6 +4785,62 @@ function placeNameContinuation(figure: HTMLElement, block: HTMLElement) {
     placeCaretAtStart(continued);
 }
 
+function pictureNameHost(editor: HTMLElement, selection: Selection): HTMLElement | null {
+    if (!selection.rangeCount) return null;
+    const range = selection.getRangeAt(0);
+    const captionFor = (node: Node) => {
+        const host = node instanceof Element ? node : node.parentElement;
+        const caption = host?.closest("figcaption");
+        return caption instanceof HTMLElement && editor.contains(caption) ? caption : null;
+    };
+    const start = captionFor(range.startContainer);
+    const end = captionFor(range.endContainer);
+    if (!start || start !== end) return null;
+    return start;
+}
+
+function writeCaretText(text: string) {
+    if (!text) return;
+    const selection = window.getSelection();
+    if (!selection?.rangeCount) return;
+    const range = selection.getRangeAt(0);
+    if (range.startContainer instanceof Text) {
+        const node = range.startContainer;
+        const offset = range.startOffset;
+        node.data = `${node.data.slice(0, offset)}${text}${node.data.slice(offset)}`;
+        range.setStart(node, offset + text.length);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        return;
+    }
+    const node = document.createTextNode(text);
+    const parent = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+    if (parent instanceof HTMLElement && parent.childNodes.length === 1 && parent.firstChild instanceof HTMLBRElement) parent.replaceChildren(node);
+    else range.insertNode(node);
+    const next = document.createRange();
+    next.setStart(node, node.data.length);
+    next.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(next);
+}
+
+function pastePictureNameLines(caption: HTMLElement, text: string) {
+    const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+    const selection = window.getSelection();
+    if (selection?.rangeCount && !selection.getRangeAt(0).collapsed) selection.getRangeAt(0).deleteContents();
+    writeCaretText(lines[0] ?? "");
+    dropEmptyMarks(caption);
+    caption.normalize();
+    const figure = caption.closest("figure");
+    if (figure instanceof HTMLElement) syncPictureAlt(figure);
+    lines.slice(1).forEach((line, index) => {
+        if (index === 0) continueAfterPicture(caption);
+        else document.execCommand("insertParagraph", false);
+        writeCaretText(line);
+    });
+}
+
 const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const router = useRouter();
     const { toast } = useToast();
@@ -5501,6 +5557,19 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const data = event.clipboardData;
         const selection = window.getSelection();
         const editor = editorRef.current;
+        if (editor && selection && data.files.length === 0) {
+            const caption = pictureNameHost(editor, selection);
+            const text = data.getData("text/plain");
+            if (caption && pictureNamePaste({ inName: true, text }) === "lines") {
+                event.preventDefault();
+                const before = editor.innerHTML;
+                const path = childPath(editor, caption);
+                pastePictureNameLines(caption, text);
+                keepBlank({ before, after: editor.innerHTML, path });
+                setHtmlContent(editor.innerHTML);
+                return;
+            }
+        }
         if (editor && selection && data.files.length === 0 && selectionInsideCode(editor, selection)) {
             const text = data.getData("text/plain");
             if (text) {
