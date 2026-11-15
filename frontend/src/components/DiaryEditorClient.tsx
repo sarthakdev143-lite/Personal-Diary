@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, listReachBlock, pictureCodeList, pictureTableList, pictureStyle, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, listReachBlock, pictureCodeList, pictureTableList, pictureStyle, pictureStyleHold, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
 type Entry = { _id: string; diaryId: string; content: string; plainText?: string; createdAt: string; updatedAt: string; };
@@ -1858,57 +1858,32 @@ const PICTURE_STYLE: Record<string, { tag: string; host: string }> = {
     strikeThrough: { tag: "s", host: "s, strike, del" },
 };
 
-function outsidePictureText(root: ParentNode): Text[] {
-    const texts: Text[] = [];
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    let node = walker.nextNode();
-    while (node) {
-        if (node instanceof Text && node.data.length > 0 && !node.parentElement?.closest("figure")) texts.push(node);
-        node = walker.nextNode();
-    }
-    return texts;
-}
-
-function releaseStyle(text: Text, selector: string) {
-    const mark = text.parentElement?.closest(selector);
-    if (!(mark instanceof HTMLElement)) return;
-    const after = document.createElement(mark.tagName.toLowerCase());
-    let sibling = text.nextSibling;
-    while (sibling && mark.contains(sibling)) {
-        const next = sibling.nextSibling;
-        after.append(sibling);
-        sibling = next;
-    }
-    if (after.childNodes.length) mark.after(after);
-    mark.after(text);
-    if (!after.childNodes.length) after.remove();
-    if (!mark.childNodes.length) mark.remove();
-}
-
 function styleOutsidePicture(editor: HTMLElement, range: Range, command: string): boolean {
-    const mark = PICTURE_STYLE[command];
-    if (!mark || !editor.contains(range.commonAncestorContainer)) return false;
-    const holder = document.createElement("div");
-    holder.append(range.cloneContents());
-    const texts = outsidePictureText(holder);
-    if (!texts.length) return false;
-    const covered = texts.every((text) => text.parentElement?.closest(mark.host));
-    for (let index = texts.length - 1; index >= 0; index -= 1) {
-        const text = texts[index];
-        if (covered) {
-            releaseStyle(text, mark.host);
-            continue;
+    if (!PICTURE_STYLE[command] || !editor.contains(range.commonAncestorContainer)) return false;
+    const figures = [...editor.querySelectorAll("figure")].filter((figure) => {
+        const containsEdge = figure.contains(range.startContainer) || figure.contains(range.endContainer);
+        if (pictureStyleHold({ containsEdge }) !== "aside") return false;
+        try {
+            return range.intersectsNode(figure);
+        } catch {
+            return false;
         }
-        if (text.parentElement?.closest(mark.host)) continue;
-        const styled = document.createElement(mark.tag);
-        text.before(styled);
-        styled.append(text);
-    }
+    });
+    if (!figures.length) return false;
+    const spots = figures.map((figure) => ({ figure, parent: figure.parentNode, next: figure.nextSibling }));
+    for (const figure of figures) figure.remove();
     const selection = window.getSelection();
-    if (!selection) return false;
+    if (!selection) {
+        for (const spot of spots) spot.parent?.insertBefore(spot.figure, spot.next);
+        return false;
+    }
     selection.removeAllRanges();
     selection.addRange(range);
-    document.execCommand("insertHTML", false, holder.innerHTML);
+    document.execCommand(command, false);
+    for (const spot of spots) {
+        if (spot.parent?.isConnected) spot.parent.insertBefore(spot.figure, spot.next);
+        else editor.append(spot.figure);
+    }
     return true;
 }
 
