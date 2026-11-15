@@ -1,6 +1,6 @@
 import { MAX_IMAGE_BYTES } from "./constants";
 import { sanitizeEntryHtml } from "./sanitize";
-import { boundarySpaceCut, sameEditingPage } from "./text";
+import { boundarySpaceCut, listLineSpace, sameEditingPage } from "./text";
 
 const IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/gif", "image/webp"]);
 
@@ -179,8 +179,7 @@ export function pictureInsert(input: { inPicture: boolean; inItem: boolean; inLi
 }
 
 export function pictureListSpace(text: string, edge: "start" | "end"): string {
-    if (edge === "start") return text.replace(/^[\s\u00a0]/, "");
-    return text.replace(/[\s\u00a0]$/, "");
+    return listLineSpace(text, edge);
 }
 
 export type DatePicture = "after" | "replace" | "pass";
