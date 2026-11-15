@@ -1210,6 +1210,16 @@ export function listLineSpace(text: string, edge: "start" | "end"): string {
     return text.replace(/[\s\u00a0]$/, "");
 }
 
+export type ListBlockPlace = "items" | "nested" | "span" | "pass";
+
+export function listBlockPlace(input: { inItem: boolean; acrossItems?: boolean; acrossLists?: boolean; intoNested?: boolean; across?: boolean; separateLists?: boolean }): ListBlockPlace {
+    if (!input.inItem) return "pass";
+    if (input.acrossItems || input.acrossLists) return "items";
+    if (input.intoNested) return "nested";
+    if (input.across || input.separateLists) return "span";
+    return "pass";
+}
+
 export function listBlockNumbers(input: { item: number; following: number[]; split: boolean }): number[] {
     if (!input.split) return input.following;
     const numbers = [input.item + 1];
