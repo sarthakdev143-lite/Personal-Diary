@@ -274,6 +274,13 @@ export function pictureFormat(input: { inPicture: boolean; command?: string; kin
     return "keep";
 }
 
+export type PictureNameClear = "keep" | "slice";
+
+export function pictureNameClear(input: { startsOutside: boolean; endsOutside: boolean }): PictureNameClear {
+    if (input.startsOutside && input.endsOutside) return "keep";
+    return "slice";
+}
+
 export type PictureBoundsKey = "clear" | "type" | "pass";
 
 export function pictureBoundsKey(input: {
