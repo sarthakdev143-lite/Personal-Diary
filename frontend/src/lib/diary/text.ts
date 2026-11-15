@@ -1241,6 +1241,15 @@ export function pictureListChange(input: { inList: boolean; hasPicture: boolean;
 
 export type PictureListReach = "lines" | "skip";
 
+export type ListReachBlock = "line" | "list" | "skip";
+
+export function listReachBlock(tag: string): ListReachBlock {
+    const name = tag.toLowerCase();
+    if (name === "ul" || name === "ol") return "list";
+    if (name === "p" || name === "h1" || name === "h2" || name === "h3" || name === "blockquote") return "line";
+    return "skip";
+}
+
 export function pictureListReach(input: { inList: boolean; outsideList: boolean; hasPicture: boolean }): PictureListReach {
     if (input.inList && input.outsideList && input.hasPicture) return "lines";
     return "skip";
