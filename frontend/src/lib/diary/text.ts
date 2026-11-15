@@ -1198,6 +1198,25 @@ export function listHeading(input: { command: string; value?: string; inItem: bo
     return "pass";
 }
 
+export type ListBlock = "open" | "pass";
+
+export function listBlock(input: { kind: string; inItem: boolean }): ListBlock {
+    if (input.inItem && (input.kind === "divider" || input.kind === "code")) return "open";
+    return "pass";
+}
+
+export function listBlockNumbers(input: { item: number; following: number[]; split: boolean }): number[] {
+    if (!input.split) return input.following;
+    const numbers = [input.item + 1];
+    let previous = input.item + 1;
+    for (const number of input.following) {
+        const kept = number > previous ? number : previous + 1;
+        numbers.push(kept);
+        previous = kept;
+    }
+    return numbers;
+}
+
 export function orderedItemNumber(input: { start?: string | null; values?: Array<string | null | undefined>; index: number }): number {
     const start = wholeNumber(input.start);
     let number = start ?? 1;

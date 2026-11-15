@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteListPlan, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listBlock, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteListPlan, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -2569,6 +2569,116 @@ function turnListItemsIntoHeadings(items: HTMLElement[], tag: string): HTMLEleme
     }
     if (first) placeCaretAtStart(first);
     return first;
+}
+
+function itemCaretEdge(item: HTMLElement, range: Range): { atStart: boolean; atEnd: boolean } {
+    const before = document.createRange();
+    before.selectNodeContents(item);
+    before.setEnd(range.startContainer, range.startOffset);
+    const after = document.createRange();
+    after.selectNodeContents(item);
+    after.setStart(range.endContainer, range.endOffset);
+    const plain = (fragment: DocumentFragment) => (fragment.textContent ?? "").replace(/[\u200b\u00a0]/g, "").trim() === "" && !fragment.querySelector("ul, ol, img, hr, pre");
+    return { atStart: plain(before.cloneContents()), atEnd: plain(after.cloneContents()) };
+}
+
+function onlyNestedLists(fragment: DocumentFragment): HTMLElement[] | null {
+    const lists: HTMLElement[] = [];
+    for (const node of [...fragment.childNodes]) {
+        if (node instanceof Text && node.data.replace(/[\u200b\u00a0]/g, "").trim() === "") continue;
+        if (node instanceof HTMLElement && (node.tagName === "UL" || node.tagName === "OL")) {
+            lists.push(node);
+            continue;
+        }
+        return null;
+    }
+    return lists;
+}
+
+function splitListAtCaret(item: HTMLElement, range: Range): { before: HTMLElement | null; after: HTMLElement | null; path: number[] } | null {
+    const list = item.parentElement;
+    if (!(list instanceof HTMLUListElement || list instanceof HTMLOListElement)) return null;
+    const editor = item.closest("#de-editor");
+    if (!(editor instanceof HTMLElement)) return null;
+    if (!range.collapsed) {
+        const endHost = range.endContainer instanceof Element ? range.endContainer : range.endContainer.parentElement;
+        if (endHost?.closest("li") !== item) return null;
+        range.deleteContents();
+    }
+    const path = childPath(editor, item);
+    const numbers = leavingOrderedNumbers(item, null);
+    const items = listItems(list);
+    const index = items.indexOf(item);
+    if (index < 0) return null;
+    const following = items.slice(index + 1);
+    const itemNumber = numbers?.get(item) ?? index + 1;
+    const edge = itemCaretEdge(item, range);
+    const lifted: HTMLElement[] = [];
+    let afterItems: HTMLElement[] = [];
+    let split = false;
+    if (edge.atStart) afterItems = [item, ...following];
+    else if (edge.atEnd) afterItems = [...following];
+    else {
+        const tail = document.createRange();
+        tail.selectNodeContents(item);
+        tail.setStart(range.startContainer, range.startOffset);
+        const fragment = tail.extractContents();
+        const lists = onlyNestedLists(fragment);
+        if (lists) {
+            lifted.push(...lists);
+            afterItems = [...following];
+        } else {
+            const fresh = document.createElement("li");
+            fresh.append(fragment);
+            if (blockIsEmpty(fresh)) fresh.appendChild(document.createElement("br"));
+            afterItems = [fresh, ...following];
+            split = true;
+        }
+    }
+    if (blockIsEmpty(item)) item.appendChild(document.createElement("br"));
+    const afterList = afterItems.length ? document.createElement(list.tagName.toLowerCase()) : null;
+    let point: HTMLElement = list;
+    for (const nested of lifted) {
+        point.after(nested);
+        point = nested;
+    }
+    if (afterList) {
+        for (const node of afterItems) afterList.append(node);
+        point.after(afterList);
+    }
+    const kept = listItems(list);
+    const previous = list.previousElementSibling;
+    if (!kept.length) list.remove();
+    if (numbers) {
+        const assigned = listBlockNumbers({
+            item: itemNumber,
+            following: following.map((node) => numbers.get(node) ?? itemNumber),
+            split,
+        });
+        const bumped = new Map<HTMLElement, number>();
+        if (split) afterItems.forEach((node, position) => bumped.set(node, assigned[position] ?? itemNumber + position));
+        else if (edge.atStart) {
+            bumped.set(item, itemNumber);
+            following.forEach((node, position) => bumped.set(node, assigned[position] ?? itemNumber));
+        } else following.forEach((node, position) => bumped.set(node, assigned[position] ?? itemNumber));
+        restoreOrderedNumbers(numbers);
+        if (bumped.size) restoreOrderedNumbers(bumped);
+    }
+    const before = kept.length ? list : previous instanceof HTMLElement ? previous : null;
+    return { before, after: lifted[0] ?? afterList, path };
+}
+
+function placeListBlock(nodes: HTMLElement[], slot: { before: HTMLElement | null; after: HTMLElement | null }) {
+    if (slot.after) {
+        for (const node of nodes) slot.after.before(node);
+        return;
+    }
+    let point = slot.before;
+    if (!point) return;
+    for (const node of nodes) {
+        point.after(node);
+        point = node;
+    }
 }
 
 function outdentListItem(item: HTMLElement) {
@@ -5981,6 +6091,46 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             openLinkField();
             return;
         }
+        const openedListBlock = (kind: "divider" | "code") => {
+            const editor = editorRef.current;
+            const selection = window.getSelection();
+            if (!editor || !selection?.rangeCount) return false;
+            const anchor = selection.anchorNode;
+            const host = anchor instanceof Element ? anchor : anchor?.parentElement ?? null;
+            const item = host?.closest("li");
+            if (!(item instanceof HTMLElement) || !editor.contains(item) || listBlock({ kind, inItem: true }) !== "open") return false;
+            const before = editor.innerHTML;
+            const slot = splitListAtCaret(item, selection.getRangeAt(0));
+            if (!slot) return false;
+            if (kind === "divider") {
+                const rule = document.createElement("hr");
+                const paragraph = document.createElement("p");
+                paragraph.appendChild(document.createElement("br"));
+                placeListBlock([rule, paragraph], slot);
+                placeCaretAtStart(paragraph);
+                settleDivider(editor);
+            } else {
+                const code = document.createElement("code");
+                code.setAttribute("data-fresh", "true");
+                code.appendChild(document.createElement("br"));
+                const pre = document.createElement("pre");
+                pre.append(code);
+                const paragraph = document.createElement("p");
+                paragraph.appendChild(document.createElement("br"));
+                placeListBlock([pre, paragraph], slot);
+                settleCode(editor);
+                code.removeAttribute("data-fresh");
+                const range = document.createRange();
+                range.selectNodeContents(code);
+                const nextSelection = window.getSelection();
+                nextSelection?.removeAllRanges();
+                nextSelection?.addRange(range);
+            }
+            keepBlank({ before, after: editor.innerHTML, path: slot.path });
+            setHtmlContent(editor.innerHTML);
+            updateActiveFormats();
+            return true;
+        };
         if (tool.kind === "code") {
             const editor = editorRef.current;
             if (editor && keepFormatOffDate(editor, "insertHTML") === "hold") return;
@@ -5989,6 +6139,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             const anchor = selection?.anchorNode ?? null;
             const host = anchor instanceof Element ? anchor : anchor?.parentElement ?? null;
             const pre = host?.closest("pre");
+            const insideCode = Boolean(editor && pre && editor.contains(pre));
             if (editor && pre && editor.contains(pre) && selection) {
                 const range = document.createRange();
                 range.setStartAfter(pre);
@@ -5996,6 +6147,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 selection.removeAllRanges();
                 selection.addRange(range);
             }
+            if (!insideCode && openedListBlock("code")) return;
             const replaced = selectionUndo(editor);
             insertHTML(codeBlockHtml());
             const fresh = editor?.querySelector("code[data-fresh]");
@@ -6016,6 +6168,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (tool.html) {
             const editor = editorRef.current;
             if (editor && keepFormatOffDate(editor, "insertHTML") === "hold") return;
+            editor?.focus();
+            if (tool.html.includes("<hr") && openedListBlock("divider")) return;
             const replaced = selectionUndo(editor);
             insertHTML(tool.html);
             if (replaced && editor && editor.innerHTML !== replaced.before) {
