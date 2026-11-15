@@ -1110,6 +1110,15 @@ describe("code block", () => {
         assert.equal(continued.content, '<ol start="2"><li>Harbor</li><li>today</li></ol>');
         assert.equal(htmlToMarkdown(continued.content), "2. Harbor\n3. today");
         assert.equal(htmlToMarkdown('<ol start="nope"><li>Harbor</li></ol>'), "1. Harbor");
+        assert.equal(htmlToMarkdown("<ul><li><p>Harbor</p></li></ul>"), "- Harbor");
+        assert.equal(
+            htmlToMarkdown("<ul><li><p>Harbor</p><p>rain</p></li><li><p>today</p></li></ul>"),
+            "- Harbor\n\n  rain\n- today",
+        );
+        assert.equal(
+            htmlToMarkdown("<ol><li><p><b>Harbor</b></p><p>rain</p></li></ol>"),
+            "1. **Harbor**\n\n   rain",
+        );
     });
 
     it("keeps each row of a pasted table", () => {
