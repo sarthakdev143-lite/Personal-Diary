@@ -161,6 +161,14 @@ export function pictureUndo(input: {
     return "restore";
 }
 
+export type PictureInsert = "line" | "after" | "pass";
+
+export function pictureInsert(input: { inPicture: boolean; inItem: boolean }): PictureInsert {
+    if (input.inPicture) return "after";
+    if (input.inItem) return "line";
+    return "pass";
+}
+
 export function imageHtml(src: string, alt: string): string {
     const name = imageAltText(alt)
         .replace(/&/g, "&amp;")
