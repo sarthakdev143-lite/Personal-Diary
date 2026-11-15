@@ -1330,8 +1330,9 @@ export function entryToOpenWhenHidden<T extends { _id: string; createdAt: string
 export function entryToOpenForFilter<T extends { _id: string; createdAt: string }>(
     visible: readonly T[],
     currentId: string | null,
+    mode: "compose" | "view" | "edit" = "view",
 ): T | null {
-    if (!currentId) return null;
+    if (mode !== "view" || !currentId) return null;
     return entryToOpenWhenHidden(visible, currentId);
 }
 

@@ -2002,6 +2002,9 @@ describe("entry date", () => {
         assert.equal(entryToOpenForFilter([november, february], "rain"), null);
         assert.equal(entryToOpenForFilter([february], "rain")?._id, "garden");
         assert.equal(entryToOpenForFilter([], "rain"), null);
+        assert.equal(entryToOpenForFilter([february], "rain", "edit"), null);
+        assert.equal(entryToOpenForFilter([february], "rain", "compose"), null);
+        assert.equal(entryToOpenForFilter([february], "rain", "view")?._id, "garden");
     });
 
     it("hides a viewed entry that the list filtered out and keeps one being written", () => {

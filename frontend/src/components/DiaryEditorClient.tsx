@@ -5338,6 +5338,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                             && entryMatchesListQuery(entry, query)
                                         ),
                                         selectedEntryId,
+                                        mode,
                                     );
                                     if (!next) return;
                                     handleEntrySelect(next);
