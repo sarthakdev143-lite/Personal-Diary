@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteTouchedBlocks, quoteListPortion, quoteListPlan, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -2651,7 +2651,7 @@ function turnListItemsIntoHeadings(items: HTMLElement[], tag: string): HTMLEleme
 
 function turnTouchedBlocksIntoHeadings(editor: HTMLElement, range: Range, tag: "h1" | "h2" | "h3"): HTMLElement | null {
     const blocks = touchedQuoteBlocks(editor, range);
-    if (blocks.length < 2 || !blocksAreConsecutive(editor, blocks) || !blocks.some((block) => block.matches("ul, ol"))) return null;
+    if (blocks.length < 2 || !blocksAreConsecutive(editor, blocks) || !blocks.some((block) => block.matches("ul, ol, hr, pre"))) return null;
     let first: HTMLElement | null = null;
     for (const block of blocks) {
         if (block.matches("ul, ol")) {
@@ -4196,12 +4196,15 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             if (!selection.isCollapsed) {
                 const range = selection.getRangeAt(0);
                 const covered = coveredQuoteBlocks(editor, range);
-                const coveredTogether = quoteCoveredBlocks({ covered: covered.length, consecutive: blocksAreConsecutive(editor, covered) }) === "together";
-                const touched = coveredTogether ? covered : touchedQuoteBlocks(editor, range);
+                const reached = touchedQuoteBlocks(editor, range);
+                const coveredTogether = quoteCoveredReach({ covered: covered.length, touched: reached.length }) === "inside"
+                    && quoteCoveredBlocks({ covered: covered.length, consecutive: blocksAreConsecutive(editor, covered) }) === "together";
+                const touched = coveredTogether ? covered : reached;
                 const together = coveredTogether || quoteTouchedBlocks({
                     touched: touched.length,
                     consecutive: blocksAreConsecutive(editor, touched),
                     crossesList: touched.some((block) => block.matches("ul, ol")),
+                    crossesBreak: touched.some((block) => block.matches("hr, pre")),
                 }) === "together";
                 const before = editor.innerHTML;
                 const path = touched[0] ? childPath(editor, touched[0]) : undefined;
@@ -4230,10 +4233,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             const headingValue = (value ?? "").toLowerCase();
             const headingRange = selection.getRangeAt(0);
             const touched = touchedQuoteBlocks(editor, headingRange);
-            if ((headingValue === "h1" || headingValue === "h2" || headingValue === "h3") && listHeadingAcross({
-                touchesList: touched.some((block) => block.matches("ul, ol")),
-                across: Boolean(pictureAcross(editor, headingRange)),
-            }) === "lines") {
+            const across = Boolean(pictureAcross(editor, headingRange));
+            const headingLines = (headingValue === "h1" || headingValue === "h2" || headingValue === "h3") && (
+                listHeadingAcross({ touchesList: touched.some((block) => block.matches("ul, ol")), across }) === "lines"
+                || breakHeadingAcross({ crossesBreak: touched.some((block) => block.matches("hr, pre")), across }) === "lines"
+            );
+            if (headingLines) {
                 const before = editor.innerHTML;
                 const path = childPath(editor, touched[0]);
                 const heading = turnTouchedBlocksIntoHeadings(editor, headingRange, headingValue);
