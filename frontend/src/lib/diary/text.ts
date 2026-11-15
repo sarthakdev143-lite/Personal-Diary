@@ -916,6 +916,10 @@ export function keptListNumber(input: { first: boolean; previous: number | null;
     return input.number;
 }
 
+export function listLineLeaves(input: { ordered: boolean; sameList: boolean }): boolean {
+    return input.ordered && !input.sameList;
+}
+
 export type QuoteToggle = "leave" | "quote";
 
 export function quoteToggle(input: { inside: boolean }): QuoteToggle {
