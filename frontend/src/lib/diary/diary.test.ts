@@ -1121,6 +1121,21 @@ describe("code block", () => {
         );
     });
 
+    it("keeps a line break inside the list item when the entry is copied", () => {
+        assert.equal(
+            htmlToMarkdown("<ul><li>Harbor<br>rain</li><li>today</li></ul>"),
+            "- Harbor\n  rain\n- today",
+        );
+        assert.equal(
+            htmlToMarkdown("<ol><li><b>Harbor</b><br>rain</li></ol>"),
+            "1. **Harbor**\n   rain",
+        );
+        assert.equal(
+            htmlToMarkdown("<ul><li>Harbor<br><br>rain</li></ul>"),
+            "- Harbor\n\n  rain",
+        );
+    });
+
     it("keeps each row of a pasted table", () => {
         const saved = prepareEntryContent("<table><tr><th>Rain</th><th>Harbor</th></tr><tr><td>Bread</td><td><b>Market</b></td></tr></table>");
         assert.equal(saved.ok, true);
