@@ -32,6 +32,20 @@ function matchRange(text: string, query: string): { start: number; end: number }
     return { start: start.start, end: end.end };
 }
 
+// One line of a diary title fits about this many characters.
+const TITLE_LINE = 18;
+
+export function titleCardText(title: string, rawQuery: string): string {
+    const query = normalizeSearchQuery(rawQuery);
+    if (!query) return title;
+    const range = matchRange(title, query);
+    if (!range || range.start < TITLE_LINE) return title;
+    const start = Math.max(0, range.start - 8);
+    let snippet = title.slice(start, Math.min(title.length, range.end + 8)).trim();
+    if (start > 0) snippet = `…${snippet}`;
+    return snippet;
+}
+
 export function diaryFieldsMatch(title: string, description: string, rawQuery: string): boolean {
     const query = normalizeSearchQuery(rawQuery).toLowerCase();
     if (!query) return true;
