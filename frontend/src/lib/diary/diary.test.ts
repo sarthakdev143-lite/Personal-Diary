@@ -1545,6 +1545,17 @@ describe("search", () => {
         assert.equal(entryListSearchText(written).includes(yearSeam), true);
         assert.equal(entryMatchesListQuery(written, dateSeam), false);
         assert.equal(entryMatchesListQuery(written, yearSeam), false);
+        const heading = formatEntryLong(created);
+        const pageSeam = `${heading.slice(-4)} Quiet`;
+        assert.equal(entryListSearchText(written).includes(pageSeam), false);
+        assert.equal(entryMatchesListQuery(written, pageSeam), true);
+        const marked = textRunHits([
+            { text: heading, breakBefore: false },
+            { text: "Quiet rain.", breakBefore: true },
+        ], pageSeam);
+        assert.equal(marked.length, 1);
+        assert.equal(heading.slice(marked[0][0].start, marked[0][0].end), heading.slice(-4));
+        assert.equal("Quiet rain.".slice(marked[0][1].start, marked[0][1].end), "Quiet");
         assert.equal(entryMatchesListQuery(written, "Quiet rain"), true);
         assert.equal(diaryListMatch({ title: "Window", description: "" }, [written], dateSeam).matched, false);
 
