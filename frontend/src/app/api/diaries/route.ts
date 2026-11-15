@@ -55,7 +55,7 @@ export async function GET(request: Request) {
                 query,
             );
             if (!match.matched) return [];
-            return [{ ...serializeDiary(diary), match: match.snippet, matchEntry: match.entryId }];
+            return [{ ...serializeDiary(diary), match: match.snippet, matchEntry: match.entryId, matchAt: match.entryAt }];
         });
 
         return NextResponse.json(visible);

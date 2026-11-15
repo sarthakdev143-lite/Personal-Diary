@@ -1,5 +1,5 @@
 import { SEARCH_MAX } from "./constants";
-import { entrySearchParts, entryWritingText, formatEntryLong } from "./text";
+import { entrySearchParts, entryWritingText, formatDiaryDate, formatEntryLong } from "./text";
 
 type RegexQuery = { $regex: string; $options: "i" };
 
@@ -236,19 +236,32 @@ export function diaryListMatch(
     diary: { title: string; description?: string | null },
     entries: readonly ListedEntry[],
     rawQuery: string,
-): { matched: boolean; snippet: string | null; entryId: string | null } {
+): { matched: boolean; snippet: string | null; entryId: string | null; entryAt: string | null } {
     const query = normalizeSearchQuery(rawQuery);
-    if (!query) return { matched: true, snippet: null, entryId: null };
+    if (!query) return { matched: true, snippet: null, entryId: null, entryAt: null };
     if (diaryFieldsMatch(diary.title, diary.description ?? "", query)) {
-        return { matched: true, snippet: null, entryId: null };
+        return { matched: true, snippet: null, entryId: null, entryAt: null };
     }
 
     const hits = entries
         .filter((entry) => entryMatchesListQuery(entry, query))
         .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
     const newest = hits[0];
-    if (!newest) return { matched: false, snippet: null, entryId: null };
-    return { matched: true, snippet: matchingPiece(newest, query), entryId: newest.id || null };
+    if (!newest) return { matched: false, snippet: null, entryId: null, entryAt: null };
+    return { matched: true, snippet: matchingPiece(newest, query), entryId: newest.id || null, entryAt: newest.createdAt };
+}
+
+export function diaryCardWhen(input: {
+    query: string;
+    matchEntry?: string | null;
+    matchAt?: string | null;
+    updatedAt?: string | null;
+    createdAt: string;
+}): string {
+    const query = normalizeSearchQuery(input.query);
+    const note = input.matchAt?.trim();
+    if (query && input.matchEntry && note) return formatDiaryDate(note);
+    return `Updated ${formatDiaryDate(input.updatedAt || input.createdAt)}`;
 }
 
 export function diaryListAddress(rawQuery: string): string {
