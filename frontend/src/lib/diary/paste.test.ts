@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameSelection, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -262,6 +262,16 @@ describe("entry paste", () => {
         assert.equal(pictureNameSelection({ key: "x", ...selected }), "pass");
         assert.equal(pictureNameSelection({ key: "x", ctrlKey: true, ...selected }), "edit");
         assert.equal(pictureNameSelection({ key: "X", metaKey: true, ...selected }), "edit");
+    });
+
+    it("removes the selected letters of a picture name before the line continues", () => {
+        const named = { inName: true };
+        assert.equal(pictureNameEnter({ key: "Enter", collapsed: true, ...named }), "continue");
+        assert.equal(pictureNameEnter({ key: "Enter", shiftKey: true, collapsed: false, ...named }), "replace");
+        assert.equal(pictureNameEnter({ key: "Enter", collapsed: false, ...named }), "replace");
+        assert.equal(pictureNameEnter({ key: "Enter", ctrlKey: true, collapsed: false, ...named }), "pass");
+        assert.equal(pictureNameEnter({ key: "Enter", collapsed: false, inName: false }), "pass");
+        assert.equal(pictureNameEnter({ key: "Delete", collapsed: false, ...named }), "pass");
     });
 
     it("keeps a picture when the selection also holds the writing around it", () => {

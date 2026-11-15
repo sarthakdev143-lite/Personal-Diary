@@ -176,6 +176,21 @@ export function pictureNameSelection(input: {
     return cut || removing ? "edit" : "pass";
 }
 
+export type PictureNameEnter = "replace" | "continue" | "pass";
+
+export function pictureNameEnter(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    inName: boolean;
+}): PictureNameEnter {
+    if (input.altKey || input.ctrlKey || input.metaKey || input.key !== "Enter" || !input.inName) return "pass";
+    return input.collapsed ? "continue" : "replace";
+}
+
 export function captionBreakText(before: string, after: string): { name: string; next: string } {
     const cut = boundarySpaceCut(before, after);
     if (!cut) return { name: before, next: after };
