@@ -484,16 +484,28 @@ export function styledSpace(input: {
     return "outside";
 }
 
-export function joinNeedsSpace(previous: string, next: string): boolean {
+export function joinGap(previous: string, next: string): { trimPrevious: number; trimNext: number; insert: boolean; separate: boolean } {
     const left = previous.replace(/\u00a0/g, " ");
     const right = next.replace(/\u00a0/g, " ");
-    if (!left.trim() || !right.trim()) return false;
-    if (/\s$/.test(left) || /^\s/.test(right)) return false;
+    if (!left.trim() || !right.trim()) return { trimPrevious: 0, trimNext: 0, insert: false, separate: false };
+    const trailing = left.length - left.trimEnd().length;
+    const leading = right.length - right.trimStart().length;
     const end = left.trimEnd();
     const start = right.trimStart();
     const opens = /[\p{L}\p{N}\p{Pc},.!?;:)\]"']$/u.test(end);
     const continues = /^[\p{L}\p{N}\p{Pc}(["']/u.test(start);
-    return opens && continues;
+    if (!opens || !continues) return { trimPrevious: 0, trimNext: 0, insert: false, separate: false };
+    return {
+        trimPrevious: Math.max(0, trailing - 1),
+        trimNext: leading,
+        insert: trailing === 0,
+        separate: true,
+    };
+}
+
+export function joinNeedsSpace(previous: string, next: string): boolean {
+    const gap = joinGap(previous, next);
+    return gap.insert && gap.trimPrevious === 0 && gap.trimNext === 0;
 }
 
 export type SplitSpace = "trim" | "keep";

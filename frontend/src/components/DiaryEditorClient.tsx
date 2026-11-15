@@ -17,7 +17,7 @@ import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, resto
 import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -1293,28 +1293,34 @@ function codeLines(code: HTMLElement): string[] {
     return lines.map((line) => line.replace(/\u00a0/g, " "));
 }
 
-function pullFirstCodeLine(into: HTMLElement, pre: HTMLElement) {
+function pullFirstCodeLine(into: HTMLElement, pre: HTMLElement): "after" | "none" {
     const code = pre.querySelector("code");
     const source = code instanceof HTMLElement ? code : pre;
     const lines = codeLines(source);
     const line = lines[0] ?? "";
     const rest = lines.slice(1).join("\n");
     const host = writingHost(into);
+    let separated: "after" | "none" = "none";
     if (line.trim()) {
         if (!(host.textContent ?? "").replace(/[\u200b\u00a0]/g, "").trim()) {
             for (const child of [...host.childNodes]) {
                 if (child instanceof HTMLBRElement || (child instanceof Text && !child.data.replace(/[\u200b\u00a0]/g, "").trim())) child.remove();
             }
         }
-        if (joinNeedsSpace(host.textContent ?? "", line)) host.appendChild(document.createTextNode(" "));
-        const text = document.createTextNode(line);
+        const gap = joinGap(host.textContent ?? "", line);
+        trimEdgeSpaces(host, "end", gap.trimPrevious);
+        const body = line.slice(gap.trimNext);
+        if (gap.insert) host.appendChild(document.createTextNode(" "));
+        const text = document.createTextNode(body);
         host.appendChild(text);
         placeCaretOn(text, host);
+        separated = gap.separate ? "after" : "none";
     } else {
         placeCaretAtEnd(host);
     }
     if (!rest.trim()) pre.remove();
     else source.textContent = rest;
+    return separated;
 }
 
 function followingCode(block: HTMLElement): HTMLPreElement | null {
@@ -1324,20 +1330,83 @@ function followingCode(block: HTMLElement): HTMLPreElement | null {
     return next instanceof HTMLPreElement ? next : null;
 }
 
-function joinBlock(target: HTMLElement, source: HTMLElement) {
+function gapChar(value: string): boolean {
+    return /\s/u.test(value);
+}
+
+function trimTextData(text: Text, side: "start" | "end", count: number): number {
+    if (count <= 0) return count;
+    const data = text.data;
+    let left = count;
+    if (side === "end") {
+        let end = data.length;
+        while (left > 0 && end > 0 && gapChar(data[end - 1] ?? "")) {
+            end -= 1;
+            left -= 1;
+        }
+        if (end !== data.length) text.data = data.slice(0, end);
+        return left;
+    }
+    let start = 0;
+    while (left > 0 && start < data.length && gapChar(data[start] ?? "")) {
+        start += 1;
+        left -= 1;
+    }
+    if (start) text.data = data.slice(start);
+    return left;
+}
+
+function trimEdgeSpaces(root: HTMLElement, side: "start" | "end", count: number): number {
+    if (count <= 0) return count;
+    const nodes: Text[] = [];
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    while (node instanceof Text) {
+        nodes.push(node);
+        node = walker.nextNode();
+    }
+    if (side === "end") nodes.reverse();
+    let left = count;
+    for (const text of nodes) {
+        left = trimTextData(text, side, left);
+        if (left <= 0 || text.data.length > 0) return left;
+    }
+    return left;
+}
+
+function trimSpacesBeside(br: HTMLBRElement, direction: "previous" | "next", count: number) {
+    let left = count;
+    let current = direction === "previous" ? br.previousSibling : br.nextSibling;
+    const side = direction === "previous" ? "end" : "start";
+    while (current && left > 0 && !(current instanceof HTMLBRElement)) {
+        if (current instanceof Text) {
+            left = trimTextData(current, side, left);
+            if (left <= 0 || current.data.length > 0) return;
+        } else if (current instanceof HTMLElement) {
+            left = trimEdgeSpaces(current, side, left);
+            if (left <= 0 || (current.textContent ?? "").length > 0) return;
+        }
+        current = direction === "previous" ? current.previousSibling : current.nextSibling;
+    }
+}
+
+function joinBlock(target: HTMLElement, source: HTMLElement): "after" | "none" {
     const into = writingHost(target);
     const after = source.textContent ?? "";
     const sourceEmpty = !after.replace(/[\u200b\u00a0]/g, "").trim() && !source.querySelector("img");
     if (sourceEmpty) {
         removeJoined(source);
         placeCaretAtEnd(into);
-        return;
+        return "none";
     }
     if (!(into.textContent ?? "").replace(/[\u200b\u00a0]/g, "").trim()) {
         for (const child of [...into.childNodes]) {
             if (child instanceof HTMLBRElement || (child instanceof Text && !child.data.replace(/[\u200b\u00a0]/g, "").trim())) child.remove();
         }
     }
+    const gap = joinGap(into.textContent ?? "", source.textContent ?? "");
+    trimEdgeSpaces(into, "end", gap.trimPrevious);
+    trimEdgeSpaces(source, "start", gap.trimNext);
     const pieces = piecesOf(source);
     const start = pieces.find((node) => {
         if (node instanceof Text) return node.data.replace(/[\u200b\u00a0]/g, "") !== "";
@@ -1352,6 +1421,7 @@ function joinBlock(target: HTMLElement, source: HTMLElement) {
     }
     removeJoined(source);
     placeCaretOn(start, into);
+    return gap.separate ? "after" : "none";
 }
 
 const INLINE_MARK = /^(?:B|STRONG|I|EM|U|S|STRIKE|DEL|A|SPAN|FONT)$/;
@@ -1476,13 +1546,16 @@ function placeBreakCaret(line: HTMLElement, index: number | undefined, side: "be
     return true;
 }
 
-function joinBrokenLine(br: HTMLBRElement) {
+function joinBrokenLine(br: HTMLBRElement): "after" | "none" {
     const block = br.closest("p, li, h1, h2, h3, blockquote");
     const before = textBesideBreak(br, "previous");
     const after = textBesideBreak(br, "next");
     const following = firstTextAfter(br);
     const marker = br.nextSibling;
-    if (joinNeedsSpace(before, after)) {
+    const gap = joinGap(before, after);
+    trimSpacesBeside(br, "previous", gap.trimPrevious);
+    trimSpacesBeside(br, "next", gap.trimNext);
+    if (gap.insert) {
         const previous = br.previousSibling;
         if (previous instanceof Text) previous.data = `${previous.data} `;
         else br.before(document.createTextNode(" "));
@@ -1498,6 +1571,7 @@ function joinBrokenLine(br: HTMLBRElement) {
         selection?.removeAllRanges();
         selection?.addRange(caret);
     } else if (block instanceof HTMLElement) placeCaretAtEnd(block);
+    return gap.separate ? "after" : "none";
 }
 
 function openBlankLine(br: HTMLBRElement, side: "before" | "after") {
@@ -3709,7 +3783,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const path = block instanceof HTMLElement ? childPath(editor, block) : undefined;
         const index = block instanceof HTMLElement ? [...block.querySelectorAll("br")].indexOf(beside.br) : -1;
         const mark = breakUndoMark({ index, side: beside.side });
-        joinBrokenLine(beside.br);
+        const separated = joinBrokenLine(beside.br);
+        rememberWordGap(editor, block instanceof HTMLElement ? block : null, separated);
         keepBlank({ before, after: editor.innerHTML, path, ...(mark ? { breakIndex: mark.index, breakSide: mark.side } : {}) });
         setHtmlContent(editor.innerHTML);
         return true;
@@ -3748,7 +3823,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             e.preventDefault();
             const before = editor.innerHTML;
             const path = childPath(editor, pre);
-            pullFirstCodeLine(neighbor, pre);
+            const separated = pullFirstCodeLine(neighbor, pre);
+            rememberWordGap(editor, writingHost(neighbor), separated);
             keepBlank({ before, after: editor.innerHTML, path });
             setHtmlContent(editor.innerHTML);
             return true;
@@ -3775,7 +3851,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const path = childPath(editor, block);
         const range = selection.getRangeAt(0);
         const caret = codePullUndoCaret(textOffsetWithin(block, range.startContainer, range.startOffset)) ?? undefined;
-        pullFirstCodeLine(block, code);
+        const separated = pullFirstCodeLine(block, code);
+        rememberWordGap(editor, writingHost(block), separated);
         keepBlank({ before, after: editor.innerHTML, path, caret });
         setHtmlContent(editor.innerHTML);
         return true;
@@ -3839,14 +3916,16 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             offset: anchor && block.contains(anchor) ? textOffsetWithin(block, anchor, selection.anchorOffset) : -1,
         }) ?? undefined;
         const path = childPath(editor, block);
+        let separated: "after" | "none" = "none";
         if (action === "clear") {
             removeJoined(backward ? neighbor : block);
             placeCaretAtStart(backward ? block : neighbor);
         } else if (action === "drop") {
             removeJoined(block);
             placeCaretAtEnd(neighbor);
-        } else if (backward) joinBlock(neighbor, block);
-        else joinBlock(block, neighbor);
+        } else if (backward) separated = joinBlock(neighbor, block);
+        else separated = joinBlock(block, neighbor);
+        rememberWordGap(editor, writingHost(backward ? neighbor : block), separated);
         keepBlank({ before, after: editor.innerHTML, path, caret });
         setHtmlContent(editor.innerHTML);
         return true;
