@@ -902,6 +902,40 @@ export function quoteItalicKey(input: {
     return "clear";
 }
 
+export type LinkUnderline = "browser" | "mark" | "clear" | "arm" | "plain" | "disarm";
+
+export function linkUnderline(input: { inLink: boolean; inUnderline: boolean; collapsed: boolean; pending: "underline" | "plain" | null }): LinkUnderline {
+    if (!input.inLink) return "browser";
+    if (input.collapsed && !input.inUnderline) return input.pending === "underline" ? "disarm" : "arm";
+    if (input.collapsed && input.inUnderline) return input.pending === "plain" ? "disarm" : "plain";
+    if (input.inUnderline) return "clear";
+    return "mark";
+}
+
+export function linkUnderlineShown(input: { inLink: boolean; inUnderline: boolean; pending: "underline" | "plain" | null; browser: boolean }): boolean {
+    if (!input.inLink) return input.browser;
+    if (input.pending === "underline") return true;
+    if (input.pending === "plain") return false;
+    return input.inUnderline;
+}
+
+export type LinkUnderlineKey = "keep" | "release" | "clear";
+
+export function linkUnderlineKey(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    held: boolean;
+}): LinkUnderlineKey {
+    const typing = input.key.length === 1 && !input.ctrlKey && !input.metaKey && !input.altKey;
+    const modifier = input.key === "Control" || input.key === "Meta" || input.key === "Alt" || input.key === "Shift";
+    if (typing || modifier || styleShortcut(input) === "underline") return "keep";
+    if (input.held) return "release";
+    return "clear";
+}
+
 export type StyleStart = "start" | "pass";
 
 export function styleStartType(input: { inStyle: boolean; collapsed: boolean; atStart: boolean }): StyleStart {
