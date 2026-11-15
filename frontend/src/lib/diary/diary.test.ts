@@ -859,6 +859,22 @@ describe("code block", () => {
         assert.deepEqual(wordDeleteSpan("See #tag rain", 5, 8), { start: 4, end: 9 });
     });
 
+    it("keeps a mark at the end of a word with that word", () => {
+        for (const mark of ["*", "_", "&", "/", "@", "=", "|", "~", "\\", "^", "-", "\u2013"]) {
+            const text = `See note${mark} rain`;
+            const at = text.indexOf(mark);
+            assert.deepEqual(wordDeleteSpan(text, at, at + 1), { start: 4, end: at + 2 });
+            assert.equal(wordDeleteGap(text, at, at + 1), "after");
+            assert.deepEqual(wordDeleteSpan(text, 4, 6), { start: 4, end: 6 });
+        }
+        assert.deepEqual(wordDeleteSpan("See note* rain", 4, 8), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See note*star rain", 8, 9), { start: 8, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See note** rain", 8, 9), { start: 4, end: 11 });
+        assert.deepEqual(wordDeleteSpan("See note*, rain", 8, 9), { start: 4, end: 11 });
+        assert.deepEqual(wordDeleteSpan("See note*", 8, 9), { start: 3, end: 9 });
+        assert.equal(wordDeleteGap("See note*", 8, 9), "before");
+    });
+
     it("keeps a space on both sides of the word typed after a deleted word", () => {
         assert.equal(wordDeleteGap("See Harbor rain", 4, 10), "after");
         assert.equal(wordDeleteGap("See  Harbor rain", 5, 11), "after");
