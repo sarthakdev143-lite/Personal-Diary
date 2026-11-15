@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listBlock, listLineSpace, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteListPlan, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listBlock, listLineSpace, listBlockPlace, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteListPlan, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -2673,6 +2673,37 @@ function trimListBlockEdges(slot: { before: HTMLElement | null; after: HTMLEleme
     if (slot.after instanceof HTMLElement) trimPictureEdge(slot.after, "start");
 }
 
+function listBlockNodes(kind: "divider" | "code"): { nodes: HTMLElement[]; code: HTMLElement | null; caret: HTMLElement } {
+    const paragraph = document.createElement("p");
+    paragraph.appendChild(document.createElement("br"));
+    if (kind === "divider") {
+        const rule = document.createElement("hr");
+        return { nodes: [rule, paragraph], code: null, caret: paragraph };
+    }
+    const code = document.createElement("code");
+    code.setAttribute("data-fresh", "true");
+    code.appendChild(document.createElement("br"));
+    const pre = document.createElement("pre");
+    pre.append(code);
+    return { nodes: [pre, paragraph], code, caret: paragraph };
+}
+
+function finishListBlock(editor: HTMLElement, kind: "divider" | "code", code: HTMLElement | null, caret: HTMLElement) {
+    if (kind === "divider") {
+        placeCaretAtStart(caret);
+        settleDivider(editor);
+        return;
+    }
+    settleCode(editor);
+    code?.removeAttribute("data-fresh");
+    if (!code) return;
+    const range = document.createRange();
+    range.selectNodeContents(code);
+    const nextSelection = window.getSelection();
+    nextSelection?.removeAllRanges();
+    nextSelection?.addRange(range);
+}
+
 function placeListBlock(nodes: HTMLElement[], slot: { before: HTMLElement | null; after: HTMLElement | null }) {
     if (slot.after) {
         for (const node of nodes) slot.after.before(node);
@@ -2914,7 +2945,10 @@ function pictureIntoNested(editor: HTMLElement, range: Range): HTMLElement | nul
     return null;
 }
 
-function placePictureIntoNested(range: Range, picture: HTMLElement) {
+function placePictureIntoNested(range: Range, nodes: HTMLElement[]) {
+    const first = nodes[0];
+    const last = nodes[nodes.length - 1];
+    if (!first || !last) return;
     const start = listItemFrom(range.startContainer, range.startOffset, "start");
     const end = listItemFrom(range.endContainer, range.endOffset, "end");
     const outer = start && end && start.contains(end) ? start : end && start && end.contains(start) ? end : null;
@@ -2925,11 +2959,13 @@ function placePictureIntoNested(range: Range, picture: HTMLElement) {
     const numbers = orderedListNumbers(list);
     const nestedNumbers = inner?.parentElement && inner.parentElement !== list ? orderedListNumbers(inner.parentElement) : null;
     range.deleteContents();
-    if (atStart) outer.prepend(picture);
-    else if (range.startContainer === outer || outer.contains(range.startContainer)) range.insertNode(picture);
-    else outer.append(picture);
+    const fragment = document.createDocumentFragment();
+    for (const node of nodes) fragment.append(node);
+    if (atStart) outer.prepend(fragment);
+    else if (range.startContainer === outer || outer.contains(range.startContainer)) range.insertNode(fragment);
+    else outer.append(fragment);
     const lifted: Node[] = [];
-    let sibling = picture.nextSibling;
+    let sibling = last.nextSibling;
     while (sibling) {
         const next = sibling.nextSibling;
         lifted.push(sibling);
@@ -2943,13 +2979,17 @@ function placePictureIntoNested(range: Range, picture: HTMLElement) {
         afterList.append(sibling);
         sibling = next;
     }
-    picture.remove();
+    for (const node of nodes) node.remove();
     if (outer.isConnected) trimPictureEdge(outer, "end");
     clearPictureItem(outer);
-    let point: HTMLElement = picture;
-    if (list.isConnected && listItems(list).length) list.after(picture);
-    else if (list.isConnected) list.replaceWith(picture);
+    let point: HTMLElement = first;
+    if (list.isConnected && listItems(list).length) list.after(first);
+    else if (list.isConnected) list.replaceWith(first);
     else return;
+    for (const node of nodes.slice(1)) {
+        point.after(node);
+        point = node;
+    }
     for (const node of lifted) {
         if (node instanceof HTMLUListElement || node instanceof HTMLOListElement) {
             const first = listItems(node)[0] ?? null;
@@ -3011,7 +3051,7 @@ function clearPictureItem(item: HTMLElement | null) {
     if (blockIsEmpty(item) && !directNestedLists(item).length) item.remove();
 }
 
-function placePictureBetweenItems(range: Range, picture: HTMLElement) {
+function placePictureBetweenItems(range: Range, nodes: HTMLElement[]) {
     const start = listItemAt(range.startContainer);
     const end = listItemAt(range.endContainer);
     const list = start ? sharedPictureList(start, end) : null;
@@ -3025,8 +3065,11 @@ function placePictureBetweenItems(range: Range, picture: HTMLElement) {
     const afterList = document.createElement(splitList.tagName.toLowerCase());
     for (const node of [...splitList.childNodes].slice(offset)) afterList.append(node);
     if (afterList.childNodes.length) splitList.after(afterList);
-    if (afterList.parentElement) afterList.before(picture);
-    else splitList.after(picture);
+    if (afterList.parentElement) {
+        for (const node of nodes) afterList.before(node);
+    } else {
+        for (const node of nodes) splitList.after(node);
+    }
     const previous = listItems(splitList).at(-1) ?? null;
     const following = listItems(afterList)[0] ?? null;
     if (previous) trimPictureEdge(previous, "end");
@@ -3078,28 +3121,34 @@ function coverTouchedPictures(editor: HTMLElement, range: Range) {
     if (end && !end.contains(range.startContainer)) range.setEndAfter(end);
 }
 
-function placePictureAcross(editor: HTMLElement, range: Range, picture: HTMLElement) {
+function placePictureAcross(editor: HTMLElement, range: Range, nodes: HTMLElement[]) {
+    const first = nodes[0];
+    const last = nodes[nodes.length - 1];
+    if (!first || !last) return;
     coverTouchedPictures(editor, range);
     range.deleteContents();
     const atEditor = range.startContainer === editor;
     const next = atEditor ? editor.childNodes[range.startOffset] ?? null : null;
-    if (next) next.before(picture);
-    else if (atEditor) editor.append(picture);
+    const insert = (before: ChildNode | null) => {
+        if (before) for (const node of nodes) before.before(node);
+        else for (const node of nodes) editor.append(node);
+    };
+    if (atEditor) insert(next);
     else {
         const host = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
         let block: HTMLElement | null = host instanceof HTMLElement ? host : null;
         while (block && block.parentElement && block.parentElement !== editor) block = block.parentElement;
-        if (block && block.parentElement === editor) block.before(picture);
-        else editor.append(picture);
+        if (block && block.parentElement === editor) insert(block);
+        else insert(null);
     }
-    const previous = picture.previousElementSibling;
-    const following = picture.nextElementSibling;
+    const previous = first.previousElementSibling;
+    const following = last.nextElementSibling;
     if (previous instanceof HTMLElement) trimPictureEdge(previous, "end");
     if (following instanceof HTMLElement) trimPictureEdge(following, "start");
     if (previous instanceof HTMLElement && blockIsEmpty(previous)) previous.remove();
     if (following instanceof HTMLElement && blockIsEmpty(following)) following.remove();
-    clearPictureListEdge(picture.previousElementSibling, "end");
-    clearPictureListEdge(picture.nextElementSibling, "start");
+    clearPictureListEdge(first.previousElementSibling, "end");
+    clearPictureListEdge(last.nextElementSibling, "start");
 }
 
 function clearPictureListEdge(block: Element | null, edge: "start" | "end") {
@@ -3152,19 +3201,19 @@ function openPicture(editor: HTMLElement, range: Range, src: string, name: strin
     }
     if (action === "items" && (items || lists)) {
         const path = childPath(editor, items ?? lists!);
-        placePictureBetweenItems(range, picture);
+        placePictureBetweenItems(range, [picture]);
         placeCaretInPicture(picture);
         return { before, path };
     }
     if (action === "nested" && nested) {
         const path = childPath(editor, nested);
-        placePictureIntoNested(range, picture);
+        placePictureIntoNested(range, [picture]);
         placeCaretInPicture(picture);
         return { before, path };
     }
     if (action === "span" && (across || separate)) {
         const path = childPath(editor, across ?? separate!);
-        placePictureAcross(editor, range, picture);
+        placePictureAcross(editor, range, [picture]);
         placeCaretInPicture(picture);
         return { before, path };
     }
@@ -6637,33 +6686,40 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             const host = anchor instanceof Element ? anchor : anchor?.parentElement ?? null;
             const item = host?.closest("li");
             if (!(item instanceof HTMLElement) || !editor.contains(item) || listBlock({ kind, inItem: true }) !== "open") return false;
-            const before = editor.innerHTML;
-            const slot = splitListAtCaret(item, selection.getRangeAt(0));
-            if (!slot) return false;
-            if (kind === "divider") {
-                const rule = document.createElement("hr");
-                const paragraph = document.createElement("p");
-                paragraph.appendChild(document.createElement("br"));
-                placeListBlock([rule, paragraph], slot);
-                placeCaretAtStart(paragraph);
-                settleDivider(editor);
-            } else {
-                const code = document.createElement("code");
-                code.setAttribute("data-fresh", "true");
-                code.appendChild(document.createElement("br"));
-                const pre = document.createElement("pre");
-                pre.append(code);
-                const paragraph = document.createElement("p");
-                paragraph.appendChild(document.createElement("br"));
-                placeListBlock([pre, paragraph], slot);
-                settleCode(editor);
-                code.removeAttribute("data-fresh");
-                const range = document.createRange();
-                range.selectNodeContents(code);
-                const nextSelection = window.getSelection();
-                nextSelection?.removeAllRanges();
-                nextSelection?.addRange(range);
+            const range = selection.getRangeAt(0);
+            const place = listBlockPlace({
+                inItem: true,
+                across: Boolean(pictureAcross(editor, range)),
+                acrossItems: Boolean(pictureItems(editor, range)),
+                acrossLists: Boolean(pictureAcrossLists(editor, range)),
+                separateLists: Boolean(pictureSeparateLists(editor, range)),
+                intoNested: Boolean(pictureIntoNested(editor, range)),
+            });
+            if (place !== "pass") {
+                const before = editor.innerHTML;
+                const anchor = place === "items"
+                    ? pictureItems(editor, range) ?? pictureAcrossLists(editor, range)
+                    : place === "nested"
+                        ? pictureIntoNested(editor, range)
+                        : pictureAcross(editor, range) ?? pictureSeparateLists(editor, range);
+                if (!anchor) return false;
+                const path = childPath(editor, anchor);
+                const built = listBlockNodes(kind);
+                if (place === "items") placePictureBetweenItems(range, built.nodes);
+                else if (place === "nested") placePictureIntoNested(range, built.nodes);
+                else placePictureAcross(editor, range, built.nodes);
+                finishListBlock(editor, kind, built.code, built.caret);
+                keepBlank({ before, after: editor.innerHTML, path });
+                setHtmlContent(editor.innerHTML);
+                updateActiveFormats();
+                return true;
             }
+            const before = editor.innerHTML;
+            const slot = splitListAtCaret(item, range);
+            if (!slot) return false;
+            const built = listBlockNodes(kind);
+            placeListBlock(built.nodes, slot);
+            finishListBlock(editor, kind, built.code, built.caret);
             trimListBlockEdges(slot);
             keepBlank({ before, after: editor.innerHTML, path: slot.path });
             setHtmlContent(editor.innerHTML);
