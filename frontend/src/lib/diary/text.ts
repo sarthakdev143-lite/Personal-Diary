@@ -1042,9 +1042,21 @@ export function dateHeadingKey(input: {
     return "pass";
 }
 
+export type DateFormatReach = "hold" | "writing" | "run";
+
+export function dateFormatReach(input: {
+    command: string;
+    touchesDate: boolean;
+    onlyDate: boolean;
+}): DateFormatReach {
+    if (input.command === "undo" || input.command === "redo") return "run";
+    if (input.onlyDate) return "hold";
+    if (input.touchesDate) return "writing";
+    return "run";
+}
+
 export function dateHeadingCommand(command: string, inDate: boolean): "run" | "hold" {
-    if (!inDate || command === "undo" || command === "redo") return "run";
-    return "hold";
+    return dateFormatReach({ command, touchesDate: inDate, onlyDate: inDate }) === "hold" ? "hold" : "run";
 }
 
 const DATE_WRITING_TAGS = new Set(["P", "H1", "H2", "H3", "LI", "UL", "OL", "BLOCKQUOTE", "PRE"]);
