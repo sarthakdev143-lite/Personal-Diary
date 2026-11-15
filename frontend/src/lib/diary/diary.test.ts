@@ -1452,6 +1452,22 @@ describe("search", () => {
         assert.equal(entryCardPreview(entry, "lantern"), writing);
     });
 
+    it("shows an entry-list word the card would cut off", () => {
+        const created = new Date(2026, 10, 14, 15).toISOString();
+        const writing = `${"The morning stayed ordinary and quiet beside the old glass window. ".padEnd(82, "x")}lantern.`;
+        const entry = {
+            content: `<p>${writing}</p>`,
+            plainText: writing,
+            createdAt: created,
+            updatedAt: created,
+        };
+        const shown = entryCardPreview(entry, "lantern").replace(/^…/, "");
+        assert.match(shown, /lantern/i);
+        assert.ok(shown.toLowerCase().indexOf("lantern") <= 32);
+        const earlier = "The morning was ordinary and quiet beside the old glass before the late lantern.";
+        assert.equal(entryCardPreview({ ...entry, content: `<p>${earlier}</p>`, plainText: earlier }, "lantern"), earlier);
+    });
+
     it("shows the date and the first line when a search crosses them", () => {
         const created = new Date(2026, 10, 15, 9, 30).toISOString();
         const entry = {
