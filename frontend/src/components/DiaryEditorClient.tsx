@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -311,6 +311,60 @@ function captionCaret(caption: HTMLElement, selection: Selection): { collapsed: 
         atStart: before.toString().length === 0,
         atEnd: after.toString().length === 0,
     };
+}
+
+function pictureAheadOfCaret(editor: HTMLElement, selection: Selection): { figure: HTMLElement; ahead: "picture" | "space" } | null {
+    if (!selection.rangeCount || !selection.isCollapsed) return null;
+    const range = selection.getRangeAt(0);
+    if (!editor.contains(range.startContainer)) return null;
+    const anchor = range.startContainer;
+    const host = anchor instanceof Element ? anchor : anchor.parentElement;
+    if (host?.closest("figcaption")) return null;
+    const caret = document.createRange();
+    caret.setStart(range.startContainer, range.startOffset);
+    caret.collapse(true);
+    for (const figure of editor.querySelectorAll("figure")) {
+        if (!(figure instanceof HTMLElement) || figure.contains(range.startContainer)) continue;
+        const start = document.createRange();
+        start.setStartBefore(figure);
+        start.collapse(true);
+        if (caret.compareBoundaryPoints(Range.START_TO_START, start) > 0) continue;
+        const gap = document.createRange();
+        gap.setStart(range.startContainer, range.startOffset);
+        gap.setEndBefore(figure);
+        if (pictureGap(gap)) return { figure, ahead: "picture" };
+        if (gap.toString().replace(/[\u00a0\s]/g, "") === "" && gap.cloneContents().querySelector("br, img, figure, table, pre") === null) {
+            return { figure, ahead: "space" };
+        }
+    }
+    return null;
+}
+
+function removePictureAhead(figure: HTMLElement, editor: HTMLElement) {
+    const next = figure.nextSibling;
+    const parent = figure.parentElement;
+    figure.remove();
+    const selection = window.getSelection();
+    if (next instanceof Text) {
+        const caret = document.createRange();
+        caret.setStart(next, 0);
+        caret.collapse(true);
+        selection?.removeAllRanges();
+        selection?.addRange(caret);
+        return;
+    }
+    if (next instanceof HTMLElement && editor.contains(next)) {
+        placeCaretAtStart(next);
+        return;
+    }
+    if (parent instanceof HTMLElement && editor.contains(parent) && parent !== editor) {
+        placeCaretAtEnd(parent);
+        return;
+    }
+    const paragraph = document.createElement("p");
+    paragraph.appendChild(document.createElement("br"));
+    editor.appendChild(paragraph);
+    placeCaretAtStart(paragraph);
 }
 
 function pictureGap(range: Range): boolean {
@@ -6328,6 +6382,37 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const keepPictureAhead = (e: React.KeyboardEvent) => {
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection || mode === "view") return false;
+        const ahead = pictureAheadOfCaret(editor, selection);
+        const action = pictureAheadDelete({
+            key: e.key,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            collapsed: selection.isCollapsed,
+            ahead: ahead?.ahead ?? "none",
+        });
+        if (action === "pass" || !ahead) return false;
+        e.preventDefault();
+        const before = editor.innerHTML;
+        if (action === "clear") {
+            const gap = document.createRange();
+            const caret = selection.getRangeAt(0);
+            gap.setStart(caret.startContainer, caret.startOffset);
+            gap.setEndBefore(ahead.figure);
+            gap.deleteContents();
+            keepBlank({ before, after: editor.innerHTML });
+        } else {
+            removePictureAhead(ahead.figure, editor);
+            keepPicture({ before, after: editor.innerHTML });
+        }
+        setHtmlContent(editor.innerHTML);
+        return true;
+    };
+
     const keepInlinePictureEnter = (e: React.KeyboardEvent) => {
         const editor = editorRef.current;
         const selection = window.getSelection();
@@ -7826,6 +7911,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
         if (keepPictureBounds(e)) return;
         if (keepDateLine(e)) return;
+        if (keepPictureAhead(e)) return;
         if (keepInlinePictureEnter(e)) return;
         if (keepHeadingLine(e)) return;
         if (keepCodeLine(e)) return;
