@@ -614,6 +614,12 @@ describe("code block", () => {
         assert.equal(wordDeleteGap("See Ph.D. rain", 7, 8), "after");
         assert.deepEqual(wordDeleteSpan("See Ph.D. rain", 4, 6), { start: 4, end: 10 });
         assert.deepEqual(wordDeleteSpan("See file.a rain", 9, 10), { start: 8, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See M.Sc. rain", 6, 8), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See M.Sc. rain", 6, 10), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See M.Sc. rain", 8, 9), { start: 4, end: 10 });
+        assert.equal(wordDeleteGap("See M.Sc. rain", 6, 8), "after");
+        assert.deepEqual(wordDeleteSpan("See M.Sc. rain", 4, 5), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See B.Sc. rain", 6, 8), { start: 4, end: 10 });
         assert.deepEqual(wordDeleteSpan("See #tag rain", 5, 8), { start: 4, end: 9 });
         assert.deepEqual(wordDeleteSpan("See item#tag rain", 9, 12), { start: 9, end: 12 });
         assert.equal(wordDeleteGap("See #tag rain", 5, 8), "after");

@@ -258,18 +258,34 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
             break;
         }
         while (cursor > 0 && letter(cursor - 1)) cursor -= 1;
+        while (cursor > 1 && text[cursor - 1] === ".") {
+            let previous = cursor - 2;
+            while (previous > 0 && letter(previous - 1)) previous -= 1;
+            const length = cursor - previous - 1;
+            if (length < 1 || length > 3) break;
+            cursor = previous;
+        }
         if (!letter(cursor)) return undefined;
-        let bound = cursor + 1;
-        const longFirst = letter(bound);
-        while (letter(bound)) bound += 1;
+        const segmentEnd = (from: number) => {
+            let next = from;
+            while (letter(next)) next += 1;
+            if (next === from || next - from > 3) return undefined;
+            return next;
+        };
+        let bound = segmentEnd(cursor);
+        if (bound === undefined) return undefined;
         let parts = 1;
-        while (text[bound] === "." && letter(bound + 1) && !letter(bound + 2)) {
+        let anyLong = bound > cursor + 1;
+        while (text[bound] === "." && letter(bound + 1)) {
+            const next = segmentEnd(bound + 1);
+            if (next === undefined) break;
+            if (next > bound + 2) anyLong = true;
             parts += 1;
-            bound += 2;
+            bound = next;
         }
         if (parts < 2) return undefined;
         if (text[bound] === "." && !letter(bound + 1)) bound += 1;
-        else if (longFirst) return undefined;
+        else if (anyLong) return undefined;
         if (index < cursor || index >= bound) return undefined;
         return { start: cursor, end: bound };
     };
@@ -289,7 +305,9 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         if (bounds && start >= bounds.start && start < bounds.end) {
             let tail = bounds.end;
             while (held(tail)) tail += 1;
-            if (end <= tail) {
+            let limit = tail;
+            while (space(limit)) limit += 1;
+            if (end <= limit) {
                 start = bounds.start;
                 end = tail;
             }
