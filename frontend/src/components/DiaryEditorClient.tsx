@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateHeadingCommand, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -131,12 +131,13 @@ function selectionTouchesPicture(editor: HTMLElement): boolean {
     const selection = window.getSelection();
     if (!selection?.rangeCount) return false;
     const range = selection.getRangeAt(0);
-    const touches = (node: Node) => {
-        const host = node instanceof Element ? node : node.parentElement;
-        const figure = host?.closest("figure");
-        return Boolean(figure && editor.contains(figure));
-    };
-    return touches(range.startContainer) || touches(range.endContainer);
+    return [...editor.querySelectorAll("figure")].some((figure) => {
+        try {
+            return range.intersectsNode(figure);
+        } catch {
+            return false;
+        }
+    });
 }
 
 function selectionCrossesPicture(editor: HTMLElement): { touchesPicture: boolean; outsideSelected: boolean } {
@@ -653,14 +654,40 @@ function peelDateLine(heading: HTMLElement, label: string): { paragraph: HTMLEle
     return { paragraph, offset: extra.length };
 }
 
-function dateHeadingHoldsSelection(editor: HTMLElement, selection: Selection | null): boolean {
-    if (!selection?.rangeCount || !selection.anchorNode) return false;
+function dateSelectionSpan(editor: HTMLElement, selection: Selection | null): "only" | "with-writing" | "none" {
+    if (!selection?.rangeCount || !selection.anchorNode) return "none";
     const heading = editor.firstElementChild;
-    if (!(heading instanceof HTMLElement) || !/^H[1-3]$/.test(heading.tagName)) return false;
+    if (!(heading instanceof HTMLElement) || !/^H[1-3]$/.test(heading.tagName)) return "none";
     const text = (heading.textContent ?? "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
-    if (!leadingDateLabel(text) || heading.querySelector("img")) return false;
+    if (!leadingDateLabel(text) || heading.querySelector("img")) return "none";
     const range = selection.getRangeAt(0);
-    return heading.contains(range.startContainer) && heading.contains(range.endContainer);
+    const inside = heading.contains(range.startContainer) && heading.contains(range.endContainer);
+    let touches = inside || heading.contains(range.startContainer) || heading.contains(range.endContainer);
+    if (!touches) {
+        try {
+            touches = range.intersectsNode(heading);
+        } catch {
+            touches = false;
+        }
+    }
+    if (!touches) return "none";
+    return pointAfterDate(heading, range.endContainer, range.endOffset) ? "with-writing" : "only";
+}
+
+function keepFormatOffDate(editor: HTMLElement, command: string): "hold" | "run" {
+    const selection = window.getSelection();
+    const span = dateSelectionSpan(editor, selection);
+    const reach = dateFormatReach({
+        command,
+        touchesDate: span !== "none",
+        onlyDate: span === "only",
+    });
+    if (reach === "hold") return "hold";
+    if (reach === "writing" && selection?.rangeCount) {
+        const heading = editor.firstElementChild;
+        if (heading instanceof HTMLElement) selectReplaceRange(editor, heading, selection);
+    }
+    return "run";
 }
 
 function selectedDateHeading(editor: HTMLElement, selection: Selection | null, label: string): { heading: HTMLElement; onlyDate: boolean } | null {
@@ -2428,7 +2455,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
     const exec = useCallback((cmd: string, value?: string) => {
         const editor = editorRef.current;
-        if (editor && dateHeadingCommand(cmd, dateHeadingHoldsSelection(editor, window.getSelection())) === "hold") return;
+        if (editor && keepFormatOffDate(editor, cmd) === "hold") return;
         editor?.focus();
         const selection = window.getSelection();
         const lists = cmd === "insertUnorderedList" || cmd === "insertOrderedList";
@@ -4708,6 +4735,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
         if (tool.kind === "code") {
             const editor = editorRef.current;
+            if (editor && keepFormatOffDate(editor, "insertHTML") === "hold") return;
             editor?.focus();
             const selection = window.getSelection();
             const anchor = selection?.anchorNode ?? null;
@@ -4739,6 +4767,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
         if (tool.html) {
             const editor = editorRef.current;
+            if (editor && keepFormatOffDate(editor, "insertHTML") === "hold") return;
             const replaced = selectionUndo(editor);
             insertHTML(tool.html);
             if (replaced && editor && editor.innerHTML !== replaced.before) {
