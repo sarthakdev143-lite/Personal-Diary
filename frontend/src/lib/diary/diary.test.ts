@@ -1423,7 +1423,7 @@ describe("search", () => {
         assert.deepEqual(textPieceHits(["See ", "Harbor"], "garden"), []);
     });
 
-    it("keeps a found phrase inside one line", () => {
+    it("treats a line break as a space when finding a phrase", () => {
         assert.deepEqual(textRunHits([
             { text: "See ", breakBefore: false },
             { text: "Harbor", breakBefore: false },
@@ -1446,6 +1446,26 @@ describe("search", () => {
             { text: "2026", breakBefore: false },
             { text: "See Harbor", breakBefore: true },
         ], "6See"), []);
+        assert.deepEqual(textRunHits([
+            { text: "Harbor", breakBefore: false },
+            { text: "rain", breakBefore: true },
+        ], "Harbor rain"), [[
+            { run: 0, start: 0, end: 6 },
+            { run: 1, start: 0, end: 4 },
+        ]]);
+        assert.deepEqual(textRunHits([
+            { text: "Harbor ", breakBefore: false },
+            { text: "rain", breakBefore: true },
+        ], "Harbor rain"), [[
+            { run: 0, start: 0, end: 7 },
+            { run: 1, start: 0, end: 4 },
+        ]]);
+        assert.deepEqual(textRunHits([
+            { text: "banana", breakBefore: false },
+            { text: "na today", breakBefore: true },
+        ], "nana"), [[
+            { run: 0, start: 2, end: 6 },
+        ]]);
     });
 
     it("moves through each match and wraps around", () => {
