@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -609,25 +609,56 @@ function selectPictureImage(image: HTMLImageElement) {
     selection.addRange(range);
 }
 
-function moveBesidePicture(figure: HTMLElement, direction: "before" | "after") {
-    const neighbor = direction === "before" ? figure.previousElementSibling : figure.nextElementSibling;
-    if (neighbor instanceof HTMLElement && neighbor.tagName === "FIGURE") {
-        const image = neighbor.querySelector("img");
-        if (image instanceof HTMLImageElement) {
-            selectPictureImage(image);
-            return;
-        }
+function pictureBesideNode(figure: HTMLElement, direction: "before" | "after"): Node | null {
+    let node = direction === "before" ? figure.previousSibling : figure.nextSibling;
+    while (node instanceof Text && !node.data.replace(/[\s\u00a0]/g, "")) {
+        node = direction === "before" ? node.previousSibling : node.nextSibling;
     }
-    if (neighbor instanceof HTMLElement) {
-        if (direction === "before") placeCaretAtEnd(neighbor);
-        else placeCaretAtStart(neighbor);
+    return node;
+}
+
+function placeCaretInText(text: Text, offset: number) {
+    const selection = window.getSelection();
+    if (!selection) return;
+    const caret = document.createRange();
+    caret.setStart(text, Math.max(0, Math.min(offset, text.data.length)));
+    caret.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(caret);
+}
+
+function moveBesidePicture(figure: HTMLElement, direction: "before" | "after") {
+    const parent = figure.parentElement;
+    const inLine = pictureNameLine(parent?.tagName ?? "DIV") !== "page";
+    const node = pictureBesideNode(figure, direction);
+    const sibling = node instanceof HTMLElement
+        ? (node.tagName === "FIGURE" ? "picture" : "element")
+        : node instanceof Text ? "text" : "none";
+    const target = pictureBesideTarget({ direction, sibling, inLine });
+    if (target === "picture" && node instanceof HTMLElement) {
+        const image = node.querySelector("img");
+        if (image instanceof HTMLImageElement) selectPictureImage(image);
         return;
     }
-    if (direction === "after") {
+    if (target === "element" && node instanceof HTMLElement) {
+        if (direction === "before") placeCaretAtEnd(node);
+        else placeCaretAtStart(node);
+        return;
+    }
+    if (target === "text" && node instanceof Text) {
+        placeCaretInText(node, direction === "before" ? node.data.length : 0);
+        return;
+    }
+    if (target === "line") {
         const paragraph = document.createElement("p");
         paragraph.appendChild(document.createElement("br"));
         figure.after(paragraph);
         placeCaretAtStart(paragraph);
+        return;
+    }
+    if (parent instanceof HTMLElement && inLine) {
+        if (direction === "before") placeCaretAtStart(parent);
+        else placeCaretAtEnd(parent);
     }
 }
 
@@ -6663,7 +6694,6 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             selectPictureImage(image);
             return true;
         }
-        if (action === "before" && !context.figure.previousElementSibling) return false;
         if (action === "name" && !context.image) return false;
         e.preventDefault();
         const before = editor.innerHTML;

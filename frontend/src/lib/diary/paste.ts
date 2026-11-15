@@ -243,6 +243,20 @@ export function pictureMoveKey(input: {
     return "pass";
 }
 
+export type PictureBesideTarget = "picture" | "text" | "element" | "line" | "stay";
+
+export function pictureBesideTarget(input: {
+    direction: "before" | "after";
+    sibling: "picture" | "text" | "element" | "none";
+    inLine: boolean;
+}): PictureBesideTarget {
+    if (input.sibling === "picture") return "picture";
+    if (input.sibling === "text") return "text";
+    if (input.sibling === "element") return "element";
+    if (input.direction === "after" && !input.inLine) return "line";
+    return "stay";
+}
+
 export type PictureUndo = "restore" | "pass";
 
 export function pictureUndo(input: {

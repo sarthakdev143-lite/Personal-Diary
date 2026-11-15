@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -403,6 +403,17 @@ describe("entry paste", () => {
         assert.equal(pictureMoveKey({ ...plain, key: "x", where: "figure" }), "name");
         assert.equal(pictureMoveKey({ ...plain, key: "ArrowDown", shiftKey: true, where: "before" }), "pass");
         assert.equal(pictureMoveKey({ ...plain, key: "Enter", where: "selected" }), "pass");
+    });
+
+    it("moves from a picture to the word beside it without adding a line", () => {
+        const line = { inLine: true };
+        assert.equal(pictureBesideTarget({ direction: "after", sibling: "text", ...line }), "text");
+        assert.equal(pictureBesideTarget({ direction: "before", sibling: "text", ...line }), "text");
+        assert.equal(pictureBesideTarget({ direction: "after", sibling: "element", ...line }), "element");
+        assert.equal(pictureBesideTarget({ direction: "after", sibling: "picture", ...line }), "picture");
+        assert.equal(pictureBesideTarget({ direction: "after", sibling: "none", ...line }), "stay");
+        assert.equal(pictureBesideTarget({ direction: "after", sibling: "none", inLine: false }), "line");
+        assert.equal(pictureBesideTarget({ direction: "before", sibling: "none", inLine: false }), "stay");
     });
 
     it("marks only the selected picture while editing", () => {
