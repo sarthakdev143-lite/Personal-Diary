@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureForwardDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -8144,6 +8144,29 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             neighborEmpty: neighbor ? blockIsEmpty(neighbor) : false,
         });
         if (action === "pass" || !neighbor) return false;
+        const pictureRange = selection.getRangeAt(0);
+        const endFigure = typeAfterPicture(pictureRange);
+        let afterFigure: ChildNode | null = endFigure instanceof HTMLElement && block.contains(endFigure) ? endFigure.nextSibling : null;
+        while (afterFigure instanceof Text && !afterFigure.data.replace(/[\u00a0\s\u200b]/g, "")) afterFigure = afterFigure.nextSibling;
+        if (afterFigure instanceof HTMLElement && afterFigure.tagName === "BR") {
+            let beyond: ChildNode | null = afterFigure.nextSibling;
+            while (beyond instanceof Text && !beyond.data.replace(/[\u00a0\s\u200b]/g, "")) beyond = beyond.nextSibling;
+            if (!beyond) afterFigure = null;
+        }
+        const forward = pictureForwardDelete({
+            key: e.key,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            collapsed: edges.collapsed,
+            afterPicture: endFigure instanceof HTMLElement && block.contains(endFigure) && !afterFigure,
+            next: blockIsEmpty(neighbor) ? "empty" : "writing",
+        });
+        if (forward === "into") {
+            e.preventDefault();
+            placeCaretAtStart(neighbor);
+            return true;
+        }
         e.preventDefault();
         const before = editor.innerHTML;
         const removed = ((action === "clear" && backward) || (action === "join" && !backward)) ? neighbor : block;

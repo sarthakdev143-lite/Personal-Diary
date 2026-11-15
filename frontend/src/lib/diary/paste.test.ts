@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalJoin, pictureRemovalSpace, pictureRemovalHost, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureForwardDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalJoin, pictureRemovalSpace, pictureRemovalHost, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -529,6 +529,13 @@ describe("entry paste", () => {
         assert.equal(pictureBehindLine({ sibling: "other", tail: "picture" }), true);
         assert.equal(pictureBehindLine({ sibling: "other", tail: "writing" }), false);
         assert.equal(pictureBehindLine({ sibling: "none", tail: "none" }), false);
+        const atPicture = { collapsed: true, afterPicture: true, next: "writing" as const };
+        assert.equal(pictureForwardDelete({ key: "Delete", ...atPicture }), "into");
+        assert.equal(pictureForwardDelete({ key: "Delete", ...atPicture, next: "empty" }), "pass");
+        assert.equal(pictureForwardDelete({ key: "Delete", ...atPicture, next: "none" }), "pass");
+        assert.equal(pictureForwardDelete({ key: "Delete", collapsed: true, afterPicture: false, next: "writing" }), "pass");
+        assert.equal(pictureForwardDelete({ key: "Backspace", ...atPicture }), "pass");
+        assert.equal(pictureForwardDelete({ key: "Delete", ctrlKey: true, ...atPicture }), "pass");
     });
 
     it("removes a selected picture together with its name", () => {

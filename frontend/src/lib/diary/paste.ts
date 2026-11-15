@@ -55,6 +55,22 @@ export function pictureBehindLine(input: { sibling: "picture" | "other" | "none"
     return input.sibling === "other" && input.tail === "picture";
 }
 
+export type PictureForwardDelete = "into" | "pass";
+
+export function pictureForwardDelete(input: {
+    key: string;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    afterPicture: boolean;
+    next: "writing" | "empty" | "none";
+}): PictureForwardDelete {
+    if (input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.key !== "Delete" || !input.collapsed || !input.afterPicture || input.next !== "writing") return "pass";
+    return "into";
+}
+
 export type PictureAhead = "picture" | "space" | "none";
 
 export type PictureAheadDelete = "remove" | "clear" | "pass";
