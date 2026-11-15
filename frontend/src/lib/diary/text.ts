@@ -347,10 +347,13 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         if (word(end - 1) && held(end)) {
             while (held(end)) end += 1;
         }
-        const trailingMark = (index: number) => text[index] === "+" || text[index] === "#";
+        const trailingMark = (index: number) => {
+            const piece = text[index];
+            return piece === "+" || piece === "#" || piece === "*" || piece === "_" || piece === "&" || piece === "/" || piece === "@" || piece === "=" || piece === "|" || piece === "~" || piece === "\\" || piece === "^" || piece === "-" || piece === "\u2010" || piece === "\u2011" || piece === "\u2013" || piece === "\u2014";
+        };
         const plusSuffix = (index: number) => {
+            if (!trailingMark(index)) return undefined;
             const mark = text[index];
-            if (mark !== "+" && mark !== "#") return undefined;
             let plusStart = index;
             while (text[plusStart - 1] === mark) plusStart -= 1;
             let plusEnd = index + 1;
