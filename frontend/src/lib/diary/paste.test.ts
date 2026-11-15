@@ -486,7 +486,7 @@ describe("entry paste", () => {
             after: "<p>After</p>",
         };
         assert.equal(pictureUndo({ saved, current: saved.after }), "restore");
-        assert.equal(pictureUndo({ saved, current: "<p>After!</p>" }), "pass");
+        assert.equal(pictureUndo({ saved, current: "<p>After!</p>" }), "keep");
         assert.equal(pictureUndo({ saved: null, current: saved.after }), "pass");
     });
 

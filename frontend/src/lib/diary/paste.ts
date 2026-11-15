@@ -385,14 +385,15 @@ export function pictureBesideTarget(input: {
     return "stay";
 }
 
-export type PictureUndo = "restore" | "pass";
+export type PictureUndo = "restore" | "keep" | "pass";
 
 export function pictureUndo(input: {
     saved: { before: string; after: string } | null;
     current: string;
 }): PictureUndo {
-    if (!input.saved || !sameEditingPage(input.current, input.saved.after)) return "pass";
-    return "restore";
+    if (!input.saved) return "pass";
+    if (sameEditingPage(input.current, input.saved.after)) return "restore";
+    return "keep";
 }
 
 export type PictureInsert = "line" | "after" | "split" | "code" | "span" | "items" | "nested" | "pass";

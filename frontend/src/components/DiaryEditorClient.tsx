@@ -5345,8 +5345,6 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const plain = plainMarkSpaces(plainSpacesAfterMarks(editor.innerHTML));
         if (plain !== editor.innerHTML) restoreMarkSpaces(editor);
         settleDateHeading(editor);
-        const saved = pictureRemoval.current;
-        if (saved && editor.innerHTML !== saved.after) pictureRemoval.current = null;
         const split = headingSplit.current;
         if (split && editor.innerHTML !== split.after) headingSplit.current = null;
         const blank = blankLine.current;
@@ -6866,10 +6864,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const editor = editorRef.current;
         const saved = pictureRemoval.current;
         const action = pictureUndo({ saved, current: editor?.innerHTML ?? "" });
-        if (!editor || !saved || action !== "restore") {
-            if (saved && editor && editor.innerHTML !== saved.after) pictureRemoval.current = null;
-            return false;
-        }
+        if (!editor || !saved || action !== "restore") return false;
         holdRedo({ undone: saved.before, redone: saved.after, kind: "picture" });
         pictureRemoval.current = null;
         editor.innerHTML = saved.before;
