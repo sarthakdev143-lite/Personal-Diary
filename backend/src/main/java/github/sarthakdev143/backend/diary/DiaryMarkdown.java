@@ -251,6 +251,13 @@ public final class DiaryMarkdown {
                 Element image = element.selectFirst("img");
                 if (image != null) {
                     parts.add(renderInline(List.of(image)));
+                    Element caption = element.selectFirst("figcaption");
+                    if (caption != null && !caption.select("b, strong, i, em, u, s, strike, del, a, code").isEmpty()) {
+                        String line = renderInline(caption.childNodes()).trim();
+                        if (!line.isEmpty()) {
+                            parts.add(line);
+                        }
+                    }
                     continue;
                 }
             }

@@ -67,6 +67,16 @@ class DiaryMarkdownTest {
     }
 
     @Test
+    void keepsAStyledPictureName() {
+        assertEquals("![Harbor rain](https://example.com/a.png)\n\n**Harbor** rain", DiaryMarkdown.htmlToMarkdown(
+                "<figure><img src=\"https://example.com/a.png\" alt=\"old\"><figcaption><b>Harbor</b> rain</figcaption></figure>"));
+        assertEquals("![Harbor](https://example.com/a.png)\n\n[Harbor](https://example.com)", DiaryMarkdown.htmlToMarkdown(
+                "<figure><img src=\"https://example.com/a.png\" alt=\"old\"><figcaption><a href=\"https://example.com\">Harbor</a></figcaption></figure>"));
+        assertEquals("![quiet bay](https://example.com/a.png)\n\n<u>quiet</u> bay", DiaryMarkdown.htmlToMarkdown(
+                "<figure><img src=\"https://example.com/a.png\" alt=\"old\"><figcaption><u>quiet</u> bay</figcaption></figure>"));
+    }
+
+    @Test
     void keepsEachLineOfAQuote() {
         assertEquals("> **Harbor**\n> **rain**", DiaryMarkdown.htmlToMarkdown(
                 "<blockquote><b>Harbor</b><br><b>rain</b></blockquote>"));

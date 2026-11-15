@@ -1992,6 +1992,25 @@ describe("export", () => {
         );
     });
 
+    it("keeps a styled picture name in the copied text", () => {
+        assert.equal(
+            htmlToMarkdown('<figure><img src="https://example.com/a.png" alt="old"><figcaption><b>Harbor</b> rain</figcaption></figure>'),
+            "![Harbor rain](https://example.com/a.png)\n\n**Harbor** rain",
+        );
+        assert.equal(
+            htmlToMarkdown('<figure><img src="https://example.com/a.png" alt="old"><figcaption><a href="https://example.com">Harbor</a></figcaption></figure>'),
+            "![Harbor](https://example.com/a.png)\n\n[Harbor](https://example.com)",
+        );
+        assert.equal(
+            htmlToMarkdown('<figure><img src="https://example.com/a.png" alt="old"><figcaption><u>quiet</u> bay</figcaption></figure>'),
+            "![quiet bay](https://example.com/a.png)\n\n<u>quiet</u> bay",
+        );
+        assert.equal(
+            htmlToMarkdown('<figure><img src="data:image/png;base64,aaaa" alt="Harbor"><figcaption>Bay</figcaption></figure>'),
+            "![Bay](image)",
+        );
+    });
+
     it("keeps an underline in the markdown", () => {
         assert.equal(htmlToMarkdown("<p>a <u>quiet</u> rain</p>"), "a <u>quiet</u> rain");
         assert.equal(htmlToMarkdown("<p>a <u></u> rain</p>"), "a  rain");
