@@ -262,6 +262,60 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
             start -= 1;
             end += 1;
         }
+        const opening = (index: number) => {
+            const piece = text[index];
+            if (piece === undefined) return undefined;
+            for (const [open, close] of pairs) {
+                if (open === piece) return close;
+            }
+            if (apostrophe(index)) return piece;
+            return undefined;
+        };
+        const closing = (index: number) => {
+            const piece = text[index];
+            if (piece === undefined) return undefined;
+            for (const [open, close] of pairs) {
+                if (close === piece) return open;
+            }
+            if (apostrophe(index)) return piece;
+            return undefined;
+        };
+        const marksOnly = (from: number, to: number) => {
+            for (let index = from; index < to; index += 1) {
+                if (!held(index) && !space(index)) return false;
+            }
+            return true;
+        };
+        const wrappedWord = (from: number, to: number) => {
+            if (!word(from)) return false;
+            for (let index = from; index < to; index += 1) {
+                if (word(index)) continue;
+                if (apostrophe(index) && word(index - 1) && word(index + 1)) continue;
+                return false;
+            }
+            return from < to;
+        };
+        const expectedClose = opening(start);
+        if (expectedClose !== undefined && !word(start - 1)) {
+            let cursor = start + 1;
+            while (cursor < text.length && (word(cursor) || (apostrophe(cursor) && word(cursor + 1)))) cursor += 1;
+            if (text[cursor] === expectedClose && wrappedWord(start + 1, cursor)) {
+                const after = cursor + 1;
+                if (end <= after || marksOnly(after, end)) {
+                    if (end < after) end = after;
+                    while (held(end)) end += 1;
+                }
+            }
+        }
+        const expectedOpen = closing(start);
+        if (expectedOpen !== undefined && marksOnly(start + 1, end)) {
+            let cursor = start - 1;
+            while (cursor >= 0 && (word(cursor) || (apostrophe(cursor) && word(cursor - 1)))) cursor -= 1;
+            if (text[cursor] === expectedOpen && wrappedWord(cursor + 1, start) && !word(cursor - 1)) {
+                start = cursor;
+                while (held(end)) end += 1;
+            }
+        }
     }
     const before = text.slice(0, start).replace(/[\u00a0\s]/g, "");
     const after = text.slice(end).replace(/[\u00a0\s]/g, "");
@@ -300,6 +354,7 @@ export function wordDeleteGap(text: string, start: number, end: number): "before
     const removedTrailing = space(text[end - 1]);
     if (removedLeading && !removedTrailing && word(text[start - 1]) && (end >= text.length || space(text[end]))) return "before";
     if (removedTrailing && !removedLeading && word(text[end]) && (start === 0 || space(text[start - 1]))) return "after";
+    if (word(text[widened.end]) && widened.start < start && space(text[widened.start - 1])) return "after";
     return "none";
 }
 
