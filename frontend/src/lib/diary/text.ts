@@ -895,6 +895,20 @@ export function quoteListPlan(input: {
     };
 }
 
+export type QuoteListKind = "ul" | "ol" | "other" | "none";
+
+export function quoteListAgain(input: { quoted: QuoteListKind; previous: QuoteListKind; next: QuoteListKind }): { previous: boolean; next: boolean } {
+    const same = (side: QuoteListKind) => (input.quoted === "ul" || input.quoted === "ol") && side === input.quoted;
+    return { previous: same(input.previous), next: same(input.next) };
+}
+
+export function quotedListJoinValue(input: { ordered: boolean; previous: number | null; number: number }): number | null {
+    if (!input.ordered || input.previous === null) return null;
+    if (!Number.isInteger(input.previous) || !Number.isInteger(input.number)) return null;
+    if (input.number === input.previous + 1) return null;
+    return input.number;
+}
+
 export type QuoteToggle = "leave" | "quote";
 
 export function quoteToggle(input: { inside: boolean }): QuoteToggle {

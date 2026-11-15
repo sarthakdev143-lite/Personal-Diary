@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteListPlan, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteListPlan, quoteListAgain, quotedListJoinValue, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -1026,12 +1026,55 @@ function quoteHolding(editor: HTMLElement, range: Range): HTMLElement | null {
     return startQuote;
 }
 
+function listKind(node: Element | null): "ul" | "ol" | "other" | "none" {
+    if (!(node instanceof HTMLElement)) return "none";
+    if (node.tagName === "UL") return "ul";
+    if (node.tagName === "OL") return "ol";
+    return "other";
+}
+
+function itemNumber(list: HTMLElement, index: number): number {
+    const items = listItems(list);
+    return orderedItemNumber({
+        start: list.getAttribute("start"),
+        values: items.map((item) => item.getAttribute("value")),
+        index,
+    });
+}
+
+function absorbList(target: HTMLElement, source: HTMLElement) {
+    const incoming = listItems(source);
+    const value = quotedListJoinValue({
+        ordered: target.tagName === "OL",
+        previous: listItems(target).length ? itemNumber(target, listItems(target).length - 1) : null,
+        number: incoming.length ? itemNumber(source, 0) : 1,
+    });
+    if (value !== null && incoming[0]) incoming[0].setAttribute("value", String(value));
+    for (const item of incoming) target.append(item);
+    source.remove();
+}
+
+function joinNeighboringLists(list: HTMLElement) {
+    const previous = list.previousElementSibling;
+    const next = list.nextElementSibling;
+    const join = quoteListAgain({ quoted: listKind(list), previous: listKind(previous), next: listKind(next) });
+    if (join.previous && previous instanceof HTMLElement) absorbList(previous, list);
+    const host = join.previous && previous instanceof HTMLElement ? previous : list;
+    const following = host.nextElementSibling;
+    if (quoteListAgain({ quoted: listKind(host), previous: "none", next: listKind(following) }).next && following instanceof HTMLElement) {
+        absorbList(host, following);
+    }
+}
+
 function unwrapQuote(quote: HTMLElement) {
     const blocks = new Set(["P", "H1", "H2", "H3", "UL", "OL", "BLOCKQUOTE", "PRE", "FIGURE", "HR", "DIV", "LI"]);
     const nodes = [...quote.childNodes];
     const hasBlock = nodes.some((node) => node instanceof HTMLElement && blocks.has(node.tagName));
     if (hasBlock) {
+        const elements = nodes.filter((node): node is HTMLElement => node instanceof HTMLElement && node.tagName !== "BR");
+        const list = elements.length === 1 && (elements[0].tagName === "UL" || elements[0].tagName === "OL") ? elements[0] : null;
         quote.replaceWith(...nodes);
+        if (list) joinNeighboringLists(list);
         return;
     }
     const paragraph = document.createElement("p");
