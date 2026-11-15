@@ -1228,6 +1228,21 @@ describe("code block", () => {
         );
     });
 
+    it("keeps a nested list under the line above when the entry is copied", () => {
+        assert.equal(
+            htmlToMarkdown("<ol><li>Harbor<ol><li>rain</li></ol></li><li>today</li></ol>"),
+            "1. Harbor\n   1. rain\n2. today",
+        );
+        assert.equal(
+            htmlToMarkdown("<ul><li>Harbor<ul><li>rain</li></ul></li><li>today</li></ul>"),
+            "- Harbor\n  - rain\n- today",
+        );
+        assert.equal(
+            htmlToMarkdown("<ol><li>Harbor<ol><li>rain<ol><li>deep</li></ol></li></ol></li></ol>"),
+            "1. Harbor\n   1. rain\n      1. deep",
+        );
+    });
+
     it("keeps a styled line break styled on each line when the entry is copied", () => {
         assert.equal(
             htmlToMarkdown("<ul><li><b>Harbor<br>rain</b></li></ul>"),
