@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteToggle, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteToggle, italicInQuote, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -1038,6 +1038,94 @@ function unwrapQuote(quote: HTMLElement) {
     if (nodes.length === 0) paragraph.append(document.createElement("br"));
     else paragraph.append(...nodes);
     quote.replaceWith(paragraph);
+}
+
+function italicHost(node: Node | null, editor: HTMLElement): HTMLElement | null {
+    const host = node instanceof Element ? node : node?.parentElement ?? null;
+    const italic = host?.closest("i, em");
+    if (!(italic instanceof HTMLElement) || !editor.contains(italic)) return null;
+    return italic;
+}
+
+function selectionInOneItalic(editor: HTMLElement, range: Range): boolean {
+    const start = italicHost(range.startContainer, editor);
+    const end = italicHost(range.endContainer, editor);
+    return Boolean(start && start === end);
+}
+
+function italicSlices(range: Range, root: HTMLElement): { text: Text; start: number; end: number }[] {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const slices: { text: Text; start: number; end: number }[] = [];
+    let node = walker.nextNode();
+    while (node instanceof Text) {
+        if (node.data.length > 0) {
+            try {
+                if (!range.intersectsNode(node)) {
+                    node = walker.nextNode();
+                    continue;
+                }
+            } catch {
+                node = walker.nextNode();
+                continue;
+            }
+            const bounds = document.createRange();
+            bounds.selectNodeContents(node);
+            const startsBefore = range.compareBoundaryPoints(Range.START_TO_START, bounds) <= 0;
+            const endsAfter = range.compareBoundaryPoints(Range.END_TO_END, bounds) >= 0;
+            const start = startsBefore ? 0 : node === range.startContainer ? range.startOffset : 0;
+            const end = endsAfter ? node.data.length : node === range.endContainer ? range.endOffset : node.data.length;
+            if (end > start) slices.push({ text: node, start, end });
+        }
+        node = walker.nextNode();
+    }
+    return slices;
+}
+
+function markItalicSlice(text: Text, start: number, end: number): HTMLElement | null {
+    const slice = start > 0 ? text.splitText(start) : text;
+    const length = end - start;
+    if (length < slice.data.length) slice.splitText(length);
+    if (slice.parentElement?.closest("i, em")) return null;
+    const italic = document.createElement("i");
+    slice.before(italic);
+    italic.append(slice);
+    return italic;
+}
+
+function clearItalicSlice(text: Text, start: number, end: number) {
+    const italic = text.parentElement?.closest("i, em");
+    if (!(italic instanceof HTMLElement)) return;
+    const slice = start > 0 ? text.splitText(start) : text;
+    const length = end - start;
+    if (length < slice.data.length) slice.splitText(length);
+    const after = document.createElement(italic.tagName.toLowerCase());
+    let sibling = slice.nextSibling;
+    while (sibling && italic.contains(sibling)) {
+        const next = sibling.nextSibling;
+        after.append(sibling);
+        sibling = next;
+    }
+    if (after.childNodes.length) italic.after(after);
+    italic.after(slice);
+    if (!after.childNodes.length) after.remove();
+    if (!italic.childNodes.length) italic.remove();
+}
+
+function applyQuoteItalic(editor: HTMLElement, range: Range, action: "mark" | "clear"): HTMLElement[] {
+    const quote = quoteHolding(editor, range);
+    if (!quote) return [];
+    const slices = italicSlices(range, quote);
+    const marked: HTMLElement[] = [];
+    for (let index = slices.length - 1; index >= 0; index -= 1) {
+        const slice = slices[index];
+        if (action === "mark") {
+            const italic = markItalicSlice(slice.text, slice.start, slice.end);
+            if (italic) marked.unshift(italic);
+        } else {
+            clearItalicSlice(slice.text, slice.start, slice.end);
+        }
+    }
+    return marked;
 }
 
 function edgeText(element: HTMLElement, edge: "start" | "end"): Text | null {
@@ -2375,7 +2463,6 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
         const fmt = new Set<string>();
         if (document.queryCommandState("bold")) fmt.add("bold");
-        if (document.queryCommandState("italic")) fmt.add("italic");
         if (document.queryCommandState("underline")) fmt.add("underline");
         if (document.queryCommandState("strikeThrough")) fmt.add("strikethrough");
         if (document.queryCommandState("insertUnorderedList")) fmt.add("ul");
@@ -2389,7 +2476,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const link = linkHost?.closest("a");
         if (link && editorRef.current.contains(link)) fmt.add("link");
         const quote = linkHost?.closest("blockquote");
-        if (quote && editorRef.current.contains(quote)) fmt.add("blockquote");
+        const inQuote = Boolean(quote && editorRef.current.contains(quote));
+        if (inQuote) fmt.add("blockquote");
+        const italic = linkHost?.closest("i, em");
+        const inItalic = Boolean(italic && editorRef.current.contains(italic));
+        if (inQuote ? inItalic : document.queryCommandState("italic")) fmt.add("italic");
         setActiveFormats(fmt);
     }, []);
 
@@ -2524,6 +2615,39 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (editor && keepFormatOffDate(editor, cmd) === "hold") return;
         editor?.focus();
         const selection = window.getSelection();
+        if (cmd === "italic" && editor && selection?.rangeCount) {
+            const italicRange = selection.getRangeAt(0);
+            const quote = quoteHolding(editor, italicRange);
+            const action = italicInQuote({
+                inQuote: Boolean(quote),
+                inItalic: selectionInOneItalic(editor, italicRange),
+                collapsed: selection.isCollapsed,
+            });
+            if (action === "hold") {
+                updateActiveFormats();
+                return;
+            }
+            if (action === "mark" || action === "clear") {
+                const before = editor.innerHTML;
+                const block = lineBlock(italicRange.startContainer);
+                const path = block instanceof HTMLElement ? childPath(editor, block) : undefined;
+                const marked = applyQuoteItalic(editor, italicRange, action);
+                if (action === "mark" && marked.length) {
+                    const kept = document.createRange();
+                    if (marked.length === 1) kept.selectNodeContents(marked[0]);
+                    else {
+                        kept.setStart(marked[0], 0);
+                        kept.collapse(true);
+                    }
+                    selection.removeAllRanges();
+                    selection.addRange(kept);
+                }
+                keepBlank({ before, after: editor.innerHTML, path });
+                setHtmlContent(editor.innerHTML);
+                updateActiveFormats();
+                return;
+            }
+        }
         if (cmd === "formatBlock" && value === "blockquote" && editor && selection?.rangeCount) {
             const quoteRange = selection.getRangeAt(0);
             const quote = quoteHolding(editor, quoteRange);

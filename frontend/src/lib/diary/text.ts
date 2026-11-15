@@ -870,6 +870,15 @@ export function quoteToggle(input: { inside: boolean }): QuoteToggle {
     return "quote";
 }
 
+export type ItalicQuote = "browser" | "mark" | "clear" | "hold";
+
+export function italicInQuote(input: { inQuote: boolean; inItalic: boolean; collapsed: boolean }): ItalicQuote {
+    if (!input.inQuote) return "browser";
+    if (input.collapsed) return "hold";
+    if (input.inItalic) return "clear";
+    return "mark";
+}
+
 export type ListCommand = "lift" | "pass";
 
 export function listCommand(command: string): ListCommand {
