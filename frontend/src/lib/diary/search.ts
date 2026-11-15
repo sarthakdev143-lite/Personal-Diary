@@ -82,7 +82,7 @@ export function entryCardPreview(entry: {
 }, rawQuery: string): string {
     const writing = entry.plainText?.trim() || entryWritingText(entry.content);
     const query = normalizeSearchQuery(rawQuery);
-    if (!query) return writing.slice(0, 90);
+    if (!query || !writing.toLowerCase().includes(query.toLowerCase())) return writing.slice(0, 90);
     return matchingPiece(entry, query);
 }
 
