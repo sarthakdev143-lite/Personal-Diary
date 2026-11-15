@@ -135,7 +135,7 @@ export function pictureInlineEnter(input: {
     return "split";
 }
 
-export type PictureInlineBackspace = "name" | "pass";
+export type PictureInlineBackspace = "name" | "remove" | "pass";
 
 export function pictureInlineBackspace(input: {
     key: string;
@@ -144,10 +144,11 @@ export function pictureInlineBackspace(input: {
     metaKey?: boolean;
     collapsed: boolean;
     afterPicture: boolean;
+    following: boolean;
 }): PictureInlineBackspace {
     if (input.altKey || input.ctrlKey || input.metaKey) return "pass";
     if (input.key !== "Backspace" || !input.collapsed || !input.afterPicture) return "pass";
-    return "name";
+    return input.following ? "name" : "remove";
 }
 
 export type SelectedPictureKey = "remove" | "name" | "after" | "pass";

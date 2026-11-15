@@ -464,11 +464,12 @@ describe("entry paste", () => {
 
     it("keeps the word after a picture in the line out of the picture name", () => {
         const beside = { collapsed: true, afterPicture: true };
-        assert.equal(pictureInlineBackspace({ key: "Backspace", ...beside }), "name");
-        assert.equal(pictureInlineBackspace({ key: "Backspace", collapsed: true, afterPicture: false }), "pass");
-        assert.equal(pictureInlineBackspace({ key: "Backspace", collapsed: false, afterPicture: true }), "pass");
-        assert.equal(pictureInlineBackspace({ key: "Delete", ...beside }), "pass");
-        assert.equal(pictureInlineBackspace({ key: "Backspace", ctrlKey: true, ...beside }), "pass");
+        assert.equal(pictureInlineBackspace({ key: "Backspace", ...beside, following: true }), "name");
+        assert.equal(pictureInlineBackspace({ key: "Backspace", ...beside, following: false }), "remove");
+        assert.equal(pictureInlineBackspace({ key: "Backspace", collapsed: true, afterPicture: false, following: false }), "pass");
+        assert.equal(pictureInlineBackspace({ key: "Backspace", collapsed: false, afterPicture: true, following: false }), "pass");
+        assert.equal(pictureInlineBackspace({ key: "Delete", ...beside, following: false }), "pass");
+        assert.equal(pictureInlineBackspace({ key: "Backspace", ctrlKey: true, ...beside, following: false }), "pass");
     });
 
     it("keeps the next line from joining the picture name", () => {
