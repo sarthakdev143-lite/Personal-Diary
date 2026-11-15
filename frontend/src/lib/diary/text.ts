@@ -1047,6 +1047,12 @@ export function dateHeadingCommand(command: string, inDate: boolean): "run" | "h
     return "hold";
 }
 
+const DATE_WRITING_TAGS = new Set(["P", "H1", "H2", "H3", "LI", "UL", "OL", "BLOCKQUOTE", "PRE"]);
+
+export function dateLeaveTarget(tag: string): "into" | "past" {
+    return DATE_WRITING_TAGS.has(tag) ? "into" : "past";
+}
+
 export function dateLineTyping(input: { writing: boolean; peeled: boolean; paragraph: boolean }): "new-line" | "into-line" {
     if (input.peeled || (input.paragraph && !input.writing)) return "into-line";
     return "new-line";
