@@ -257,8 +257,11 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
             }
             break;
         }
-        if (!letter(cursor) || letter(cursor - 1)) return undefined;
+        while (cursor > 0 && letter(cursor - 1)) cursor -= 1;
+        if (!letter(cursor)) return undefined;
         let bound = cursor + 1;
+        const longFirst = letter(bound);
+        while (letter(bound)) bound += 1;
         let parts = 1;
         while (text[bound] === "." && letter(bound + 1) && !letter(bound + 2)) {
             parts += 1;
@@ -266,6 +269,7 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         }
         if (parts < 2) return undefined;
         if (text[bound] === "." && !letter(bound + 1)) bound += 1;
+        else if (longFirst) return undefined;
         if (index < cursor || index >= bound) return undefined;
         return { start: cursor, end: bound };
     };
