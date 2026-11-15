@@ -12,7 +12,7 @@ export type EntrySearchFilter = {
 };
 
 export function normalizeSearchQuery(value: string): string {
-    return value.trim().slice(0, SEARCH_MAX);
+    return searchSpans(value.trim().slice(0, SEARCH_MAX)).text;
 }
 
 export function escapeRegExp(value: string): string {

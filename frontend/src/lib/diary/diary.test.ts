@@ -1222,6 +1222,26 @@ describe("search", () => {
 
     it("matches a diary title or description and ignores a blank query", () => {
         assert.equal(normalizeSearchQuery("  hello  "), "hello");
+        assert.equal(normalizeSearchQuery("Hello ,"), "Hello,");
+        assert.equal(normalizeSearchQuery("Harbor  rain"), "Harbor rain");
+        assert.equal(diaryFieldsMatch("Hello, rain", "", "Hello ,"), true);
+        assert.equal(diaryFieldsMatch("Harbor rain today", "", "Harbor  rain"), true);
+        const spaced = buildEntrySearchFilter("user-1", "Hello ,");
+        assert.equal(spaced?.$or[0].plainText.$regex, "Hello,");
+        assert.deepEqual(matchedTextParts("Hello, rain", "Hello ,"), [
+            { text: "Hello,", match: true },
+            { text: " rain", match: false },
+        ]);
+        assert.deepEqual(textPieceHits(["Hello , rain"], "Hello ,"), [
+            [{ piece: 0, start: 0, end: 7 }],
+        ]);
+        const created = new Date(2026, 10, 14, 9, 30).toISOString();
+        assert.equal(entryMatchesListQuery({
+            content: "<p>Hello , rain</p>",
+            plainText: "Hello, rain",
+            createdAt: created,
+            updatedAt: created,
+        }, "Hello ,"), true);
         assert.equal(diaryFieldsMatch("Morning", "garden notes", "GARDEN"), true);
         assert.equal(diaryFieldsMatch("Morning", "garden notes", "night"), false);
         assert.equal(diaryFieldsMatch("Morning", "", "   "), true);
