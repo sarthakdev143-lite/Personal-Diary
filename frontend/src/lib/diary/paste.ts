@@ -204,6 +204,13 @@ export function pictureNameWord(input: { inName: boolean; leavesName?: boolean }
     return input.leavesName ? "hold" : "name";
 }
 
+export type PictureWordEdge = "hold" | "pass";
+
+export function pictureWordEdge(input: { word: boolean; touchesPicture: boolean; outsideSelected: boolean }): PictureWordEdge {
+    if (!input.word || !input.touchesPicture || !input.outsideSelected) return "pass";
+    return "hold";
+}
+
 export type PictureNamePaste = "lines" | "pass";
 
 export function pictureNamePaste(input: { inName: boolean; text: string }): PictureNamePaste {

@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -136,6 +136,26 @@ function selectionTouchesPicture(editor: HTMLElement): boolean {
             return false;
         }
     });
+}
+
+function rangeCrossesPicture(editor: HTMLElement, target: AbstractRange): { touchesPicture: boolean; outsideSelected: boolean } {
+    const range = document.createRange();
+    try {
+        range.setStart(target.startContainer, target.startOffset);
+        range.setEnd(target.endContainer, target.endOffset);
+    } catch {
+        return { touchesPicture: false, outsideSelected: false };
+    }
+    const figures = [...editor.querySelectorAll("figure")].filter((figure) => {
+        try {
+            return range.intersectsNode(figure);
+        } catch {
+            return false;
+        }
+    });
+    if (!figures.length) return { touchesPicture: false, outsideSelected: false };
+    const contained = figures.some((figure) => figure.contains(range.startContainer) && figure.contains(range.endContainer));
+    return { touchesPicture: true, outsideSelected: !contained };
 }
 
 function selectionCrossesPicture(editor: HTMLElement): { touchesPicture: boolean; outsideSelected: boolean } {
@@ -8346,7 +8366,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             const caption = caretHost?.closest("figcaption");
             const inName = caption instanceof HTMLElement && editor.contains(caption);
             const inside = (node: Node) => Boolean(inName && caption instanceof HTMLElement && (node === caption || caption.contains(node)));
-            if (pictureNameWord({
+            const crossed = rangeCrossesPicture(editor, target);
+            if (pictureWordEdge({ word: true, touchesPicture: crossed.touchesPicture, outsideSelected: crossed.outsideSelected }) === "hold" || pictureNameWord({
                 inName,
                 leavesName: inName && (!inside(target.startContainer) || !inside(target.endContainer)),
             }) === "hold") {
