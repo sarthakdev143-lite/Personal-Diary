@@ -15,7 +15,7 @@ import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
 import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
-import { diaryListAddress, entryCardPreview, entryFindAddress, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, openedEntryQuery, textRunHits } from "@/lib/diary/search";
+import { diaryListAddress, entryCardPreview, entryFindAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedEntryMonth, openedEntryQuery, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
@@ -2076,7 +2076,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 setEntries(loaded);
                 const requested = new URLSearchParams(window.location.search);
                 const requestedId = requested.get("entry");
-                const latest = entryToOpenFromLink(loaded, requestedId);
+                const month = openedEntryMonth(requested.get("month"));
+                setEntryMonth(month);
+                const inMonth = loaded.filter((entry) => entryInMonth(entry.createdAt, month));
+                const latest = entryToOpenFromLink(inMonth.length ? inMonth : loaded, requestedId);
                 if (latest) {
                     setSelectedEntryId(latest._id);
                     setMode("view");
@@ -2129,11 +2132,15 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
     useEffect(() => {
         if (isLoading || error) return;
-        const next = entryFindAddress(entryPageAddress(diaryId, selectedEntryId, mode), mode === "compose" ? "" : entryQuery);
+        const month = entryMonth && entries.some((entry) => entryInMonth(entry.createdAt, entryMonth)) ? entryMonth : "";
+        const next = entryMonthAddress(
+            entryFindAddress(entryPageAddress(diaryId, selectedEntryId, mode), mode === "compose" ? "" : entryQuery),
+            month,
+        );
         const current = `${window.location.pathname}${window.location.search}`;
         if (current === next) return;
         window.history.replaceState(window.history.state, "", next);
-    }, [isLoading, error, diaryId, mode, selectedEntryId, entryQuery]);
+    }, [isLoading, error, diaryId, mode, selectedEntryId, entryQuery, entryMonth, entries]);
 
     useEffect(() => {
         if (isLoading) return;

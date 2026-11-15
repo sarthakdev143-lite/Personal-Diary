@@ -295,6 +295,22 @@ export function entryFindAddress(path: string, rawQuery: string): string {
     return `${path}${join}q=${encodeURIComponent(query)}`;
 }
 
+export function openedEntryMonth(rawMonth: string | null): string {
+    const month = (rawMonth ?? "").trim();
+    const match = /^(\d{4})-(\d{2})$/.exec(month);
+    if (!match) return "";
+    const value = Number(match[2]);
+    if (value < 1 || value > 12) return "";
+    return month;
+}
+
+export function entryMonthAddress(path: string, month: string): string {
+    const key = openedEntryMonth(month);
+    if (!key) return path;
+    const join = path.includes("?") ? "&" : "?";
+    return `${path}${join}month=${encodeURIComponent(key)}`;
+}
+
 export function entryPageAddress(
     diaryId: string,
     entryId: string | null,
