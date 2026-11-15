@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameContinue, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -588,6 +588,27 @@ function splitBesidePicture(block: HTMLElement, figure: HTMLElement, side: "befo
         selection?.removeAllRanges();
         selection?.addRange(caret);
         return;
+    }
+    if (side === "after") {
+        let neighbor: ChildNode | null = figure.nextSibling;
+        while (neighbor instanceof Text && !neighbor.data.replace(/[\u00a0\s\u200b]/g, "")) neighbor = neighbor.nextSibling;
+        const kind = neighbor instanceof Text ? "text" : neighbor instanceof HTMLElement ? "block" : "none";
+        const heading = block.tagName === "H1" || block.tagName === "H2" || block.tagName === "H3";
+        if (pictureHeadingContinue({ heading, next: kind }) === "apart" && neighbor instanceof Text) {
+            const paragraph = document.createElement("p");
+            paragraph.appendChild(document.createElement("br"));
+            const rest = document.createElement("p");
+            let moving: ChildNode | null = neighbor;
+            while (moving) {
+                const following: ChildNode | null = moving.nextSibling;
+                rest.append(moving);
+                moving = following;
+            }
+            block.after(paragraph);
+            paragraph.after(rest);
+            placeCaretAtStart(paragraph);
+            return;
+        }
     }
     const next = document.createElement(block.tagName === "LI" ? "li" : "p");
     let node: ChildNode | null = side === "after" ? figure.nextSibling : figure;
@@ -5172,6 +5193,17 @@ function placeNameContinuation(figure: HTMLElement, block: HTMLElement) {
         node = next;
     }
     const remainder = (block.textContent ?? "").replace(/[\u200b\u00a0\s]/g, "") !== "";
+    const heading = parent.tagName === "H1" || parent.tagName === "H2" || parent.tagName === "H3";
+    const firstText = following.find((child): child is Text => child instanceof Text && child.data.replace(/[\u00a0\s\u200b]/g, "") !== "");
+    if (!remainder && line !== "item" && firstText && pictureHeadingContinue({ heading, next: "text" }) === "apart") {
+        if (!block.querySelector("br")) block.appendChild(document.createElement("br"));
+        const rest = document.createElement("p");
+        for (const child of following) rest.append(child);
+        parent.after(block);
+        block.after(rest);
+        placeCaretAtStart(block);
+        return;
+    }
     if (!remainder && following.length) block.replaceChildren();
     const continued = line === "item" ? document.createElement("li") : block;
     if (line === "item") while (block.firstChild) continued.append(block.firstChild);

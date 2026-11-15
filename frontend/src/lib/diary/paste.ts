@@ -424,6 +424,13 @@ export function pictureNameContinue(input: { next: "block" | "text" | "picture" 
     return "break";
 }
 
+export type PictureHeadingContinue = "apart" | "into";
+
+export function pictureHeadingContinue(input: { heading: boolean; next: "text" | "block" | "none" }): PictureHeadingContinue {
+    if (input.heading && input.next === "text") return "apart";
+    return "into";
+}
+
 export function captionBreakText(before: string, after: string): { name: string; next: string } {
     const cut = boundarySpaceCut(before, after);
     if (!cut) return { name: before, next: after };
