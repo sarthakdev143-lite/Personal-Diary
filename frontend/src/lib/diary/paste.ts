@@ -365,6 +365,13 @@ export function pastedPictureLine(input: { parent: "page" | "line"; beside: "pic
     return "leave";
 }
 
+export type PastedPictureLines = "split" | "same";
+
+export function pastedPictureLines(input: { text: string; besidePicture: boolean }): PastedPictureLines {
+    if (input.besidePicture && /[\r\n]/.test(input.text)) return "split";
+    return "same";
+}
+
 export type PictureNameSelection = "edit" | "pass";
 
 export function pictureNameSelection(input: {
