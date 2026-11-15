@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteListPlan, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteListPlan, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -2526,6 +2526,83 @@ function outdentNestedItem(item: HTMLElement) {
     if (!listItems(list).length) list.remove();
 }
 
+function joinNestedItem(item: HTMLElement) {
+    const list = item.parentElement;
+    const parent = list?.parentElement;
+    if (!(list instanceof HTMLUListElement || list instanceof HTMLOListElement) || !(parent instanceof HTMLLIElement)) return;
+    const following = listItems(list).find((entry) => entry !== item && (item.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0) ?? null;
+    const holder = document.createElement("span");
+    while (parent.firstChild && parent.firstChild !== list) holder.appendChild(parent.firstChild);
+    parent.insertBefore(holder, parent.firstChild);
+    for (const child of [...item.children]) {
+        if (!(child instanceof HTMLElement) || (child.tagName !== "UL" && child.tagName !== "OL")) continue;
+        if (child.tagName === list.tagName) {
+            for (const nested of listItems(child)) {
+                nested.removeAttribute("value");
+                if (following) list.insertBefore(nested, following);
+                else list.appendChild(nested);
+            }
+            child.remove();
+        } else parent.insertBefore(child, list);
+    }
+    const inline = document.createElement("span");
+    while (item.firstChild) inline.appendChild(item.firstChild);
+    item.remove();
+    if (!listItems(list).length) list.remove();
+    joinBlock(holder, inline);
+    const caret = window.getSelection();
+    const anchor = caret?.anchorNode ?? null;
+    while (holder.firstChild) parent.insertBefore(holder.firstChild, holder);
+    holder.remove();
+    if (!anchor || !parent.contains(anchor)) {
+        const boundary = parent.querySelector(":scope > ul, :scope > ol");
+        if (boundary) placeCaretAtEndOfInline(parent, boundary);
+        else placeCaretAtEnd(parent);
+    }
+}
+
+function nestedItemToJoin(block: HTMLElement, selection: Selection, event: { key: string; shiftKey: boolean; altKey: boolean; ctrlKey: boolean; metaKey: boolean }): HTMLElement | null {
+    if (block.tagName !== "LI" || !selection.rangeCount || !selection.isCollapsed) return null;
+    const range = selection.getRangeAt(0);
+    const nestedList = block.parentElement;
+    const atNestedStart = (nestedList instanceof HTMLUListElement || nestedList instanceof HTMLOListElement)
+        && nestedList.parentElement instanceof HTMLLIElement
+        && listItems(nestedList)[0] === block
+        && caretEdges(block, selection)?.atStart === true;
+    let parentTarget: HTMLElement | null = null;
+    for (const child of block.children) {
+        if (!(child instanceof HTMLElement) || (child.tagName !== "UL" && child.tagName !== "OL")) continue;
+        if (range.comparePoint(child, 0) !== 1) continue;
+        const between = range.cloneRange();
+        between.setEndBefore(child);
+        if (between.toString().replace(/[\u200b\u00a0\s]/g, "")) continue;
+        parentTarget = listItems(child)[0] ?? null;
+        break;
+    }
+    const action = nestedListJoinKey({
+        key: event.key,
+        shiftKey: event.shiftKey,
+        altKey: event.altKey,
+        ctrlKey: event.ctrlKey,
+        metaKey: event.metaKey,
+        collapsed: true,
+        atNestedStart,
+        atParentEnd: parentTarget !== null,
+    });
+    if (action !== "join") return null;
+    return event.key === "Backspace" ? block : parentTarget;
+}
+
+function placeCaretAtEndOfInline(parent: HTMLElement, boundary: Element) {
+    const selection = window.getSelection();
+    if (!selection) return;
+    const caret = document.createRange();
+    caret.setStartBefore(boundary);
+    caret.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(caret);
+}
+
 function continueOrderedList(list: HTMLElement, rest: HTMLElement, index: number) {
     if (!(list instanceof HTMLOListElement) || !(rest instanceof HTMLOListElement) || index < 0) return;
     const items = [...list.children].filter((child) => child.tagName === "LI");
@@ -4924,6 +5001,16 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             inItem: block.tagName === "LI",
             neighbor: neighbor === dateHeading ? "date" : neighbor ? "text" : "none",
         });
+        const nestedTarget = nestedItemToJoin(block, selection, e);
+        if (nestedTarget) {
+            e.preventDefault();
+            const before = editor.innerHTML;
+            const path = childPath(editor, nestedTarget);
+            joinNestedItem(nestedTarget);
+            keepBlank({ before, after: editor.innerHTML, path });
+            setHtmlContent(editor.innerHTML);
+            return true;
+        }
         if (edge === "outdent") {
             e.preventDefault();
             const before = editor.innerHTML;
