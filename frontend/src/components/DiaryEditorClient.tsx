@@ -14,11 +14,11 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureForwardDelete, pictureGapDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBackspaceFollows, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, pictureCutText, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureListContinue, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureForwardDelete, pictureGapDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBackspaceFollows, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, pictureCutText, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureListContinue, pictureItemCaret, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, listReachBlock, pictureCodeList, pictureTableList, pictureStyle, pictureStyleHold, pictureStyleSeat, pictureLineItalic, pictureLinkField, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, dropCaretMarker, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, listReachBlock, pictureCodeList, pictureTableList, pictureStyle, pictureStyleHold, pictureStyleSeat, pictureLineItalic, pictureLinkField, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
 type Entry = { _id: string; diaryId: string; content: string; plainText?: string; createdAt: string; updatedAt: string; };
@@ -5151,6 +5151,48 @@ function placeCaretAtEnd(node: HTMLElement) {
     selection.addRange(caret);
 }
 
+function blockEndsWithPicture(block: HTMLElement): boolean {
+    let node: ChildNode | null = block.lastChild;
+    while ((node instanceof Text && !node.data.replace(/[\u00a0\s\u200b]/g, "")) || node instanceof HTMLBRElement) node = node.previousSibling;
+    return node instanceof HTMLElement && node.tagName === "FIGURE";
+}
+
+function holdCaretAfterFigure(figure: HTMLElement) {
+    const lead = document.createTextNode("\u200b");
+    figure.after(lead);
+    placeCaretInText(lead, lead.data.length);
+}
+
+function placeCaretAfterPicture(block: HTMLElement) {
+    let node: ChildNode | null = block.lastChild;
+    while ((node instanceof Text && !node.data.replace(/[\u00a0\s\u200b]/g, "")) || node instanceof HTMLBRElement) node = node.previousSibling;
+    if (!(node instanceof HTMLElement) || node.tagName !== "FIGURE") {
+        placeCaretAtEnd(block);
+        return;
+    }
+    holdCaretAfterFigure(node);
+}
+
+function dropTypedCaretMarkers(editor: HTMLElement) {
+    const selection = window.getSelection();
+    const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+    const nodes = [editor, ...editor.querySelectorAll("*")].flatMap((element) => element.closest("pre") ? [] : [...element.childNodes]);
+    const texts = nodes.filter((node): node is Text => node instanceof Text && node.data.includes("\u200b"));
+    for (const node of texts) {
+        if (node.parentElement?.closest("pre")) continue;
+        const offset = range?.startContainer === node ? range.startOffset : node.data.length;
+        const dropped = dropCaretMarker({ text: node.data, offset });
+        if (!dropped) continue;
+        node.data = dropped.text;
+        if (range?.startContainer !== node || !selection) continue;
+        const caret = document.createRange();
+        caret.setStart(node, Math.min(dropped.offset, node.data.length));
+        caret.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(caret);
+    }
+}
+
 function dropEmptyMarks(root: HTMLElement) {
     root.querySelectorAll("b, strong, i, em, u, s, strike, del, a").forEach((node) => {
         if (!(node.textContent ?? "").replace(/[\u00a0\s]/g, "")) node.remove();
@@ -5680,6 +5722,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const editor = editorRef.current;
         if (!editor) return;
         dropDateLineMarker(editor);
+        dropTypedCaretMarkers(editor);
         const plain = plainMarkSpaces(plainSpacesAfterMarks(editor.innerHTML));
         if (plain !== editor.innerHTML) restoreMarkSpaces(editor);
         settleDateHeading(editor);
@@ -7597,8 +7640,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         e.preventDefault();
         const before = editor.innerHTML;
         const path = childPath(editor, line.block);
+        const figure = line.caption.closest("figure");
         if (action === "remove") line.block.remove();
-        placeCaretAtEnd(line.caption);
+        if (action === "remove" && figure instanceof HTMLElement && pictureItemCaret({ endsWithPicture: true }) === "after") holdCaretAfterFigure(figure);
+        else placeCaretAtEnd(line.caption);
         if (action === "remove") keepBlank({ before, after: editor.innerHTML, path });
         setHtmlContent(editor.innerHTML);
         return true;
@@ -8381,7 +8426,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             placeCaretAtStart(backward ? block : neighbor);
         } else if (action === "drop") {
             removeJoined(block);
-            placeCaretAtEnd(neighbor);
+            if (pictureItemCaret({ endsWithPicture: blockEndsWithPicture(neighbor) }) === "after") placeCaretAfterPicture(neighbor);
+            else placeCaretAtEnd(neighbor);
         } else if (backward) {
             const lifted = detachNestedLists(block, neighbor.tagName);
             separated = joinBlock(neighbor, block);

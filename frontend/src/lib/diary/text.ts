@@ -23,7 +23,19 @@ export function entryPlainText(html: string): string {
     const extra = [...captioned.matchAll(/\balt\s*=\s*["']([^"']*)["']/gi)]
         .map((match) => decodeEntryText(match[1] ?? "").trim())
         .filter((alt) => alt && !visible.includes(alt.toLowerCase()));
-    return [text, ...extra].join(" ").replace(/\s+([.,;:!?])/g, "$1").replace(/\s+/g, " ").trim();
+    return [text, ...extra].join(" ").replace(/\u200b/g, "").replace(/\s+([.,;:!?])/g, "$1").replace(/\s+/g, " ").trim();
+}
+
+export function dropCaretMarker(input: { text: string; offset: number }): { text: string; offset: number } | null {
+    if (!input.text.includes("\u200b")) return null;
+    const visible = input.text.replace(/\u200b/g, "");
+    if (!visible) return null;
+    let removedBefore = 0;
+    const end = Math.min(input.offset, input.text.length);
+    for (let index = 0; index < end; index += 1) {
+        if (input.text[index] === "\u200b") removedBefore += 1;
+    }
+    return { text: visible, offset: Math.max(0, Math.min(input.offset - removedBefore, visible.length)) };
 }
 
 const MONTH_INDEX = new Map([

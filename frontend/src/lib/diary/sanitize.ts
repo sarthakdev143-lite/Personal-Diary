@@ -81,7 +81,7 @@ export function sanitizeEntryHtml(input: string): string {
         },
         exclusiveFilter: (frame) => frame.tag === "img" && !frame.attribs.src,
     });
-    return separateGluedDateHeading(joinCodeLines(alignPictureCaptions(clean).trim()));
+    return separateGluedDateHeading(joinCodeLines(alignPictureCaptions(clean).trim()).replace(/\u200b/g, ""));
 }
 
 function liftBlockLines(html: string): string {
