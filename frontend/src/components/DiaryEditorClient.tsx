@@ -2700,6 +2700,87 @@ function shapeListAroundPicture(list: HTMLElement, range: Range, role: "start" |
     else if (numbers) restoreOrderedNumbers(numbers);
 }
 
+function placeBlockInsideListItem(editor: HTMLElement, range: Range, kind: "divider" | "code", list: HTMLElement): boolean {
+    const startItem = directListItem(list, range.startContainer);
+    const endItem = directListItem(list, range.endContainer);
+    if (!startItem || startItem !== endItem) return false;
+    const figures = [...startItem.querySelectorAll("figure")].filter((figure): figure is HTMLElement => {
+        try {
+            return range.intersectsNode(figure);
+        } catch {
+            return false;
+        }
+    });
+    if (!figures.length) return false;
+    const numbers = orderedListNumbers(list);
+    const items = listItems(list);
+    const index = items.indexOf(startItem);
+    if (index < 0) return false;
+    const following = items.slice(index + 1);
+    const itemNumber = numbers?.get(startItem) ?? index + 1;
+    const prefix = sidePiece(startItem, range, "before");
+    const suffix = sidePiece(endItem, range, "after");
+    for (const figure of figures) figure.remove();
+    let keptPrefix = false;
+    if (pieceKept(prefix)) {
+        startItem.replaceChildren(prefix);
+        trimPictureEdge(startItem, "end");
+        if (blockIsEmpty(startItem)) startItem.remove();
+        else keptPrefix = true;
+    } else startItem.remove();
+    const suffixItem = document.createElement("li");
+    let keptSuffix = false;
+    if (pieceKept(suffix)) {
+        suffixItem.append(suffix);
+        trimPictureEdge(suffixItem, "start");
+        keptSuffix = !blockIsEmpty(suffixItem);
+    }
+    for (const item of following) item.remove();
+    const afterItems = [...(keptSuffix ? [suffixItem] : []), ...following];
+    const afterList = afterItems.length ? document.createElement(list.tagName.toLowerCase()) : null;
+    if (afterList) for (const item of afterItems) afterList.append(item);
+    let anchor: ChildNode | null = list.isConnected && listItems(list).length ? list : list.previousSibling;
+    if (!listItems(list).length) list.remove();
+    const built = listBlockNodes(kind);
+    const placed: HTMLElement[] = [...built.nodes, ...figures];
+    if (afterList) placed.push(afterList);
+    const insert = (node: HTMLElement) => {
+        if (anchor?.parentNode) anchor.after(node);
+        else editor.insertBefore(node, editor.firstChild);
+        anchor = node;
+    };
+    for (const node of placed) insert(node);
+    if (numbers && afterList) {
+        const followingNumbers = following.map((item) => numbers.get(item) ?? itemNumber);
+        const bumped = new Map<HTMLElement, number>();
+        if (keptPrefix && keptSuffix) {
+            const assigned = listBlockNumbers({ item: itemNumber, following: followingNumbers, split: true });
+            afterItems.forEach((item, position) => bumped.set(item, assigned[position] ?? itemNumber + 1 + position));
+        } else if (keptSuffix) {
+            bumped.set(suffixItem, itemNumber);
+            following.forEach((item, position) => bumped.set(item, followingNumbers[position] ?? itemNumber));
+        } else following.forEach((item, position) => bumped.set(item, followingNumbers[position] ?? itemNumber));
+        restoreOrderedNumbers(bumped);
+    }
+    if (kind === "code") {
+        finishListBlock(editor, kind, built.code, built.caret);
+        return true;
+    }
+    built.caret.remove();
+    if (afterList) {
+        const first = listItems(afterList)[0];
+        if (first) placeCaretAtStart(first);
+        return true;
+    }
+    const paragraph = document.createElement("p");
+    paragraph.appendChild(document.createElement("br"));
+    const lastFigure = figures[figures.length - 1];
+    if (lastFigure?.isConnected) lastFigure.after(paragraph);
+    else editor.append(paragraph);
+    placeCaretAtStart(paragraph);
+    return true;
+}
+
 function placeBlockAroundPicture(editor: HTMLElement, range: Range, kind: "divider" | "code"): boolean {
     if (range.collapsed) return false;
     const children = [...editor.childNodes].filter((node): node is HTMLElement => node instanceof HTMLElement);
@@ -2713,6 +2794,10 @@ function placeBlockAroundPicture(editor: HTMLElement, range: Range, kind: "divid
     const start = top(range.startContainer);
     const end = top(range.endContainer);
     if (!start || !end) return false;
+    if (start === end) {
+        return pictureBlockEnds({ start: start.tagName, end: end.tagName, hasPicture: true, sameBlock: true }) === "item"
+            && placeBlockInsideListItem(editor, range, kind, start);
+    }
     const startIndex = children.indexOf(start);
     const endIndex = children.indexOf(end);
     if (startIndex < 0 || endIndex <= startIndex) return false;

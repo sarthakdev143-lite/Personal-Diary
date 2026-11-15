@@ -502,6 +502,11 @@ describe("code block", () => {
         assert.equal(pictureBlockEnds({ start: "ol", end: "p", hasPicture: false }), "skip");
         assert.equal(pictureBlockEnds({ start: "pre", end: "p", hasPicture: true }), "skip");
         assert.equal(pictureBlockEnds({ start: "blockquote", end: "p", hasPicture: true }), "skip");
+        assert.equal(pictureBlockEnds({ start: "ol", end: "ol", hasPicture: true, sameBlock: true }), "item");
+        assert.equal(pictureBlockEnds({ start: "ul", end: "ul", hasPicture: true, sameBlock: true }), "item");
+        assert.equal(pictureBlockEnds({ start: "p", end: "p", hasPicture: true, sameBlock: true }), "skip");
+        assert.equal(pictureBlockEnds({ start: "ol", end: "p", hasPicture: true, sameBlock: true }), "skip");
+        assert.equal(pictureBlockEnds({ start: "ol", end: "ol", hasPicture: false, sameBlock: true }), "skip");
         assert.deepEqual(listBlockNumbers({ item: 1, following: [2, 3], split: false }), [2, 3]);
         assert.deepEqual(listBlockNumbers({ item: 1, following: [2, 3], split: true }), [2, 3, 4]);
         assert.deepEqual(listBlockNumbers({ item: 1, following: [10, 11], split: true }), [2, 10, 11]);

@@ -1268,13 +1268,17 @@ export function listBlockPlace(input: { inItem: boolean; acrossItems?: boolean; 
     return "pass";
 }
 
-export type PictureBlockEnds = "writing" | "list" | "skip";
+export type PictureBlockEnds = "writing" | "list" | "item" | "skip";
 
-export function pictureBlockEnds(input: { start: string; end: string; hasPicture: boolean }): PictureBlockEnds {
+export function pictureBlockEnds(input: { start: string; end: string; hasPicture: boolean; sameBlock?: boolean }): PictureBlockEnds {
     if (!input.hasPicture) return "skip";
     const name = (tag: string) => tag.toLowerCase();
     const writing = (tag: string) => name(tag) === "p" || name(tag) === "h1" || name(tag) === "h2" || name(tag) === "h3";
     const list = (tag: string) => name(tag) === "ul" || name(tag) === "ol";
+    if (input.sameBlock) {
+        if (list(input.start) && name(input.start) === name(input.end)) return "item";
+        return "skip";
+    }
     if (!writing(input.start) && !list(input.start)) return "skip";
     if (!writing(input.end) && !list(input.end)) return "skip";
     if (list(input.start) || list(input.end)) return "list";
