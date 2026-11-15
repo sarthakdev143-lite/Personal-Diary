@@ -11,6 +11,7 @@ import { diaryListKeyAction, diaryListStep } from "@/lib/diary/keys";
 import { compareDiaryMatches } from "@/lib/diary/order";
 import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { diaryCardWhen, diaryMatchPath } from "@/lib/diary/search";
+import { diaryListView } from "@/lib/diary/view";
 
 type Diary = {
     _id: string;
@@ -38,7 +39,7 @@ const Diaries = ({ query = "", refetchTrigger = 0, paused = false, onMatchCount 
     const [attempt, setAttempt] = useState(0);
     const [pinningId, setPinningId] = useState<string | null>(null);
     const [pinError, setPinError] = useState<{ id: string; message: string } | null>(null);
-    const visibleRef = useRef<Diary[]>([]);
+    const visibleRef = useRef<readonly Diary[]>([]);
     const [result, setResult] = useState<{
         key: string;
         diaries: Diary[];
@@ -183,14 +184,24 @@ const Diaries = ({ query = "", refetchTrigger = 0, paused = false, onMatchCount 
         }
     };
 
-    const isCurrent = result?.key === requestKey;
-    const diaries = isCurrent ? result.diaries : [];
+    const view = diaryListView({
+        status: status === "loading" || status === "authenticated" ? status : "unauthenticated",
+        result,
+        requestKey,
+    });
+    const diaries = view.diaries;
     visibleRef.current = diaries;
-    const error = isCurrent ? result.error : null;
-    const isLoading = status === "loading" || (status === "authenticated" && !isCurrent);
+    const error = view.error;
+    const isLoading = view.loading;
+    const isCurrent = result?.key === requestKey;
 
     useEffect(() => {
-        onMatchCount?.(query.trim() && isCurrent && !error ? diaries.length : null);
+        if (!query.trim() || (isCurrent && error)) {
+            onMatchCount?.(null);
+            return;
+        }
+        if (!isCurrent) return;
+        onMatchCount?.(diaries.length);
     }, [onMatchCount, query, isCurrent, error, diaries.length]);
 
     if (isLoading) {
