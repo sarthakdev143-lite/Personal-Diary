@@ -189,4 +189,26 @@ class DiarySearchTest {
         assertTrue(DiarySearch.order(pinnedOlder, newerNote) < 0);
         assertTrue(DiarySearch.order(title, newerNote) < 0);
     }
+
+    @Test
+    void findsADiaryFromThePageWhenTheSavedTextSplitAWord() {
+        DiarySearch.Note split = new DiarySearch.Note(
+                "harbor",
+                "<p>See <b>Har</b>bor rain.</p>",
+                "See Har bor rain.",
+                NOVEMBER,
+                NOVEMBER);
+        DiarySearch.Hit hit = DiarySearch.match("Window", "", List.of(split), "Harbor", ZoneOffset.UTC);
+        assertTrue(hit.matched());
+        assertEquals("harbor", hit.entryId());
+        assertTrue(hit.snippet().contains("Harbor"));
+
+        DiarySearch.Note unnamed = new DiarySearch.Note(
+                "plain",
+                "<figure><img src=\"https://example.com/sunset.png\" alt=\"\"></figure>",
+                "Image",
+                NOVEMBER,
+                NOVEMBER);
+        assertTrue(DiarySearch.pageMatches(unnamed, "Image", ZoneOffset.UTC));
+    }
 }

@@ -1454,13 +1454,19 @@ export function entryWasRevised(createdAt: string | Date, updatedAt: string | Da
     return Number.isFinite(created) && Number.isFinite(updated) && updated - created > REVISION_GAP_MS;
 }
 
+export function entrySearchWriting(entry: { content?: string | null; plainText?: string | null }): string {
+    const fromPage = entry.content ? entryWritingText(entry.content) : "";
+    if (fromPage) return fromPage;
+    return entry.plainText?.trim() ?? "";
+}
+
 export function entrySearchParts(entry: {
     content: string;
     plainText?: string | null;
     createdAt: string;
     updatedAt: string;
 }): string[] {
-    const writing = entry.plainText?.trim() || entryWritingText(entry.content);
+    const writing = entrySearchWriting(entry);
     const clock = formatEntryTime(entry.createdAt);
     const looseClock = clock.replace(/^0/, "");
     const parts = [writing, formatDiaryDate(entry.createdAt), formatEntryLong(entry.createdAt), clock];
