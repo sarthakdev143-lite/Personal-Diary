@@ -175,7 +175,7 @@ function renderBlocks(nodes: HtmlNode[]): string {
         if (node.tag === "h1" || node.tag === "h2" || node.tag === "h3") {
             const level = node.tag === "h1" ? "#" : node.tag === "h2" ? "##" : "###";
             const text = renderInline(node.children).trim();
-            if (text) parts.push(`${level} ${text}`);
+            if (text) parts.push(text.split("\n").map((line) => line ? `${level} ${line}` : line).join("\n"));
             continue;
         }
 

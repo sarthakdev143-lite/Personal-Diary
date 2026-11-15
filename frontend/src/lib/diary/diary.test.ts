@@ -1156,6 +1156,12 @@ describe("code block", () => {
         assert.equal(htmlToMarkdown("<p><code>Harbor<br>rain</code></p>"), "`Harbor`\n`rain`");
     });
 
+    it("keeps a line break inside a heading as a heading on each line", () => {
+        assert.equal(htmlToMarkdown("<h2>Harbor<br>rain</h2>"), "## Harbor\n## rain");
+        assert.equal(htmlToMarkdown("<h1>See <b>Harbor<br>rain</b></h1>"), "# See **Harbor**\n# **rain**");
+        assert.equal(htmlToMarkdown("<h3>Harbor<br><br>rain</h3>"), "### Harbor\n\n### rain");
+    });
+
     it("keeps each row of a pasted table", () => {
         const saved = prepareEntryContent("<table><tr><th>Rain</th><th>Harbor</th></tr><tr><td>Bread</td><td><b>Market</b></td></tr></table>");
         assert.equal(saved.ok, true);
