@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteListPlan, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteListPlan, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -2511,6 +2511,66 @@ function placeLiftedLists(anchor: HTMLElement, lists: HTMLElement[]) {
     }
 }
 
+function selectedListItems(editor: HTMLElement, range: Range): HTMLElement[] | null {
+    const startHost = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+    const endHost = range.endContainer instanceof Element ? range.endContainer : range.endContainer.parentElement;
+    let startItem = startHost?.closest("li") ?? null;
+    let endItem = endHost?.closest("li") ?? null;
+    if (!(startItem instanceof HTMLElement) || !(endItem instanceof HTMLElement) || !editor.contains(startItem) || !editor.contains(endItem)) return null;
+    if (startItem.contains(endItem)) endItem = startItem;
+    else if (endItem.contains(startItem)) startItem = endItem;
+    const list = startItem.parentElement;
+    if (!(list instanceof HTMLUListElement || list instanceof HTMLOListElement) || list !== endItem.parentElement) return [startItem];
+    const items = listItems(list);
+    const start = items.indexOf(startItem);
+    const end = items.indexOf(endItem);
+    if (start < 0 || end < 0) return [startItem];
+    return items.slice(Math.min(start, end), Math.max(start, end) + 1);
+}
+
+function turnListItemIntoHeading(item: HTMLElement, tag: "h1" | "h2" | "h3"): HTMLElement | null {
+    const list = item.parentElement;
+    if (!(list instanceof HTMLUListElement || list instanceof HTMLOListElement)) return null;
+    const numbers = leavingOrderedNumbers(item, null);
+    const lifted = detachNestedLists(item, tag.toUpperCase());
+    const heading = document.createElement(tag);
+    while (item.firstChild) heading.appendChild(item.firstChild);
+    if (blockIsEmpty(heading)) {
+        heading.replaceChildren();
+        heading.appendChild(document.createElement("br"));
+    }
+    const items = listItems(list);
+    const index = items.indexOf(item);
+    const before = index > 0;
+    const following = items.slice(index + 1);
+    item.remove();
+    const after = following.length ? document.createElement(list.tagName.toLowerCase()) : null;
+    if (after) for (const next of following) after.append(next);
+    if (!before) {
+        if (after) list.after(after);
+        list.replaceWith(heading);
+    } else {
+        if (after) list.after(after);
+        list.after(heading);
+    }
+    placeLiftedLists(heading, lifted);
+    if (numbers) restoreOrderedNumbers(numbers);
+    return heading;
+}
+
+function turnListItemsIntoHeadings(items: HTMLElement[], tag: string): HTMLElement | null {
+    const level = tag.toLowerCase();
+    if (level !== "h1" && level !== "h2" && level !== "h3") return null;
+    let first: HTMLElement | null = null;
+    for (const item of [...items].reverse()) {
+        if (!item.isConnected) continue;
+        const heading = turnListItemIntoHeading(item, level);
+        if (heading) first = heading;
+    }
+    if (first) placeCaretAtStart(first);
+    return first;
+}
+
 function outdentListItem(item: HTMLElement) {
     const list = item.parentElement;
     if (!(list instanceof HTMLUListElement || list instanceof HTMLOListElement)) return;
@@ -3373,6 +3433,21 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     const quoted = document.createElement("blockquote");
                     covered[0].before(quoted);
                     for (const block of covered) quoted.append(block);
+                    keepBlank({ before, after: editor.innerHTML, path });
+                    setHtmlContent(editor.innerHTML);
+                    updateActiveFormats();
+                    return;
+                }
+            }
+        }
+        if (cmd === "formatBlock" && editor && selection?.rangeCount) {
+            const headingValue = (value ?? "").toLowerCase();
+            const listed = selectedListItems(editor, selection.getRangeAt(0));
+            if (listed && listHeading({ command: cmd, value: headingValue, inItem: true }) === "line") {
+                const before = editor.innerHTML;
+                const path = childPath(editor, listed[0]);
+                const heading = turnListItemsIntoHeadings(listed, headingValue);
+                if (heading) {
                     keepBlank({ before, after: editor.innerHTML, path });
                     setHtmlContent(editor.innerHTML);
                     updateActiveFormats();
