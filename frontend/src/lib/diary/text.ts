@@ -856,6 +856,13 @@ export function quoteLeaveKey(input: {
     return "leave";
 }
 
+export type QuoteBlocks = "together" | "browser";
+
+export function quoteCoveredBlocks(input: { covered: number; consecutive: boolean }): QuoteBlocks {
+    if (input.covered > 1 && input.consecutive) return "together";
+    return "browser";
+}
+
 export type ListCommand = "lift" | "pass";
 
 export function listCommand(command: string): ListCommand {
