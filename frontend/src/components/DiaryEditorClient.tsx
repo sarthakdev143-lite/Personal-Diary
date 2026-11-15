@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -438,9 +438,19 @@ function removePictureAhead(figure: HTMLElement, editor: HTMLElement) {
         }
     }
     const parent = figure.parentElement;
+    const previousBlock = figure.previousElementSibling;
     figure.remove();
     const selection = window.getSelection();
-    if (next instanceof Text) {
+    const nextKind = next instanceof Text
+        ? "text"
+        : next instanceof HTMLElement && next.tagName === "FIGURE"
+            ? "picture"
+            : next instanceof HTMLElement
+                ? "block"
+                : "none";
+    const inLine = parent instanceof HTMLElement && parent !== editor && pictureNameLine(parent.tagName) !== "page";
+    const caretPlace = pictureRemovalCaret({ next: nextKind, inLine });
+    if (caretPlace === "text" && next instanceof Text) {
         const caret = document.createRange();
         caret.setStart(next, 0);
         caret.collapse(true);
@@ -448,7 +458,19 @@ function removePictureAhead(figure: HTMLElement, editor: HTMLElement) {
         selection?.addRange(caret);
         return;
     }
-    if (next instanceof HTMLElement && editor.contains(next)) {
+    if (caretPlace === "before" && next instanceof HTMLElement) {
+        const caret = document.createRange();
+        caret.setStartBefore(next);
+        caret.collapse(true);
+        selection?.removeAllRanges();
+        selection?.addRange(caret);
+        return;
+    }
+    if (caretPlace === "previous" && previousBlock instanceof HTMLElement && editor.contains(previousBlock)) {
+        placeCaretAtEnd(previousBlock);
+        return;
+    }
+    if (caretPlace === "inside" && next instanceof HTMLElement && editor.contains(next)) {
         placeCaretAtStart(next);
         return;
     }

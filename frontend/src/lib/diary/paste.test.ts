@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalJoin, pictureRemovalSpace, pictureRemovalHost, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalJoin, pictureRemovalSpace, pictureRemovalHost, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -422,6 +422,11 @@ describe("entry paste", () => {
         assert.equal(pictureAheadReach({ sameBlock: true, siblingBlock: false }), "picture");
         assert.equal(pictureAheadReach({ sameBlock: false, siblingBlock: true }), "picture");
         assert.equal(pictureAheadReach({ sameBlock: false, siblingBlock: false }), "none");
+        assert.equal(pictureRemovalCaret({ next: "text" }), "text");
+        assert.equal(pictureRemovalCaret({ next: "picture", inLine: true }), "before");
+        assert.equal(pictureRemovalCaret({ next: "picture", inLine: false }), "previous");
+        assert.equal(pictureRemovalCaret({ next: "block" }), "inside");
+        assert.equal(pictureRemovalCaret({ next: "none" }), "end");
         assert.equal(pictureAheadDelete({ key: "Delete", ...picture }), "remove");
         assert.equal(pictureAheadDelete({ key: "Delete", collapsed: true, ahead: "space" }), "clear");
         assert.equal(pictureAheadDelete({ key: "Delete", collapsed: true, ahead: "none" }), "pass");
