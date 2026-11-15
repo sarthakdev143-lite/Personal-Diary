@@ -254,6 +254,19 @@ export function stickyUndo(input: { sticky: boolean; matches: boolean; sameLine:
     return "clear";
 }
 
+export function stickyTyped(input: { sticky: boolean; sameLine: boolean; current: string; before: string; after: string }): "record" | "skip" {
+    if (!input.sticky || !input.sameLine) return "skip";
+    if (sameEditingPage(input.current, input.after) || sameEditingPage(input.current, input.before)) return "skip";
+    return "record";
+}
+
+export function typedRedo(input: { redone: string; typed?: string | null; undone?: string }): string {
+    if (!input.typed) return input.redone;
+    if (sameEditingPage(input.typed, input.redone)) return input.redone;
+    if (input.undone && sameEditingPage(input.typed, input.undone)) return input.redone;
+    return input.typed;
+}
+
 export function wordGapInsert(gap: "before" | "after", typed: string): { text: string; caret: number; pull: boolean } | null {
     if (typed === " " || typed === "\u00a0") return null;
     if (gap === "after" && /^[,.;:!?]$/.test(typed)) return { text: typed, caret: typed.length, pull: true };
