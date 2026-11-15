@@ -1071,6 +1071,26 @@ export function savedRedo(input: {
 
 export type ListEdge = "outdent" | "pass";
 
+export type ListIndent = "indent" | "outdent" | "stay" | "pass";
+
+export function listIndentKey(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    inItem: boolean;
+    collapsed: boolean;
+    hasPrevious: boolean;
+    nested: boolean;
+}): ListIndent {
+    if (input.key !== "Tab" || input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (!input.inItem) return "pass";
+    if (!input.collapsed) return "stay";
+    if (input.shiftKey) return input.nested ? "outdent" : "stay";
+    return input.hasPrevious ? "indent" : "stay";
+}
+
 export function listEdgeKey(input: {
     key: string;
     shiftKey?: boolean;
