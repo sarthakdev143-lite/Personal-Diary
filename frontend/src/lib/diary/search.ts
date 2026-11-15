@@ -88,8 +88,14 @@ export function entryCardPreview(entry: {
 }, rawQuery: string): string {
     const writing = entry.plainText?.trim() || entryWritingText(entry.content);
     const query = normalizeSearchQuery(rawQuery);
-    if (!query || !writing.toLowerCase().includes(query.toLowerCase())) return writing.slice(0, 90);
-    return matchingPiece(entry, query);
+    if (!query) return writing.slice(0, 90);
+    const needle = query.toLowerCase();
+    if (writing.toLowerCase().includes(needle)) return matchingPiece(entry, query);
+    if (entrySearchParts(entry).some((part) => part.toLowerCase().includes(needle))) return writing.slice(0, 90);
+    const date = formatEntryLong(entry.createdAt);
+    const page = date && date !== "—" && writing ? `${date} ${writing}` : writing;
+    if (page.toLowerCase().includes(needle)) return matchingPiece(entry, query);
+    return writing.slice(0, 90);
 }
 
 export function matchedTextParts(text: string, rawQuery: string): { text: string; match: boolean }[] {

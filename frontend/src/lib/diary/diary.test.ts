@@ -1346,7 +1346,8 @@ describe("search", () => {
             matchedTextParts(match.snippet ?? "", "2026 Quiet").filter((part) => part.match).map((part) => part.text),
             ["2026 Quiet"],
         );
-        assert.equal(entryCardPreview(entry, "2026 Quiet"), "Quiet rain.");
+        assert.match(entryCardPreview(entry, "2026 Quiet"), /2026 Quiet/);
+        assert.equal(entryCardPreview(entry, "November"), "Quiet rain.");
     });
 
     it("opens the note that made a diary match", () => {
