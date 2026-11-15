@@ -1205,6 +1205,11 @@ export function listBlock(input: { kind: string; inItem: boolean }): ListBlock {
     return "pass";
 }
 
+export function listLineSpace(text: string, edge: "start" | "end"): string {
+    if (edge === "start") return text.replace(/^[\s\u00a0]/, "");
+    return text.replace(/[\s\u00a0]$/, "");
+}
+
 export function listBlockNumbers(input: { item: number; following: number[]; split: boolean }): number[] {
     if (!input.split) return input.following;
     const numbers = [input.item + 1];
