@@ -443,6 +443,8 @@ describe("entry paste", () => {
         assert.equal(pictureRemovalCaret({ next: "picture", inLine: false }), "previous");
         assert.equal(pictureRemovalCaret({ next: "block" }), "inside");
         assert.equal(pictureRemovalCaret({ next: "none" }), "end");
+        assert.equal(pictureRemovalCaret({ next: "none", previous: true }), "previous");
+        assert.equal(pictureRemovalCaret({ next: "none", previous: false }), "end");
         assert.equal(pictureRemovalRoute({ selected: true }), "ahead");
         assert.equal(pictureRemovalRoute({ selected: false }), "plain");
         assert.equal(pictureAheadDelete({ key: "Delete", ...picture }), "remove");
