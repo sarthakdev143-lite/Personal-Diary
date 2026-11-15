@@ -1375,6 +1375,26 @@ describe("search", () => {
         assert.equal(miss.snippet, null);
     });
 
+    it("shows a description word that sits past the card opening", () => {
+        const description = `${"Notes from the path. ".repeat(8)}Harbor light at the end.`;
+        const late = diaryListMatch({ title: "Window notes", description }, [], "harbor");
+        assert.equal(late.matched, true);
+        assert.equal(late.entryId, null);
+        assert.equal(late.count, 0);
+        assert.match(late.snippet ?? "", /Harbor light/);
+        assert.deepEqual(
+            matchedTextParts(late.snippet ?? "", "harbor").filter((part) => part.match).map((part) => part.text.toLowerCase()),
+            ["harbor"],
+        );
+
+        const early = diaryListMatch({ title: "Window notes", description: "Harbor light, then a longer story." }, [], "harbor");
+        assert.equal(early.matched, true);
+        assert.equal(early.snippet, null);
+
+        const titled = diaryListMatch({ title: "Harbor", description }, [], "harbor");
+        assert.equal(titled.snippet, null);
+    });
+
     it("shows the date and the first line when a search crosses them", () => {
         const created = new Date(2026, 10, 15, 9, 30).toISOString();
         const entry = {
