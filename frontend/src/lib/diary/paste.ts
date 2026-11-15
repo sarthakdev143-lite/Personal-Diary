@@ -50,6 +50,21 @@ export function lineAfterPictureKey(input: {
     return input.empty ? "remove" : "move";
 }
 
+export type PictureInlineBackspace = "name" | "pass";
+
+export function pictureInlineBackspace(input: {
+    key: string;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    afterPicture: boolean;
+}): PictureInlineBackspace {
+    if (input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.key !== "Backspace" || !input.collapsed || !input.afterPicture) return "pass";
+    return "name";
+}
+
 export type SelectedPictureKey = "remove" | "name" | "after" | "pass";
 
 export function selectedPictureKey(input: {

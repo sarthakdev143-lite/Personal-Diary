@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureInlineBackspace, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -287,6 +287,15 @@ describe("entry paste", () => {
         assert.equal(pictureFormat({ inPicture: true, kind: "image" }), "keep");
         assert.equal(pictureInsert({ inPicture: true, inItem: false, leavesPicture: true }), "span");
         assert.equal(pictureInsert({ inPicture: true, inItem: false }), "after");
+    });
+
+    it("keeps the word after a picture in the line out of the picture name", () => {
+        const beside = { collapsed: true, afterPicture: true };
+        assert.equal(pictureInlineBackspace({ key: "Backspace", ...beside }), "name");
+        assert.equal(pictureInlineBackspace({ key: "Backspace", collapsed: true, afterPicture: false }), "pass");
+        assert.equal(pictureInlineBackspace({ key: "Backspace", collapsed: false, afterPicture: true }), "pass");
+        assert.equal(pictureInlineBackspace({ key: "Delete", ...beside }), "pass");
+        assert.equal(pictureInlineBackspace({ key: "Backspace", ctrlKey: true, ...beside }), "pass");
     });
 
     it("keeps the next line from joining the picture name", () => {
