@@ -312,7 +312,7 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
                 end = tail;
             }
         }
-        if ((text[start - 1] === "$" || text[start - 1] === "\u20ac" || text[start - 1] === "\u00a3" || text[start - 1] === "#") && !word(start - 2) && word(start)) start -= 1;
+        if ((text[start - 1] === "$" || text[start - 1] === "\u20ac" || text[start - 1] === "\u00a3" || text[start - 1] === "\u20b9" || text[start - 1] === "\u00a5" || text[start - 1] === "#") && !word(start - 2) && word(start)) start -= 1;
         if (end === start + 1 && word(start - 1) && (sticky(start) || ((text[start] === "." || text[start] === ":") && !word(end)))) {
             while (word(start - 1)) start -= 1;
         }
