@@ -2849,6 +2849,41 @@ function pictureCode(editor: HTMLElement, range: Range): HTMLElement | null {
     return block;
 }
 
+function pictureAcross(editor: HTMLElement, range: Range): HTMLElement | null {
+    if (range.collapsed) return null;
+    const top = (node: Node) => {
+        const host = node instanceof Element ? node : node.parentElement;
+        if (!(host instanceof HTMLElement) || !editor.contains(host)) return null;
+        let block: HTMLElement = host;
+        while (block.parentElement && block.parentElement !== editor) block = block.parentElement;
+        return block === editor ? null : block;
+    };
+    const start = top(range.startContainer);
+    const end = top(range.endContainer);
+    return start && end && start !== end ? start : null;
+}
+
+function placePictureAcross(editor: HTMLElement, range: Range, picture: HTMLElement) {
+    range.deleteContents();
+    const atEditor = range.startContainer === editor;
+    const next = atEditor ? editor.childNodes[range.startOffset] ?? null : null;
+    if (next) next.before(picture);
+    else if (atEditor) editor.append(picture);
+    else {
+        const host = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+        let block: HTMLElement | null = host instanceof HTMLElement ? host : null;
+        while (block && block.parentElement && block.parentElement !== editor) block = block.parentElement;
+        if (block && block.parentElement === editor) block.before(picture);
+        else editor.append(picture);
+    }
+    const previous = picture.previousElementSibling;
+    const following = picture.nextElementSibling;
+    if (previous instanceof HTMLElement) trimPictureEdge(previous, "end");
+    if (following instanceof HTMLElement) trimPictureEdge(following, "start");
+    if (previous instanceof HTMLElement && blockIsEmpty(previous)) previous.remove();
+    if (following instanceof HTMLElement && blockIsEmpty(following)) following.remove();
+}
+
 function pictureLine(editor: HTMLElement, range: Range): HTMLParagraphElement | null {
     const host = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
     const block = host?.closest("p");
@@ -2868,7 +2903,8 @@ function openPicture(editor: HTMLElement, range: Range, src: string, name: strin
     const inItem = item instanceof HTMLElement && editor.contains(item);
     const line = pictureLine(editor, range);
     const code = pictureCode(editor, range);
-    const action = pictureInsert({ inPicture: Boolean(anchor), inItem, inLine: Boolean(line), inCode: Boolean(code) });
+    const across = pictureAcross(editor, range);
+    const action = pictureInsert({ inPicture: Boolean(anchor), inItem, inLine: Boolean(line), inCode: Boolean(code), across: Boolean(across) });
     if (action === "pass") return null;
     const before = editor.innerHTML;
     const picture = buildPicture(src, name);
@@ -2881,6 +2917,12 @@ function openPicture(editor: HTMLElement, range: Range, src: string, name: strin
     if (action === "code" && code) {
         const path = childPath(editor, code);
         placePictureInCode(code, range, picture);
+        placeCaretInPicture(picture);
+        return { before, path };
+    }
+    if (action === "span" && across) {
+        const path = childPath(editor, across);
+        placePictureAcross(editor, range, picture);
         placeCaretInPicture(picture);
         return { before, path };
     }
