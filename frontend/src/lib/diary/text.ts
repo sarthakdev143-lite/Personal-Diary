@@ -8,12 +8,14 @@ function decodeEntryText(value: string): string {
         .replace(/&#39;|&apos;/gi, "'");
 }
 
+const INLINE_TAG = /^(a|abbr|b|cite|code|del|em|font|i|img|ins|kbd|mark|s|samp|small|span|strike|strong|sub|sup|u|wbr)$/i;
+
 export function entryPlainText(html: string): string {
     const text = decodeEntryText(
         html
             .replace(/<script[\s\S]*?<\/script>/gi, " ")
             .replace(/<style[\s\S]*?<\/style>/gi, " ")
-            .replace(/<[^>]+>/g, " "),
+            .replace(/<\/?([a-zA-Z0-9]+)[^>]*>/g, (_tag, name: string) => INLINE_TAG.test(name) ? "" : " "),
     );
 
     const visible = text.toLowerCase();

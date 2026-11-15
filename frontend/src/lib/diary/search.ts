@@ -72,11 +72,11 @@ export function entryMatchesListQuery(entry: {
 }, rawQuery: string): boolean {
     const query = normalizeSearchQuery(rawQuery).toLowerCase();
     if (!query) return true;
-    if (entrySearchParts(entry).some((part) => part.toLowerCase().includes(query))) return true;
+    if (entrySearchParts(entry).some((part) => foldedIncludes(part, query))) return true;
     const writing = entry.plainText?.trim() || entryWritingText(entry.content);
     const date = formatEntryLong(entry.createdAt);
     if (!writing || !date || date === "—") return false;
-    return `${date} ${writing}`.toLowerCase().includes(query);
+    return foldedIncludes(`${date} ${writing}`, query);
 }
 
 export function entriesForQuery<T extends {
@@ -133,7 +133,7 @@ function matchingPiece(entry: ListedEntry, query: string, visible = 90): string 
     const needle = query.toLowerCase();
     const date = formatEntryLong(entry.createdAt);
     const page = date && date !== "—" && writing ? `${date} ${writing}` : writing;
-    const piece = entrySearchParts(entry).find((item) => item.toLowerCase().includes(needle)) ?? page;
+    const piece = entrySearchParts(entry).find((item) => foldedIncludes(item, needle)) ?? page;
     return textWindow(piece, query, visible);
 }
 
@@ -159,12 +159,11 @@ export function entryCardPreview(entry: {
     const writing = entry.plainText?.trim() || entryWritingText(entry.content);
     const query = normalizeSearchQuery(rawQuery);
     if (!query) return writing.slice(0, 90);
-    const needle = query.toLowerCase();
-    if (writing.toLowerCase().includes(needle)) return matchingPiece(entry, query, ENTRY_LINE);
-    if (entrySearchParts(entry).some((part) => part.toLowerCase().includes(needle))) return writing.slice(0, 90);
+    if (foldedIncludes(writing, query)) return matchingPiece(entry, query, ENTRY_LINE);
+    if (entrySearchParts(entry).some((part) => foldedIncludes(part, query))) return writing.slice(0, 90);
     const date = formatEntryLong(entry.createdAt);
     const page = date && date !== "—" && writing ? `${date} ${writing}` : writing;
-    if (page.toLowerCase().includes(needle)) return matchingPiece(entry, query, ENTRY_LINE);
+    if (foldedIncludes(page, query)) return matchingPiece(entry, query, ENTRY_LINE);
     return writing.slice(0, 90);
 }
 
