@@ -2849,25 +2849,81 @@ function pictureCode(editor: HTMLElement, range: Range): HTMLElement | null {
     return block;
 }
 
-function pictureItems(editor: HTMLElement, range: Range): HTMLElement | null {
+function listItemAt(node: Node): HTMLElement | null {
+    const host = node instanceof Element ? node : node.parentElement;
+    const item = host?.closest("li") ?? null;
+    return item instanceof HTMLElement ? item : null;
+}
+
+function pictureItemEnds(editor: HTMLElement, range: Range): { start: HTMLElement; end: HTMLElement } | null {
     if (range.collapsed) return null;
-    const hostOf = (node: Node) => node instanceof Element ? node : node.parentElement;
-    const start = hostOf(range.startContainer)?.closest("li") ?? null;
-    const end = hostOf(range.endContainer)?.closest("li") ?? null;
-    if (!(start instanceof HTMLElement) || !(end instanceof HTMLElement)) return null;
-    if (!editor.contains(start) || !editor.contains(end) || start === end) return null;
-    const list = start.parentElement;
-    if (list !== end.parentElement) return null;
-    if (!(list instanceof HTMLUListElement || list instanceof HTMLOListElement)) return null;
-    return start;
+    const start = listItemAt(range.startContainer);
+    const end = listItemAt(range.endContainer);
+    if (!start || !end || start === end || !editor.contains(start) || !editor.contains(end)) return null;
+    if (start.contains(end) || end.contains(start)) return null;
+    const startList = start.parentElement;
+    const endList = end.parentElement;
+    if (!(startList instanceof HTMLUListElement || startList instanceof HTMLOListElement)) return null;
+    if (!(endList instanceof HTMLUListElement || endList instanceof HTMLOListElement)) return null;
+    return { start, end };
+}
+
+function pictureItems(editor: HTMLElement, range: Range): HTMLElement | null {
+    const ends = pictureItemEnds(editor, range);
+    if (!ends || ends.start.parentElement !== ends.end.parentElement) return null;
+    return ends.start;
+}
+
+function pictureAcrossLists(editor: HTMLElement, range: Range): HTMLElement | null {
+    const ends = pictureItemEnds(editor, range);
+    if (!ends || ends.start.parentElement === ends.end.parentElement) return null;
+    let node = ends.start.parentElement;
+    while (node && node !== editor) {
+        if ((node instanceof HTMLUListElement || node instanceof HTMLOListElement) && node.contains(ends.end)) return ends.start;
+        node = node.parentElement;
+    }
+    return null;
+}
+
+function orderedListNumbers(list: HTMLElement | null): Map<HTMLElement, number> | null {
+    if (!(list instanceof HTMLOListElement)) return null;
+    const items = listItems(list);
+    const numbers = new Map<HTMLElement, number>();
+    items.forEach((entry, index) => {
+        numbers.set(entry, orderedItemNumber({
+            start: list.getAttribute("start"),
+            values: items.map((node) => node.getAttribute("value")),
+            index,
+        }));
+    });
+    return numbers;
+}
+
+function sharedPictureList(start: HTMLElement, end: HTMLElement | null): HTMLElement | null {
+    let node = start.parentElement;
+    while (node) {
+        if ((node instanceof HTMLUListElement || node instanceof HTMLOListElement) && (!end || node.contains(end))) return node;
+        node = node.parentElement;
+    }
+    return start.parentElement instanceof HTMLUListElement || start.parentElement instanceof HTMLOListElement ? start.parentElement : null;
+}
+
+function clearPictureItem(item: HTMLElement | null) {
+    if (!item) return;
+    for (const nested of [...item.children]) {
+        if (!(nested instanceof HTMLUListElement || nested instanceof HTMLOListElement)) continue;
+        for (const child of [...listItems(nested)]) clearPictureItem(child);
+        if (!listItems(nested).length) nested.remove();
+    }
+    if (blockIsEmpty(item) && !directNestedLists(item).length) item.remove();
 }
 
 function placePictureBetweenItems(range: Range, picture: HTMLElement) {
-    const host = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
-    const start = host?.closest("li");
-    const list = start?.parentElement;
+    const start = listItemAt(range.startContainer);
+    const end = listItemAt(range.endContainer);
+    const list = start ? sharedPictureList(start, end) : null;
     if (!(start instanceof HTMLElement) || !(list instanceof HTMLUListElement || list instanceof HTMLOListElement)) return;
-    const numbers = leavingOrderedNumbers(start, null);
+    const numbers = orderedListNumbers(list);
     range.deleteContents();
     const splitList = range.startContainer instanceof HTMLUListElement || range.startContainer instanceof HTMLOListElement
         ? range.startContainer
@@ -2882,8 +2938,8 @@ function placePictureBetweenItems(range: Range, picture: HTMLElement) {
     const following = listItems(afterList)[0] ?? null;
     if (previous) trimPictureEdge(previous, "end");
     if (following) trimPictureEdge(following, "start");
-    if (previous && blockIsEmpty(previous)) previous.remove();
-    if (following && blockIsEmpty(following)) following.remove();
+    clearPictureItem(previous);
+    clearPictureItem(following);
     if (!listItems(splitList).length) splitList.remove();
     if (!listItems(afterList).length) afterList.remove();
     if (numbers) restoreOrderedNumbers(numbers);
@@ -2972,8 +3028,9 @@ function openPicture(editor: HTMLElement, range: Range, src: string, name: strin
     const code = pictureCode(editor, range);
     const across = pictureAcross(editor, range);
     const items = pictureItems(editor, range);
+    const lists = pictureAcrossLists(editor, range);
     const leaves = pictureLeaves(editor, range);
-    const action = pictureInsert({ inPicture: Boolean(anchor), inItem, inLine: Boolean(line), inCode: Boolean(code), across: Boolean(across), acrossItems: Boolean(items), leavesPicture: leaves });
+    const action = pictureInsert({ inPicture: Boolean(anchor), inItem, inLine: Boolean(line), inCode: Boolean(code), across: Boolean(across), acrossItems: Boolean(items), acrossLists: Boolean(lists), leavesPicture: leaves });
     if (action === "pass") return null;
     const before = editor.innerHTML;
     const picture = buildPicture(src, name);
@@ -2989,8 +3046,8 @@ function openPicture(editor: HTMLElement, range: Range, src: string, name: strin
         placeCaretInPicture(picture);
         return { before, path };
     }
-    if (action === "items" && items) {
-        const path = childPath(editor, items);
+    if (action === "items" && (items || lists)) {
+        const path = childPath(editor, items ?? lists!);
         placePictureBetweenItems(range, picture);
         placeCaretInPicture(picture);
         return { before, path };
