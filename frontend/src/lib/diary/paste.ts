@@ -160,6 +160,22 @@ export function pictureNameLine(tag: string): PictureNameLine {
     return "paragraph";
 }
 
+export type PictureNameSelection = "edit" | "pass";
+
+export function pictureNameSelection(input: {
+    key: string;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    inName: boolean;
+}): PictureNameSelection {
+    if (input.altKey || input.collapsed || !input.inName) return "pass";
+    const cut = (input.ctrlKey || input.metaKey) && (input.key === "x" || input.key === "X");
+    const removing = !input.ctrlKey && !input.metaKey && (input.key === "Backspace" || input.key === "Delete");
+    return cut || removing ? "edit" : "pass";
+}
+
 export function captionBreakText(before: string, after: string): { name: string; next: string } {
     const cut = boundarySpaceCut(before, after);
     if (!cut) return { name: before, next: after };
