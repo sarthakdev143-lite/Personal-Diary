@@ -210,10 +210,11 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
     };
     const word = (index: number) => /[\p{L}\p{N}]/u.test(text[index] ?? "");
     const joiner = (index: number) => text[index] === "&" || text[index] === "/" || text[index] === "-" || text[index] === "\u2010" || text[index] === "\u2011" || text[index] === "\u2013" || text[index] === "\u2014";
-    const trailing = (index: number) => {
+    const sticky = (index: number) => {
         const piece = text[index];
-        return piece === "," || piece === "." || piece === ";" || piece === ":" || piece === "!" || piece === "?" || piece === "\u2026";
+        return piece === "," || piece === ";" || piece === "!" || piece === "?" || piece === "\u2026";
     };
+    const held = (index: number) => sticky(index) || ((text[index] === "." || text[index] === ":") && !word(index + 1));
     const pairs = new Map<string, string>([
         ['"', '"'],
         ["(", ")"],
@@ -224,7 +225,7 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         ["\u00ab", "\u00bb"],
     ]);
     if (start < end) {
-        if (end === start + 1 && trailing(start) && word(start - 1) && !word(end)) {
+        if (end === start + 1 && word(start - 1) && (sticky(start) || ((text[start] === "." || text[start] === ":") && !word(end)))) {
             while (word(start - 1)) start -= 1;
         }
         if (joiner(start - 1) && word(start - 2) && word(start)) start -= 1;
@@ -232,8 +233,8 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
             end += 1;
             while (word(end)) end += 1;
         } else if (joiner(end) && word(end - 1) && word(end + 1)) end += 1;
-        if (word(end - 1) && trailing(end) && !word(end + 1)) {
-            while (trailing(end)) end += 1;
+        if (word(end - 1) && held(end)) {
+            while (held(end)) end += 1;
         }
         const closer = text[end];
         if (closer !== undefined && pairs.get(text[start - 1] ?? "") === closer && word(start)) {
