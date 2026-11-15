@@ -1197,19 +1197,28 @@ export function entryWasRevised(createdAt: string | Date, updatedAt: string | Da
     return Number.isFinite(created) && Number.isFinite(updated) && updated - created > REVISION_GAP_MS;
 }
 
-export function entryListSearchText(entry: {
+export function entrySearchParts(entry: {
     content: string;
     plainText?: string | null;
     createdAt: string;
     updatedAt: string;
-}): string {
+}): string[] {
     const writing = entry.plainText?.trim() || entryWritingText(entry.content);
     const clock = formatEntryTime(entry.createdAt);
     const looseClock = clock.replace(/^0/, "");
     const parts = [writing, formatDiaryDate(entry.createdAt), formatEntryLong(entry.createdAt), clock];
     if (looseClock !== clock) parts.push(looseClock);
     if (entryWasRevised(entry.createdAt, entry.updatedAt)) parts.push("edited");
-    return parts.filter(Boolean).join(" ");
+    return parts.filter(Boolean);
+}
+
+export function entryListSearchText(entry: {
+    content: string;
+    plainText?: string | null;
+    createdAt: string;
+    updatedAt: string;
+}): string {
+    return entrySearchParts(entry).join(" ");
 }
 
 export function entryWritingChanged(previousHtml: string, nextHtml: string): boolean {
