@@ -1190,6 +1190,14 @@ export function nestedListLeave(input: { nested: boolean; host: string }): Neste
     return "keep";
 }
 
+export type ListHeading = "line" | "pass";
+
+export function listHeading(input: { command: string; value?: string; inItem: boolean }): ListHeading {
+    const value = (input.value ?? "").toLowerCase();
+    if (input.command === "formatBlock" && input.inItem && (value === "h1" || value === "h2" || value === "h3")) return "line";
+    return "pass";
+}
+
 export function orderedItemNumber(input: { start?: string | null; values?: Array<string | null | undefined>; index: number }): number {
     const start = wholeNumber(input.start);
     let number = start ?? 1;
