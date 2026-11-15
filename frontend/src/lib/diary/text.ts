@@ -209,7 +209,30 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         return piece === " " || piece === "\u00a0" || piece === "\t";
     };
     const word = (index: number) => /[\p{L}\p{N}]/u.test(text[index] ?? "");
-    const joiner = (index: number) => text[index] === "&" || text[index] === "/" || text[index] === "@" || text[index] === "+" || text[index] === "_" || text[index] === "-" || text[index] === "\u2010" || text[index] === "\u2011" || text[index] === "\u2013" || text[index] === "\u2014";
+    const mark = (index: number) => text[index] === "&" || text[index] === "/" || text[index] === "@" || text[index] === "+" || text[index] === "_" || text[index] === ":" || text[index] === "-" || text[index] === "\u2010" || text[index] === "\u2011" || text[index] === "\u2013" || text[index] === "\u2014";
+    const dots = (index: number) => text[index] === ".";
+    const pullJoiner = (index: number) => {
+        if (mark(index) && word(index - 1)) return index;
+        if (!dots(index)) return undefined;
+        let cursor = index;
+        while (dots(cursor)) cursor -= 1;
+        return word(cursor) ? cursor + 1 : undefined;
+    };
+    const afterJoiner = (index: number) => {
+        if (mark(index)) return word(index + 1) ? index + 1 : undefined;
+        if (!dots(index) || dots(index - 1)) return undefined;
+        let cursor = index;
+        while (dots(cursor)) cursor += 1;
+        return word(cursor) ? cursor : undefined;
+    };
+    const joinerSpan = (from: number, to: number) => {
+        if (to === from + 1 && mark(from)) return true;
+        if (from >= to) return false;
+        for (let index = from; index < to; index += 1) {
+            if (!dots(index)) return false;
+        }
+        return true;
+    };
     const sticky = (index: number) => {
         const piece = text[index];
         return piece === "," || piece === ";" || piece === "!" || piece === "?" || piece === "\u2026";
@@ -230,11 +253,15 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         if (end === start + 1 && word(start - 1) && (sticky(start) || ((text[start] === "." || text[start] === ":") && !word(end)))) {
             while (word(start - 1)) start -= 1;
         }
-        if (joiner(start - 1) && word(start - 2) && word(start)) start -= 1;
-        else if (end === start + 1 && joiner(start) && word(start - 1) && word(end)) {
+        const pulled = pullJoiner(start - 1);
+        if (pulled !== undefined && word(start)) start = pulled;
+        else if (word(start - 1) && word(end) && joinerSpan(start, end)) {
             end += 1;
             while (word(end)) end += 1;
-        } else if (joiner(end) && word(end - 1) && word(end + 1)) end += 1;
+        } else if (word(end - 1)) {
+            const next = afterJoiner(end);
+            if (next !== undefined) end = next;
+        }
         if (apostrophe(start - 1) && apostrophe(end) && word(start) && !word(start - 2) && !word(end + 1)) {
             start -= 1;
             end += 1;
@@ -351,6 +378,19 @@ export function wordDeleteGap(text: string, start: number, end: number): "before
     const joiner = (piece: string | undefined) => piece === "&" || piece === "/" || piece === "@" || piece === "+" || piece === "_" || piece === "-" || piece === "\u2010" || piece === "\u2011" || piece === "\u2013" || piece === "\u2014";
     if (joiner(text[start]) && word(text[start - 1]) && (end >= text.length || space(text[end]) || word(text[end]))) return "before";
     if (joiner(text[end - 1]) && word(text[end]) && (start === 0 || space(text[start - 1]) || word(text[start - 1]))) return "after";
+    const piece = text[start];
+    if ((piece === ":" || piece === ".") && word(text[start - 1])) {
+        let cursor = start;
+        if (piece === ".") {
+            while (text[cursor] === ".") cursor += 1;
+        } else cursor += 1;
+        let tail = cursor === end;
+        if (!tail && word(text[cursor])) {
+            while (word(text[cursor])) cursor += 1;
+            tail = cursor === end;
+        }
+        if (tail) return "before";
+    }
     const selected = text.slice(start, end);
     if (!/[\u00a0\t ]/.test(selected)) return "none";
     const removedLeading = space(text[start]);
