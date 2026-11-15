@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prepareEntryContent } from "@/lib/diary/content";
 import { asRecord, readJsonBody } from "@/lib/diary/json";
+import { entriesForQuery, normalizeSearchQuery } from "@/lib/diary/search";
 import { laterEntryTime } from "@/lib/diary/text";
 import { parseEntryDate } from "@/lib/diary/validation";
 
@@ -20,7 +21,7 @@ type RouteContext = {
     params: Promise<{ id: string }>;
 };
 
-export async function GET(_: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
     try {
         const userId = await getSessionUserId();
 
@@ -45,8 +46,9 @@ export async function GET(_: Request, context: RouteContext) {
             return NextResponse.json({ error: "Diary not found" }, { status: 404 });
         }
 
+        const query = normalizeSearchQuery(new URL(request.url).searchParams.get("q") ?? "");
         const entries = await entriesCollection.find({ diaryId, userId }).sort({ createdAt: -1 }).toArray();
-        return NextResponse.json((entries as EntryWithId[]).map(serializeEntry));
+        return NextResponse.json(entriesForQuery((entries as EntryWithId[]).map(serializeEntry), query));
     } catch (error) {
         console.error("Failed to fetch entries", error);
         return NextResponse.json({ error: "Failed to fetch entries" }, { status: 500 });

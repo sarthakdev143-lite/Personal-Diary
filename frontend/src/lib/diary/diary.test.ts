@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
-import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
+import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entriesForQuery, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, codePullUndoCaret, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, blankUndoCaret, joinUndoCaret, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
@@ -1153,6 +1153,19 @@ describe("search", () => {
         const revisedText = entryListSearchText(revised);
         assert.equal(diaryFieldsMatch(revisedText, "", "edited"), true);
         assert.equal(diaryFieldsMatch(revisedText, "", "09:30"), true);
+
+        const garden = {
+            content: "<p>Garden notes</p>",
+            plainText: "Garden notes",
+            createdAt: new Date(2026, 1, 2, 15, 0).toISOString(),
+            updatedAt: new Date(2026, 1, 2, 15, 0).toISOString(),
+        };
+        const pages = [entry, garden, revised];
+        assert.deepEqual(entriesForQuery(pages, "   ").map((page) => page.plainText), ["Quiet rain", "Garden notes", "Quiet rain"]);
+        assert.deepEqual(entriesForQuery(pages, " rain ").map((page) => page.plainText), ["Quiet rain", "Quiet rain"]);
+        assert.deepEqual(entriesForQuery(pages, "November").map((page) => page.plainText), ["Quiet rain", "Quiet rain"]);
+        assert.deepEqual(entriesForQuery(pages, "edited").map((page) => page.plainText), ["Quiet rain"]);
+        assert.deepEqual(entriesForQuery(pages, "garden").map((page) => page.plainText), ["Garden notes"]);
     });
 
     it("shows the note that made a diary match", () => {

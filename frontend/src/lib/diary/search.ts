@@ -34,6 +34,22 @@ export function entryMatchesListQuery(entry: {
     return diaryFieldsMatch(entryListSearchText(entry), "", rawQuery);
 }
 
+export function entriesForQuery<T extends {
+    content: string;
+    plainText?: string | null;
+    createdAt: string | Date;
+    updatedAt: string | Date;
+}>(entries: readonly T[], rawQuery: string): T[] {
+    const query = normalizeSearchQuery(rawQuery);
+    if (!query) return [...entries];
+    return entries.filter((entry) => entryMatchesListQuery({
+        content: entry.content,
+        plainText: entry.plainText,
+        createdAt: entry.createdAt instanceof Date ? entry.createdAt.toISOString() : entry.createdAt,
+        updatedAt: entry.updatedAt instanceof Date ? entry.updatedAt.toISOString() : entry.updatedAt,
+    }, query));
+}
+
 type ListedEntry = {
     id?: string;
     content: string;
