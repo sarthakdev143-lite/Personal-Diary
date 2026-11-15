@@ -1433,6 +1433,21 @@ describe("search", () => {
         assert.equal(titleCardText(title, "   "), title);
     });
 
+    it("shows a title word that starts on the first line and runs past it", () => {
+        const title = "Saturday morning lantern";
+        const shown = titleCardText(title, "lantern").replace(/^…/, "");
+        assert.notEqual(shown, title);
+        assert.match(shown, /lantern/i);
+        assert.ok(shown.toLowerCase().indexOf("lantern") <= 12);
+        assert.ok(shown.length <= 20);
+        const wide = titleCardText("Notes on the extraordinary", "extraordinary").replace(/^…/, "");
+        assert.match(wide, /extraordinary/i);
+        assert.ok(wide.toLowerCase().indexOf("extraordinary") <= 12);
+        assert.ok(wide.length <= 19);
+        assert.equal(titleCardText("Quiet harbor lantern", "lantern"), "Quiet harbor lantern");
+        assert.equal(titleCardText("The old glass lantern", "lantern"), "The old glass lantern");
+    });
+
     it("shows a short note word the diary card would cut off", () => {
         const created = new Date(2026, 10, 14, 15).toISOString();
         const writing = "The morning stayed ordinary and quiet beside the old glass before lantern.";
