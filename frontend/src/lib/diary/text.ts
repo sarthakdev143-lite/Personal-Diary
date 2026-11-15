@@ -1285,6 +1285,14 @@ export function pictureBlockEnds(input: { start: string; end: string; hasPicture
     return "writing";
 }
 
+export type PictureItemSpan = "item" | "across" | "skip";
+
+export function pictureItemSpan(input: { sameItem: boolean; hasPicture: boolean }): PictureItemSpan {
+    if (!input.hasPicture) return "skip";
+    if (input.sameItem) return "item";
+    return "across";
+}
+
 export function listBlockNumbers(input: { item: number; following: number[]; split: boolean }): number[] {
     if (!input.split) return input.following;
     const numbers = [input.item + 1];
