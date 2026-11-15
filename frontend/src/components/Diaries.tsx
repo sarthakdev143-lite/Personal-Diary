@@ -10,6 +10,7 @@ import { coverForTheme } from "@/lib/diary/constants";
 import { diaryListKeyAction, diaryListStep } from "@/lib/diary/keys";
 import { compareDiaryMatches } from "@/lib/diary/order";
 import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
+import { diaryFindCountLabel } from "@/lib/diary/text";
 import { diaryCardWhen, diaryMatchPath } from "@/lib/diary/search";
 
 type Diary = {
@@ -217,6 +218,8 @@ const Diaries = ({ query = "", refetchTrigger = 0, paused = false }: { query?: s
         );
     }
 
+    const findCountLabel = diaryFindCountLabel(diaries.length, query);
+
     if (!diaries.length && query) {
         return (
             <p className="w-full max-w-xs rounded-xl border border-white/10 bg-zinc-600/10 p-6 text-base text-zinc-300" role="status">
@@ -231,6 +234,9 @@ const Diaries = ({ query = "", refetchTrigger = 0, paused = false }: { query?: s
 
     return (
         <>
+            {findCountLabel && (
+                <p id="diary-find-count" className="w-full text-sm tracking-wide text-zinc-400" role="status">{findCountLabel}</p>
+            )}
             {diaries.map((diary) => {
                 const cover = coverForTheme(diary.theme);
                 const pinned = diary.pinned === true;

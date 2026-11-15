@@ -1191,6 +1191,11 @@ export function entryFindCountLabel(count: number, query: string): string | null
     return count === 1 ? "1 entry" : `${count} entries`;
 }
 
+export function diaryFindCountLabel(count: number, query: string): string | null {
+    if (!query.trim() || count < 1) return null;
+    return count === 1 ? "1 diary" : `${count} diaries`;
+}
+
 export function retitleEntryDate(html: string, fromLabel: string, toLabel: string): string {
     if (!fromLabel || !toLabel || fromLabel === toLabel) return html;
     const prefix = `<h2>${fromLabel}</h2>`;
