@@ -7942,6 +7942,19 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (selectedDateHeading(editor, selection, label)) return;
         const target = word ? native.getTargetRanges()[0] : range;
         if (!target) return;
+        if (word) {
+            const caretHost = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+            const caption = caretHost?.closest("figcaption");
+            const inName = caption instanceof HTMLElement && editor.contains(caption);
+            const inside = (node: Node) => Boolean(inName && caption instanceof HTMLElement && (node === caption || caption.contains(node)));
+            if (pictureNameWord({
+                inName,
+                leavesName: inName && (!inside(target.startContainer) || !inside(target.endContainer)),
+            }) === "hold") {
+                event.preventDefault();
+                return;
+            }
+        }
         const block = wordBlock(target.startContainer);
         const end = wordBlock(target.endContainer);
         if (!(block instanceof HTMLElement) || block !== end || !editor.contains(block)) {

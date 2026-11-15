@@ -276,6 +276,8 @@ describe("entry paste", () => {
 
     it("deletes a word in a picture name without the words beside the picture", () => {
         assert.equal(pictureNameWord({ inName: true }), "name");
+        assert.equal(pictureNameWord({ inName: true, leavesName: true }), "hold");
+        assert.equal(pictureNameWord({ inName: false, leavesName: true }), "line");
         assert.equal(pictureNameWord({ inName: false }), "line");
     });
 
