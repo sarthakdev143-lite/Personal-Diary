@@ -163,7 +163,8 @@ public final class DiarySearch {
     }
 
     private static String descriptionSnippet(String description, String query) {
-        String opening = description.length() <= 110 ? description : description.substring(0, 110);
+        // Two lines of a diary card fit about this many characters.
+        String opening = description.length() <= 48 ? description : description.substring(0, 48);
         if (contains(opening, query)) {
             return null;
         }

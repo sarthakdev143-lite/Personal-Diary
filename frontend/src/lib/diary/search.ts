@@ -77,7 +77,8 @@ type ListedEntry = {
     updatedAt: string;
 };
 
-const CARD_OPENING = 110;
+// Two lines of a diary card fit about this many characters.
+const CARD_OPENING = 48;
 
 function textWindow(text: string, query: string): string {
     if (text.length <= 90) return text;

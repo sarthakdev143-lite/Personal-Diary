@@ -60,6 +60,12 @@ class DiarySearchTest {
         assertTrue(early.matched());
         assertNull(early.snippet());
 
+        String clipped = "The morning stayed ordinary and quiet beside the window. lantern appeared before the card opening ended.";
+        DiarySearch.Hit hidden = DiarySearch.match("Window notes", clipped, List.of(), "lantern", ZoneOffset.UTC);
+        assertTrue(hidden.matched());
+        assertTrue(hidden.snippet().contains("lantern"));
+        assertTrue(hidden.snippet().replaceFirst("^…", "").toLowerCase().indexOf("lantern") <= 32);
+
         DiarySearch.Hit titled = DiarySearch.match("Harbor", lateDescription, List.of(), "harbor", ZoneOffset.UTC);
         assertNull(titled.snippet());
 
