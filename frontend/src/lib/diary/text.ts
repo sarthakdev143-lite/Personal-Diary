@@ -1239,6 +1239,13 @@ export function pictureListChange(input: { inList: boolean; hasPicture: boolean;
     return input.sameKind ? "leave" : "switch";
 }
 
+export type PictureListReach = "lines" | "skip";
+
+export function pictureListReach(input: { inList: boolean; outsideList: boolean; hasPicture: boolean }): PictureListReach {
+    if (input.inList && input.outsideList && input.hasPicture) return "lines";
+    return "skip";
+}
+
 export type ListHeadingAcross = "lines" | "pass";
 
 export function listHeadingAcross(input: { touchesList: boolean; across: boolean }): ListHeadingAcross {
