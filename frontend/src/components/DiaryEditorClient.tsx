@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameSelection, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -6461,20 +6461,28 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (!(caption instanceof HTMLElement) || !editor.contains(caption)) return false;
         const caret = captionCaret(caption, selection);
         if (!caret) return false;
-        const action = pictureCaptionKey({
+        const action = pictureNameEnter({
             key: e.key,
             shiftKey: e.shiftKey,
             altKey: e.altKey,
             ctrlKey: e.ctrlKey,
             metaKey: e.metaKey,
             collapsed: caret.collapsed,
-            atStart: caret.atStart,
-            atEnd: caret.atEnd,
+            inName: true,
         });
-        if (action !== "break") return false;
+        if (action === "pass") return false;
         e.preventDefault();
         const before = editor.innerHTML;
         const path = childPath(editor, caption);
+        if (action === "replace" && selection.rangeCount) {
+            const range = selection.getRangeAt(0);
+            const at = textOffsetWithin(caption, range.startContainer, range.startOffset);
+            range.deleteContents();
+            dropEmptyMarks(caption);
+            caption.normalize();
+            if (!imageAltText(caption.textContent ?? "")) caption.replaceChildren(document.createElement("br"));
+            placeCaretAtTextOffset(caption, at);
+        }
         const offset = captionUndoCaret(continueAfterPicture(caption)) ?? undefined;
         keepBlank({ before, after: editor.innerHTML, path, caret: offset });
         setHtmlContent(editor.innerHTML);
