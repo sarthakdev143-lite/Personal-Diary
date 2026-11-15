@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import { importNotice, importedDiaryPath, rememberImportNotice } from "@/lib/diary/import";
-import { diaryListKeyAction, diarySearchShortcut, searchShortcutLabel } from "@/lib/diary/keys";
+import { diaryListKeyAction, diarySearchShortcut, searchHintVisible, searchShortcutLabel } from "@/lib/diary/keys";
 import { diaryListNavigation } from "@/lib/diary/search";
 
 const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) => {
@@ -53,6 +53,9 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
         if (searchKeyRef.current) {
             searchKeyRef.current.textContent = searchShortcutLabel(navigator.platform);
         }
+    }, [query]);
+
+    useEffect(() => {
         if (window.matchMedia("(max-width: 767px)").matches) return;
         searchInputRef.current?.focus();
     }, []);
@@ -189,12 +192,14 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
                         placeholder="Search diaries and notes..."
                         aria-label="Search diaries and notes"
                         maxLength={80}
-                        className="rounded-xl border border-white/15 bg-zinc-900 p-6 py-[1.65rem] text-lg text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/50 md:pr-24"
+                        className={`rounded-xl border border-white/15 bg-zinc-900 p-6 py-[1.65rem] text-lg text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/50 ${searchHintVisible(query) ? "md:pr-24" : "pr-6"}`}
                     />
+                    {searchHintVisible(query) && (
                     <div id="keyboard-key" className="absolute right-6 top-1/2 flex -translate-y-1/2 gap-1 max-md:hidden">
                         <span ref={searchKeyRef} className="rounded-md bg-zinc-700/70 px-[0.4rem] font-mono text-base text-zinc-400/90">ctrl</span>
                         <span className="rounded-md bg-zinc-700/70 px-[0.4rem] font-mono text-base text-zinc-400/90">I</span>
                     </div>
+                    )}
                     </div>
                     <button
                         type="button"

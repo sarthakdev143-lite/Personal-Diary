@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { diaryListKeyAction, diaryListStep, diarySearchShortcut, entryListStep, searchShortcutLabel } from "./keys";
+import { diaryListKeyAction, diaryListStep, diarySearchShortcut, entryListStep, searchHintVisible, searchShortcutLabel } from "./keys";
 
 const plain = { key: "i", ctrlKey: false, metaKey: false, altKey: false, shiftKey: false };
 
@@ -19,6 +19,13 @@ describe("diary search shortcut", () => {
         assert.equal(searchShortcutLabel("iPhone"), "⌘");
         assert.equal(searchShortcutLabel("Linux x86_64"), "ctrl");
         assert.equal(searchShortcutLabel("Win32"), "ctrl");
+    });
+
+    it("hides the search shortcut once the field has text", () => {
+        assert.equal(searchHintVisible(""), true);
+        assert.equal(searchHintVisible("   "), false);
+        assert.equal(searchHintVisible("rain"), false);
+        assert.equal(searchHintVisible(" rain "), false);
     });
 
     it("leaves diary search with escape, then moves through the diaries", () => {
