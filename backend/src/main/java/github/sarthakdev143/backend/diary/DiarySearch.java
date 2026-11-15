@@ -64,7 +64,8 @@ public final class DiarySearch {
             return "";
         }
         String trimmed = raw.trim();
-        return trimmed.length() <= MAX ? trimmed : trimmed.substring(0, MAX);
+        String capped = trimmed.length() <= MAX ? trimmed : trimmed.substring(0, MAX);
+        return fold(capped).text();
     }
 
     public static Hit match(String title, String description, List<Note> notes, String rawQuery, ZoneId zone) {
