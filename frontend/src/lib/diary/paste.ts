@@ -129,9 +129,13 @@ export function pictureInlineEnter(input: {
     metaKey?: boolean;
     collapsed: boolean;
     besidePicture: boolean;
+    side?: "before" | "after";
+    atStart?: boolean;
+    line?: PictureNameLine;
 }): PictureInlineEnter {
     if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey) return "pass";
     if (input.key !== "Enter" || !input.collapsed || !input.besidePicture) return "pass";
+    if (input.side === "before" && input.atStart && input.line === "item") return "pass";
     return "split";
 }
 

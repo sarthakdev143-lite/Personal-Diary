@@ -456,6 +456,10 @@ describe("entry paste", () => {
     it("starts the next line beside a picture and leaves the picture whole", () => {
         const beside = { collapsed: true, besidePicture: true };
         assert.equal(pictureInlineEnter({ key: "Enter", ...beside }), "split");
+        assert.equal(pictureInlineEnter({ key: "Enter", ...beside, side: "before", atStart: true, line: "item" }), "pass");
+        assert.equal(pictureInlineEnter({ key: "Enter", ...beside, side: "before", atStart: false, line: "item" }), "split");
+        assert.equal(pictureInlineEnter({ key: "Enter", ...beside, side: "after", atStart: true, line: "item" }), "split");
+        assert.equal(pictureInlineEnter({ key: "Enter", ...beside, side: "before", atStart: true, line: "paragraph" }), "split");
         assert.equal(pictureInlineEnter({ key: "Enter", collapsed: true, besidePicture: false }), "pass");
         assert.equal(pictureInlineEnter({ key: "Enter", collapsed: false, besidePicture: true }), "pass");
         assert.equal(pictureInlineEnter({ key: "Enter", shiftKey: true, ...beside }), "pass");
