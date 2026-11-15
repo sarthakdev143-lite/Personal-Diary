@@ -1,5 +1,5 @@
 import { SEARCH_MAX } from "./constants";
-import { entrySearchParts, entryWritingText } from "./text";
+import { entrySearchParts, entryWritingText, formatEntryLong } from "./text";
 
 type RegexQuery = { $regex: string; $options: "i" };
 
@@ -33,7 +33,11 @@ export function entryMatchesListQuery(entry: {
 }, rawQuery: string): boolean {
     const query = normalizeSearchQuery(rawQuery).toLowerCase();
     if (!query) return true;
-    return entrySearchParts(entry).some((part) => part.toLowerCase().includes(query));
+    if (entrySearchParts(entry).some((part) => part.toLowerCase().includes(query))) return true;
+    const writing = entry.plainText?.trim() || entryWritingText(entry.content);
+    const date = formatEntryLong(entry.createdAt);
+    if (!writing || !date || date === "—") return false;
+    return `${date} ${writing}`.toLowerCase().includes(query);
 }
 
 export function entriesForQuery<T extends {
