@@ -169,6 +169,13 @@ export function pictureTypedPlace(input: { next: "text" | "element" | "none"; li
     return "line";
 }
 
+export type PictureCutWords = "keep" | "pass";
+
+export function pictureCutWords(input: { collapsed: boolean; touchesPicture: boolean; outsideSelected: boolean }): PictureCutWords {
+    if (input.collapsed || !input.touchesPicture || !input.outsideSelected) return "pass";
+    return "keep";
+}
+
 export type PictureNameSelection = "edit" | "pass";
 
 export function pictureNameSelection(input: {
