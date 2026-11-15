@@ -11,7 +11,7 @@ import { diaryListKeyAction, diaryListStep } from "@/lib/diary/keys";
 import { compareDiaryMatches } from "@/lib/diary/order";
 import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { diaryCardWhen, diaryMatchPath } from "@/lib/diary/search";
-import { diaryListView } from "@/lib/diary/view";
+import { diaryEnterChoice, diaryFieldReady, diaryListView, diaryPendingOpen } from "@/lib/diary/view";
 
 type Diary = {
     _id: string;
@@ -34,12 +34,18 @@ const truncateDescription = (description: string, maxLength = 110) => {
     return `${description.slice(0, maxLength).trimEnd()}...`;
 };
 
-const Diaries = ({ query = "", refetchTrigger = 0, paused = false, onMatchCount }: { query?: string; refetchTrigger?: number; paused?: boolean; onMatchCount?: (count: number | null) => void }) => {
+const Diaries = ({ query = "", typedQuery = query, refetchTrigger = 0, paused = false, onMatchCount }: { query?: string; typedQuery?: string; refetchTrigger?: number; paused?: boolean; onMatchCount?: (count: number | null) => void }) => {
     const { status } = useSession();
     const [attempt, setAttempt] = useState(0);
     const [pinningId, setPinningId] = useState<string | null>(null);
     const [pinError, setPinError] = useState<{ id: string; message: string } | null>(null);
     const visibleRef = useRef<readonly Diary[]>([]);
+    const typedRef = useRef(typedQuery);
+    const loadedRef = useRef(query);
+    const currentRef = useRef(false);
+    const pendingOpen = useRef<string | null>(null);
+    typedRef.current = typedQuery;
+    loadedRef.current = query;
     const [result, setResult] = useState<{
         key: string;
         diaries: Diary[];
@@ -117,15 +123,21 @@ const Diaries = ({ query = "", refetchTrigger = 0, paused = false, onMatchCount 
                 themeOpen: false,
             });
             if (action === "open") {
-                const first = visibleRef.current[0];
-                if (!first) return;
-                const link = document.querySelector<HTMLAnchorElement>(`a[data-diary-id="${CSS.escape(first._id)}"]`);
-                if (!link) return;
                 event.preventDefault();
-                link.click();
+                const choice = diaryEnterChoice(
+                    diaryFieldReady(typedRef.current, loadedRef.current, currentRef.current),
+                    visibleRef.current.map((diary) => diary._id),
+                );
+                if (choice === "wait") {
+                    pendingOpen.current = typedRef.current.trim();
+                    return;
+                }
+                if (!choice) return;
+                document.querySelector<HTMLAnchorElement>(`a[data-diary-id="${CSS.escape(choice)}"]`)?.click();
                 return;
             }
             if (action !== "next" && action !== "previous") return;
+            if (!diaryFieldReady(typedRef.current, loadedRef.current, currentRef.current)) return;
             const list = visibleRef.current;
             if (!list.length) return;
             const active = document.activeElement instanceof Element
@@ -194,6 +206,20 @@ const Diaries = ({ query = "", refetchTrigger = 0, paused = false, onMatchCount 
     const error = view.error;
     const isLoading = view.loading;
     const isCurrent = result?.key === requestKey;
+    currentRef.current = isCurrent;
+
+    useEffect(() => {
+        const decision = diaryPendingOpen({
+            pending: pendingOpen.current,
+            typed: typedQuery,
+            loaded: query,
+            current: isCurrent,
+            ids: diaries.map((diary) => diary._id),
+        });
+        pendingOpen.current = decision.pending;
+        if (!decision.openId) return;
+        document.querySelector<HTMLAnchorElement>(`a[data-diary-id="${CSS.escape(decision.openId)}"]`)?.click();
+    }, [typedQuery, query, isCurrent, diaries]);
 
     useEffect(() => {
         if (!query.trim() || (isCurrent && error)) {

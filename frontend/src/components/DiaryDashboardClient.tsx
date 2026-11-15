@@ -104,6 +104,7 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
                 searchInputRef.current?.blur();
                 return;
             }
+            if (action === "open") setDebouncedQuery(queryRef.current);
             if (!diarySearchShortcut(event)) return;
             if (formActiveRef.current || fullScreenRef.current) return;
             event.preventDefault();
@@ -230,7 +231,7 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
                     )}
                 </div>
                 <div id="diaries" className="mx-auto flex h-auto w-full max-w-[85%] flex-wrap gap-5 max-sm:justify-center">
-                    <Diaries query={debouncedQuery} refetchTrigger={refetchTrigger} paused={newDiaryFormActive || isFullScreen} onMatchCount={setMatchCount} />
+                    <Diaries query={debouncedQuery} typedQuery={query} refetchTrigger={refetchTrigger} paused={newDiaryFormActive || isFullScreen} onMatchCount={setMatchCount} />
                     <Button
                         onClick={() => setNewDiaryFormActive(true)}
                         id="add-new-diary"
