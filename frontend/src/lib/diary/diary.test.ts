@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryCardWhen, diaryFieldsMatch, diaryListAddress, diaryListMatch, diaryListNavigation, diaryMatchPath, entriesForQuery, entryCardPreview, entryMonthAddress, openedDiaryQuery, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryFindAddress, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery, openedEntryMonth, openedEntryQuery, textPieceHits, textRunHits } from "./search";
 import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatDiaryDate, formatEntryLong, formatEntryTime, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, codePullUndoCaret, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, blankUndoCaret, joinUndoCaret, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
-import { compareDiaries } from "./order";
+import { compareDiaries, compareDiaryMatches } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
     normalizeDescription,
@@ -88,6 +88,48 @@ describe("pinned diaries", () => {
         assert.deepEqual(
             [createdEarlier, createdLater, updatedLater].sort(compareDiaries).map((diary) => diary.id),
             ["updated", "later", "earlier"],
+        );
+        assert.deepEqual(
+            [createdEarlier, createdLater, updatedLater].sort(compareDiaryMatches).map((diary) => diary.id),
+            ["updated", "later", "earlier"],
+        );
+    });
+
+    it("puts the newer matching note ahead of a diary that was saved later", () => {
+        const savedLater = {
+            id: "saved-later",
+            pinned: false,
+            updatedAt: "2026-11-15T00:00:00.000Z",
+            createdAt: "2026-01-01T00:00:00.000Z",
+            matchAt: "2026-02-02T15:00:00.000Z",
+        };
+        const newerNote = {
+            id: "newer-note",
+            pinned: false,
+            updatedAt: "2026-06-01T00:00:00.000Z",
+            createdAt: "2026-01-01T00:00:00.000Z",
+            matchAt: "2026-11-14T09:30:00.000Z",
+        };
+        const pinnedOlder = { ...savedLater, id: "pinned-older", pinned: true };
+        const title = {
+            id: "title",
+            pinned: false,
+            updatedAt: "2026-11-15T00:00:00.000Z",
+            createdAt: "2026-01-01T00:00:00.000Z",
+            matchAt: null,
+        };
+
+        assert.deepEqual(
+            [savedLater, newerNote].sort(compareDiaryMatches).map((diary) => diary.id),
+            ["newer-note", "saved-later"],
+        );
+        assert.deepEqual(
+            [newerNote, pinnedOlder].sort(compareDiaryMatches).map((diary) => diary.id),
+            ["pinned-older", "newer-note"],
+        );
+        assert.deepEqual(
+            [newerNote, title].sort(compareDiaryMatches).map((diary) => diary.id),
+            ["title", "newer-note"],
         );
     });
 

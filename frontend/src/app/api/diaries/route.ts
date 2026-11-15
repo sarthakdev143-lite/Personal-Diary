@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { asRecord, readJsonBody } from "@/lib/diary/json";
-import { compareDiaries } from "@/lib/diary/order";
+import { compareDiaries, compareDiaryMatches } from "@/lib/diary/order";
 import { diaryListMatch, normalizeSearchQuery } from "@/lib/diary/search";
 import { normalizeDescription, normalizeTheme, normalizeTitle } from "@/lib/diary/validation";
 
@@ -57,6 +57,7 @@ export async function GET(request: Request) {
             if (!match.matched) return [];
             return [{ ...serializeDiary(diary), match: match.snippet, matchEntry: match.entryId, matchAt: match.entryAt, matchCount: match.count }];
         });
+        visible.sort(compareDiaryMatches);
 
         return NextResponse.json(visible);
     } catch (error) {

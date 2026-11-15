@@ -21,3 +21,13 @@ export function compareDiaries(a: DiarySortable, b: DiarySortable): number {
     if (byUpdated !== 0) return byUpdated;
     return diaryTime(b.createdAt) - diaryTime(a.createdAt);
 }
+
+export function compareDiaryMatches(a: DiarySortable & { matchAt?: string | null }, b: DiarySortable & { matchAt?: string | null }): number {
+    const byPin = Number(b.pinned === true) - Number(a.pinned === true);
+    if (byPin !== 0) return byPin;
+    if (a.matchAt && b.matchAt) {
+        const byNote = diaryTime(b.matchAt) - diaryTime(a.matchAt);
+        if (byNote !== 0) return byNote;
+    }
+    return compareDiaries(a, b);
+}
