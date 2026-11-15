@@ -577,6 +577,18 @@ function inlinePictureBeforeCaret(editor: HTMLElement, selection: Selection): HT
     return beside?.side === "after" ? beside.figure : null;
 }
 
+function writingAfterPicture(figure: HTMLElement, selection: Selection): boolean {
+    const range = selection.rangeCount ? selection.getRangeAt(0) : null;
+    if (range?.startContainer instanceof Text && !figure.contains(range.startContainer) && range.startContainer.data.slice(range.startOffset).replace(/[\u00a0\s\u200b]/g, "")) return true;
+    let node: ChildNode | null = figure.nextSibling;
+    while (node) {
+        if (node instanceof Text && node.data.replace(/[\u00a0\s\u200b]/g, "")) return true;
+        if (node instanceof HTMLElement && (node.textContent ?? "").replace(/[\u00a0\s\u200b]/g, "")) return true;
+        node = node.nextSibling;
+    }
+    return false;
+}
+
 function lineAfterPicture(editor: HTMLElement, selection: Selection): { block: HTMLElement; caption: HTMLElement; atStart: boolean; empty: boolean } | null {
     if (!selection.rangeCount || !selection.anchorNode) return null;
     const range = selection.getRangeAt(0);
@@ -7139,7 +7151,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const editor = editorRef.current;
         const selection = window.getSelection();
         if (!editor || !selection || mode === "view") return false;
-        const figure = inlinePictureBeforeCaret(editor, selection);
+        const inline = inlinePictureBeforeCaret(editor, selection);
+        const range = selection.rangeCount ? selection.getRangeAt(0) : null;
+        const figure = inline ?? (range ? typeAfterPicture(range) : null);
         const action = pictureInlineBackspace({
             key: e.key,
             altKey: e.altKey,
@@ -7147,7 +7161,16 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             metaKey: e.metaKey,
             collapsed: selection.isCollapsed,
             afterPicture: Boolean(figure),
+            following: inline instanceof HTMLElement && writingAfterPicture(inline, selection),
         });
+        if (action === "remove" && figure instanceof HTMLElement) {
+            e.preventDefault();
+            const before = editor.innerHTML;
+            removePictureAhead(figure, editor);
+            keepPicture({ before, after: editor.innerHTML });
+            setHtmlContent(editor.innerHTML);
+            return true;
+        }
         if (action !== "name" || !(figure instanceof HTMLElement)) return false;
         e.preventDefault();
         const caption = figure.querySelector("figcaption");
