@@ -166,6 +166,13 @@ export function selectedPictureKey(input: {
     return "pass";
 }
 
+export type SelectedPictureEnter = "writing" | "line";
+
+export function selectedPictureEnter(input: { next: "text" | "block" | "none"; inLine: boolean }): SelectedPictureEnter {
+    if (input.next === "none" && !input.inLine) return "line";
+    return "writing";
+}
+
 export type PictureFormat = "keep" | "pass" | "lines" | "block";
 
 export function pictureFormat(input: { inPicture: boolean; command?: string; kind?: string; leavesPicture?: boolean; outsideSelected?: boolean }): PictureFormat {

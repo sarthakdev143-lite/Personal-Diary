@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalJoin, pictureRemovalSpace, pictureRemovalHost, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalJoin, pictureRemovalSpace, pictureRemovalHost, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -471,6 +471,10 @@ describe("entry paste", () => {
         assert.equal(selectedPictureKey({ key: "Delete", imageSelected: false }), "pass");
         assert.equal(selectedPictureKey({ key: "Delete", ctrlKey: true, imageSelected: true }), "pass");
         assert.equal(selectedPictureKey({ key: "Enter", imageSelected: true }), "after");
+        assert.equal(selectedPictureEnter({ next: "text", inLine: true }), "writing");
+        assert.equal(selectedPictureEnter({ next: "block", inLine: false }), "writing");
+        assert.equal(selectedPictureEnter({ next: "none", inLine: true }), "writing");
+        assert.equal(selectedPictureEnter({ next: "none", inLine: false }), "line");
         assert.equal(selectedPictureKey({ key: "s", imageSelected: true }), "name");
         assert.equal(selectedPictureKey({ key: "s", imageSelected: false }), "pass");
         assert.equal(selectedPictureKey({ key: "ArrowDown", imageSelected: true }), "pass");
