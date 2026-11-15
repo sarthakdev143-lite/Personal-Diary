@@ -353,6 +353,13 @@ export function pictureCutWords(input: { collapsed: boolean; touchesPicture: boo
     return "keep";
 }
 
+export type PictureCutText = "outside" | "selection";
+
+export function pictureCutText(input: { startsOutside: boolean; endsOutside: boolean }): PictureCutText {
+    if (input.startsOutside && input.endsOutside) return "outside";
+    return "selection";
+}
+
 export function picturePasteWords(input: { collapsed: boolean; touchesPicture: boolean; outsideSelected: boolean }): PictureCutWords {
     if (input.collapsed || !input.touchesPicture || !input.outsideSelected) return "pass";
     return "keep";
