@@ -487,7 +487,7 @@ describe("entry paste", () => {
 
     it("opens a paragraph under a picture when a block follows inside a quote", () => {
         assert.equal(pictureBreakLine({ next: "block" }), "paragraph");
-        assert.equal(pictureBreakLine({ next: "text" }), "break");
+        assert.equal(pictureBreakLine({ next: "text" }), "apart");
         assert.equal(pictureBreakLine({ next: "picture" }), "break");
         assert.equal(pictureBreakLine({ next: "none" }), "break");
     });
