@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -287,6 +287,16 @@ describe("entry paste", () => {
         assert.equal(pictureFormat({ inPicture: true, kind: "image" }), "keep");
         assert.equal(pictureInsert({ inPicture: true, inItem: false, leavesPicture: true }), "span");
         assert.equal(pictureInsert({ inPicture: true, inItem: false }), "after");
+    });
+
+    it("removes the picture in front of the cursor and keeps its name with it", () => {
+        const picture = { collapsed: true, ahead: "picture" as const };
+        assert.equal(pictureAheadDelete({ key: "Delete", ...picture }), "remove");
+        assert.equal(pictureAheadDelete({ key: "Delete", collapsed: true, ahead: "space" }), "clear");
+        assert.equal(pictureAheadDelete({ key: "Delete", collapsed: true, ahead: "none" }), "pass");
+        assert.equal(pictureAheadDelete({ key: "Delete", collapsed: false, ahead: "picture" }), "pass");
+        assert.equal(pictureAheadDelete({ key: "Backspace", ...picture }), "pass");
+        assert.equal(pictureAheadDelete({ key: "Delete", ctrlKey: true, ...picture }), "pass");
     });
 
     it("starts the next line beside a picture and leaves the picture whole", () => {

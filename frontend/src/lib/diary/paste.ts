@@ -50,6 +50,23 @@ export function lineAfterPictureKey(input: {
     return input.empty ? "remove" : "move";
 }
 
+export type PictureAhead = "picture" | "space" | "none";
+
+export type PictureAheadDelete = "remove" | "clear" | "pass";
+
+export function pictureAheadDelete(input: {
+    key: string;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    ahead: PictureAhead;
+}): PictureAheadDelete {
+    if (input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.key !== "Delete" || !input.collapsed || input.ahead === "none") return "pass";
+    return input.ahead === "space" ? "clear" : "remove";
+}
+
 export type PictureInlineEnter = "split" | "pass";
 
 export function pictureInlineEnter(input: {
