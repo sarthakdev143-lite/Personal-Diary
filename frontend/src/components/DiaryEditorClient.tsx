@@ -15,7 +15,7 @@ import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
 import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
-import { entryCardPreview, entryFindAddress, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, openedEntryQuery, textRunHits } from "@/lib/diary/search";
+import { diaryListAddress, entryCardPreview, entryFindAddress, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, openedEntryQuery, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
@@ -2128,12 +2128,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     }, [diaryId]);
 
     useEffect(() => {
-        if (isLoading) return;
+        if (isLoading || error) return;
         const next = entryFindAddress(entryPageAddress(diaryId, selectedEntryId, mode), mode === "compose" ? "" : entryQuery);
         const current = `${window.location.pathname}${window.location.search}`;
         if (current === next) return;
         window.history.replaceState(window.history.state, "", next);
-    }, [isLoading, diaryId, mode, selectedEntryId, entryQuery]);
+    }, [isLoading, error, diaryId, mode, selectedEntryId, entryQuery]);
 
     useEffect(() => {
         if (isLoading) return;
@@ -3011,7 +3011,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             const res = await fetch(`/api/diaries/${diaryId}`, { method: "DELETE" });
             const data = await res.json().catch(() => null) as { error?: string } | null;
             if (!res.ok) throw new Error(data?.error || "Failed to delete diary.");
-            router.push("/diary");
+            router.push(diaryListAddress(entryQuery));
         } catch (e) {
             toast({ title: "Not deleted", description: e instanceof Error ? e.message : "Error", variant: "destructive" });
             setIsSavingDiary(false);
@@ -4711,7 +4711,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     if (error) return (
         <div style={{ position: "fixed", inset: 0, zIndex: 10, background: "#0d0b09", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
             <p style={{ fontFamily: "Georgia,serif", color: "#a09080", fontSize: 14 }}>{error}</p>
-            <button onClick={() => router.push("/diary")} style={{ fontFamily: "monospace", color: "#8a7860", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", borderBottom: "1px solid #5a4a38", background: "none", cursor: "pointer" }}>← return</button>
+            <button onClick={() => router.push(diaryListAddress(new URLSearchParams(window.location.search).get("q") ?? ""))} style={{ fontFamily: "monospace", color: "#8a7860", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", borderBottom: "1px solid #5a4a38", background: "none", cursor: "pointer" }}>← return</button>
             <Toaster viewportClassName="bottom-24 top-auto flex-col sm:bottom-16" />
         </div>
     );
@@ -5064,12 +5064,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 <header className="de-header">
                     <div style={{ display: "flex", alignItems: "center", gap: 18, minWidth: 0 }}>
                         <Link
-                            href="/diary"
+                            href={diaryListAddress(entryQuery)}
                             className="de-back"
                             onClick={(event) => {
                                 if (!isDirty) return;
                                 event.preventDefault();
-                                askToDiscard(() => router.push("/diary"));
+                                askToDiscard(() => router.push(diaryListAddress(entryQuery)));
                             }}
                         >
                             ← back
