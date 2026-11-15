@@ -15,7 +15,7 @@ import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
 import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
-import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, textPieceHits } from "@/lib/diary/search";
+import { entryCardPreview, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, textRunHits } from "@/lib/diary/search";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
@@ -29,15 +29,35 @@ const fmtShort = formatDiaryDate;
 const fmtTime = formatEntryTime;
 const fmtLong = formatEntryLong;
 
+const FIND_BLOCKS = new Set(["ADDRESS", "ARTICLE", "ASIDE", "BLOCKQUOTE", "DIV", "DL", "FIGCAPTION", "FIGURE", "FOOTER", "H1", "H2", "H3", "H4", "H5", "H6", "HEADER", "HR", "LI", "OL", "P", "PRE", "SECTION", "TABLE", "TR", "UL"]);
+
+function findRuns(root: HTMLElement): { node: Text; breakBefore: boolean }[] {
+    const runs: { node: Text; breakBefore: boolean }[] = [];
+    let breakBefore = false;
+    const visit = (node: Node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            runs.push({ node: node as Text, breakBefore });
+            breakBefore = false;
+            return;
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) return;
+        const element = node as HTMLElement;
+        if (element.tagName === "BR" || element.tagName === "HR") {
+            breakBefore = true;
+            return;
+        }
+        const block = FIND_BLOCKS.has(element.tagName);
+        if (block && runs.length > 0) breakBefore = true;
+        element.childNodes.forEach(visit);
+        if (block) breakBefore = true;
+    };
+    root.childNodes.forEach(visit);
+    return runs;
+}
+
 function showFindMarks(root: HTMLElement, query: string, activeIndex: number): { mark: HTMLElement | null; count: number } {
-    const nodes: Text[] = [];
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    let node = walker.nextNode();
-    while (node) {
-        nodes.push(node as Text);
-        node = walker.nextNode();
-    }
-    const matches = textPieceHits(nodes.map((item) => item.textContent ?? ""), query);
+    const runs = findRuns(root);
+    const matches = textRunHits(runs.map((run) => ({ text: run.node.textContent ?? "", breakBefore: run.breakBefore })), query);
     if (!matches.length) return { mark: null, count: 0 };
     const current = ((activeIndex % matches.length) + matches.length) % matches.length;
     let currentMark: HTMLElement | null = null;
@@ -47,7 +67,7 @@ function showFindMarks(root: HTMLElement, query: string, activeIndex: number): {
         let first: HTMLElement | null = null;
         for (let sliceIndex = slices.length - 1; sliceIndex >= 0; sliceIndex -= 1) {
             const slice = slices[sliceIndex];
-            const textNode = nodes[slice.piece];
+            const textNode = runs[slice.run]?.node;
             const parent = textNode?.parentNode;
             if (!textNode || !parent) continue;
             const length = textNode.length;

@@ -143,6 +143,32 @@ export function textPieceHits(pieces: readonly string[], rawQuery: string): Text
     return matches;
 }
 
+export type TextRun = { text: string; breakBefore: boolean };
+export type TextRunSlice = { run: number; start: number; end: number };
+
+export function textRunHits(runs: readonly TextRun[], rawQuery: string): TextRunSlice[][] {
+    const query = normalizeSearchQuery(rawQuery);
+    if (!query) return [];
+    const segments: { run: number; text: string }[][] = [];
+    runs.forEach((run, index) => {
+        const piece = { run: index, text: run.text };
+        if (run.breakBefore || segments.length === 0) segments.push([piece]);
+        else segments[segments.length - 1].push(piece);
+    });
+    const matches: TextRunSlice[][] = [];
+    for (const segment of segments) {
+        const hits = textPieceHits(segment.map((piece) => piece.text), query);
+        for (const hit of hits) {
+            matches.push(hit.map((slice) => ({
+                run: segment[slice.piece].run,
+                start: slice.start,
+                end: slice.end,
+            })));
+        }
+    }
+    return matches;
+}
+
 export function entryMatchCount(text: string, rawQuery: string): number {
     const query = normalizeSearchQuery(rawQuery);
     if (!query) return 0;
