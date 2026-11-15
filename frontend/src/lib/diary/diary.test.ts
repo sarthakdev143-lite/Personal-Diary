@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
-import { buildEntrySearchFilter, diaryFieldsMatch, diaryListAddress, diaryListMatch, diaryListNavigation, diaryMatchPath, entriesForQuery, entryCardPreview, openedDiaryQuery, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryFindAddress, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery, openedEntryQuery, textPieceHits, textRunHits } from "./search";
+import { buildEntrySearchFilter, diaryFieldsMatch, diaryListAddress, diaryListMatch, diaryListNavigation, diaryMatchPath, entriesForQuery, entryCardPreview, entryMonthAddress, openedDiaryQuery, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryFindAddress, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery, openedEntryMonth, openedEntryQuery, textPieceHits, textRunHits } from "./search";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatDiaryDate, formatEntryLong, formatEntryTime, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, codePullUndoCaret, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, blankUndoCaret, joinUndoCaret, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
@@ -1418,6 +1418,20 @@ describe("search", () => {
         assert.equal(openedEntryQuery("  2026  Quiet  ", entry), "2026 Quiet");
         assert.equal(openedEntryQuery("snow", entry), "");
         assert.equal(openedEntryQuery("2026 Quiet", null), "");
+        assert.equal(entryShareAddress("https://diary.example", "diary1", "rain"), "https://diary.example/diary/diary1?entry=rain");
+    });
+
+    it("keeps the chosen month in the address", () => {
+        assert.equal(openedEntryMonth("2026-11"), "2026-11");
+        assert.equal(openedEntryMonth(" 2026-11 "), "2026-11");
+        assert.equal(openedEntryMonth("2026-11-01"), "");
+        assert.equal(openedEntryMonth("2026-13"), "");
+        assert.equal(openedEntryMonth("November"), "");
+        assert.equal(openedEntryMonth(null), "");
+        assert.equal(entryMonthAddress("/diary/diary1?entry=rain&q=garden", "2026-11"), "/diary/diary1?entry=rain&q=garden&month=2026-11");
+        assert.equal(entryMonthAddress("/diary/diary1", "2026-10"), "/diary/diary1?month=2026-10");
+        assert.equal(entryMonthAddress("/diary/diary1?entry=rain", ""), "/diary/diary1?entry=rain");
+        assert.equal(entryMonthAddress("/diary/diary1?entry=rain", "November"), "/diary/diary1?entry=rain");
         assert.equal(entryShareAddress("https://diary.example", "diary1", "rain"), "https://diary.example/diary/diary1?entry=rain");
     });
 
