@@ -114,7 +114,6 @@ const LIST_BLOCK = new Set(["p", "div", "section", "article", "h1", "h2", "h3", 
 function listItemBody(item: ElementNode, indent: number): string {
     const hasBlock = item.children.some((child) => child.kind === "el" && LIST_BLOCK.has(child.tag));
     const text = (hasBlock ? renderBlocks(item.children) : renderInline(item.children)).trim();
-    if (!hasBlock) return text;
     const pad = " ".repeat(indent);
     return text.split("\n").map((line, index) => index === 0 || !line ? line : `${pad}${line}`).join("\n");
 }

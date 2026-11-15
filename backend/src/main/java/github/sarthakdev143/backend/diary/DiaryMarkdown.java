@@ -292,9 +292,6 @@ public final class DiaryMarkdown {
             }
         }
         String text = (block ? renderBlocks(item.childNodes()) : renderInline(item.childNodes())).trim();
-        if (!block) {
-            return text;
-        }
         String pad = " ".repeat(indent);
         String[] lines = text.split("\n", -1);
         StringBuilder body = new StringBuilder();

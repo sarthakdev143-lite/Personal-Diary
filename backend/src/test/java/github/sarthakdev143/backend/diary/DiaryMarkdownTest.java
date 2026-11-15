@@ -44,6 +44,19 @@ class DiaryMarkdownTest {
     }
 
     @Test
+    void keepsALineBreakInsideAListItem() {
+        assertEquals(
+                "- Harbor\n  rain\n- today",
+                DiaryMarkdown.htmlToMarkdown("<ul><li>Harbor<br>rain</li><li>today</li></ul>"));
+        assertEquals(
+                "1. **Harbor**\n   rain",
+                DiaryMarkdown.htmlToMarkdown("<ol><li><b>Harbor</b><br>rain</li></ol>"));
+        assertEquals(
+                "- Harbor\n\n  rain",
+                DiaryMarkdown.htmlToMarkdown("<ul><li>Harbor<br><br>rain</li></ul>"));
+    }
+
+    @Test
     void keepsAListThatWasNestedInsideAParagraph() {
         String markdown = DiaryMarkdown.htmlToMarkdown("<p><ol><li>one</li><li>two</li></ol></p>");
         assertTrue(markdown.contains("1. one\n2. two"));
