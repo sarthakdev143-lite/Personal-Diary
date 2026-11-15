@@ -68,9 +68,10 @@ export function selectedPictureKey(input: {
 
 export type PictureFormat = "keep" | "pass";
 
-export function pictureFormat(input: { inPicture: boolean; command?: string; kind?: string }): PictureFormat {
+export function pictureFormat(input: { inPicture: boolean; command?: string; kind?: string; leavesPicture?: boolean }): PictureFormat {
     if (!input.inPicture) return "pass";
     if (input.kind === "link") return "pass";
+    if (input.kind === "image" && input.leavesPicture) return "pass";
     if (
         input.command === "bold"
         || input.command === "italic"
@@ -163,7 +164,8 @@ export function pictureUndo(input: {
 
 export type PictureInsert = "line" | "after" | "split" | "code" | "span" | "items" | "pass";
 
-export function pictureInsert(input: { inPicture: boolean; inItem: boolean; inLine?: boolean; inCode?: boolean; across?: boolean; acrossItems?: boolean }): PictureInsert {
+export function pictureInsert(input: { inPicture: boolean; inItem: boolean; inLine?: boolean; inCode?: boolean; across?: boolean; acrossItems?: boolean; leavesPicture?: boolean }): PictureInsert {
+    if (input.inPicture && input.leavesPicture) return "span";
     if (input.inPicture) return "after";
     if (input.acrossItems) return "items";
     if (input.inItem) return "line";
