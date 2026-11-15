@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { importNotice, importedDiaryPath, rememberImportNotice } from "@/lib/diary/import";
 import { diaryListKeyAction, diarySearchShortcut, searchHintVisible, searchShortcutLabel } from "@/lib/diary/keys";
 import { diaryListNavigation } from "@/lib/diary/search";
+import { diaryFindCountLabel } from "@/lib/diary/text";
 
 const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) => {
     const router = useRouter();
@@ -26,6 +27,8 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
     const [query, setQuery] = useState(initialQuery);
     const searchKeyRef = useRef<HTMLSpanElement>(null);
     const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
+    const [matchCount, setMatchCount] = useState<number | null>(null);
+    const findCountLabel = matchCount === null ? null : diaryFindCountLabel(matchCount, debouncedQuery);
     const [isImporting, setIsImporting] = useState(false);
     const queryRef = useRef(query);
     const formActiveRef = useRef(newDiaryFormActive);
@@ -181,7 +184,8 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
                 className="relative flex min-h-screen w-full flex-col bg-zinc-950 px-4 pt-32 text-base text-zinc-100 max-xs:px-3"
             >
                 <h1 className="sr-only">Your diaries</h1>
-                <div className="sticky top-[16%] mx-auto mb-6 flex w-full items-center gap-3 xs:w-[80%] md:w-[55%]">
+                <div className="sticky top-[16%] mx-auto mb-6 flex w-full flex-col xs:w-[80%] md:w-[55%]">
+                    <div className="flex items-center gap-3">
                     <div className="relative min-w-0 flex-1">
                     <Input
                         ref={searchInputRef}
@@ -191,6 +195,7 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
                         onChange={(event) => setQuery(event.target.value)}
                         placeholder="Search diaries and notes..."
                         aria-label="Search diaries and notes"
+                        aria-describedby={findCountLabel ? "diary-find-count" : undefined}
                         maxLength={80}
                         className={`rounded-xl border border-white/15 bg-zinc-900 p-6 py-[1.65rem] text-lg text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/50 ${searchHintVisible(query) ? "md:pr-24" : "pr-6"}`}
                     />
@@ -219,9 +224,13 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
                             void importBackup(event.target.files?.[0]);
                         }}
                     />
+                    </div>
+                    {findCountLabel && (
+                        <p id="diary-find-count" className="mt-2 text-sm tracking-wide text-zinc-400" role="status">{findCountLabel}</p>
+                    )}
                 </div>
                 <div id="diaries" className="mx-auto flex h-auto w-full max-w-[85%] flex-wrap gap-5 max-sm:justify-center">
-                    <Diaries query={debouncedQuery} refetchTrigger={refetchTrigger} paused={newDiaryFormActive || isFullScreen} />
+                    <Diaries query={debouncedQuery} refetchTrigger={refetchTrigger} paused={newDiaryFormActive || isFullScreen} onMatchCount={setMatchCount} />
                     <Button
                         onClick={() => setNewDiaryFormActive(true)}
                         id="add-new-diary"
