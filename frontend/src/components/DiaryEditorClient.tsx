@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -94,7 +94,7 @@ type ToolButton = {
     command?: string;
     value?: string;
     html?: string;
-    kind?: "image" | "link" | "code";
+    kind?: "image" | "link" | "code" | "divider";
 };
 
 const TOOLBAR: ToolButton[][] = [
@@ -113,7 +113,7 @@ const TOOLBAR: ToolButton[][] = [
         { icon: "≡", title: "Bullet list", command: "insertUnorderedList", format: "ul" },
         { icon: "1.", title: "Numbered list", command: "insertOrderedList", format: "ol" },
         { icon: "❝", title: "Blockquote", command: "formatBlock", value: "blockquote", format: "blockquote" },
-        { icon: "—", title: "Divider", html: "<hr/><p><br></p>" },
+        { icon: "—", title: "Divider", html: "<hr/><p><br></p>", kind: "divider" },
     ],
     [
         { icon: "🖼", title: "Insert image", kind: "image" },
@@ -2647,6 +2647,125 @@ function turnListItemsIntoHeadings(items: HTMLElement[], tag: string): HTMLEleme
     }
     if (first) placeCaretAtStart(first);
     return first;
+}
+
+function sidePiece(block: HTMLElement, range: Range, edge: "before" | "after"): DocumentFragment {
+    const piece = document.createRange();
+    piece.selectNodeContents(block);
+    if (edge === "before") {
+        if (block.contains(range.startContainer)) piece.setEnd(range.startContainer, range.startOffset);
+        else piece.collapse(true);
+    } else if (block.contains(range.endContainer)) piece.setStart(range.endContainer, range.endOffset);
+    else piece.collapse(false);
+    return piece.cloneContents();
+}
+
+function pieceKept(fragment: DocumentFragment): boolean {
+    if ((fragment.textContent ?? "").length > 0) return true;
+    return [...fragment.childNodes].some((node) => node instanceof HTMLElement && node.tagName !== "BR");
+}
+
+function directListItem(list: HTMLElement, node: Node): HTMLElement | null {
+    const host = node instanceof Element ? node : node.parentElement;
+    const item = host?.closest("li");
+    if (!(item instanceof HTMLElement) || !list.contains(item)) return null;
+    return listItems(list).find((entry) => entry === item || entry.contains(item)) ?? null;
+}
+
+function shapeListAroundPicture(list: HTMLElement, range: Range, role: "start" | "end") {
+    const numbers = orderedListNumbers(list);
+    const items = listItems(list);
+    if (role === "start") {
+        const item = directListItem(list, range.startContainer);
+        const index = item ? items.indexOf(item) : -1;
+        if (!item || index < 0) {
+            list.remove();
+            return;
+        }
+        const prefix = sidePiece(item, range, "before");
+        if (pieceKept(prefix)) item.replaceChildren(prefix);
+        else item.remove();
+        for (const later of items.slice(index + 1)) later.remove();
+    } else {
+        const item = directListItem(list, range.endContainer);
+        const index = item ? items.indexOf(item) : items.length;
+        for (const earlier of items.slice(0, index)) earlier.remove();
+        if (item) {
+            const suffix = sidePiece(item, range, "after");
+            if (pieceKept(suffix)) item.replaceChildren(suffix);
+            else item.remove();
+        }
+    }
+    if (!listItems(list).length) list.remove();
+    else if (numbers) restoreOrderedNumbers(numbers);
+}
+
+function placeBlockAroundPicture(editor: HTMLElement, range: Range, kind: "divider" | "code"): boolean {
+    if (range.collapsed) return false;
+    const children = [...editor.childNodes].filter((node): node is HTMLElement => node instanceof HTMLElement);
+    const top = (node: Node) => {
+        const host = node instanceof Element ? node : node.parentElement;
+        if (!(host instanceof HTMLElement) || !editor.contains(host)) return null;
+        let block: HTMLElement = host;
+        while (block.parentElement && block.parentElement !== editor) block = block.parentElement;
+        return block.parentElement === editor ? block : null;
+    };
+    const start = top(range.startContainer);
+    const end = top(range.endContainer);
+    if (!start || !end) return false;
+    const startIndex = children.indexOf(start);
+    const endIndex = children.indexOf(end);
+    if (startIndex < 0 || endIndex <= startIndex) return false;
+    const between = children.slice(startIndex, endIndex + 1);
+    const figure = between.find((block) => block.tagName === "FIGURE");
+    const ends = pictureBlockEnds({ start: start.tagName, end: end.tagName, hasPicture: Boolean(figure) });
+    if (ends === "skip" || !figure) return false;
+    if (between.some((block) => !block.matches("p, h1, h2, h3, ul, ol, figure"))) return false;
+    if (start.matches("ul, ol")) shapeListAroundPicture(start, range, "start");
+    else {
+        const prefix = sidePiece(start, range, "before");
+        if (pieceKept(prefix)) start.replaceChildren(prefix);
+        else start.remove();
+    }
+    if (end.matches("ul, ol")) shapeListAroundPicture(end, range, "end");
+    else {
+        const suffix = sidePiece(end, range, "after");
+        if (pieceKept(suffix)) end.replaceChildren(suffix);
+        else end.remove();
+    }
+    for (const block of between.slice(1, -1)) {
+        if (block.tagName !== "FIGURE") block.remove();
+    }
+    if (ends === "list") {
+        if (start.isConnected) trimPictureEdge(start, "end");
+        if (end.isConnected) trimPictureEdge(end, "start");
+    }
+    const built = listBlockNodes(kind);
+    if (start.isConnected) {
+        let point: HTMLElement = start;
+        for (const node of built.nodes) {
+            point.after(node);
+            point = node;
+        }
+    } else {
+        for (const node of built.nodes) figure.before(node);
+    }
+    if (kind === "code") {
+        finishListBlock(editor, kind, built.code, built.caret);
+        return true;
+    }
+    built.caret.remove();
+    if (end.isConnected) {
+        const caretTarget = end.matches("ul, ol") ? listItems(end)[0] ?? end : end;
+        placeCaretAtStart(caretTarget);
+        return true;
+    }
+    const lastFigure = [...between].reverse().find((block) => block.tagName === "FIGURE" && block.isConnected) ?? figure;
+    const paragraph = document.createElement("p");
+    paragraph.appendChild(document.createElement("br"));
+    lastFigure.after(paragraph);
+    placeCaretAtStart(paragraph);
+    return true;
 }
 
 function listWritingAroundPicture(editor: HTMLElement, range: Range, ordered: boolean): boolean {
@@ -6857,6 +6976,20 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             const touched = touchedQuoteBlocks(editorForTool, range);
             const path = touched[0] ? childPath(editorForTool, touched[0]) : undefined;
             if (listWritingAroundPicture(editorForTool, range, tool.command === "insertOrderedList")) {
+                keepBlank({ before, after: editorForTool.innerHTML, path });
+                setHtmlContent(editorForTool.innerHTML);
+                updateActiveFormats();
+            }
+            return;
+        }
+        if (pictureAction === "block" && editorForTool && toolSelection?.rangeCount && (tool.kind === "divider" || tool.kind === "code")) {
+            const before = editorForTool.innerHTML;
+            const range = toolSelection.getRangeAt(0);
+            const host = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+            let block: HTMLElement | null = host instanceof HTMLElement ? host : null;
+            while (block && block.parentElement && block.parentElement !== editorForTool) block = block.parentElement;
+            const path = block && block.parentElement === editorForTool ? childPath(editorForTool, block) : undefined;
+            if (placeBlockAroundPicture(editorForTool, range, tool.kind)) {
                 keepBlank({ before, after: editorForTool.innerHTML, path });
                 setHtmlContent(editorForTool.innerHTML);
                 updateActiveFormats();
