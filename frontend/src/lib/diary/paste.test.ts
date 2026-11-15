@@ -262,7 +262,8 @@ describe("entry paste", () => {
     it("leaves the picture together when a heading or a list is chosen", () => {
         assert.equal(pictureFormat({ inPicture: true, command: "formatBlock" }), "keep");
         assert.equal(pictureFormat({ inPicture: true, command: "formatBlock", outsideSelected: true }), "pass");
-        assert.equal(pictureFormat({ inPicture: true, command: "insertUnorderedList", outsideSelected: true }), "keep");
+        assert.equal(pictureFormat({ inPicture: true, command: "insertUnorderedList", outsideSelected: true }), "lines");
+        assert.equal(pictureFormat({ inPicture: true, command: "insertOrderedList", outsideSelected: true }), "lines");
         assert.equal(pictureFormat({ inPicture: true, kind: "code", outsideSelected: true }), "keep");
         assert.equal(pictureFormat({ inPicture: true, command: "insertUnorderedList" }), "keep");
         assert.equal(pictureFormat({ inPicture: true, command: "insertOrderedList" }), "keep");
