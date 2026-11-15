@@ -291,7 +291,7 @@ public final class DiaryMarkdown {
                 break;
             }
         }
-        String text = (block ? renderBlocks(item.childNodes()) : renderInline(item.childNodes())).trim();
+        String text = (block ? renderListItemBlocks(item.childNodes()) : renderInline(item.childNodes())).trim();
         String pad = " ".repeat(indent);
         String[] lines = text.split("\n", -1);
         StringBuilder body = new StringBuilder();
@@ -303,6 +303,51 @@ public final class DiaryMarkdown {
                 body.append(pad);
             }
             body.append(lines[index]);
+        }
+        return body.toString();
+    }
+
+    private static String renderListItemBlocks(List<Node> nodes) {
+        List<String> parts = new ArrayList<>();
+        List<Boolean> tight = new ArrayList<>();
+        List<Node> inline = new ArrayList<>();
+        Runnable flush = () -> {
+            String text = renderInline(inline).trim();
+            inline.clear();
+            if (!text.isEmpty()) {
+                parts.add(text);
+                tight.add(false);
+            }
+        };
+        for (Node node : nodes) {
+            if (!(node instanceof Element element) || !listBlock(element.normalName())) {
+                inline.add(node);
+                continue;
+            }
+            String tag = element.normalName();
+            if (tag.equals("ul") || tag.equals("ol")) {
+                flush.run();
+                String list = renderBlocks(List.of(element)).trim();
+                if (!list.isEmpty()) {
+                    tight.add(!parts.isEmpty());
+                    parts.add(list);
+                }
+                continue;
+            }
+            flush.run();
+            String rendered = renderBlocks(List.of(element)).trim();
+            if (!rendered.isEmpty()) {
+                tight.add(false);
+                parts.add(rendered);
+            }
+        }
+        flush.run();
+        StringBuilder body = new StringBuilder();
+        for (int index = 0; index < parts.size(); index += 1) {
+            if (index > 0) {
+                body.append(Boolean.TRUE.equals(tight.get(index)) ? '\n' : "\n\n");
+            }
+            body.append(parts.get(index));
         }
         return body.toString();
     }

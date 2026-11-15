@@ -57,6 +57,19 @@ class DiaryMarkdownTest {
     }
 
     @Test
+    void keepsANestedListUnderTheLineAbove() {
+        assertEquals(
+                "1. Harbor\n   1. rain\n2. today",
+                DiaryMarkdown.htmlToMarkdown("<ol><li>Harbor<ol><li>rain</li></ol></li><li>today</li></ol>"));
+        assertEquals(
+                "- Harbor\n  - rain\n- today",
+                DiaryMarkdown.htmlToMarkdown("<ul><li>Harbor<ul><li>rain</li></ul></li><li>today</li></ul>"));
+        assertEquals(
+                "1. Harbor\n   1. rain\n      1. deep",
+                DiaryMarkdown.htmlToMarkdown("<ol><li>Harbor<ol><li>rain<ol><li>deep</li></ol></li></ol></li></ol>"));
+    }
+
+    @Test
     void keepsAStyledLineBreakStyledOnEachLine() {
         assertEquals(
                 "- **Harbor**\n  **rain**",

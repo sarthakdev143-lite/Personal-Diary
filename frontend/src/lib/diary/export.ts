@@ -132,9 +132,36 @@ const LIST_BLOCK = new Set(["p", "div", "section", "article", "h1", "h2", "h3", 
 
 function listItemBody(item: ElementNode, indent: number): string {
     const hasBlock = item.children.some((child) => child.kind === "el" && LIST_BLOCK.has(child.tag));
-    const text = (hasBlock ? renderBlocks(item.children) : renderInline(item.children)).trim();
+    const text = (hasBlock ? renderListItemBlocks(item.children) : renderInline(item.children)).trim();
     const pad = " ".repeat(indent);
     return text.split("\n").map((line, index) => index === 0 || !line ? line : `${pad}${line}`).join("\n");
+}
+
+function renderListItemBlocks(nodes: HtmlNode[]): string {
+    const parts: { text: string; tight: boolean }[] = [];
+    let inline: HtmlNode[] = [];
+    const flush = () => {
+        const text = renderInline(inline).trim();
+        inline = [];
+        if (text) parts.push({ text, tight: false });
+    };
+    for (const node of nodes) {
+        if (node.kind === "text" || !LIST_BLOCK.has(node.tag)) {
+            inline.push(node);
+            continue;
+        }
+        if (node.tag === "ul" || node.tag === "ol") {
+            flush();
+            const list = renderBlocks([node]).trim();
+            if (list) parts.push({ text: list, tight: parts.length > 0 });
+            continue;
+        }
+        flush();
+        const block = renderBlocks([node]).trim();
+        if (block) parts.push({ text: block, tight: false });
+    }
+    flush();
+    return parts.map((part, index) => (index === 0 ? part.text : `${part.tight ? "\n" : "\n\n"}${part.text}`)).join("");
 }
 
 function renderInline(nodes: HtmlNode[]): string {
