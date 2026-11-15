@@ -2649,6 +2649,42 @@ function turnListItemsIntoHeadings(items: HTMLElement[], tag: string): HTMLEleme
     return first;
 }
 
+function listWritingAroundPicture(editor: HTMLElement, range: Range, ordered: boolean): boolean {
+    const blocks = touchedQuoteBlocks(editor, range);
+    if (blocks.length < 2 || !blocksAreConsecutive(editor, blocks)) return false;
+    if (!blocks.some((block) => block.tagName === "FIGURE")) return false;
+    if (!blocks.some((block) => block.matches("p, h1, h2, h3"))) return false;
+    let number = 1;
+    let index = 0;
+    let firstList: HTMLElement | null = null;
+    while (index < blocks.length) {
+        if (!blocks[index].matches("p, h1, h2, h3")) {
+            index += 1;
+            continue;
+        }
+        const group: HTMLElement[] = [];
+        while (index < blocks.length && blocks[index].matches("p, h1, h2, h3")) {
+            group.push(blocks[index]);
+            index += 1;
+        }
+        const list = document.createElement(ordered ? "ol" : "ul");
+        if (!firstList) firstList = list;
+        if (ordered && number !== 1) list.setAttribute("start", String(number));
+        for (const block of group) {
+            const item = document.createElement("li");
+            while (block.firstChild) item.appendChild(block.firstChild);
+            if (blockIsEmpty(item)) item.appendChild(document.createElement("br"));
+            list.appendChild(item);
+            number += 1;
+        }
+        group[0].before(list);
+        for (const block of group) block.remove();
+    }
+    const first = firstList?.querySelector("li");
+    if (first instanceof HTMLElement) placeCaretAtStart(first);
+    return true;
+}
+
 function turnTouchedBlocksIntoHeadings(editor: HTMLElement, range: Range, tag: "h1" | "h2" | "h3"): HTMLElement | null {
     const blocks = touchedQuoteBlocks(editor, range);
     if (blocks.length < 2 || !blocksAreConsecutive(editor, blocks) || !blocks.some((block) => block.matches("ul, ol, p, h1, h2, h3") || quoteBreakBlock(block.tagName))) return null;
@@ -6808,13 +6844,26 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const toolSelection = window.getSelection();
         const leavesPicture = Boolean(editorForTool && toolSelection?.rangeCount && pictureLeaves(editorForTool, toolSelection.getRangeAt(0)));
         const crossedPicture = editorForTool ? selectionCrossesPicture(editorForTool) : { touchesPicture: false, outsideSelected: false };
-        if (pictureFormat({
+        const pictureAction = pictureFormat({
             inPicture: Boolean(editorForTool && selectionTouchesPicture(editorForTool)),
             command: tool.command,
             kind: tool.kind,
             leavesPicture,
             outsideSelected: crossedPicture.outsideSelected,
-        }) === "keep") return;
+        });
+        if (pictureAction === "lines" && editorForTool && toolSelection?.rangeCount && (tool.command === "insertUnorderedList" || tool.command === "insertOrderedList")) {
+            const before = editorForTool.innerHTML;
+            const range = toolSelection.getRangeAt(0);
+            const touched = touchedQuoteBlocks(editorForTool, range);
+            const path = touched[0] ? childPath(editorForTool, touched[0]) : undefined;
+            if (listWritingAroundPicture(editorForTool, range, tool.command === "insertOrderedList")) {
+                keepBlank({ before, after: editorForTool.innerHTML, path });
+                setHtmlContent(editorForTool.innerHTML);
+                updateActiveFormats();
+            }
+            return;
+        }
+        if (pictureAction === "keep") return;
         if (tool.kind === "image") {
             pictureRangeSaved.current = rememberPictureRange();
             fileInputRef.current?.click();
