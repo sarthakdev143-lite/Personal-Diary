@@ -176,6 +176,11 @@ export function pictureCutWords(input: { collapsed: boolean; touchesPicture: boo
     return "keep";
 }
 
+export function picturePasteWords(input: { collapsed: boolean; touchesPicture: boolean; outsideSelected: boolean }): PictureCutWords {
+    if (input.collapsed || !input.touchesPicture || !input.outsideSelected) return "pass";
+    return "keep";
+}
+
 export type PictureNameSelection = "edit" | "pass";
 
 export function pictureNameSelection(input: {

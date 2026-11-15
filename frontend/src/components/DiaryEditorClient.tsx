@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -5748,6 +5748,29 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const selection = window.getSelection();
         const editor = editorRef.current;
         if (editor && selection && data.files.length === 0) {
+            const crossed = selectionCrossesPicture(editor);
+            if (picturePasteWords({ collapsed: selection.isCollapsed, touchesPicture: crossed.touchesPicture, outsideSelected: crossed.outsideSelected }) === "keep") {
+                const decision = decideEntryPaste({
+                    files: [],
+                    html: data.getData("text/html"),
+                    text: data.getData("text/plain"),
+                });
+                event.preventDefault();
+                if (decision.action === "reject") {
+                    toast({ title: decision.title, description: decision.description, variant: "destructive" });
+                    return;
+                }
+                if (decision.action === "ignore") return;
+                const mark = selectionUndo(editor);
+                separatePictureSelection(editor, selection, false);
+                if (decision.action === "html" && picturePaste(decision.html) === "picture") insertPictureFigure(editor, decision.html);
+                else if (decision.action === "html") document.execCommand("insertHTML", false, decision.html);
+                else if (decision.action === "plain") writeCaretText(decision.text);
+                else if (decision.action === "default") writeCaretText(data.getData("text/plain"));
+                keepReplacedSelection(mark);
+                setHtmlContent(editor.innerHTML);
+                return;
+            }
             const caption = pictureNameHost(editor, selection);
             const text = data.getData("text/plain");
             if (caption && pictureNamePaste({ inName: true, text }) === "lines") {
