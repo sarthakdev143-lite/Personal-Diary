@@ -112,6 +112,35 @@ export function matchedTextParts(text: string, rawQuery: string): { text: string
 
 export type TextPieceSlice = { piece: number; start: number; end: number };
 
+function isSearchSpace(char: string): boolean {
+    return /\s/.test(char) || char === "\u00a0";
+}
+
+function searchSpans(text: string): { text: string; spans: { start: number; end: number }[] } {
+    const chars: string[] = [];
+    const spans: { start: number; end: number }[] = [];
+    let index = 0;
+    while (index < text.length) {
+        if (!isSearchSpace(text[index])) {
+            chars.push(text[index]);
+            spans.push({ start: index, end: index + 1 });
+            index += 1;
+            continue;
+        }
+        let next = index + 1;
+        while (next < text.length && isSearchSpace(text[next])) next += 1;
+        const following = text[next];
+        if (!following || /[.,;:!?]/.test(following) || chars.length === 0) {
+            index = next;
+            continue;
+        }
+        chars.push(" ");
+        spans.push({ start: index, end: next });
+        index = next;
+    }
+    return { text: chars.join(""), spans };
+}
+
 export function textPieceHits(pieces: readonly string[], rawQuery: string): TextPieceSlice[][] {
     const query = normalizeSearchQuery(rawQuery);
     if (!query) return [];
@@ -123,21 +152,24 @@ export function textPieceHits(pieces: readonly string[], rawQuery: string): Text
         combined += piece;
         ranges.push({ piece: pieceIndex, start, end: combined.length });
     });
-    const haystack = combined.toLowerCase();
+    const hay = searchSpans(combined);
+    const haystack = hay.text.toLowerCase();
     const matches: TextPieceSlice[][] = [];
     let from = 0;
     while (from <= haystack.length - needle.length) {
         const index = haystack.indexOf(needle, from);
         if (index < 0) break;
         const end = index + needle.length;
+        const originStart = hay.spans[index]?.start ?? 0;
+        const originEnd = hay.spans[end - 1]?.end ?? originStart;
         const slices: TextPieceSlice[] = [];
         for (const range of ranges) {
-            if (range.end <= index || range.start >= end) continue;
-            const start = Math.max(index, range.start) - range.start;
-            const stop = Math.min(end, range.end) - range.start;
+            if (range.end <= originStart || range.start >= originEnd) continue;
+            const start = Math.max(originStart, range.start) - range.start;
+            const stop = Math.min(originEnd, range.end) - range.start;
             if (stop > start) slices.push({ piece: range.piece, start, end: stop });
         }
-        matches.push(slices);
+        if (slices.length) matches.push(slices);
         from = end;
     }
     return matches;
