@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
-import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entriesForQuery, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery } from "./search";
+import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entriesForQuery, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery, textPieceHits, textRunHits } from "./search";
 import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, codePullUndoCaret, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, blankUndoCaret, joinUndoCaret, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
@@ -1385,6 +1385,67 @@ describe("search", () => {
             { text: "no match", match: false },
         ]);
         assert.deepEqual(matchedTextParts("", "rain"), []);
+    });
+
+    it("finds a phrase that crosses styled pieces", () => {
+        assert.deepEqual(textPieceHits(["See ", "Harbor", " rain"], "Harbor rain"), [
+            [
+                { piece: 1, start: 0, end: 6 },
+                { piece: 2, start: 0, end: 5 },
+            ],
+        ]);
+        assert.deepEqual(textPieceHits(["See Harbor", " rain today"], "harbor rain"), [
+            [
+                { piece: 0, start: 4, end: 10 },
+                { piece: 1, start: 0, end: 5 },
+            ],
+        ]);
+        assert.deepEqual(textPieceHits(["See Harbor rain"], "Harbor"), [
+            [{ piece: 0, start: 4, end: 10 }],
+        ]);
+        assert.deepEqual(textPieceHits(["aaaa"], "aa"), [
+            [{ piece: 0, start: 0, end: 2 }],
+            [{ piece: 0, start: 2, end: 4 }],
+        ]);
+        assert.deepEqual(textPieceHits(["aa", "aa"], "aaa"), [
+            [
+                { piece: 0, start: 0, end: 2 },
+                { piece: 1, start: 0, end: 1 },
+            ],
+        ]);
+        assert.deepEqual(textPieceHits(["xxaa", "ay"], "aaa"), [
+            [
+                { piece: 0, start: 2, end: 4 },
+                { piece: 1, start: 0, end: 1 },
+            ],
+        ]);
+        assert.deepEqual(textPieceHits(["See ", "Harbor"], "   "), []);
+        assert.deepEqual(textPieceHits(["See ", "Harbor"], "garden"), []);
+    });
+
+    it("keeps a found phrase inside one line", () => {
+        assert.deepEqual(textRunHits([
+            { text: "See ", breakBefore: false },
+            { text: "Harbor", breakBefore: false },
+            { text: " rain", breakBefore: false },
+        ], "Harbor rain"), [[
+            { run: 1, start: 0, end: 6 },
+            { run: 2, start: 0, end: 5 },
+        ]]);
+        assert.deepEqual(textRunHits([
+            { text: "endHarbor", breakBefore: false },
+            { text: "rain start", breakBefore: true },
+        ], "Harborrain"), []);
+        assert.deepEqual(textRunHits([
+            { text: "Harbor", breakBefore: false },
+            { text: "rain", breakBefore: true },
+        ], "rain"), [[
+            { run: 1, start: 0, end: 4 },
+        ]]);
+        assert.deepEqual(textRunHits([
+            { text: "2026", breakBefore: false },
+            { text: "See Harbor", breakBefore: true },
+        ], "6See"), []);
     });
 
     it("moves through each match and wraps around", () => {
