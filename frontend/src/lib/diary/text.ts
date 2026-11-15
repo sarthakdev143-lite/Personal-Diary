@@ -1112,7 +1112,7 @@ export function listEdgeKey(input: {
     return "outdent";
 }
 
-export type ListLeaveKey = "leave" | "pass";
+export type ListLeaveKey = "leave" | "outdent" | "pass";
 
 export function listLeaveKey(input: {
     key: string;
@@ -1123,11 +1123,12 @@ export function listLeaveKey(input: {
     inItem: boolean;
     collapsed: boolean;
     empty: boolean;
+    nested?: boolean;
 }): ListLeaveKey {
     if (!input.inItem || !input.collapsed || !input.empty) return "pass";
     if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey) return "pass";
     if (input.key !== "Enter") return "pass";
-    return "leave";
+    return input.nested ? "outdent" : "leave";
 }
 
 export function orderedItemNumber(input: { start?: string | null; values?: Array<string | null | undefined>; index: number }): number {

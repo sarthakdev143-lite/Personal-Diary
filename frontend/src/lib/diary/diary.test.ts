@@ -304,6 +304,8 @@ describe("code block", () => {
     it("leaves a list when Enter is pressed on a blank item", () => {
         const blank = { key: "Enter", inItem: true, collapsed: true, empty: true };
         assert.equal(listLeaveKey(blank), "leave");
+        assert.equal(listLeaveKey({ ...blank, nested: true }), "outdent");
+        assert.equal(listLeaveKey({ ...blank, nested: false }), "leave");
         assert.equal(listLeaveKey({ ...blank, empty: false }), "pass");
         assert.equal(listLeaveKey({ ...blank, collapsed: false }), "pass");
         assert.equal(listLeaveKey({ ...blank, inItem: false }), "pass");

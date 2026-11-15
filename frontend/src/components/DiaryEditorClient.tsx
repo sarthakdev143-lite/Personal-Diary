@@ -4689,7 +4689,19 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             inItem: true,
             collapsed: selection.isCollapsed,
             empty,
+            nested: item.parentElement?.parentElement instanceof HTMLLIElement,
         });
+        if (action === "outdent") {
+            e.preventDefault();
+            const before = editor.innerHTML;
+            const path = childPath(editor, item);
+            outdentNestedItem(item);
+            const caret = window.getSelection();
+            if (!caret?.anchorNode || !item.contains(caret.anchorNode)) placeCaretAtStart(item);
+            keepBlank({ before, after: editor.innerHTML, path });
+            setHtmlContent(editor.innerHTML);
+            return true;
+        }
         if (action === "leave") {
             e.preventDefault();
             const before = editor.innerHTML;
