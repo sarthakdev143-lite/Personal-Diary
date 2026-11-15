@@ -132,11 +132,17 @@ export function pictureInlineEnter(input: {
     side?: "before" | "after";
     atStart?: boolean;
     line?: PictureNameLine;
+    above?: boolean;
 }): PictureInlineEnter {
     if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey) return "pass";
     if (input.key !== "Enter" || !input.collapsed || !input.besidePicture) return "pass";
-    if (input.side === "before" && input.atStart && input.line === "item") return "pass";
+    if (input.side === "before" && input.atStart && (input.line === "item" || input.above)) return "pass";
     return "split";
+}
+
+export function pictureEdgeOffset(input: { textOffset: number | null; atStart: boolean }): number | null {
+    if (input.textOffset !== null) return input.textOffset;
+    return input.atStart ? 0 : null;
 }
 
 export type PictureInlineBackspace = "name" | "remove" | "pass";

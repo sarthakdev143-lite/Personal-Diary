@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -7139,6 +7139,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             side: beside?.side,
             atStart: Boolean(edges?.atStart),
             line: block instanceof HTMLElement ? pictureNameLine(block.tagName) : "page",
+            above: block instanceof HTMLElement && /^(BLOCKQUOTE|H1|H2|H3)$/.test(block.tagName),
         });
         if (action !== "split" || !beside || !(block instanceof HTMLElement) || !editor.contains(block)) return false;
         e.preventDefault();
@@ -7754,7 +7755,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const nodes = textPieces(quote);
         const range = selection.getRangeAt(0);
         const raw = nodes.map((node) => node.data).join("");
-        const offset = caretTextOffset(nodes, range.startContainer, range.startOffset);
+        const offset = pictureEdgeOffset({
+            textOffset: caretTextOffset(nodes, range.startContainer, range.startOffset),
+            atStart: Boolean(caretEdges(quote, selection)?.atStart),
+        });
         if (offset === null) return false;
         const beside = breakBesideCaret(selection, e.key);
         const split = quoteEnterKey({
@@ -8149,7 +8153,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const nodes = textPieces(heading);
         const range = selection.getRangeAt(0);
         const raw = nodes.map((node) => node.data).join("");
-        const offset = caretTextOffset(nodes, range.startContainer, range.startOffset) ?? (raw.replace(/[\s\u00a0]/g, "") ? null : 0);
+        const offset = pictureEdgeOffset({
+            textOffset: caretTextOffset(nodes, range.startContainer, range.startOffset),
+            atStart: Boolean(caretEdges(heading, selection)?.atStart),
+        });
         if (offset === null) return false;
         const action = headingEnterKey({
             key: e.key,
