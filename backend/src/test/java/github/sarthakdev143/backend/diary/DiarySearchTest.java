@@ -66,6 +66,11 @@ class DiarySearchTest {
         assertTrue(hidden.snippet().contains("lantern"));
         assertTrue(hidden.snippet().replaceFirst("^…", "").toLowerCase().indexOf("lantern") <= 32);
 
+        String shortDescription = "The morning stayed ordinary and quiet beside the window before lantern.";
+        DiarySearch.Hit shortMatch = DiarySearch.match("Window notes", shortDescription, List.of(), "lantern", ZoneOffset.UTC);
+        assertTrue(shortMatch.snippet().contains("lantern"));
+        assertTrue(shortMatch.snippet().replaceFirst("^…", "").toLowerCase().indexOf("lantern") <= 32);
+
         DiarySearch.Hit titled = DiarySearch.match("Harbor", lateDescription, List.of(), "harbor", ZoneOffset.UTC);
         assertNull(titled.snippet());
 
