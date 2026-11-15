@@ -211,7 +211,7 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
     const word = (index: number) => /[\p{L}\p{N}]/u.test(text[index] ?? "");
     const digit = (index: number) => /\p{N}/u.test(text[index] ?? "");
     const digitComma = (index: number) => text[index] === "," && digit(index - 1) && digit(index + 1);
-    const mark = (index: number) => digitComma(index) || text[index] === "&" || text[index] === "/" || text[index] === "@" || text[index] === "+" || text[index] === "_" || text[index] === "*" || text[index] === "=" || text[index] === "|" || text[index] === ":" || text[index] === "-" || text[index] === "\u2010" || text[index] === "\u2011" || text[index] === "\u2013" || text[index] === "\u2014";
+    const mark = (index: number) => digitComma(index) || text[index] === "&" || text[index] === "/" || text[index] === "@" || text[index] === "+" || text[index] === "_" || text[index] === "*" || text[index] === "=" || text[index] === "|" || text[index] === "~" || text[index] === ":" || text[index] === "-" || text[index] === "\u2010" || text[index] === "\u2011" || text[index] === "\u2013" || text[index] === "\u2014";
     const dots = (index: number) => text[index] === ".";
     const pullJoiner = (index: number) => {
         if (mark(index) && word(index - 1)) return index;
@@ -447,7 +447,7 @@ export function wordDeleteGap(text: string, start: number, end: number): "before
     const joiner = (index: number) => {
         const piece = text[index];
         if (piece === "," && digit(text[index - 1]) && digit(text[index + 1])) return true;
-        return piece === "&" || piece === "/" || piece === "@" || piece === "+" || piece === "_" || piece === "*" || piece === "=" || piece === "|" || piece === "-" || piece === "\u2010" || piece === "\u2011" || piece === "\u2013" || piece === "\u2014";
+        return piece === "&" || piece === "/" || piece === "@" || piece === "+" || piece === "_" || piece === "*" || piece === "=" || piece === "|" || piece === "~" || piece === "-" || piece === "\u2010" || piece === "\u2011" || piece === "\u2013" || piece === "\u2014";
     };
     if (joiner(start) && word(text[start - 1]) && (end >= text.length || space(text[end]) || word(text[end]))) return "before";
     if (joiner(end - 1) && word(text[end]) && (start === 0 || space(text[start - 1]) || word(text[start - 1]))) return "after";
