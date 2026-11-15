@@ -163,6 +163,23 @@ export function pictureBlockEnter(input: {
     return input.previous === "empty" ? "into" : "line";
 }
 
+export type PictureAfterEnter = "line" | "into" | "pass";
+
+export function pictureAfterEnter(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    afterPicture: boolean;
+    next: "empty" | "writing" | "none";
+}): PictureAfterEnter {
+    if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.key !== "Enter" || !input.collapsed || !input.afterPicture) return "pass";
+    return input.next === "empty" ? "into" : "line";
+}
+
 export type PictureInlineBackspace = "name" | "remove" | "pass";
 
 export function pictureInlineBackspace(input: {
