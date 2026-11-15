@@ -2855,10 +2855,18 @@ function listItemAt(node: Node): HTMLElement | null {
     return item instanceof HTMLElement ? item : null;
 }
 
+function listItemFrom(node: Node, offset: number, edge: "start" | "end"): HTMLElement | null {
+    const direct = listItemAt(node);
+    if (direct) return direct;
+    if (!(node instanceof HTMLUListElement || node instanceof HTMLOListElement)) return null;
+    const child = node.childNodes[edge === "end" ? offset - 1 : offset];
+    return child instanceof HTMLLIElement ? child : null;
+}
+
 function pictureItemEnds(editor: HTMLElement, range: Range): { start: HTMLElement; end: HTMLElement } | null {
     if (range.collapsed) return null;
-    const start = listItemAt(range.startContainer);
-    const end = listItemAt(range.endContainer);
+    const start = listItemFrom(range.startContainer, range.startOffset, "start");
+    const end = listItemFrom(range.endContainer, range.endOffset, "end");
     if (!start || !end || start === end || !editor.contains(start) || !editor.contains(end)) return null;
     if (start.contains(end) || end.contains(start)) return null;
     const startList = start.parentElement;
@@ -2883,6 +2891,12 @@ function pictureAcrossLists(editor: HTMLElement, range: Range): HTMLElement | nu
         node = node.parentElement;
     }
     return null;
+}
+
+function pictureSeparateLists(editor: HTMLElement, range: Range): HTMLElement | null {
+    const ends = pictureItemEnds(editor, range);
+    if (!ends || ends.start.parentElement === ends.end.parentElement || pictureAcrossLists(editor, range)) return null;
+    return ends.start;
 }
 
 function orderedListNumbers(list: HTMLElement | null): Map<HTMLElement, number> | null {
@@ -3029,8 +3043,9 @@ function openPicture(editor: HTMLElement, range: Range, src: string, name: strin
     const across = pictureAcross(editor, range);
     const items = pictureItems(editor, range);
     const lists = pictureAcrossLists(editor, range);
+    const separate = pictureSeparateLists(editor, range);
     const leaves = pictureLeaves(editor, range);
-    const action = pictureInsert({ inPicture: Boolean(anchor), inItem, inLine: Boolean(line), inCode: Boolean(code), across: Boolean(across), acrossItems: Boolean(items), acrossLists: Boolean(lists), leavesPicture: leaves });
+    const action = pictureInsert({ inPicture: Boolean(anchor), inItem, inLine: Boolean(line), inCode: Boolean(code), across: Boolean(across), acrossItems: Boolean(items), acrossLists: Boolean(lists), separateLists: Boolean(separate), leavesPicture: leaves });
     if (action === "pass") return null;
     const before = editor.innerHTML;
     const picture = buildPicture(src, name);
@@ -3052,8 +3067,8 @@ function openPicture(editor: HTMLElement, range: Range, src: string, name: strin
         placeCaretInPicture(picture);
         return { before, path };
     }
-    if (action === "span" && across) {
-        const path = childPath(editor, across);
+    if (action === "span" && (across || separate)) {
+        const path = childPath(editor, across ?? separate!);
         placePictureAcross(editor, range, picture);
         placeCaretInPicture(picture);
         return { before, path };
