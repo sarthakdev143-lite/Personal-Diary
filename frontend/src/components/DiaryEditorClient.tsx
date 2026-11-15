@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -1195,6 +1195,48 @@ function applyLinkUnderline(editor: HTMLElement, range: Range, action: "mark" | 
         }
     }
     return marked;
+}
+
+function deletedHost(node: Node | null, editor: HTMLElement): HTMLElement | null {
+    const host = node instanceof Element ? node : node?.parentElement ?? null;
+    const deleted = host?.closest("del");
+    if (!(deleted instanceof HTMLElement) || !editor.contains(deleted)) return null;
+    return deleted;
+}
+
+function selectionInOneDeleted(editor: HTMLElement, range: Range): boolean {
+    const start = deletedHost(range.startContainer, editor);
+    const end = deletedHost(range.endContainer, editor);
+    return Boolean(start && start === end);
+}
+
+function clearDeletedSlice(text: Text, start: number, end: number) {
+    const deleted = text.parentElement?.closest("del");
+    if (!(deleted instanceof HTMLElement)) return;
+    const slice = start > 0 ? text.splitText(start) : text;
+    const length = end - start;
+    if (length < slice.data.length) slice.splitText(length);
+    const after = document.createElement("del");
+    let sibling = slice.nextSibling;
+    while (sibling && deleted.contains(sibling)) {
+        const next = sibling.nextSibling;
+        after.append(sibling);
+        sibling = next;
+    }
+    if (after.childNodes.length) deleted.after(after);
+    deleted.after(slice);
+    if (!after.childNodes.length) after.remove();
+    if (!deleted.childNodes.length) deleted.remove();
+}
+
+function applyDeletedStrike(editor: HTMLElement, range: Range) {
+    const deleted = deletedHost(range.startContainer, editor);
+    if (!deleted) return;
+    const slices = italicSlices(range, deleted);
+    for (let index = slices.length - 1; index >= 0; index -= 1) {
+        const slice = slices[index];
+        clearDeletedSlice(slice.text, slice.start, slice.end);
+    }
 }
 
 function insertUnderlineCharacter(range: Range, text: string) {
@@ -2484,6 +2526,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const quoteItalicHold = useRef(false);
     const linkUnderlineMode = useRef<"underline" | "plain" | null>(null);
     const linkUnderlineHold = useRef(false);
+    const deletedStrikeMode = useRef<"plain" | null>(null);
     const styleUndo = useRef<{ before: string; after: string; path: number[]; caret: number } | null>(null);
     const styleRedo = useRef<{ undone: string; redone: string; path: number[]; caret: number } | null>(null);
     const redoPage = useRef<{
@@ -2675,7 +2718,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             pending: linkUnderlineMode.current,
             browser: document.queryCommandState("underline"),
         })) fmt.add("underline");
-        if (document.queryCommandState("strikeThrough")) fmt.add("strikethrough");
+        const formatDeleted = formatHost?.closest("del");
+        if (deletedStrikeShown({
+            inDeleted: Boolean(formatDeleted && editorRef.current.contains(formatDeleted)),
+            pending: deletedStrikeMode.current,
+            browser: document.queryCommandState("strikeThrough"),
+        })) fmt.add("strikethrough");
         if (document.queryCommandState("insertUnorderedList")) fmt.add("ul");
         if (document.queryCommandState("insertOrderedList")) fmt.add("ol");
         const block = document.queryCommandValue("formatBlock");
@@ -2896,6 +2944,30 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     selection.removeAllRanges();
                     selection.addRange(kept);
                 }
+                keepBlank({ before, after: editor.innerHTML, path });
+                setHtmlContent(editor.innerHTML);
+                updateActiveFormats();
+                return;
+            }
+        }
+        if (cmd === "strikeThrough" && editor && selection?.rangeCount) {
+            const deletedRange = selection.getRangeAt(0);
+            const action = deletedStrike({
+                inDeleted: selectionInOneDeleted(editor, deletedRange),
+                collapsed: selection.isCollapsed,
+                pending: deletedStrikeMode.current,
+            });
+            if (action === "plain" || action === "disarm") {
+                deletedStrikeMode.current = action === "plain" ? "plain" : null;
+                updateActiveFormats();
+                return;
+            }
+            if (action === "clear") {
+                deletedStrikeMode.current = null;
+                const before = editor.innerHTML;
+                const block = lineBlock(deletedRange.startContainer);
+                const path = block instanceof HTMLElement ? childPath(editor, block) : undefined;
+                applyDeletedStrike(editor, deletedRange);
                 keepBlank({ before, after: editor.innerHTML, path });
                 setHtmlContent(editor.innerHTML);
                 updateActiveFormats();
@@ -5056,6 +5128,29 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         keepBlank({ before, after: editor.innerHTML, path, ...(caret !== null ? { caret } : {}) });
         setHtmlContent(editor.innerHTML);
     };
+    const applyDeletedStrikeType = (event: InputEvent) => {
+        const pending = deletedStrikeMode.current;
+        if (!pending || event.inputType !== "insertText") return;
+        const typed = event.data ?? "";
+        if (!typed) return;
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection?.rangeCount || !selection.isCollapsed || !selection.anchorNode || !editor.contains(selection.anchorNode)) return;
+        const range = selection.getRangeAt(0);
+        if (!deletedHost(range.startContainer, editor)) {
+            deletedStrikeMode.current = null;
+            return;
+        }
+        event.preventDefault();
+        deletedStrikeMode.current = null;
+        const before = editor.innerHTML;
+        const block = lineBlock(range.startContainer);
+        const path = block instanceof HTMLElement ? childPath(editor, block) : undefined;
+        const caret = block instanceof HTMLElement ? typedQuoteUndoCaret(textOffsetWithin(block, range.startContainer, range.startOffset)) : null;
+        insertPlainCharacter(range, typed, "del");
+        keepBlank({ before, after: editor.innerHTML, path, ...(caret !== null ? { caret } : {}) });
+        setHtmlContent(editor.innerHTML);
+    };
     const applyStyleStart = (event: InputEvent) => {
         if (event.inputType !== "insertText") return;
         const typed = event.data ?? "";
@@ -5108,6 +5203,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     applyQuoteItalicTypeRef.current = applyQuoteItalicType;
     const applyLinkUnderlineTypeRef = useRef(applyLinkUnderlineType);
     applyLinkUnderlineTypeRef.current = applyLinkUnderlineType;
+    const applyDeletedStrikeTypeRef = useRef(applyDeletedStrikeType);
+    applyDeletedStrikeTypeRef.current = applyDeletedStrikeType;
     const applyStyleStartRef = useRef(applyStyleStart);
     applyStyleStartRef.current = applyStyleStart;
     const applyLinkEdgeRef = useRef(applyLinkEdge);
@@ -5211,6 +5308,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             const editor = editorRef.current;
             if (!(event instanceof InputEvent) || !editor || !(event.target instanceof Node) || !editor.contains(event.target)) return;
             editingForward.current = event.inputType !== "historyUndo" && event.inputType !== "historyRedo";
+            if (event.inputType === "insertText") applyDeletedStrikeTypeRef.current(event);
+            if (event.defaultPrevented) return;
             if (event.inputType === "insertText") applyLinkUnderlineTypeRef.current(event);
             if (event.defaultPrevented) return;
             if (event.inputType === "insertText") applyLinkEdgeRef.current(event);
@@ -6320,6 +6419,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                     });
                                     if (underlineAction === "clear") linkUnderlineMode.current = null;
                                     if (underlineAction === "release") linkUnderlineHold.current = false;
+                                    if (deletedStrikeKey({
+                                        key: event.key,
+                                        altKey: event.altKey,
+                                        ctrlKey: event.ctrlKey,
+                                        metaKey: event.metaKey,
+                                    }) === "clear") deletedStrikeMode.current = null;
                                     updateActiveFormats();
                                 }}
                                 onMouseUp={() => {
@@ -6327,6 +6432,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                     quoteItalicHold.current = false;
                                     linkUnderlineMode.current = null;
                                     linkUnderlineHold.current = false;
+                                    deletedStrikeMode.current = null;
                                     updateActiveFormats();
                                 }}
                                 spellCheck={false}
