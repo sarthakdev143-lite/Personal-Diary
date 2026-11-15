@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -197,6 +197,13 @@ describe("entry paste", () => {
         assert.equal(pictureInsert({ inPicture: false, inItem: true, across: true }), "span");
         assert.equal(pictureInsert({ inPicture: false, inItem: true }), "line");
         assert.equal(pictureInsert({ inPicture: true, inItem: true, across: true }), "after");
+    });
+
+    it("keeps one space off the words beside a picture in a list line", () => {
+        assert.equal(pictureListSpace(" rain", "start"), "rain");
+        assert.equal(pictureListSpace("Harbor ", "end"), "Harbor");
+        assert.equal(pictureListSpace("rain", "start"), "rain");
+        assert.equal(pictureListSpace("Harbor", "end"), "Harbor");
     });
 
     it("keeps a picture on its own line when the selection runs from a list line into its nested line", () => {

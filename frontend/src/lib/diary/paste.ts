@@ -178,6 +178,11 @@ export function pictureInsert(input: { inPicture: boolean; inItem: boolean; inLi
     return "pass";
 }
 
+export function pictureListSpace(text: string, edge: "start" | "end"): string {
+    if (edge === "start") return text.replace(/^[\s\u00a0]/, "");
+    return text.replace(/[\s\u00a0]$/, "");
+}
+
 export type DatePicture = "after" | "replace" | "pass";
 
 export function datePicture(input: { onDate: "only" | "with-writing" | "none" }): DatePicture {
