@@ -902,6 +902,15 @@ export function quoteItalicKey(input: {
     return "clear";
 }
 
+export type LinkEdge = "start" | "end" | "pass";
+
+export function linkEdgeType(input: { inLink: boolean; collapsed: boolean; atStart: boolean; atEnd: boolean }): LinkEdge {
+    if (!input.inLink || !input.collapsed) return "pass";
+    if (input.atStart) return "start";
+    if (input.atEnd) return "end";
+    return "pass";
+}
+
 export type ListCommand = "lift" | "pass";
 
 export function listCommand(command: string): ListCommand {
