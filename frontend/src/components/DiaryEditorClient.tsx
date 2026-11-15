@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -2606,17 +2606,49 @@ function selectedListItems(editor: HTMLElement, range: Range): HTMLElement[] | n
     return items.slice(Math.min(start, end), Math.max(start, end) + 1);
 }
 
+function headingNodesAroundPictures(item: HTMLElement, tag: "h1" | "h2" | "h3"): HTMLElement[] {
+    const nodes: HTMLElement[] = [];
+    let heading: HTMLElement | null = null;
+    const flush = () => {
+        if (!heading || blockIsEmpty(heading)) {
+            heading = null;
+            return;
+        }
+        nodes.push(heading);
+        heading = null;
+    };
+    for (const child of [...item.childNodes]) {
+        if (child instanceof HTMLElement && child.tagName === "FIGURE") {
+            flush();
+            child.remove();
+            nodes.push(child);
+            continue;
+        }
+        if (!heading) heading = document.createElement(tag);
+        heading.appendChild(child);
+    }
+    flush();
+    return nodes;
+}
+
 function turnListItemIntoHeading(item: HTMLElement, tag: "h1" | "h2" | "h3"): HTMLElement | null {
     const list = item.parentElement;
     if (!(list instanceof HTMLUListElement || list instanceof HTMLOListElement)) return null;
     const numbers = leavingOrderedNumbers(item, null);
     const lifted = detachNestedLists(item, tag.toUpperCase());
+    const pictures = [...item.children].some((child) => child.tagName === "FIGURE");
+    const around = listHeadingPicture({ inItem: true, hasPicture: pictures }) === "lift"
+        ? headingNodesAroundPictures(item, tag)
+        : [];
     const heading = document.createElement(tag);
-    while (item.firstChild) heading.appendChild(item.firstChild);
-    if (blockIsEmpty(heading)) {
-        heading.replaceChildren();
-        heading.appendChild(document.createElement("br"));
+    if (!around.length) {
+        while (item.firstChild) heading.appendChild(item.firstChild);
+        if (blockIsEmpty(heading)) {
+            heading.replaceChildren();
+            heading.appendChild(document.createElement("br"));
+        }
     }
+    const placed = around.length ? around : [heading];
     const items = listItems(list);
     const index = items.indexOf(item);
     const before = index > 0;
@@ -2624,16 +2656,22 @@ function turnListItemIntoHeading(item: HTMLElement, tag: "h1" | "h2" | "h3"): HT
     item.remove();
     const after = following.length ? document.createElement(list.tagName.toLowerCase()) : null;
     if (after) for (const next of following) after.append(next);
+    const lead = placed[0];
     if (!before) {
         if (after) list.after(after);
-        list.replaceWith(heading);
+        list.replaceWith(lead);
     } else {
         if (after) list.after(after);
-        list.after(heading);
+        list.after(lead);
     }
-    placeLiftedLists(heading, lifted);
+    let anchor = lead;
+    for (const node of placed.slice(1)) {
+        anchor.after(node);
+        anchor = node;
+    }
+    placeLiftedLists(anchor, lifted);
     if (numbers) restoreOrderedNumbers(numbers);
-    return heading;
+    return placed.find((node) => node.tagName === tag.toUpperCase()) ?? lead;
 }
 
 function turnListItemsIntoHeadings(items: HTMLElement[], tag: string): HTMLElement | null {

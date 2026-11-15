@@ -1225,6 +1225,13 @@ export function listHeading(input: { command: string; value?: string; inItem: bo
     return "pass";
 }
 
+export type ListHeadingPicture = "lift" | "keep";
+
+export function listHeadingPicture(input: { inItem: boolean; hasPicture: boolean }): ListHeadingPicture {
+    if (input.inItem && input.hasPicture) return "lift";
+    return "keep";
+}
+
 export type ListHeadingAcross = "lines" | "pass";
 
 export function listHeadingAcross(input: { touchesList: boolean; across: boolean }): ListHeadingAcross {
