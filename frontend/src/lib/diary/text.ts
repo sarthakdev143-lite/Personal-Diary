@@ -347,22 +347,24 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         if (word(end - 1) && held(end)) {
             while (held(end)) end += 1;
         }
+        const trailingMark = (index: number) => text[index] === "+" || text[index] === "#";
         const plusSuffix = (index: number) => {
-            if (text[index] !== "+") return undefined;
+            const mark = text[index];
+            if (mark !== "+" && mark !== "#") return undefined;
             let plusStart = index;
-            while (text[plusStart - 1] === "+") plusStart -= 1;
+            while (text[plusStart - 1] === mark) plusStart -= 1;
             let plusEnd = index + 1;
-            while (text[plusEnd] === "+") plusEnd += 1;
+            while (text[plusEnd] === mark) plusEnd += 1;
             if (word(plusEnd) || !word(plusStart - 1)) return undefined;
             let wordStart = plusStart - 1;
             while (word(wordStart - 1)) wordStart -= 1;
             return { wordStart, plusStart, end: plusEnd };
         };
         let plusProbe = -1;
-        if (text[start] === "+") plusProbe = start;
-        else if (text[end] === "+") plusProbe = end;
-        else if (text[end - 1] === "+") plusProbe = end - 1;
-        else if (text[start - 1] === "+") plusProbe = start - 1;
+        if (trailingMark(start)) plusProbe = start;
+        else if (trailingMark(end)) plusProbe = end;
+        else if (trailingMark(end - 1)) plusProbe = end - 1;
+        else if (trailingMark(start - 1)) plusProbe = start - 1;
         const suffix = plusProbe >= 0 ? plusSuffix(plusProbe) : undefined;
         if (suffix) {
             let tail = suffix.end;
