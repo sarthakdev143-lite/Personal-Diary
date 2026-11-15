@@ -169,6 +169,14 @@ export function pictureInsert(input: { inPicture: boolean; inItem: boolean }): P
     return "pass";
 }
 
+export type DatePicture = "after" | "replace" | "pass";
+
+export function datePicture(input: { onDate: "only" | "with-writing" | "none" }): DatePicture {
+    if (input.onDate === "only") return "after";
+    if (input.onDate === "with-writing") return "replace";
+    return "pass";
+}
+
 export function imageHtml(src: string, alt: string): string {
     const name = imageAltText(alt)
         .replace(/&/g, "&amp;")
