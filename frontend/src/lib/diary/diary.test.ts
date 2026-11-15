@@ -183,9 +183,11 @@ describe("blank entry", () => {
         assert.equal(dateHeadingCommand("redo", true), "run");
         assert.equal(dateHeadingCommand("bold", true), "hold");
         assert.equal(dateHeadingCommand("bold", false), "run");
-        assert.equal(dateLineTyping({ writing: true, peeled: false }), "new-line");
-        assert.equal(dateLineTyping({ writing: false, peeled: false }), "into-line");
-        assert.equal(dateLineTyping({ writing: true, peeled: true }), "into-line");
+        assert.equal(dateLineTyping({ writing: true, peeled: false, paragraph: true }), "new-line");
+        assert.equal(dateLineTyping({ writing: false, peeled: false, paragraph: true }), "into-line");
+        assert.equal(dateLineTyping({ writing: true, peeled: true, paragraph: true }), "into-line");
+        assert.equal(dateLineTyping({ writing: false, peeled: false, paragraph: false }), "new-line");
+        assert.equal(dateLineTyping({ writing: true, peeled: true, paragraph: false }), "into-line");
         assert.equal(freshDateLineMarkup("H", "<p>Kept the lantern.</p>"), "<p>H</p><p>Kept the lantern.</p>");
         assert.equal(freshDateLineMarkup("<", "<p>Kept</p>"), "<p>&lt;</p><p>Kept</p>");
         assert.equal(datePaste({ touchesDate: false, onlyDate: false }), "pass");

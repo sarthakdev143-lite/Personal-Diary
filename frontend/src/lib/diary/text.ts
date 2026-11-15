@@ -1047,8 +1047,8 @@ export function dateHeadingCommand(command: string, inDate: boolean): "run" | "h
     return "hold";
 }
 
-export function dateLineTyping(input: { writing: boolean; peeled: boolean }): "new-line" | "into-line" {
-    if (input.peeled || !input.writing) return "into-line";
+export function dateLineTyping(input: { writing: boolean; peeled: boolean; paragraph: boolean }): "new-line" | "into-line" {
+    if (input.peeled || (input.paragraph && !input.writing)) return "into-line";
     return "new-line";
 }
 

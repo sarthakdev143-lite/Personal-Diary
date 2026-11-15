@@ -542,16 +542,53 @@ function lineUnderDate(heading: HTMLElement): HTMLElement {
     return paragraph;
 }
 
+const DATE_LINE_MARKER = "\u200b";
+
+function caretHomeAfter(block: Element | null): HTMLElement | null {
+    if (!(block instanceof HTMLElement)) return null;
+    if (block.tagName === "FIGURE") {
+        const after = block.nextElementSibling;
+        if (after instanceof HTMLElement) return after;
+        const caption = block.querySelector("figcaption");
+        return caption instanceof HTMLElement ? caption : null;
+    }
+    if (block.tagName === "IMG") {
+        const after = block.nextElementSibling;
+        return after instanceof HTMLElement ? after : null;
+    }
+    return block;
+}
+
+function dropDateLineMarker(editor: HTMLElement) {
+    const heading = editor.firstElementChild;
+    if (!(heading instanceof HTMLElement) || heading.tagName !== "H2") return;
+    const next = heading.nextSibling;
+    if (!(next instanceof Text) || next.data.replaceAll(DATE_LINE_MARKER, "") !== "") return;
+    const home = caretHomeAfter(heading.nextElementSibling);
+    if (home) placeCaretAtStart(home);
+    next.remove();
+}
+
 function typeFreshDateLine(heading: HTMLElement, letter: string): boolean {
     const next = heading.nextElementSibling;
     if (!(next instanceof HTMLElement)) return false;
     const selection = window.getSelection();
     if (!selection) return false;
     const range = document.createRange();
-    range.selectNode(next);
+    const markup = next.tagName === "P" ? freshDateLineMarkup(letter, next.outerHTML) : freshDateLineMarkup(letter, "");
+    let marker: Text | null = null;
+    if (next.tagName === "P") range.selectNode(next);
+    else {
+        marker = document.createTextNode(DATE_LINE_MARKER);
+        heading.after(marker);
+        range.selectNode(marker);
+    }
     selection.removeAllRanges();
     selection.addRange(range);
-    if (!document.execCommand("insertHTML", false, freshDateLineMarkup(letter, next.outerHTML))) return false;
+    if (!document.execCommand("insertHTML", false, markup)) {
+        marker?.remove();
+        return false;
+    }
     const fresh = heading.nextElementSibling;
     if (fresh instanceof HTMLElement) placeCaretAtEnd(fresh);
     return true;
@@ -2228,6 +2265,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const onInput = useCallback(() => {
         const editor = editorRef.current;
         if (!editor) return;
+        dropDateLineMarker(editor);
         const plain = plainMarkSpaces(plainSpacesAfterMarks(editor.innerHTML));
         if (plain !== editor.innerHTML) restoreMarkSpaces(editor);
         settleDateHeading(editor);
@@ -3527,9 +3565,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 if (writingSelected) selectReplaceRange(editor, touched.heading, selection);
                 else {
                     const next = touched.heading.nextElementSibling;
-                    const writing = next instanceof HTMLElement
-                        && (next.textContent ?? "").replace(/\u00a0/g, " ").trim().length > 0;
-                    if (e.key.length === 1 && dateLineTyping({ writing, peeled: false }) === "new-line") {
+                    const paragraph = next instanceof HTMLElement && next.tagName === "P";
+                    const writing = paragraph && (next.textContent ?? "").replace(/\u00a0/g, " ").trim().length > 0;
+                    if (e.key.length === 1 && dateLineTyping({ writing, peeled: false, paragraph }) === "new-line") {
                         if (typeFreshDateLine(touched.heading, e.key)) {
                             setHtmlContent(editor.innerHTML);
                             return true;
@@ -3595,11 +3633,22 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             return true;
         }
         const before = editor.innerHTML;
+        const followed = line.heading.nextElementSibling;
+        const followedParagraph = followed instanceof HTMLElement && followed.tagName === "P";
+        if (
+            action === "write"
+            && e.key.length === 1
+            && dateLineTyping({ writing: false, peeled: false, paragraph: followedParagraph }) === "new-line"
+            && typeFreshDateLine(line.heading, e.key)
+        ) {
+            if (editor.innerHTML !== before) setHtmlContent(editor.innerHTML);
+            return true;
+        }
         const peeled = peelDateLine(line.heading, label);
         const writing = (peeled.paragraph.textContent ?? "").replace(/\u00a0/g, " ").trim().length > 0;
         const fresh = action === "write"
             && e.key.length === 1
-            && dateLineTyping({ writing, peeled: peeled.offset > 0 }) === "new-line";
+            && dateLineTyping({ writing, peeled: peeled.offset > 0, paragraph: true }) === "new-line";
         if (fresh && typeFreshDateLine(line.heading, e.key)) {
             if (editor.innerHTML !== before) setHtmlContent(editor.innerHTML);
             return true;
