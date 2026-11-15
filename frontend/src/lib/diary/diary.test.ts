@@ -1395,6 +1395,24 @@ describe("search", () => {
         assert.equal(titled.snippet, null);
     });
 
+    it("finds a description phrase across an extra space", () => {
+        const description = `${"Notes from the path. ".repeat(8)}Harbor  light at the end.`;
+        const match = diaryListMatch({ title: "Window notes", description }, [], "harbor light");
+        assert.equal(match.matched, true);
+        assert.equal(match.entryId, null);
+        assert.equal(match.count, 0);
+        assert.match(match.snippet ?? "", /Harbor {2}light/);
+        assert.deepEqual(
+            matchedTextParts(match.snippet ?? "", "harbor light").filter((part) => part.match).map((part) => part.text),
+            ["Harbor  light"],
+        );
+        assert.equal(diaryFieldsMatch("Window notes", "Harbor  light", "harbor light"), true);
+        assert.deepEqual(
+            matchedTextParts("Harbor  light at the end.", "harbor light").filter((part) => part.match).map((part) => part.text),
+            ["Harbor  light"],
+        );
+    });
+
     it("shows the date and the first line when a search crosses them", () => {
         const created = new Date(2026, 10, 15, 9, 30).toISOString();
         const entry = {

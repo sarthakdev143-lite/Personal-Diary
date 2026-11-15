@@ -19,10 +19,23 @@ export function escapeRegExp(value: string): string {
     return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function foldedIncludes(text: string, query: string): boolean {
+    return searchSpans(text).text.toLowerCase().includes(query.toLowerCase());
+}
+
+function matchRange(text: string, query: string): { start: number; end: number } | null {
+    const hay = searchSpans(text);
+    const index = hay.text.toLowerCase().indexOf(query.toLowerCase());
+    const start = hay.spans[index];
+    const end = hay.spans[index + query.length - 1];
+    if (index < 0 || !start || !end) return null;
+    return { start: start.start, end: end.end };
+}
+
 export function diaryFieldsMatch(title: string, description: string, rawQuery: string): boolean {
     const query = normalizeSearchQuery(rawQuery).toLowerCase();
     if (!query) return true;
-    return title.toLowerCase().includes(query) || description.toLowerCase().includes(query);
+    return foldedIncludes(title, query) || foldedIncludes(description, query);
 }
 
 export function entryMatchesListQuery(entry: {
@@ -68,9 +81,11 @@ const CARD_OPENING = 110;
 
 function textWindow(text: string, query: string): string {
     if (text.length <= 90) return text;
-    const index = text.toLowerCase().indexOf(query.toLowerCase());
+    const range = matchRange(text, query);
+    const index = range ? range.start : text.toLowerCase().indexOf(query.toLowerCase());
+    const matchLength = range ? range.end - range.start : query.length;
     const start = Math.max(0, index - 28);
-    const end = Math.min(text.length, Math.max(index, 0) + query.length + 36);
+    const end = Math.min(text.length, Math.max(index, 0) + matchLength + 36);
     let snippet = text.slice(start, end).trim();
     if (start > 0) snippet = `…${snippet}`;
     if (end < text.length) snippet = `${snippet}…`;
@@ -88,7 +103,7 @@ function matchingPiece(entry: ListedEntry, query: string): string {
 
 function descriptionSnippet(description: string, query: string): string | null {
     const opening = description.length <= CARD_OPENING ? description : description.slice(0, CARD_OPENING);
-    if (opening.toLowerCase().includes(query.toLowerCase())) return null;
+    if (foldedIncludes(opening, query)) return null;
     return textWindow(description, query);
 }
 
@@ -114,20 +129,23 @@ export function matchedTextParts(text: string, rawQuery: string): { text: string
     const query = normalizeSearchQuery(rawQuery);
     if (!text) return [];
     if (!query) return [{ text, match: false }];
-    const haystack = text.toLowerCase();
+    const hay = searchSpans(text);
+    const haystack = hay.text.toLowerCase();
     const needle = query.toLowerCase();
     const parts: { text: string; match: boolean }[] = [];
+    let cursor = 0;
     let from = 0;
-    while (from < text.length) {
+    while (from <= haystack.length - needle.length) {
         const index = haystack.indexOf(needle, from);
-        if (index < 0) {
-            parts.push({ text: text.slice(from), match: false });
-            break;
-        }
-        if (index > from) parts.push({ text: text.slice(from, index), match: false });
-        parts.push({ text: text.slice(index, index + needle.length), match: true });
+        if (index < 0) break;
+        const start = hay.spans[index]?.start ?? cursor;
+        const end = hay.spans[index + needle.length - 1]?.end ?? start;
+        if (start > cursor) parts.push({ text: text.slice(cursor, start), match: false });
+        if (end > start) parts.push({ text: text.slice(start, end), match: true });
+        cursor = Math.max(cursor, end);
         from = index + needle.length;
     }
+    if (cursor < text.length) parts.push({ text: text.slice(cursor), match: false });
     return parts;
 }
 
@@ -265,11 +283,11 @@ export function diaryListMatch(
             count: hits.length,
         };
     }
-    if (diary.title.toLowerCase().includes(query.toLowerCase())) {
+    if (foldedIncludes(diary.title, query)) {
         return { matched: true, snippet: null, entryId: null, entryAt: null, count: 0 };
     }
     const description = diary.description ?? "";
-    if (description.toLowerCase().includes(query.toLowerCase())) {
+    if (foldedIncludes(description, query)) {
         return { matched: true, snippet: descriptionSnippet(description, query), entryId: null, entryAt: null, count: 0 };
     }
     return { matched: false, snippet: null, entryId: null, entryAt: null, count: 0 };
