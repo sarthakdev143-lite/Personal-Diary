@@ -870,11 +870,12 @@ export function quoteToggle(input: { inside: boolean }): QuoteToggle {
     return "quote";
 }
 
-export type ItalicQuote = "browser" | "mark" | "clear" | "hold";
+export type ItalicQuote = "browser" | "mark" | "clear" | "arm" | "plain" | "disarm";
 
-export function italicInQuote(input: { inQuote: boolean; inItalic: boolean; collapsed: boolean }): ItalicQuote {
+export function italicInQuote(input: { inQuote: boolean; inItalic: boolean; collapsed: boolean; pending: "italic" | "plain" | null }): ItalicQuote {
     if (!input.inQuote) return "browser";
-    if (input.collapsed) return "hold";
+    if (input.collapsed && !input.inItalic) return input.pending === "italic" ? "disarm" : "arm";
+    if (input.collapsed && input.inItalic) return input.pending === "plain" ? "disarm" : "plain";
     if (input.inItalic) return "clear";
     return "mark";
 }

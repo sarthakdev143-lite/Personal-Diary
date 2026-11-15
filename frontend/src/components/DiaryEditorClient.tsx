@@ -1128,6 +1128,79 @@ function applyQuoteItalic(editor: HTMLElement, range: Range, action: "mark" | "c
     return marked;
 }
 
+function placeCaretAt(node: Node, offset: number) {
+    const selection = window.getSelection();
+    if (!selection) return;
+    const range = document.createRange();
+    range.setStart(node, offset);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
+
+function insertItalicCharacter(range: Range, text: string) {
+    const italic = document.createElement("i");
+    italic.textContent = text;
+    const node = range.startContainer;
+    const offset = range.startOffset;
+    if (node instanceof Text) {
+        if (offset > 0 && offset < node.data.length) node.splitText(offset);
+        if (offset === 0) node.before(italic);
+        else node.after(italic);
+        if (node.data.length === 0) node.remove();
+    } else {
+        range.insertNode(italic);
+    }
+    const written = italic.firstChild;
+    if (written) placeCaretAt(written, written.textContent?.length ?? 0);
+}
+
+function insertPlainCharacter(range: Range, text: string) {
+    const node = range.startContainer;
+    const offset = range.startOffset;
+    const host = node instanceof Element ? node : node.parentElement;
+    const italic = host?.closest("i, em");
+    if (!(italic instanceof HTMLElement) || !(node instanceof Text) || !italic.contains(node)) {
+        if (node instanceof Text) {
+            node.insertData(offset, text);
+            placeCaretAt(node, offset + text.length);
+        }
+        return;
+    }
+    if (offset <= 0) {
+        const written = document.createTextNode(text);
+        italic.before(written);
+        placeCaretAt(written, text.length);
+        return;
+    }
+    if (offset >= node.data.length && node === italic.lastChild) {
+        const next = italic.nextSibling;
+        if (next instanceof Text) {
+            next.insertData(0, text);
+            placeCaretAt(next, text.length);
+            return;
+        }
+        const written = document.createTextNode(text);
+        italic.after(written);
+        placeCaretAt(written, text.length);
+        return;
+    }
+    if (offset < node.data.length) node.splitText(offset);
+    const after = document.createElement(italic.tagName.toLowerCase());
+    let sibling = node.nextSibling;
+    while (sibling && italic.contains(sibling)) {
+        const next = sibling.nextSibling;
+        after.append(sibling);
+        sibling = next;
+    }
+    const written = document.createTextNode(text);
+    italic.after(written);
+    if (after.childNodes.length) written.after(after);
+    if (!italic.textContent) italic.remove();
+    if (!after.textContent) after.remove();
+    placeCaretAt(written, text.length);
+}
+
 function edgeText(element: HTMLElement, edge: "start" | "end"): Text | null {
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
     let node = walker.nextNode();
@@ -2283,6 +2356,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const selectionTypeLine = useRef<HTMLElement | null>(null);
     const dragUndo = useRef<{ before: string; path: number[]; caret: number } | null>(null);
     const wordGap = useRef<{ path: number[]; offset: number; gap: "before" | "after" } | null>(null);
+    const quoteItalic = useRef<"italic" | "plain" | null>(null);
     const styleUndo = useRef<{ before: string; after: string; path: number[]; caret: number } | null>(null);
     const styleRedo = useRef<{ undone: string; redone: string; path: number[]; caret: number } | null>(null);
     const redoPage = useRef<{
@@ -2480,7 +2554,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (inQuote) fmt.add("blockquote");
         const italic = linkHost?.closest("i, em");
         const inItalic = Boolean(italic && editorRef.current.contains(italic));
-        if (inQuote ? inItalic : document.queryCommandState("italic")) fmt.add("italic");
+        if (quoteItalic.current === "italic" || (quoteItalic.current !== "plain" && (inQuote ? inItalic : document.queryCommandState("italic")))) fmt.add("italic");
         setActiveFormats(fmt);
     }, []);
 
@@ -2622,12 +2696,16 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 inQuote: Boolean(quote),
                 inItalic: selectionInOneItalic(editor, italicRange),
                 collapsed: selection.isCollapsed,
+                pending: quoteItalic.current,
             });
-            if (action === "hold") {
+            if (!quote) quoteItalic.current = null;
+            if (action === "arm" || action === "plain" || action === "disarm") {
+                quoteItalic.current = action === "arm" ? "italic" : action === "plain" ? "plain" : null;
                 updateActiveFormats();
                 return;
             }
             if (action === "mark" || action === "clear") {
+                quoteItalic.current = null;
                 const before = editor.innerHTML;
                 const block = lineBlock(italicRange.startContainer);
                 const path = block instanceof HTMLElement ? childPath(editor, block) : undefined;
@@ -4732,8 +4810,33 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         placeCaretAtTextOffset(block, offset + decision.caret);
         setHtmlContent(editor.innerHTML);
     };
+    const applyQuoteItalicType = (event: InputEvent) => {
+        const pending = quoteItalic.current;
+        if (!pending || event.inputType !== "insertText") return;
+        const typed = event.data ?? "";
+        if (!typed) return;
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection?.rangeCount || !selection.isCollapsed || !selection.anchorNode || !editor.contains(selection.anchorNode)) return;
+        const range = selection.getRangeAt(0);
+        if (!quoteHolding(editor, range)) {
+            quoteItalic.current = null;
+            return;
+        }
+        event.preventDefault();
+        quoteItalic.current = null;
+        const before = editor.innerHTML;
+        const block = lineBlock(range.startContainer);
+        const path = block instanceof HTMLElement ? childPath(editor, block) : undefined;
+        if (pending === "italic") insertItalicCharacter(range, typed);
+        else insertPlainCharacter(range, typed);
+        keepBlank({ before, after: editor.innerHTML, path });
+        setHtmlContent(editor.innerHTML);
+    };
     const applyWordGapRef = useRef(applyWordGap);
     applyWordGapRef.current = applyWordGap;
+    const applyQuoteItalicTypeRef = useRef(applyQuoteItalicType);
+    applyQuoteItalicTypeRef.current = applyQuoteItalicType;
 
     const keepSelectionDelete = (e: React.KeyboardEvent) => {
         const editor = editorRef.current;
@@ -4835,6 +4938,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             editingForward.current = event.inputType !== "historyUndo" && event.inputType !== "historyRedo";
             if (event.inputType === "insertText" || event.inputType === "insertFromPaste") applyWordGapRef.current(event);
             else wordGap.current = null;
+            if (event.defaultPrevented) return;
+            if (event.inputType === "insertText") applyQuoteItalicTypeRef.current(event);
+            else if (quoteItalic.current) quoteItalic.current = null;
             if (event.defaultPrevented) return;
             keepWordDeleteRef.current({
                 nativeEvent: event,
@@ -5912,8 +6018,14 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 onInput={onInput}
                                 onMouseDown={selectClickedPicture}
                                 onFocus={updateActiveFormats}
-                                onKeyUp={updateActiveFormats}
-                                onMouseUp={updateActiveFormats}
+                                onKeyUp={(event) => {
+                                    if (event.key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey) quoteItalic.current = null;
+                                    updateActiveFormats();
+                                }}
+                                onMouseUp={() => {
+                                    quoteItalic.current = null;
+                                    updateActiveFormats();
+                                }}
                                 spellCheck={false}
                                 onPaste={onPaste}
                                 onCut={onCut}

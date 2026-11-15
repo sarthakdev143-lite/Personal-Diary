@@ -356,12 +356,14 @@ describe("code block", () => {
     });
 
     it("keeps italic inside a quote on the selected words", () => {
-        assert.equal(italicInQuote({ inQuote: true, inItalic: false, collapsed: false }), "mark");
-        assert.equal(italicInQuote({ inQuote: true, inItalic: true, collapsed: false }), "clear");
-        assert.equal(italicInQuote({ inQuote: true, inItalic: false, collapsed: true }), "hold");
-        assert.equal(italicInQuote({ inQuote: true, inItalic: true, collapsed: true }), "hold");
-        assert.equal(italicInQuote({ inQuote: false, inItalic: false, collapsed: false }), "browser");
-        assert.equal(italicInQuote({ inQuote: false, inItalic: true, collapsed: false }), "browser");
+        assert.equal(italicInQuote({ inQuote: true, inItalic: false, collapsed: false, pending: null }), "mark");
+        assert.equal(italicInQuote({ inQuote: true, inItalic: true, collapsed: false, pending: null }), "clear");
+        assert.equal(italicInQuote({ inQuote: true, inItalic: false, collapsed: true, pending: null }), "arm");
+        assert.equal(italicInQuote({ inQuote: true, inItalic: false, collapsed: true, pending: "italic" }), "disarm");
+        assert.equal(italicInQuote({ inQuote: true, inItalic: true, collapsed: true, pending: null }), "plain");
+        assert.equal(italicInQuote({ inQuote: true, inItalic: true, collapsed: true, pending: "plain" }), "disarm");
+        assert.equal(italicInQuote({ inQuote: false, inItalic: false, collapsed: false, pending: null }), "browser");
+        assert.equal(italicInQuote({ inQuote: false, inItalic: true, collapsed: false, pending: null }), "browser");
     });
 
     it("keeps a quote together when Enter is pressed between two words", () => {
