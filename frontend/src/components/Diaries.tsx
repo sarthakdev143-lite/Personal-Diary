@@ -225,7 +225,7 @@ const Diaries = ({ query = "", refetchTrigger = 0, paused = false }: { query?: s
                     className="flex min-h-36 w-full max-w-xs overflow-hidden rounded-xl border border-white/10 bg-zinc-600/10 text-white/80 shadow-lg"
                 >
                     <Link
-                        href={diaryMatchPath(diary._id, query ? diary.matchEntry : null)}
+                        href={diaryMatchPath(diary._id, query ? diary.matchEntry : null, query)}
                         data-diary-id={diary._id}
                         className="flex min-w-0 flex-1 focus-visible:border-white/70 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70"
                     >
