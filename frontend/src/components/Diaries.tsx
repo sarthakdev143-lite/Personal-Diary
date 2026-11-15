@@ -109,11 +109,20 @@ const Diaries = ({ query = "", refetchTrigger = 0, paused = false }: { query?: s
                 metaKey: event.metaKey,
                 shiftKey: event.shiftKey,
                 inField,
-                searchFocused: false,
+                searchFocused: target instanceof HTMLElement && target.id === "diary-search",
                 query: "",
                 formOpen: paused,
                 themeOpen: false,
             });
+            if (action === "open") {
+                const first = visibleRef.current[0];
+                if (!first) return;
+                const link = document.querySelector<HTMLAnchorElement>(`a[data-diary-id="${CSS.escape(first._id)}"]`);
+                if (!link) return;
+                event.preventDefault();
+                link.click();
+                return;
+            }
             if (action !== "next" && action !== "previous") return;
             const list = visibleRef.current;
             if (!list.length) return;
