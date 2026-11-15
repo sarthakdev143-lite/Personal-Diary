@@ -936,6 +936,33 @@ export function linkUnderlineKey(input: {
     return "clear";
 }
 
+export type DeletedStrike = "browser" | "clear" | "plain" | "disarm";
+
+export function deletedStrike(input: { inDeleted: boolean; collapsed: boolean; pending: "plain" | null }): DeletedStrike {
+    if (!input.inDeleted) return "browser";
+    if (input.collapsed) return input.pending === "plain" ? "disarm" : "plain";
+    return "clear";
+}
+
+export function deletedStrikeShown(input: { inDeleted: boolean; pending: "plain" | null; browser: boolean }): boolean {
+    if (!input.inDeleted) return input.browser;
+    return input.pending !== "plain";
+}
+
+export type DeletedStrikeKey = "keep" | "clear";
+
+export function deletedStrikeKey(input: {
+    key: string;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+}): DeletedStrikeKey {
+    const typing = input.key.length === 1 && !input.ctrlKey && !input.metaKey && !input.altKey;
+    const modifier = input.key === "Control" || input.key === "Meta" || input.key === "Alt" || input.key === "Shift";
+    if (typing || modifier) return "keep";
+    return "clear";
+}
+
 export type StyleStart = "start" | "pass";
 
 export function styleStartType(input: { inStyle: boolean; collapsed: boolean; atStart: boolean }): StyleStart {
