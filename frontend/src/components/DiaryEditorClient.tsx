@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listBlock, listLineSpace, listBlockPlace, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteListPlan, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteTouchedBlocks, quoteListPortion, quoteListPlan, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -1572,13 +1572,91 @@ function applyQuoteList(list: HTMLElement, items: HTMLElement[], from: number, t
     placeInQuotedList(quote);
 }
 
+function selectedListSpan(list: HTMLElement, range: Range): { from: number; to: number } | null {
+    const indexes = listItems(list).flatMap((item, index) => {
+        try {
+            return range.intersectsNode(item) ? [index] : [];
+        } catch {
+            return [];
+        }
+    });
+    if (!indexes.length) return null;
+    return { from: indexes[0], to: indexes[indexes.length - 1] };
+}
+
+function quoteListPiece(list: HTMLElement, from: number, to: number): HTMLElement | null {
+    const items = listItems(list);
+    const portion = quoteListPortion({ count: items.length, from, to });
+    if (portion === "list") return list;
+    if (portion !== "part") return null;
+    const plan = quoteListPlan({
+        ordered: list.tagName === "OL",
+        start: list.getAttribute("start"),
+        values: items.map((item) => item.getAttribute("value")),
+        count: items.length,
+        from,
+        to,
+    });
+    if (!plan || plan.action !== "split") return null;
+    const quotedList = document.createElement(list.tagName.toLowerCase());
+    applyListStart(quotedList, plan.quoted.start);
+    for (const item of items.slice(from, to + 1)) quotedList.append(item);
+    list.after(quotedList);
+    const after = items.slice(to + 1);
+    if (after.length) {
+        const afterList = document.createElement(list.tagName.toLowerCase());
+        applyListStart(afterList, plan.after?.start ?? null);
+        for (const item of after) afterList.append(item);
+        quotedList.after(afterList);
+    }
+    if (!listItems(list).length) list.remove();
+    return quotedList;
+}
+
 function coveredQuoteBlocks(editor: HTMLElement, range: Range): HTMLElement[] {
+    return quoteBlockCandidates(editor).filter((child) => elementFullyInside(range, child));
+}
+
+function blockIntersects(block: HTMLElement, range: Range): boolean {
+    if (block.matches("ul, ol")) {
+        return listItems(block).some((item) => {
+            try {
+                return range.intersectsNode(item);
+            } catch {
+                return false;
+            }
+        });
+    }
+    try {
+        return range.intersectsNode(block);
+    } catch {
+        return false;
+    }
+}
+
+function touchedQuoteBlocks(editor: HTMLElement, range: Range): HTMLElement[] {
+    return quoteBlockCandidates(editor).filter((child) => blockIntersects(child, range));
+}
+
+function quoteBlockCandidates(editor: HTMLElement): HTMLElement[] {
     return [...editor.children].filter((child): child is HTMLElement => {
         if (!(child instanceof HTMLElement)) return false;
         const text = (child.textContent ?? "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
         if (child === editor.firstElementChild && child.tagName === "H2" && leadingDateLabel(text) === text && text.length > 0) return false;
-        return elementFullyInside(range, child);
+        return true;
     });
+}
+
+function blocksAreConsecutive(editor: HTMLElement, blocks: HTMLElement[]): boolean {
+    const children = [...editor.children];
+    const indexes = blocks.map((block) => children.indexOf(block));
+    return indexes.every((index, position) => index >= 0 && (position === 0 || index === indexes[position - 1] + 1));
+}
+
+function wrapQuotedBlocks(blocks: HTMLElement[]) {
+    const quoted = document.createElement("blockquote");
+    blocks[0].before(quoted);
+    for (const block of blocks) quoted.append(block);
 }
 
 function lineBlock(node: Node | null): HTMLElement | null {
@@ -2566,6 +2644,34 @@ function turnListItemsIntoHeadings(items: HTMLElement[], tag: string): HTMLEleme
         if (!item.isConnected) continue;
         const heading = turnListItemIntoHeading(item, level);
         if (heading) first = heading;
+    }
+    if (first) placeCaretAtStart(first);
+    return first;
+}
+
+function turnTouchedBlocksIntoHeadings(editor: HTMLElement, range: Range, tag: "h1" | "h2" | "h3"): HTMLElement | null {
+    const blocks = touchedQuoteBlocks(editor, range);
+    if (blocks.length < 2 || !blocksAreConsecutive(editor, blocks) || !blocks.some((block) => block.matches("ul, ol"))) return null;
+    let first: HTMLElement | null = null;
+    for (const block of blocks) {
+        if (block.matches("ul, ol")) {
+            const items = listItems(block).filter((item) => {
+                try {
+                    return range.intersectsNode(item);
+                } catch {
+                    return false;
+                }
+            });
+            const heading = turnListItemsIntoHeadings(items, tag);
+            if (heading && !first) first = heading;
+            continue;
+        }
+        if (!block.matches("p, h1, h2, h3")) continue;
+        const heading = document.createElement(tag);
+        while (block.firstChild) heading.appendChild(block.firstChild);
+        if (blockIsEmpty(heading)) heading.appendChild(document.createElement("br"));
+        block.replaceWith(heading);
+        if (!first) first = heading;
     }
     if (first) placeCaretAtStart(first);
     return first;
@@ -4088,26 +4194,57 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 }
             }
             if (!selection.isCollapsed) {
-                const covered = coveredQuoteBlocks(editor, selection.getRangeAt(0));
-                const children = [...editor.children];
-                const indexes = covered.map((block) => children.indexOf(block));
-                const consecutive = indexes.every((index, position) => index >= 0 && (position === 0 || index === indexes[position - 1] + 1));
-                if (quoteCoveredBlocks({ covered: covered.length, consecutive }) === "together") {
-                    const before = editor.innerHTML;
-                    const path = childPath(editor, covered[0]);
-                    const quoted = document.createElement("blockquote");
-                    covered[0].before(quoted);
-                    for (const block of covered) quoted.append(block);
+                const range = selection.getRangeAt(0);
+                const covered = coveredQuoteBlocks(editor, range);
+                const coveredTogether = quoteCoveredBlocks({ covered: covered.length, consecutive: blocksAreConsecutive(editor, covered) }) === "together";
+                const touched = coveredTogether ? covered : touchedQuoteBlocks(editor, range);
+                const together = coveredTogether || quoteTouchedBlocks({
+                    touched: touched.length,
+                    consecutive: blocksAreConsecutive(editor, touched),
+                    crossesList: touched.some((block) => block.matches("ul, ol")),
+                }) === "together";
+                const before = editor.innerHTML;
+                const path = touched[0] ? childPath(editor, touched[0]) : undefined;
+                const spans = together
+                    ? touched.map((block) => block.matches("ul, ol") ? selectedListSpan(block, range) : { from: 0, to: 0 })
+                    : [];
+                const blocks = together && spans.every((span) => span)
+                    ? touched.flatMap((block, index) => {
+                        if (!block.matches("ul, ol")) return [block];
+                        const span = spans[index];
+                        const piece = span ? quoteListPiece(block, span.from, span.to) : null;
+                        return piece ? [piece] : [];
+                    })
+                    : [];
+                if (together && blocks.length === touched.length && blocksAreConsecutive(editor, blocks) && blocks[0]) {
+                    wrapQuotedBlocks(blocks);
+                    keepBlank({ before, after: editor.innerHTML, path });
+                    setHtmlContent(editor.innerHTML);
+                    updateActiveFormats();
+                    return;
+                }
+                if (editor.innerHTML !== before) editor.innerHTML = before;
+            }
+        }
+        if (cmd === "formatBlock" && editor && selection?.rangeCount) {
+            const headingValue = (value ?? "").toLowerCase();
+            const headingRange = selection.getRangeAt(0);
+            const touched = touchedQuoteBlocks(editor, headingRange);
+            if ((headingValue === "h1" || headingValue === "h2" || headingValue === "h3") && listHeadingAcross({
+                touchesList: touched.some((block) => block.matches("ul, ol")),
+                across: Boolean(pictureAcross(editor, headingRange)),
+            }) === "lines") {
+                const before = editor.innerHTML;
+                const path = childPath(editor, touched[0]);
+                const heading = turnTouchedBlocksIntoHeadings(editor, headingRange, headingValue);
+                if (heading) {
                     keepBlank({ before, after: editor.innerHTML, path });
                     setHtmlContent(editor.innerHTML);
                     updateActiveFormats();
                     return;
                 }
             }
-        }
-        if (cmd === "formatBlock" && editor && selection?.rangeCount) {
-            const headingValue = (value ?? "").toLowerCase();
-            const listed = selectedListItems(editor, selection.getRangeAt(0));
+            const listed = selectedListItems(editor, headingRange);
             if (listed && listHeading({ command: cmd, value: headingValue, inItem: true }) === "line") {
                 const before = editor.innerHTML;
                 const path = childPath(editor, listed[0]);

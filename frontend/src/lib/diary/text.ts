@@ -865,6 +865,21 @@ export function quoteCoveredBlocks(input: { covered: number; consecutive: boolea
     return "browser";
 }
 
+export function quoteTouchedBlocks(input: { touched: number; consecutive: boolean; crossesList: boolean }): QuoteBlocks {
+    if (input.crossesList && input.touched > 1 && input.consecutive) return "together";
+    return "browser";
+}
+
+export type QuoteListPortion = "list" | "part" | "skip";
+
+export function quoteListPortion(input: { count: number; from: number; to: number }): QuoteListPortion {
+    if (!Number.isInteger(input.count) || input.count < 1) return "skip";
+    if (!Number.isInteger(input.from) || !Number.isInteger(input.to)) return "skip";
+    if (input.from < 0 || input.to < input.from || input.to >= input.count) return "skip";
+    if (input.from === 0 && input.to === input.count - 1) return "list";
+    return "part";
+}
+
 export type QuoteListPlan =
     | { action: "wrap" }
     | { action: "split"; quoted: { start: number | null }; after: { start: number | null } | null };
@@ -1195,6 +1210,13 @@ export type ListHeading = "line" | "pass";
 export function listHeading(input: { command: string; value?: string; inItem: boolean }): ListHeading {
     const value = (input.value ?? "").toLowerCase();
     if (input.command === "formatBlock" && input.inItem && (value === "h1" || value === "h2" || value === "h3")) return "line";
+    return "pass";
+}
+
+export type ListHeadingAcross = "lines" | "pass";
+
+export function listHeadingAcross(input: { touchesList: boolean; across: boolean }): ListHeadingAcross {
+    if (input.touchesList && input.across) return "lines";
     return "pass";
 }
 
