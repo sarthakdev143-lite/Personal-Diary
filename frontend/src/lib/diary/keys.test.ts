@@ -48,5 +48,11 @@ describe("diary search shortcut", () => {
         assert.equal(diaryListKeyAction({ ...plain, key: "Escape", themeOpen: true, formOpen: true }), "theme");
         assert.equal(diaryListKeyAction({ ...plain, key: "Escape" }), null);
         assert.equal(diaryListKeyAction({ ...plain, key: "Enter" }), null);
+        assert.equal(diaryListKeyAction({ ...plain, key: "Enter", searchFocused: true, inField: true }), "open");
+        assert.equal(diaryListKeyAction({ ...plain, key: "Enter", searchFocused: true, query: "Garden" }), "open");
+        assert.equal(diaryListKeyAction({ ...plain, key: "Enter", searchFocused: true, formOpen: true }), null);
+        assert.equal(diaryListKeyAction({ ...plain, key: "Enter", searchFocused: true, themeOpen: true }), null);
+        assert.equal(diaryListKeyAction({ ...plain, key: "Enter", searchFocused: true, shiftKey: true }), null);
+        assert.equal(diaryListKeyAction({ ...plain, key: "Enter", searchFocused: true, ctrlKey: true }), null);
     });
 });

@@ -25,13 +25,17 @@ export function diaryListKeyAction(event: {
     query: string;
     formOpen: boolean;
     themeOpen: boolean;
-}): "theme" | "form" | "clear" | "close" | "next" | "previous" | null {
+}): "theme" | "form" | "clear" | "close" | "next" | "previous" | "open" | null {
     if (event.altKey || event.ctrlKey || event.metaKey) return null;
     if (event.key === "Escape") {
         if (event.themeOpen) return "theme";
         if (event.formOpen) return "form";
         if (!event.searchFocused) return null;
         return event.query ? "clear" : "close";
+    }
+    if (event.key === "Enter") {
+        if (!event.searchFocused || event.shiftKey || event.formOpen || event.themeOpen) return null;
+        return "open";
     }
     if (event.shiftKey || event.inField || event.formOpen || event.themeOpen) return null;
     if (event.key === "ArrowDown") return "next";
