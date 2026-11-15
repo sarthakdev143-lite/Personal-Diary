@@ -9,6 +9,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
 public final class DiarySearch {
     public static final int MAX = 80;
     private static final long REVISION_GAP_MS = 2_000;
@@ -229,13 +232,32 @@ public final class DiarySearch {
     }
 
     private static String writing(Note note) {
+        String fromPage = pageWriting(note.content());
+        if (!fromPage.isBlank()) {
+            return fromPage;
+        }
         if (note.plainText() != null && !note.plainText().isBlank()) {
             return note.plainText().trim();
         }
-        if (note.content() == null) {
+        return "";
+    }
+
+    private static String pageWriting(String content) {
+        if (content == null || content.isBlank()) {
             return "";
         }
-        return note.content().replaceAll("<[^>]+>", " ").replaceAll("\\s+", " ").trim();
+        Document document = Jsoup.parseBodyFragment(EntryWhen.withoutGeneratedDateHeading(content));
+        document.outputSettings().prettyPrint(false);
+        String text = document.text().replaceAll("\\s+", " ").trim();
+        String alts = document.select("img[alt]").eachAttr("alt").stream()
+                .map(String::trim)
+                .filter(alt -> !alt.isEmpty() && !text.toLowerCase(Locale.ROOT).contains(alt.toLowerCase(Locale.ROOT)))
+                .reduce((left, right) -> left + " " + right)
+                .orElse("");
+        if (alts.isEmpty()) {
+            return text;
+        }
+        return (text + " " + alts).trim();
     }
 
     private static boolean revised(Note note) {

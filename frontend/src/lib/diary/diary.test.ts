@@ -2083,6 +2083,28 @@ describe("search", () => {
         }, "Harbor"), true);
         assert.equal(wordCount("<p>See <b>Har</b>bor rain.</p>"), 3);
     });
+
+    it("finds a diary from the page when the saved text split a word", () => {
+        const created = new Date(2026, 10, 15, 9, 30).toISOString();
+        const entry = {
+            id: "harbor",
+            content: "<p>See <b>Har</b>bor rain.</p>",
+            plainText: "See Har bor rain.",
+            createdAt: created,
+            updatedAt: created,
+        };
+        assert.equal(entryMatchesListQuery(entry, "Harbor"), true);
+        const match = diaryListMatch({ title: "Window", description: "" }, [entry], "Harbor");
+        assert.equal(match.matched, true);
+        assert.equal(match.entryId, "harbor");
+        assert.match(match.snippet ?? "", /Harbor/);
+        const unnamed = {
+            ...entry,
+            content: '<figure><img src="https://example.com/sunset.png" alt=""></figure>',
+            plainText: "Image",
+        };
+        assert.equal(entryMatchesListQuery(unnamed, "Image"), true);
+    });
 });
 
 describe("export", () => {

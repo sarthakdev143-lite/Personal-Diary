@@ -1,5 +1,5 @@
 import { SEARCH_MAX } from "./constants";
-import { entryInMonth, entrySearchParts, entryToOpenFromLink, entryToShowOnOpen, entryWasRevised, entryWritingText, formatDiaryDate, formatEntryLong, formatEntryTime } from "./text";
+import { entryInMonth, entrySearchParts, entrySearchWriting, entryToOpenFromLink, entryToShowOnOpen, entryWasRevised, formatDiaryDate, formatEntryLong, formatEntryTime } from "./text";
 
 type RegexQuery = { $regex: string; $options: "i" };
 
@@ -73,7 +73,7 @@ export function entryMatchesListQuery(entry: {
     const query = normalizeSearchQuery(rawQuery).toLowerCase();
     if (!query) return true;
     if (entrySearchParts(entry).some((part) => foldedIncludes(part, query))) return true;
-    const writing = entry.plainText?.trim() || entryWritingText(entry.content);
+    const writing = entrySearchWriting(entry);
     const date = formatEntryLong(entry.createdAt);
     if (!writing || !date || date === "—") return false;
     return foldedIncludes(`${date} ${writing}`, query);
@@ -129,7 +129,7 @@ function textWindow(text: string, query: string, visible = 90): string {
 }
 
 function matchingPiece(entry: ListedEntry, query: string, visible = 90): string {
-    const writing = entry.plainText?.trim() || entryWritingText(entry.content);
+    const writing = entrySearchWriting(entry);
     const needle = query.toLowerCase();
     const date = formatEntryLong(entry.createdAt);
     const page = date && date !== "—" && writing ? `${date} ${writing}` : writing;
@@ -156,7 +156,7 @@ export function entryCardPreview(entry: {
     createdAt: string;
     updatedAt: string;
 }, rawQuery: string): string {
-    const writing = entry.plainText?.trim() || entryWritingText(entry.content);
+    const writing = entrySearchWriting(entry);
     const query = normalizeSearchQuery(rawQuery);
     if (!query) return writing.slice(0, 90);
     if (foldedIncludes(writing, query)) return matchingPiece(entry, query, ENTRY_LINE);
