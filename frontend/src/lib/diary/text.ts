@@ -1203,6 +1203,27 @@ export function retitleEntryDate(html: string, fromLabel: string, toLabel: strin
     return `<h2>${toLabel}</h2>${html.slice(prefix.length)}`;
 }
 
+export function calendarDateFromLabel(label: string): string | null {
+    if (!isGeneratedDateLabel(label)) return null;
+    const parts = /^[A-Za-z]+, ([A-Za-z]+) (\d{1,2}), (\d{4})$/.exec(label);
+    if (!parts) return null;
+    const month = MONTH_INDEX.get(parts[1]);
+    if (month === undefined) return null;
+    return `${parts[3]}-${String(month + 1).padStart(2, "0")}-${String(Number(parts[2])).padStart(2, "0")}`;
+}
+
+export function dateFieldAfterEdit(html: string, field: string): string {
+    const match = /^<h2\b[^>]*>([\s\S]*?)<\/h2>/i.exec(html.trim());
+    if (!match) return field;
+    const text = decodeEntryText((match[1] ?? "").replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
+    if (leadingDateLabel(text) !== text) return field;
+    return calendarDateFromLabel(text) ?? field;
+}
+
+export function dateRetitleAction(html: string, fromLabel: string, toLabel: string): "type" | "keep" {
+    return retitleEntryDate(html, fromLabel, toLabel) === html ? "keep" : "type";
+}
+
 const REVISION_GAP_MS = 2000;
 
 export function entryWasRevised(createdAt: string | Date, updatedAt: string | Date): boolean {

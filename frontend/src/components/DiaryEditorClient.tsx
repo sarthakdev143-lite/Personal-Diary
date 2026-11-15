@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -706,6 +706,26 @@ function placeCaretAtStart(node: HTMLElement) {
     caret.collapse(true);
     selection.removeAllRanges();
     selection.addRange(caret);
+}
+
+function typeDateHeading(editor: HTMLElement, fromLabel: string, toLabel: string): boolean {
+    const heading = editor.firstElementChild;
+    if (!(heading instanceof HTMLElement) || heading.tagName !== "H2") return false;
+    const text = (heading.textContent ?? "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+    if (text !== fromLabel) return false;
+    const selection = window.getSelection();
+    if (!selection) return false;
+    const range = document.createRange();
+    range.selectNodeContents(heading);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    editor.focus();
+    if (!document.execCommand("insertText", false, toLabel)) return false;
+    if ((heading.textContent ?? "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim() !== toLabel) return false;
+    const writing = heading.nextElementSibling;
+    if (writing instanceof HTMLElement) placeCaretAtStart(writing);
+    editor.ownerDocument.querySelector<HTMLInputElement>('input[aria-label="Entry date"]')?.focus();
+    return true;
 }
 
 function selectionInsideCode(editor: HTMLElement, selection: Selection): boolean {
@@ -2236,8 +2256,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const redo = redoPage.current;
         if (redo && editor.innerHTML !== redo.undone && editor.innerHTML !== redo.redone) redoPage.current = null;
         setHtmlContent(editor.innerHTML);
+        const followed = dateFieldAfterEdit(editor.innerHTML, entryDate);
+        if (followed !== entryDate) setEntryDate(followed);
         updateActiveFormats();
-    }, [updateActiveFormats]);
+    }, [entryDate, updateActiveFormats]);
 
     // Track active formats for toolbar highlight
     const onSelectionChange = useCallback(() => {
@@ -2767,11 +2789,18 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
         const previousInstant = instantFor(entryDate);
         const previousLabel = previousInstant ? fmtLong(previousInstant.toISOString()) : "";
-        const updated = retitleEntryDate(htmlContent, previousLabel, fmtLong(nextInstant.toISOString()));
+        const nextLabel = fmtLong(nextInstant.toISOString());
+        const action = dateRetitleAction(htmlContent, previousLabel, nextLabel);
         setEntryDate(next);
-        if (updated === htmlContent) return;
+        if (action === "keep") return;
+        const editor = editorRef.current;
+        if (editor && typeDateHeading(editor, previousLabel, nextLabel)) {
+            setHtmlContent(editor.innerHTML);
+            return;
+        }
+        const updated = retitleEntryDate(htmlContent, previousLabel, nextLabel);
         setHtmlContent(updated);
-        if (editorRef.current) editorRef.current.innerHTML = updated;
+        if (editor) editor.innerHTML = updated;
     };
 
     const resetComposer = () => {
