@@ -17,6 +17,12 @@ export function imageAltText(value: string): string {
 
 export type PictureCaptionKey = "break" | "hold" | "pass";
 
+export type PictureCaptionJoin = "stay" | "join";
+
+export function pictureCaptionJoin(input: { inCaption: boolean }): PictureCaptionJoin {
+    return input.inCaption ? "stay" : "join";
+}
+
 export function pictureCaptionKey(input: {
     key: string;
     shiftKey?: boolean;
