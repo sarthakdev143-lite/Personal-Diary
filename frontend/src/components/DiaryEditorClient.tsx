@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateHeadingCommand, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateHeadingCommand, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWasRevised, entryWritingText, formatEntryLong, formatEntryTime, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -567,6 +567,24 @@ function dropDateLineMarker(editor: HTMLElement) {
     const home = caretHomeAfter(heading.nextElementSibling);
     if (home) placeCaretAtStart(home);
     next.remove();
+}
+
+function leaveDateLine(heading: HTMLElement) {
+    const next = heading.nextElementSibling;
+    if (next instanceof HTMLElement && dateLeaveTarget(next.tagName) === "into") {
+        placeCaretAtStart(next);
+        return;
+    }
+    const after = next instanceof HTMLElement ? next.nextElementSibling : null;
+    if (after instanceof HTMLElement && dateLeaveTarget(after.tagName) === "into") {
+        placeCaretAtStart(after);
+        return;
+    }
+    const paragraph = document.createElement("p");
+    paragraph.appendChild(document.createElement("br"));
+    if (next instanceof HTMLElement) next.after(paragraph);
+    else heading.after(paragraph);
+    placeCaretAtStart(paragraph);
 }
 
 function typeFreshDateLine(heading: HTMLElement, letter: string): boolean {
@@ -3573,8 +3591,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             return true;
                         }
                         placeCaretAtStart(lineUnderDate(touched.heading));
-                    } else if (next instanceof HTMLElement) placeCaretAtStart(next);
-                    else placeCaretAtStart(writingLineAfter(touched.heading));
+                    } else leaveDateLine(touched.heading);
                 }
                 if (e.key.length === 1) document.execCommand("insertText", false, e.key);
                 else if (writingSelected) {
@@ -3591,10 +3608,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             }
             if (action === "leave") {
                 e.preventDefault();
-                const before = editor.innerHTML;
                 const next = touched.heading.nextElementSibling;
-                if (next instanceof HTMLElement) placeCaretAtStart(next);
-                else placeCaretAtStart(writingLineAfter(touched.heading));
+                if (!(next instanceof HTMLElement) || dateLeaveTarget(next.tagName) === "past") return true;
+                const before = editor.innerHTML;
+                placeCaretAtStart(next);
                 if (editor.innerHTML !== before) setHtmlContent(editor.innerHTML);
                 return true;
             }
@@ -3622,6 +3639,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (action === "pass") return false;
         e.preventDefault();
         if (action === "hold") return true;
+        if (action === "leave") {
+            const next = line.heading.nextElementSibling;
+            if (!(next instanceof HTMLElement) || dateLeaveTarget(next.tagName) === "past") return true;
+        }
         if (action === "drop") {
             const next = line.block.nextElementSibling;
             const before = editor.innerHTML;
