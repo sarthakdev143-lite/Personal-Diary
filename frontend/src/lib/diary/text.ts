@@ -241,6 +241,34 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         return piece === "," || piece === ";" || piece === "!" || piece === "?" || piece === "%" || piece === "\u00b0" || piece === "\u2026";
     };
     const held = (index: number) => sticky(index) || ((text[index] === "." || text[index] === ":") && !word(index + 1));
+    const letter = (index: number) => /\p{L}/u.test(text[index] ?? "");
+    const initialism = (index: number) => {
+        if (index < 0 || index >= text.length) return undefined;
+        let cursor = index;
+        while (cursor > 0) {
+            const previous = cursor - 1;
+            if (text[previous] === "." && letter(previous - 1) && (letter(cursor) || text[cursor] === ".")) {
+                cursor = previous - 1;
+                continue;
+            }
+            if (letter(previous) && text[cursor] === "." && !letter(previous - 1)) {
+                cursor = previous;
+                continue;
+            }
+            break;
+        }
+        if (!letter(cursor) || letter(cursor - 1)) return undefined;
+        let bound = cursor + 1;
+        let parts = 1;
+        while (text[bound] === "." && letter(bound + 1) && !letter(bound + 2)) {
+            parts += 1;
+            bound += 2;
+        }
+        if (parts < 2) return undefined;
+        if (text[bound] === "." && !letter(bound + 1)) bound += 1;
+        if (index < cursor || index >= bound) return undefined;
+        return { start: cursor, end: bound };
+    };
     const apostrophe = (index: number) => text[index] === "'" || text[index] === "\u2019" || text[index] === "\u2018";
     const contraction = (index: number) => apostrophe(index) && word(index - 1) && word(index + 1);
     const pairs = new Map<string, string>([
@@ -253,6 +281,15 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         ["\u00ab", "\u00bb"],
     ]);
     if (start < end) {
+        const bounds = initialism(start) ?? initialism(end - 1);
+        if (bounds && start >= bounds.start && start < bounds.end) {
+            let tail = bounds.end;
+            while (held(tail)) tail += 1;
+            if (end <= tail) {
+                start = bounds.start;
+                end = tail;
+            }
+        }
         if ((text[start - 1] === "$" || text[start - 1] === "\u20ac" || text[start - 1] === "\u00a3" || text[start - 1] === "#") && !word(start - 2) && word(start)) start -= 1;
         if (end === start + 1 && word(start - 1) && (sticky(start) || ((text[start] === "." || text[start] === ":") && !word(end)))) {
             while (word(start - 1)) start -= 1;
