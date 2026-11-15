@@ -877,8 +877,8 @@ export function quoteBreakBlock(tag: string): boolean {
     return name === "hr" || name === "pre" || name === "figure";
 }
 
-export function quoteTouchedBlocks(input: { touched: number; consecutive: boolean; crossesList: boolean; crossesBreak?: boolean }): QuoteBlocks {
-    if ((input.crossesList || input.crossesBreak) && input.touched > 1 && input.consecutive) return "together";
+export function quoteTouchedBlocks(input: { touched: number; consecutive: boolean; crossesList: boolean; crossesBreak?: boolean; crossesWriting?: boolean }): QuoteBlocks {
+    if ((input.crossesList || input.crossesBreak || input.crossesWriting) && input.touched > 1 && input.consecutive) return "together";
     return "browser";
 }
 
@@ -1236,6 +1236,13 @@ export type BreakHeadingAcross = "lines" | "pass";
 
 export function breakHeadingAcross(input: { crossesBreak: boolean; across: boolean }): BreakHeadingAcross {
     if (input.crossesBreak && input.across) return "lines";
+    return "pass";
+}
+
+export type WritingHeadingAcross = "lines" | "pass";
+
+export function writingHeadingAcross(input: { crossesWriting: boolean; across: boolean }): WritingHeadingAcross {
+    if (input.crossesWriting && input.across) return "lines";
     return "pass";
 }
 
