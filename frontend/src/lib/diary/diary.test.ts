@@ -1352,7 +1352,11 @@ describe("search", () => {
 
         const title = diaryListMatch(diary, [entry], "window");
         assert.equal(title.matched, true);
-        assert.equal(title.snippet, null);
+        assert.match(title.snippet ?? "", /window/i);
+
+        const titleOnly = diaryListMatch(diary, [entry], "mornings");
+        assert.equal(titleOnly.matched, true);
+        assert.equal(titleOnly.snippet, null);
 
         const note = diaryListMatch(diary, [garden, entry], "quiet");
         assert.equal(note.matched, true);
@@ -1429,16 +1433,25 @@ describe("search", () => {
         assert.equal(newest.entryAt, created);
 
         const title = diaryListMatch(diary, [rain, garden], "window");
-        assert.equal(title.entryId, null);
-        assert.equal(title.entryAt, null);
-        assert.equal(diaryMatchPath("diary1", title.entryId, "window"), "/diary/diary1?list=window");
+        assert.equal(title.matched, true);
+        assert.equal(title.entryId, "rain");
+        assert.equal(title.entryAt, created);
+        assert.equal(title.count, 1);
+        assert.match(title.snippet ?? "", /window/i);
+        assert.equal(diaryMatchPath("diary1", title.entryId, "window"), "/diary/diary1?entry=rain&q=window&list=window");
         assert.equal(diaryCardWhen({
             query: "window",
             matchEntry: title.entryId,
             matchAt: title.entryAt,
             updatedAt: created,
             createdAt: created,
-        }), `Updated ${formatDiaryDate(created)}`);
+        }), formatDiaryDate(created));
+
+        const titleOnly = diaryListMatch(diary, [garden], "mornings");
+        assert.equal(titleOnly.matched, true);
+        assert.equal(titleOnly.entryId, null);
+        assert.equal(titleOnly.count, 0);
+        assert.equal(diaryMatchPath("diary1", titleOnly.entryId, "mornings"), "/diary/diary1?list=mornings");
 
         const blank = diaryListMatch(diary, [garden], " ");
         assert.equal(blank.entryId, null);

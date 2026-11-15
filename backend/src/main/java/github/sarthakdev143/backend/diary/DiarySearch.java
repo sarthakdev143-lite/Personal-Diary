@@ -37,18 +37,17 @@ public final class DiarySearch {
         if (query.isEmpty()) {
             return new Hit(true, null, null);
         }
-        if (contains(title, query) || contains(description == null ? "" : description, query)) {
-            return new Hit(true, null, null);
-        }
-
         Note newest = notes.stream()
                 .filter(note -> contains(searchText(note, zone), query))
                 .max(Comparator.comparing(Note::createdAt, Comparator.nullsFirst(Comparator.naturalOrder())))
                 .orElse(null);
-        if (newest == null) {
-            return new Hit(false, null, null);
+        if (newest != null) {
+            return new Hit(true, snippet(newest, query, zone), newest.id());
         }
-        return new Hit(true, snippet(newest, query, zone), newest.id());
+        if (contains(title, query) || contains(description == null ? "" : description, query)) {
+            return new Hit(true, null, null);
+        }
+        return new Hit(false, null, null);
     }
 
     public static boolean pageMatches(Note note, String rawQuery, ZoneId zone) {
