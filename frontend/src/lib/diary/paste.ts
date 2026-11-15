@@ -176,10 +176,11 @@ export function pictureNameSelection(input: {
     return cut || removing ? "edit" : "pass";
 }
 
-export type PictureNameWord = "name" | "line";
+export type PictureNameWord = "name" | "hold" | "line";
 
-export function pictureNameWord(input: { inName: boolean }): PictureNameWord {
-    return input.inName ? "name" : "line";
+export function pictureNameWord(input: { inName: boolean; leavesName?: boolean }): PictureNameWord {
+    if (!input.inName) return "line";
+    return input.leavesName ? "hold" : "name";
 }
 
 export type PictureNameEnter = "replace" | "continue" | "pass";
