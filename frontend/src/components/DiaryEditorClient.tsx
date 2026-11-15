@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -619,6 +619,62 @@ function adjacentBlock(block: HTMLElement, direction: "next" | "previous"): Elem
     return null;
 }
 
+function caretNeighborNode(selection: Selection, direction: "previous" | "next"): Node | null {
+    if (!selection.rangeCount || !selection.isCollapsed) return null;
+    const range = selection.getRangeAt(0);
+    const container = range.startContainer;
+    const offset = range.startOffset;
+    const step = (node: Node | null) => direction === "next" ? node?.nextSibling ?? null : node?.previousSibling ?? null;
+    let node: Node | null = null;
+    if (container instanceof Text) {
+        if (direction === "next" && offset < container.data.length) return container;
+        if (direction === "previous" && offset > 0) return container;
+        node = step(container);
+    } else if (container instanceof Element) {
+        node = direction === "next" ? container.childNodes[offset] ?? null : container.childNodes[offset - 1] ?? null;
+    }
+    while (node instanceof Text && !node.data.replace(/[\s\u00a0]/g, "")) node = step(node);
+    return node;
+}
+
+function caretSide(node: Node | null): "picture" | "text" | "none" {
+    if (node instanceof HTMLElement && node.tagName === "FIGURE") return "picture";
+    if (node instanceof Text && node.data.replace(/[\s\u00a0]/g, "")) return "text";
+    return "none";
+}
+
+function inlinePictureNeighbor(editor: HTMLElement, selection: Selection): {
+    where: "before" | "after" | "both";
+    atStart: boolean;
+    atEnd: boolean;
+    figure: HTMLElement;
+    image: HTMLImageElement | null;
+    previousFigure: HTMLElement | null;
+    nextFigure: HTMLElement | null;
+} | null {
+    const where = pictureCaretNeighbor({
+        previous: caretSide(caretNeighborNode(selection, "previous")),
+        next: caretSide(caretNeighborNode(selection, "next")),
+    });
+    if (where === "none") return null;
+    const nextNode = caretNeighborNode(selection, "next");
+    const previousNode = caretNeighborNode(selection, "previous");
+    const nextFigure = nextNode instanceof HTMLElement && nextNode.tagName === "FIGURE" ? nextNode : null;
+    const previousFigure = previousNode instanceof HTMLElement && previousNode.tagName === "FIGURE" ? previousNode : null;
+    const figure = (where === "after" ? previousFigure : nextFigure) ?? previousFigure;
+    if (!(figure instanceof HTMLElement) || !editor.contains(figure)) return null;
+    const image = figure.querySelector("img");
+    return {
+        where,
+        atStart: false,
+        atEnd: false,
+        figure,
+        image: image instanceof HTMLImageElement ? image : null,
+        previousFigure,
+        nextFigure,
+    };
+}
+
 function pictureMoveContext(editor: HTMLElement, selection: Selection): {
     where: "before" | "after" | "both" | "caption" | "selected" | "figure";
     atStart: boolean;
@@ -668,6 +724,8 @@ function pictureMoveContext(editor: HTMLElement, selection: Selection): {
         };
     }
     if (!selection.isCollapsed) return null;
+    const inline = inlinePictureNeighbor(editor, selection);
+    if (inline) return inline;
     const block = host?.closest("p, h1, h2, h3, li, blockquote, pre");
     if (!(block instanceof HTMLElement) || !editor.contains(block)) return null;
     const edge = captionCaret(block, selection);

@@ -371,6 +371,17 @@ export function pictureMoveKey(input: {
     return "pass";
 }
 
+export type PictureCaretSide = "picture" | "text" | "none";
+
+export function pictureCaretNeighbor(input: { previous: PictureCaretSide; next: PictureCaretSide }): "before" | "after" | "both" | "none" {
+    const previous = input.previous === "picture";
+    const next = input.next === "picture";
+    if (previous && next) return "both";
+    if (next) return "before";
+    if (previous) return "after";
+    return "none";
+}
+
 export type PictureBesideTarget = "picture" | "text" | "element" | "line" | "stay";
 
 export function pictureBesideTarget(input: {

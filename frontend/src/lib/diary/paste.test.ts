@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalJoin, pictureRemovalSpace, pictureRemovalHost, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalJoin, pictureRemovalSpace, pictureRemovalHost, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -509,6 +509,10 @@ describe("entry paste", () => {
         assert.equal(pictureMoveKey({ ...plain, key: "ArrowDown", where: "figure" }), "after");
         assert.equal(pictureMoveKey({ ...plain, key: "ArrowUp", where: "figure" }), "before");
         assert.equal(pictureMoveKey({ ...plain, key: "x", where: "figure" }), "name");
+        assert.equal(pictureCaretNeighbor({ previous: "text", next: "picture" }), "before");
+        assert.equal(pictureCaretNeighbor({ previous: "picture", next: "text" }), "after");
+        assert.equal(pictureCaretNeighbor({ previous: "picture", next: "picture" }), "both");
+        assert.equal(pictureCaretNeighbor({ previous: "text", next: "text" }), "none");
         assert.equal(pictureMoveKey({ ...plain, key: "ArrowDown", shiftKey: true, where: "before" }), "pass");
         assert.equal(pictureMoveKey({ ...plain, key: "Enter", where: "selected" }), "pass");
     });
