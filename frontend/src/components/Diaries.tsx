@@ -8,7 +8,7 @@ import { useSession } from "next-auth/react";
 import { MatchedText } from "@/components/MatchedText";
 import { coverForTheme } from "@/lib/diary/constants";
 import { diaryListKeyAction, diaryListStep } from "@/lib/diary/keys";
-import { compareDiaries } from "@/lib/diary/order";
+import { compareDiaryMatches } from "@/lib/diary/order";
 import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { diaryCardWhen, diaryMatchPath } from "@/lib/diary/search";
 
@@ -175,7 +175,7 @@ const Diaries = ({ query = "", refetchTrigger = 0, paused = false }: { query?: s
                     ...current,
                     diaries: current.diaries
                         .map((item) => item._id === diary._id ? { ...item, pinned: next.pinned, updatedAt: next.updatedAt } : item)
-                        .sort(compareDiaries),
+                        .sort(compareDiaryMatches),
                 };
             });
         } finally {
