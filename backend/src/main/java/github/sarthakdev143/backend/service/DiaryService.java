@@ -54,11 +54,17 @@ public class DiaryService {
             if (!hit.matched()) {
                 return Stream.empty();
             }
-            return Stream.of(new ListedDiary(diary, hit.snippet(), hit.entryId()));
-        }).toList();
+            return Stream.of(new ListedDiary(diary, hit.snippet(), hit.entryId(), hit.entryAt(), hit.count()));
+        }).sorted(DiaryService::byMatch).toList();
     }
 
-    public record ListedDiary(Diary diary, String match, String matchEntry) {
+    private static int byMatch(ListedDiary left, ListedDiary right) {
+        return DiarySearch.order(
+                new DiarySearch.Rank(left.diary().isPinned(), left.diary().getUpdatedAt(), left.diary().getCreatedAt(), left.matchAt()),
+                new DiarySearch.Rank(right.diary().isPinned(), right.diary().getUpdatedAt(), right.diary().getCreatedAt(), right.matchAt()));
+    }
+
+    public record ListedDiary(Diary diary, String match, String matchEntry, Instant matchAt, int matchCount) {
     }
 
     private static DiarySearch.Note note(Entry entry) {

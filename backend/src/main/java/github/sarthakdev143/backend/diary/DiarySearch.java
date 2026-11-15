@@ -21,7 +21,41 @@ public final class DiarySearch {
     public record Note(String id, String content, String plainText, Instant createdAt, Instant updatedAt) {
     }
 
-    public record Hit(boolean matched, String snippet, String entryId) {
+    public record Hit(boolean matched, String snippet, String entryId, Instant entryAt, int count) {
+    }
+
+    public record Rank(boolean pinned, Instant updatedAt, Instant createdAt, Instant matchAt) {
+    }
+
+    public static int order(Rank first, Rank second) {
+        int byPin = Boolean.compare(second.pinned(), first.pinned());
+        if (byPin != 0) {
+            return byPin;
+        }
+        if (first.matchAt() != null && second.matchAt() != null) {
+            int byNote = second.matchAt().compareTo(first.matchAt());
+            if (byNote != 0) {
+                return byNote;
+            }
+        }
+        int byUpdated = compareTime(second.updatedAt(), first.updatedAt());
+        if (byUpdated != 0) {
+            return byUpdated;
+        }
+        return compareTime(second.createdAt(), first.createdAt());
+    }
+
+    private static int compareTime(Instant left, Instant right) {
+        if (left == null && right == null) {
+            return 0;
+        }
+        if (left == null) {
+            return -1;
+        }
+        if (right == null) {
+            return 1;
+        }
+        return left.compareTo(right);
     }
 
     public static String normalize(String raw) {
@@ -35,19 +69,20 @@ public final class DiarySearch {
     public static Hit match(String title, String description, List<Note> notes, String rawQuery, ZoneId zone) {
         String query = normalize(rawQuery);
         if (query.isEmpty()) {
-            return new Hit(true, null, null);
+            return new Hit(true, null, null, null, 0);
         }
-        Note newest = notes.stream()
+        List<Note> hits = notes.stream()
                 .filter(note -> contains(searchText(note, zone), query))
-                .max(Comparator.comparing(Note::createdAt, Comparator.nullsFirst(Comparator.naturalOrder())))
-                .orElse(null);
-        if (newest != null) {
-            return new Hit(true, snippet(newest, query, zone), newest.id());
+                .sorted(Comparator.comparing(Note::createdAt, Comparator.nullsFirst(Comparator.naturalOrder())).reversed())
+                .toList();
+        if (!hits.isEmpty()) {
+            Note newest = hits.get(0);
+            return new Hit(true, snippet(newest, query, zone), newest.id(), newest.createdAt(), hits.size());
         }
         if (contains(title, query) || contains(description == null ? "" : description, query)) {
-            return new Hit(true, null, null);
+            return new Hit(true, null, null, null, 0);
         }
-        return new Hit(false, null, null);
+        return new Hit(false, null, null, null, 0);
     }
 
     public static boolean pageMatches(Note note, String rawQuery, ZoneId zone) {
