@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -307,6 +307,17 @@ describe("entry paste", () => {
         assert.equal(picturePaste('<figure><img alt="Bay" src="data:image/gif;base64,aaaa"></figure>'), "pass");
         assert.equal(picturePaste("<p>Later</p>"), "pass");
         assert.equal(picturePaste('<figure><img alt="Bay" src="data:image/gif;base64,aaaa"><figcaption>Bay</figcaption></figure><p>Later</p>'), "pass");
+    });
+
+    it("types over a picture name when the selection stops at the next line", () => {
+        const boundary = { startsInName: true, endsInName: false, boundaryOnly: true };
+        assert.equal(pictureNameBoundary({ ...boundary, key: "Q" }), "name");
+        assert.equal(pictureNameBoundary({ ...boundary, key: "Backspace" }), "name");
+        assert.equal(pictureNameBoundary({ ...boundary, key: "Enter" }), "name");
+        assert.equal(pictureNameBoundary({ ...boundary, key: "Q", ctrlKey: true }), "pass");
+        assert.equal(pictureNameBoundary({ ...boundary, key: "ArrowRight" }), "pass");
+        assert.equal(pictureNameBoundary({ startsInName: true, endsInName: false, boundaryOnly: false, key: "Q" }), "pass");
+        assert.equal(pictureNameBoundary({ startsInName: false, endsInName: false, boundaryOnly: true, key: "Q" }), "pass");
     });
 
     it("keeps a picture when the selection also holds the writing around it", () => {

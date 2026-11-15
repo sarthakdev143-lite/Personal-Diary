@@ -213,6 +213,23 @@ export function picturePaste(html: string): PicturePaste {
     return "picture";
 }
 
+export type PictureNameBoundary = "name" | "pass";
+
+export function pictureNameBoundary(input: {
+    startsInName: boolean;
+    endsInName: boolean;
+    boundaryOnly: boolean;
+    key: string;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+}): PictureNameBoundary {
+    if (!input.startsInName || input.endsInName || !input.boundaryOnly) return "pass";
+    if (input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.key === "Backspace" || input.key === "Delete" || input.key === "Enter") return "name";
+    return input.key.length === 1 ? "name" : "pass";
+}
+
 export type PictureNameEnter = "replace" | "continue" | "pass";
 
 export function pictureNameEnter(input: {
