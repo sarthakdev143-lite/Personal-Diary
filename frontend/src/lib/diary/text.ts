@@ -1183,6 +1183,13 @@ export function nestedEnterKey(input: {
     return "pass";
 }
 
+export type NestedListLeave = "lift" | "keep";
+
+export function nestedListLeave(input: { nested: boolean; host: string }): NestedListLeave {
+    if (input.nested && (input.host === "P" || input.host === "H1" || input.host === "H2" || input.host === "H3")) return "lift";
+    return "keep";
+}
+
 export function orderedItemNumber(input: { start?: string | null; values?: Array<string | null | undefined>; index: number }): number {
     const start = wholeNumber(input.start);
     let number = start ?? 1;
