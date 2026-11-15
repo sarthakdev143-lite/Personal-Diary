@@ -231,6 +231,11 @@ export function pictureInlineBackspace(input: {
     return input.following ? "name" : "remove";
 }
 
+export function pictureBackspaceFollows(input: { inline: boolean; gap: boolean; writingFollows: boolean }): boolean {
+    if (!input.inline && !input.gap) return false;
+    return input.writingFollows;
+}
+
 export type SelectedPictureKey = "remove" | "name" | "after" | "pass";
 
 export function selectedPictureKey(input: {
