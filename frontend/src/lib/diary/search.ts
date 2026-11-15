@@ -1,5 +1,5 @@
 import { SEARCH_MAX } from "./constants";
-import { entrySearchParts, entryWritingText, formatDiaryDate, formatEntryLong } from "./text";
+import { entryInMonth, entrySearchParts, entryToOpenFromLink, entryToShowOnOpen, entryWritingText, formatDiaryDate, formatEntryLong } from "./text";
 
 type RegexQuery = { $regex: string; $options: "i" };
 
@@ -300,6 +300,29 @@ export function diaryMatchPath(diaryId: string, entryId: string | null | undefin
     const query = normalizeSearchQuery(rawQuery ?? "");
     if (!query) return path;
     return `${path}&q=${encodeURIComponent(query)}`;
+}
+
+export function entryFromAddress<T extends {
+    _id: string;
+    createdAt: string;
+    content: string;
+    plainText?: string | null;
+    updatedAt: string;
+}>(
+    entries: readonly T[],
+    requestedId: string | null,
+    month: string,
+    rawQuery: string,
+): { entry: T | null; query: string } {
+    const query = normalizeSearchQuery(rawQuery);
+    const inMonth = entries.filter((entry) => entryInMonth(entry.createdAt, month));
+    const scope = inMonth.length ? inMonth : entries;
+    if (!query) return { entry: entryToOpenFromLink(scope, requestedId), query: "" };
+    const matches = scope.filter((entry) => entryMatchesListQuery(entry, query));
+    if (!matches.length) return { entry: null, query };
+    const requested = requestedId ? matches.find((entry) => entry._id === requestedId) ?? null : null;
+    const entry = requested ?? entryToShowOnOpen(matches);
+    return { entry, query: entry ? openedEntryQuery(query, entry) : query };
 }
 
 export function openedEntryQuery(rawQuery: string | null, entry: {
