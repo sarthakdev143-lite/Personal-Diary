@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureNameAlt, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -293,6 +293,20 @@ describe("entry paste", () => {
         assert.equal(pictureNameAlt({ inName: true, caption: "Bay", alt: "Bay" }), "keep");
         assert.equal(pictureNameAlt({ inName: true, caption: "   ", alt: "Bay" }), "sync");
         assert.equal(pictureNameAlt({ inName: false, caption: "Bays", alt: "Bay" }), "keep");
+    });
+
+    it("copies a selected picture with its name", () => {
+        assert.equal(pictureCopy({ imageSelected: true, inFigure: true }), "picture");
+        assert.equal(pictureCopy({ imageSelected: true, inFigure: false }), "pass");
+        assert.equal(pictureCopy({ imageSelected: false, inFigure: true }), "pass");
+    });
+
+    it("pastes a copied picture with its name", () => {
+        assert.equal(picturePaste('<figure><img alt="Bay" src="data:image/gif;base64,aaaa"><figcaption>Bay</figcaption></figure>'), "picture");
+        assert.equal(picturePaste('<figure><img src="data:image/gif;base64,aaaa" alt="Bay" /><figcaption><b>Bay</b></figcaption></figure>'), "picture");
+        assert.equal(picturePaste('<figure><img alt="Bay" src="data:image/gif;base64,aaaa"></figure>'), "pass");
+        assert.equal(picturePaste("<p>Later</p>"), "pass");
+        assert.equal(picturePaste('<figure><img alt="Bay" src="data:image/gif;base64,aaaa"><figcaption>Bay</figcaption></figure><p>Later</p>'), "pass");
     });
 
     it("keeps a picture when the selection also holds the writing around it", () => {

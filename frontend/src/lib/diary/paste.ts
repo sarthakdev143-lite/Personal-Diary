@@ -197,6 +197,22 @@ export function pictureNameAlt(input: { inName: boolean; caption: string; alt: s
     return imageAltText(input.caption) === (input.alt ?? "") ? "keep" : "sync";
 }
 
+export type PictureCopy = "picture" | "pass";
+
+export function pictureCopy(input: { imageSelected: boolean; inFigure: boolean }): PictureCopy {
+    return input.imageSelected && input.inFigure ? "picture" : "pass";
+}
+
+export type PicturePaste = "picture" | "pass";
+
+export function picturePaste(html: string): PicturePaste {
+    const text = html.trim();
+    if (!/^<figure\b[^>]*>[\s\S]*<\/figure>$/i.test(text)) return "pass";
+    const body = text.replace(/^<figure\b[^>]*>/i, "").replace(/<\/figure>$/i, "").trim();
+    if (!/^<img\b[^>]*\/?\s*>\s*<figcaption\b[^>]*>[\s\S]*<\/figcaption>$/i.test(body)) return "pass";
+    return "picture";
+}
+
 export type PictureNameEnter = "replace" | "continue" | "pass";
 
 export function pictureNameEnter(input: {

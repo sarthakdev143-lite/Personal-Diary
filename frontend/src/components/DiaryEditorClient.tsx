@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureNameAlt, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -607,6 +607,139 @@ function selectPictureImage(image: HTMLImageElement) {
     range.selectNode(image);
     selection.removeAllRanges();
     selection.addRange(range);
+}
+
+function copiedPicture(editor: HTMLElement, selection: Selection): { html: string; text: string; figure: HTMLElement } | null {
+    const image = selectedImage(editor, selection);
+    const figure = image?.closest("figure");
+    if (!(image instanceof HTMLImageElement) || !(figure instanceof HTMLElement) || !editor.contains(figure)) return null;
+    if (pictureCopy({ imageSelected: true, inFigure: true }) !== "picture") return null;
+    const copy = figure.cloneNode(true) as HTMLElement;
+    copy.querySelectorAll("img").forEach((node) => clearPictureMark(node));
+    const caption = copy.querySelector("figcaption");
+    const text = (caption?.textContent ?? image.getAttribute("alt") ?? "").replace(/\s+/g, " ").trim();
+    return { html: copy.outerHTML, text, figure };
+}
+
+function placeAfterRemovedPicture(editor: HTMLElement, figure: HTMLElement) {
+    const parent = figure.parentElement;
+    const next = figure.nextSibling;
+    figure.remove();
+    if (next instanceof HTMLElement && /^(P|H1|H2|H3|LI|BLOCKQUOTE|PRE)$/.test(next.tagName)) {
+        placeCaretAtStart(next);
+        return;
+    }
+    if (next && parent?.contains(next)) {
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.setStartBefore(next);
+        range.collapse(true);
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+        return;
+    }
+    if (parent instanceof HTMLElement && parent !== editor) {
+        if (!parent.childNodes.length) parent.appendChild(document.createElement("br"));
+        placeCaretAtStart(parent);
+        return;
+    }
+    const paragraph = document.createElement("p");
+    paragraph.appendChild(document.createElement("br"));
+    editor.appendChild(paragraph);
+    placeCaretAtStart(paragraph);
+}
+
+function placeCaretAfterFigure(figure: HTMLElement) {
+    const next = figure.nextSibling;
+    if (next instanceof HTMLElement && /^(P|H1|H2|H3|LI|BLOCKQUOTE|PRE)$/.test(next.tagName)) {
+        placeCaretAtStart(next);
+        return;
+    }
+    if (next instanceof Text) {
+        placeCaretInText(next, 0);
+        return;
+    }
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.setStartAfter(figure);
+    range.collapse(true);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+}
+
+function splitBlockAroundPicture(block: HTMLElement, range: Range, figure: HTMLElement) {
+    const rest = document.createRange();
+    rest.selectNodeContents(block);
+    rest.setStart(range.startContainer, range.startOffset);
+    const tail = rest.extractContents();
+    const inline = block.tagName === "LI" || block.tagName === "BLOCKQUOTE";
+    if (inline) {
+        block.append(figure);
+        while (tail.firstChild) block.append(tail.firstChild);
+        return;
+    }
+    if (!(block.textContent ?? "").replace(/[\u00a0\s]/g, "") && !block.querySelector("img, figure")) block.append(document.createElement("br"));
+    const next = document.createElement("p");
+    while (tail.firstChild) next.append(tail.firstChild);
+    if (!next.childNodes.length) next.append(document.createElement("br"));
+    block.after(figure);
+    figure.after(next);
+}
+
+function insertPictureFigure(editor: HTMLElement, html: string) {
+    const selection = window.getSelection();
+    if (!selection?.rangeCount) return;
+    const template = document.createElement("template");
+    template.innerHTML = html;
+    const figure = template.content.firstElementChild;
+    if (!(figure instanceof HTMLElement)) return;
+    const range = selection.getRangeAt(0);
+    if (!range.collapsed) range.deleteContents();
+    const live = selection.rangeCount ? selection.getRangeAt(0) : range;
+    const anchor = live.startContainer;
+    const host = anchor instanceof Element ? anchor : anchor.parentElement;
+    const caption = host?.closest("figcaption");
+    if (caption instanceof HTMLElement && editor.contains(caption)) {
+        const current = caption.closest("figure");
+        if (current instanceof HTMLElement) current.after(figure);
+        else editor.append(figure);
+        placeCaretAfterFigure(figure);
+        return;
+    }
+    const block = host?.closest("p, h1, h2, h3, li, blockquote");
+    if (!(block instanceof HTMLElement) || !editor.contains(block)) {
+        live.insertNode(figure);
+        placeCaretAfterFigure(figure);
+        return;
+    }
+    const edge = captionCaret(block, selection);
+    if (block.tagName === "LI" || block.tagName === "BLOCKQUOTE") {
+        if (edge?.atEnd) block.append(figure);
+        else if (edge?.atStart) block.prepend(figure);
+        else splitBlockAroundPicture(block, live, figure);
+        placeCaretAfterFigure(figure);
+        return;
+    }
+    if (edge?.atStart && edge.atEnd) {
+        const paragraph = document.createElement("p");
+        paragraph.appendChild(document.createElement("br"));
+        block.replaceWith(figure);
+        figure.after(paragraph);
+        placeCaretAtStart(paragraph);
+        return;
+    }
+    if (edge?.atStart) {
+        block.before(figure);
+        placeCaretAtStart(block);
+        return;
+    }
+    if (edge?.atEnd) {
+        block.after(figure);
+        placeCaretAfterFigure(figure);
+        return;
+    }
+    splitBlockAroundPicture(block, live, figure);
+    placeCaretAfterFigure(figure);
 }
 
 function pictureBesideNode(figure: HTMLElement, direction: "before" | "after"): Node | null {
@@ -5624,6 +5757,16 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             if (decision.warning) {
                 toast({ title: decision.warning.title, description: decision.warning.description, variant: "destructive" });
             }
+            if (editor && picturePaste(decision.html) === "picture") {
+                const before = editor.innerHTML;
+                insertPictureFigure(editor, decision.html);
+                if (editor.innerHTML !== before) {
+                    pictureRemoval.current = null;
+                    keepBlank({ before, after: editor.innerHTML });
+                }
+                setHtmlContent(editor.innerHTML);
+                return;
+            }
             const mark = moved === "pass" && editor && selection && pasteSelectionUndo({ collapsed: selection.isCollapsed, action: "html" }) === "place"
                 ? selectionUndo(editor)
                 : null;
@@ -5672,11 +5815,36 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         setHtmlContent(editor.innerHTML);
     };
 
+    const writePictureClipboard = (event: React.ClipboardEvent<HTMLDivElement>, picture: { html: string; text: string }) => {
+        event.preventDefault();
+        event.clipboardData.setData("text/html", picture.html);
+        event.clipboardData.setData("text/plain", picture.text);
+    };
+
+    const onCopy = (event: React.ClipboardEvent<HTMLDivElement>) => {
+        if (mode === "view") return;
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection) return;
+        const picture = copiedPicture(editor, selection);
+        if (!picture) return;
+        writePictureClipboard(event, picture);
+    };
+
     const onCut = (event: React.ClipboardEvent<HTMLDivElement>) => {
         if (mode === "view") return;
         const editor = editorRef.current;
         const selection = window.getSelection();
         if (!editor || !selection) return;
+        const picture = copiedPicture(editor, selection);
+        if (picture) {
+            writePictureClipboard(event, picture);
+            const before = editor.innerHTML;
+            placeAfterRemovedPicture(editor, picture.figure);
+            keepPicture({ before, after: editor.innerHTML });
+            setHtmlContent(editor.innerHTML);
+            return;
+        }
         const touched = selectedDateHeading(editor, selection, dateLineLabel());
         if (touched) {
             event.preventDefault();
@@ -9336,6 +9504,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 }}
                                 spellCheck={false}
                                 onPaste={onPaste}
+                                onCopy={onCopy}
                                 onCut={onCut}
                                 onDragStart={onDragStart}
                                 onDragEnd={onDragEnd}
