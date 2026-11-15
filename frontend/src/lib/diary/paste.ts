@@ -77,6 +77,29 @@ export function pictureForwardDelete(input: {
     return "into";
 }
 
+export type PictureGapDelete = "into" | "pass";
+
+export function pictureGapDelete(input: {
+    key: string;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    gap: boolean;
+    next: "writing" | "empty" | "none";
+}): PictureGapDelete {
+    if (!input.gap) return "pass";
+    return pictureForwardDelete({
+        key: input.key,
+        altKey: input.altKey,
+        ctrlKey: input.ctrlKey,
+        metaKey: input.metaKey,
+        collapsed: input.collapsed,
+        afterPicture: true,
+        next: input.next,
+    }) === "into" ? "into" : "pass";
+}
+
 export type PictureAhead = "picture" | "space" | "none";
 
 export type PictureAheadDelete = "remove" | "clear" | "pass";
