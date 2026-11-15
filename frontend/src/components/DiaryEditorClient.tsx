@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -538,6 +538,25 @@ function inlinePictureBesideCaret(editor: HTMLElement, selection: Selection): { 
 function splitBesidePicture(block: HTMLElement, figure: HTMLElement, side: "before" | "after") {
     const line = block.tagName === "BLOCKQUOTE" || block.tagName === "TD" || block.tagName === "TH";
     if (line) {
+        let neighbor: ChildNode | null = side === "after" ? figure.nextSibling : figure.previousSibling;
+        while (neighbor instanceof Text && !neighbor.data.replace(/[\u00a0\s\u200b]/g, "")) {
+            neighbor = side === "after" ? neighbor.nextSibling : neighbor.previousSibling;
+        }
+        const next = neighbor instanceof Text
+            ? "text"
+            : neighbor instanceof HTMLElement && neighbor.tagName === "FIGURE"
+                ? "picture"
+                : neighbor instanceof HTMLElement && neighbor.tagName !== "BR"
+                    ? "block"
+                    : "none";
+        if (pictureBreakLine({ next }) === "paragraph") {
+            const paragraph = document.createElement("p");
+            paragraph.appendChild(document.createElement("br"));
+            if (side === "after") figure.after(paragraph);
+            else figure.before(paragraph);
+            placeCaretAtStart(paragraph);
+            return;
+        }
         const br = document.createElement("br");
         if (side === "after") figure.after(br);
         else figure.before(br);
