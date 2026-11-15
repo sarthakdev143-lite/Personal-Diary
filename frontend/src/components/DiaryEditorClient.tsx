@@ -579,6 +579,17 @@ function caretAtHeadingEnd(heading: HTMLElement, selection: Selection): boolean 
     return after.toString().length === 0;
 }
 
+function placeCaretInBlock(block: HTMLElement) {
+    if (block.tagName === "UL" || block.tagName === "OL") {
+        const item = block.querySelector("li");
+        if (item instanceof HTMLElement) {
+            placeCaretAtStart(item);
+            return;
+        }
+    }
+    placeCaretAtStart(block);
+}
+
 function leaveDateLine(heading: HTMLElement) {
     const next = heading.nextElementSibling;
     if (next instanceof HTMLElement && dateLeaveTarget(next.tagName) === "into") {
@@ -2784,6 +2795,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     });
                     const before = editor.innerHTML;
                     if (leave === "past") leaveDateLine(line.heading);
+                    else if (leave === "into" && next instanceof HTMLElement) placeCaretInBlock(next);
                     else {
                         const peeled = peelDateLine(line.heading, label);
                         placeCaretIn(peeled.paragraph, 0);

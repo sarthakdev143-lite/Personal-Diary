@@ -202,7 +202,7 @@ describe("blank entry", () => {
         assert.equal(dateArrow({ ...arrow, key: "ArrowRight", shiftKey: true }), "pass");
         assert.equal(dateArrow({ ...arrow, key: "ArrowDown", where: "after" }), "pass");
         assert.equal(dateCaretLeave({ inHeading: true, exact: true, next: "past" }), "past");
-        assert.equal(dateCaretLeave({ inHeading: true, exact: true, next: "into" }), "peel");
+        assert.equal(dateCaretLeave({ inHeading: true, exact: true, next: "into" }), "into");
         assert.equal(dateCaretLeave({ inHeading: true, exact: false, next: "past" }), "peel");
         assert.equal(dateCaretLeave({ inHeading: false, exact: true, next: "past" }), "stay");
         assert.equal(freshDateLineMarkup("H", "<p>Kept the lantern.</p>"), "<p>H</p><p>Kept the lantern.</p>");
