@@ -209,13 +209,37 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         return piece === " " || piece === "\u00a0" || piece === "\t";
     };
     const word = (index: number) => /[\p{L}\p{N}]/u.test(text[index] ?? "");
-    const joiner = (index: number) => text[index] === "/" || text[index] === "-" || text[index] === "\u2010" || text[index] === "\u2011" || text[index] === "\u2013" || text[index] === "\u2014";
+    const joiner = (index: number) => text[index] === "&" || text[index] === "/" || text[index] === "-" || text[index] === "\u2010" || text[index] === "\u2011" || text[index] === "\u2013" || text[index] === "\u2014";
+    const trailing = (index: number) => {
+        const piece = text[index];
+        return piece === "," || piece === "." || piece === ";" || piece === ":" || piece === "!" || piece === "?" || piece === "\u2026";
+    };
+    const pairs = new Map<string, string>([
+        ['"', '"'],
+        ["(", ")"],
+        ["[", "]"],
+        ["{", "}"],
+        ["\u201c", "\u201d"],
+        ["\u2018", "\u2019"],
+        ["\u00ab", "\u00bb"],
+    ]);
     if (start < end) {
+        if (end === start + 1 && trailing(start) && word(start - 1) && !word(end)) {
+            while (word(start - 1)) start -= 1;
+        }
         if (joiner(start - 1) && word(start - 2) && word(start)) start -= 1;
         else if (end === start + 1 && joiner(start) && word(start - 1) && word(end)) {
             end += 1;
             while (word(end)) end += 1;
         } else if (joiner(end) && word(end - 1) && word(end + 1)) end += 1;
+        if (word(end - 1) && trailing(end) && !word(end + 1)) {
+            while (trailing(end)) end += 1;
+        }
+        const closer = text[end];
+        if (closer !== undefined && pairs.get(text[start - 1] ?? "") === closer && word(start)) {
+            start -= 1;
+            end += 1;
+        }
     }
     const before = text.slice(0, start).replace(/[\u00a0\s]/g, "");
     const after = text.slice(end).replace(/[\u00a0\s]/g, "");
