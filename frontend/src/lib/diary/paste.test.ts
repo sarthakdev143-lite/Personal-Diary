@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -331,6 +331,16 @@ describe("entry paste", () => {
         assert.equal(pictureBoundsKey({ key: "Backspace", ...crossed, touchesPicture: false }), "pass");
         assert.equal(pictureBoundsKey({ key: "Backspace", ...crossed, ctrlKey: true }), "pass");
         assert.equal(pictureBoundsKey({ key: "ArrowLeft", ...crossed }), "pass");
+    });
+
+    it("types the next word beside a picture in a list or a quote", () => {
+        assert.equal(pictureTypedPlace({ next: "text", line: "item" }), "text");
+        assert.equal(pictureTypedPlace({ next: "text", line: "break" }), "text");
+        assert.equal(pictureTypedPlace({ next: "element", line: "page" }), "block");
+        assert.equal(pictureTypedPlace({ next: "none", line: "item" }), "beside");
+        assert.equal(pictureTypedPlace({ next: "none", line: "break" }), "beside");
+        assert.equal(pictureTypedPlace({ next: "none", line: "page" }), "line");
+        assert.equal(pictureTypedPlace({ next: "none", line: "paragraph" }), "line");
     });
 
     it("leaves the picture together when a heading or a list is chosen", () => {

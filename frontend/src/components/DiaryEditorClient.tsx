@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -232,6 +232,12 @@ function selectedPictureName(editor: HTMLElement, selection: Selection): HTMLEle
     return start;
 }
 
+function typeAfterPicture(range: Range): HTMLElement | null {
+    if (!range.collapsed || !(range.startContainer instanceof Element)) return null;
+    const before = range.startContainer.childNodes[range.startOffset - 1];
+    return before instanceof HTMLElement && before.tagName === "FIGURE" ? before : null;
+}
+
 function separatePictureSelection(editor: HTMLElement, selection: Selection, typing: boolean): HTMLElement | null {
     const range = selection.getRangeAt(0);
     const figures = [...editor.querySelectorAll("figure")].filter((figure): figure is HTMLElement => {
@@ -280,10 +286,32 @@ function separatePictureSelection(editor: HTMLElement, selection: Selection, typ
     if (!endInside && lastFigure) {
         const emptied = lastFigure.nextElementSibling;
         if (emptied instanceof HTMLElement && touched.includes(emptied) && !(emptied.textContent ?? "").replace(/[\u00a0\s]/g, "")) emptied.remove();
-        const next = lastFigure.nextElementSibling;
-        if (next instanceof HTMLElement && editor.contains(next)) {
+        let sibling: ChildNode | null = lastFigure.nextSibling;
+        while (sibling instanceof Text && !sibling.data.replace(/[\u00a0\s]/g, "")) sibling = sibling.nextSibling;
+        const next = sibling instanceof HTMLElement ? sibling : lastFigure.nextElementSibling;
+        const place = pictureTypedPlace({
+            next: sibling instanceof Text ? "text" : next instanceof HTMLElement && editor.contains(next) ? "element" : "none",
+            line: pictureNameLine(lastFigure.parentElement?.tagName ?? "DIV"),
+        });
+        if (place === "text" && sibling instanceof Text) {
+            const caret = document.createRange();
+            caret.setStart(sibling, 0);
+            caret.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(caret);
+            return sibling.parentElement instanceof HTMLElement ? sibling.parentElement : lastFigure;
+        }
+        if (place === "block" && next instanceof HTMLElement && editor.contains(next)) {
             placeCaretAtStart(next);
             return next;
+        }
+        if (place === "beside") {
+            const caret = document.createRange();
+            caret.setStartAfter(lastFigure);
+            caret.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(caret);
+            return lastFigure.parentElement instanceof HTMLElement ? lastFigure.parentElement : lastFigure;
         }
         if (typing) {
             const paragraph = document.createElement("p");
@@ -7040,6 +7068,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             const caret = selection.getRangeAt(0);
             const holder = caret.startContainer instanceof Element ? caret.startContainer : caret.startContainer.parentElement;
             const caption = holder?.closest("figcaption");
+            const beside = typeAfterPicture(caret);
             if (caption instanceof HTMLElement && caret.collapsed && caret.startContainer instanceof Text) {
                 const text = caret.startContainer;
                 const offset = caret.startOffset;
@@ -7050,6 +7079,14 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 selection.addRange(caret);
                 const figure = caption.closest("figure");
                 if (figure instanceof HTMLElement) syncPictureAlt(figure);
+            } else if (beside) {
+                const text = document.createTextNode(e.key);
+                beside.after(text);
+                const next = document.createRange();
+                next.setStart(text, text.data.length);
+                next.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(next);
             } else document.execCommand("insertText", false, e.key);
         } else if (action === "type") {
             const anchor = selection.anchorNode;

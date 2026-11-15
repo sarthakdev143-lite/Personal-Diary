@@ -160,6 +160,15 @@ export function pictureNameLine(tag: string): PictureNameLine {
     return "paragraph";
 }
 
+export type PictureTypedPlace = "text" | "block" | "beside" | "line";
+
+export function pictureTypedPlace(input: { next: "text" | "element" | "none"; line: PictureNameLine }): PictureTypedPlace {
+    if (input.next === "text") return "text";
+    if (input.next === "element") return "block";
+    if (input.line === "item" || input.line === "break") return "beside";
+    return "line";
+}
+
 export type PictureNameSelection = "edit" | "pass";
 
 export function pictureNameSelection(input: {
