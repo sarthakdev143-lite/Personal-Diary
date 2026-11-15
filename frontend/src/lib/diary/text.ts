@@ -872,6 +872,11 @@ export function quoteCoveredReach(input: { covered: number; touched: number }): 
     return "beyond";
 }
 
+export function quoteBreakBlock(tag: string): boolean {
+    const name = tag.toLowerCase();
+    return name === "hr" || name === "pre" || name === "figure";
+}
+
 export function quoteTouchedBlocks(input: { touched: number; consecutive: boolean; crossesList: boolean; crossesBreak?: boolean }): QuoteBlocks {
     if ((input.crossesList || input.crossesBreak) && input.touched > 1 && input.consecutive) return "together";
     return "browser";

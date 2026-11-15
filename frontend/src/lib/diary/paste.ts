@@ -68,7 +68,7 @@ export function selectedPictureKey(input: {
 
 export type PictureFormat = "keep" | "pass";
 
-export function pictureFormat(input: { inPicture: boolean; command?: string; kind?: string; leavesPicture?: boolean }): PictureFormat {
+export function pictureFormat(input: { inPicture: boolean; command?: string; kind?: string; leavesPicture?: boolean; outsideSelected?: boolean }): PictureFormat {
     if (!input.inPicture) return "pass";
     if (input.kind === "link") return "pass";
     if (input.kind === "image" && input.leavesPicture) return "pass";
@@ -80,6 +80,7 @@ export function pictureFormat(input: { inPicture: boolean; command?: string; kin
         || input.command === "undo"
         || input.command === "redo"
     ) return "pass";
+    if (input.outsideSelected && input.command === "formatBlock") return "pass";
     return "keep";
 }
 
