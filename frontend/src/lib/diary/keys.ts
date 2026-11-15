@@ -14,16 +14,34 @@ export function searchShortcutLabel(platform: string): "⌘" | "ctrl" {
     return /Mac|iPhone|iPad|iPod/i.test(platform) ? "⌘" : "ctrl";
 }
 
+function listStep(
+    ids: readonly string[],
+    currentId: string | null,
+    direction: "next" | "previous",
+    field: string,
+): string | null {
+    if (!ids.length) return null;
+    if (direction === "previous" && currentId === ids[0]) return field;
+    const index = currentId ? ids.indexOf(currentId) : -1;
+    if (index < 0) return direction === "next" ? ids[0] : ids[ids.length - 1];
+    return ids[direction === "next" ? index + 1 : index - 1] ?? null;
+}
+
 export function diaryListStep(
     ids: readonly string[],
     currentId: string | null,
     direction: "next" | "previous",
 ): string | "search" | null {
-    if (!ids.length) return null;
-    if (direction === "previous" && currentId === ids[0]) return "search";
-    const index = currentId ? ids.indexOf(currentId) : -1;
-    if (index < 0) return direction === "next" ? ids[0] : ids[ids.length - 1];
-    return ids[direction === "next" ? index + 1 : index - 1] ?? null;
+    return listStep(ids, currentId, direction, "search");
+}
+
+export function entryListStep(
+    ids: readonly string[],
+    currentId: string | null,
+    direction: "next" | "previous",
+): string | "find" | null {
+    const step = listStep(ids, currentId, direction, "find");
+    return step === "find" ? "find" : step;
 }
 
 export function diaryListKeyAction(event: {

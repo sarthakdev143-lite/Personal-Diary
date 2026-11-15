@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { diaryListKeyAction, diaryListStep, diarySearchShortcut, searchShortcutLabel } from "./keys";
+import { diaryListKeyAction, diaryListStep, diarySearchShortcut, entryListStep, searchShortcutLabel } from "./keys";
 
 const plain = { key: "i", ctrlKey: false, metaKey: false, altKey: false, shiftKey: false };
 
@@ -68,5 +68,14 @@ describe("diary search shortcut", () => {
         assert.equal(diaryListStep(["harbor", "garden"], null, "next"), "harbor");
         assert.equal(diaryListStep(["harbor", "garden"], null, "previous"), "garden");
         assert.equal(diaryListStep([], "harbor", "previous"), null);
+    });
+
+    it("returns to the entry find box from the first entry", () => {
+        assert.equal(entryListStep(["newest", "older"], "newest", "previous"), "find");
+        assert.equal(entryListStep(["newest", "older"], "older", "previous"), "newest");
+        assert.equal(entryListStep(["newest", "older"], "newest", "next"), "older");
+        assert.equal(entryListStep(["newest", "older"], "older", "next"), null);
+        assert.equal(entryListStep(["newest", "older"], null, "next"), "newest");
+        assert.equal(entryListStep([], "newest", "previous"), null);
     });
 });
