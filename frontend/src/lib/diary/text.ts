@@ -1246,6 +1246,19 @@ export function pictureListReach(input: { inList: boolean; outsideList: boolean;
     return "skip";
 }
 
+export type PictureStyle = "outside" | "pass";
+
+export function pictureStyle(input: { command?: string; outsideSelected: boolean }): PictureStyle {
+    if (!input.outsideSelected) return "pass";
+    if (
+        input.command === "bold"
+        || input.command === "italic"
+        || input.command === "underline"
+        || input.command === "strikeThrough"
+    ) return "outside";
+    return "pass";
+}
+
 export type ListHeadingAcross = "lines" | "pass";
 
 export function listHeadingAcross(input: { touchesList: boolean; across: boolean }): ListHeadingAcross {
