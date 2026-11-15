@@ -1149,6 +1149,24 @@ export function nestedListJoinKey(input: {
     return "pass";
 }
 
+export type NestedEnter = "after" | "line" | "pass";
+
+export function nestedEnterKey(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    atNestedStart: boolean;
+    beforeChildList: boolean;
+}): NestedEnter {
+    if (input.key !== "Enter" || input.shiftKey || input.altKey || input.ctrlKey || input.metaKey || !input.collapsed) return "pass";
+    if (input.atNestedStart) return "line";
+    if (input.beforeChildList) return "after";
+    return "pass";
+}
+
 export function orderedItemNumber(input: { start?: string | null; values?: Array<string | null | undefined>; index: number }): number {
     const start = wholeNumber(input.start);
     let number = start ?? 1;
