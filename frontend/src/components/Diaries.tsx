@@ -23,6 +23,7 @@ type Diary = {
     match?: string | null;
     matchEntry?: string | null;
     matchAt?: string | null;
+    matchCount?: number | null;
 };
 
 const SKELETON_COUNT = 3;
@@ -274,6 +275,7 @@ const Diaries = ({ query = "", refetchTrigger = 0, paused = false }: { query?: s
                                     query,
                                     matchEntry: diary.matchEntry,
                                     matchAt: diary.matchAt,
+                                    matchCount: diary.matchCount,
                                     updatedAt: diary.updatedAt,
                                     createdAt: diary.createdAt,
                                 })}

@@ -236,31 +236,43 @@ export function diaryListMatch(
     diary: { title: string; description?: string | null },
     entries: readonly ListedEntry[],
     rawQuery: string,
-): { matched: boolean; snippet: string | null; entryId: string | null; entryAt: string | null } {
+): { matched: boolean; snippet: string | null; entryId: string | null; entryAt: string | null; count: number } {
     const query = normalizeSearchQuery(rawQuery);
-    if (!query) return { matched: true, snippet: null, entryId: null, entryAt: null };
+    if (!query) return { matched: true, snippet: null, entryId: null, entryAt: null, count: 0 };
     if (diaryFieldsMatch(diary.title, diary.description ?? "", query)) {
-        return { matched: true, snippet: null, entryId: null, entryAt: null };
+        return { matched: true, snippet: null, entryId: null, entryAt: null, count: 0 };
     }
 
     const hits = entries
         .filter((entry) => entryMatchesListQuery(entry, query))
         .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
     const newest = hits[0];
-    if (!newest) return { matched: false, snippet: null, entryId: null, entryAt: null };
-    return { matched: true, snippet: matchingPiece(newest, query), entryId: newest.id || null, entryAt: newest.createdAt };
+    if (!newest) return { matched: false, snippet: null, entryId: null, entryAt: null, count: 0 };
+    return {
+        matched: true,
+        snippet: matchingPiece(newest, query),
+        entryId: newest.id || null,
+        entryAt: newest.createdAt,
+        count: hits.length,
+    };
 }
 
 export function diaryCardWhen(input: {
     query: string;
     matchEntry?: string | null;
     matchAt?: string | null;
+    matchCount?: number | null;
     updatedAt?: string | null;
     createdAt: string;
 }): string {
     const query = normalizeSearchQuery(input.query);
     const note = input.matchAt?.trim();
-    if (query && input.matchEntry && note) return formatDiaryDate(note);
+    if (query && input.matchEntry && note) {
+        const date = formatDiaryDate(note);
+        const count = input.matchCount ?? 0;
+        if (count > 1) return `${date} · ${count} notes`;
+        return date;
+    }
     return `Updated ${formatDiaryDate(input.updatedAt || input.createdAt)}`;
 }
 
