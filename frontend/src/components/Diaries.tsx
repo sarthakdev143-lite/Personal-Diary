@@ -7,11 +7,11 @@ import { useSession } from "next-auth/react";
 
 import { MatchedText } from "@/components/MatchedText";
 import { coverForTheme } from "@/lib/diary/constants";
-import { diaryListKeyAction } from "@/lib/diary/keys";
+import { diaryListKeyAction, diaryListStep } from "@/lib/diary/keys";
 import { compareDiaries } from "@/lib/diary/order";
 import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { diaryMatchPath } from "@/lib/diary/search";
-import { entryToShowByStep, formatDiaryDate } from "@/lib/diary/text";
+import { formatDiaryDate } from "@/lib/diary/text";
 
 type Diary = {
     _id: string;
@@ -129,13 +129,18 @@ const Diaries = ({ query = "", refetchTrigger = 0, paused = false }: { query?: s
             const active = document.activeElement instanceof Element
                 ? document.activeElement.closest<HTMLElement>("[data-diary-id]")
                 : null;
-            const next = entryToShowByStep(
-                list,
+            const step = diaryListStep(
+                list.map((diary) => diary._id),
                 active?.dataset.diaryId ?? null,
                 action === "next" ? "next" : "previous",
             );
-            if (!next) return;
-            const link = document.querySelector<HTMLAnchorElement>(`a[data-diary-id="${CSS.escape(next._id)}"]`);
+            if (step === "search") {
+                event.preventDefault();
+                document.getElementById("diary-search")?.focus();
+                return;
+            }
+            if (!step) return;
+            const link = document.querySelector<HTMLAnchorElement>(`a[data-diary-id="${CSS.escape(step)}"]`);
             if (!link) return;
             event.preventDefault();
             link.focus();

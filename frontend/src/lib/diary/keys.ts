@@ -14,6 +14,18 @@ export function searchShortcutLabel(platform: string): "⌘" | "ctrl" {
     return /Mac|iPhone|iPad|iPod/i.test(platform) ? "⌘" : "ctrl";
 }
 
+export function diaryListStep(
+    ids: readonly string[],
+    currentId: string | null,
+    direction: "next" | "previous",
+): string | "search" | null {
+    if (!ids.length) return null;
+    if (direction === "previous" && currentId === ids[0]) return "search";
+    const index = currentId ? ids.indexOf(currentId) : -1;
+    if (index < 0) return direction === "next" ? ids[0] : ids[ids.length - 1];
+    return ids[direction === "next" ? index + 1 : index - 1] ?? null;
+}
+
 export function diaryListKeyAction(event: {
     key: string;
     altKey: boolean;
