@@ -1410,6 +1410,36 @@ describe("search", () => {
         }), `Updated ${formatDiaryDate(created)}`);
     });
 
+    it("counts every note that matches a diary search", () => {
+        const newer = new Date(2026, 10, 15, 9, 30).toISOString();
+        const older = new Date(2026, 1, 2, 15, 0).toISOString();
+        const rain = { id: "rain", content: "<p>Quiet rain.</p>", plainText: "Quiet rain.", createdAt: newer, updatedAt: newer };
+        const garden = { id: "garden", content: "<p>Garden rain.</p>", plainText: "Garden rain.", createdAt: older, updatedAt: older };
+        const match = diaryListMatch({ title: "Window", description: "" }, [garden, rain], "rain");
+        assert.equal(match.entryId, "rain");
+        assert.equal(match.entryAt, newer);
+        assert.equal(match.count, 2);
+        assert.equal(diaryCardWhen({
+            query: "rain",
+            matchEntry: match.entryId,
+            matchAt: match.entryAt,
+            matchCount: match.count,
+            updatedAt: newer,
+            createdAt: newer,
+        }), `${formatDiaryDate(newer)} · 2 notes`);
+        const one = diaryListMatch({ title: "Window", description: "" }, [rain], "rain");
+        assert.equal(one.count, 1);
+        assert.equal(diaryCardWhen({
+            query: "rain",
+            matchEntry: one.entryId,
+            matchAt: one.entryAt,
+            matchCount: one.count,
+            updatedAt: newer,
+            createdAt: newer,
+        }), formatDiaryDate(newer));
+        assert.equal(diaryListMatch({ title: "Window", description: "" }, [rain, garden], "window").count, 0);
+    });
+
     it("keeps a diary list search in the address", () => {
         assert.equal(diaryListAddress("2026 Quiet"), "/diary?q=2026%20Quiet");
         assert.equal(diaryListAddress("  2026  Quiet  "), "/diary?q=2026%20Quiet");
