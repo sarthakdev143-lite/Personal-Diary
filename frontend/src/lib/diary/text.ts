@@ -209,7 +209,7 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         return piece === " " || piece === "\u00a0" || piece === "\t";
     };
     const word = (index: number) => /[\p{L}\p{N}]/u.test(text[index] ?? "");
-    const joiner = (index: number) => text[index] === "&" || text[index] === "/" || text[index] === "@" || text[index] === "+" || text[index] === "-" || text[index] === "\u2010" || text[index] === "\u2011" || text[index] === "\u2013" || text[index] === "\u2014";
+    const joiner = (index: number) => text[index] === "&" || text[index] === "/" || text[index] === "@" || text[index] === "+" || text[index] === "_" || text[index] === "-" || text[index] === "\u2010" || text[index] === "\u2011" || text[index] === "\u2013" || text[index] === "\u2014";
     const sticky = (index: number) => {
         const piece = text[index];
         return piece === "," || piece === ";" || piece === "!" || piece === "?" || piece === "\u2026";
@@ -348,6 +348,9 @@ export function wordDeleteGap(text: string, start: number, end: number): "before
     if (widened.end > end && word(text[widened.end])) return "after";
     if (widened.start < start && word(text[widened.start - 1])) return "before";
     if (widened.end > end && word(text[widened.start - 1]) && (widened.end >= text.length || space(text[widened.end]))) return "before";
+    const joiner = (piece: string | undefined) => piece === "&" || piece === "/" || piece === "@" || piece === "+" || piece === "_" || piece === "-" || piece === "\u2010" || piece === "\u2011" || piece === "\u2013" || piece === "\u2014";
+    if (joiner(text[start]) && word(text[start - 1]) && (end >= text.length || space(text[end]) || word(text[end]))) return "before";
+    if (joiner(text[end - 1]) && word(text[end]) && (start === 0 || space(text[start - 1]) || word(text[start - 1]))) return "after";
     const selected = text.slice(start, end);
     if (!/[\u00a0\t ]/.test(selected)) return "none";
     const removedLeading = space(text[start]);
