@@ -865,6 +865,36 @@ export function quoteCoveredBlocks(input: { covered: number; consecutive: boolea
     return "browser";
 }
 
+export type QuoteListPlan =
+    | { action: "wrap" }
+    | { action: "split"; quoted: { start: number | null }; after: { start: number | null } | null };
+
+export function quoteListPlan(input: {
+    ordered: boolean;
+    start?: string | null;
+    values?: Array<string | null | undefined>;
+    count: number;
+    from: number;
+    to: number;
+}): QuoteListPlan | null {
+    if (!Number.isInteger(input.count) || input.count < 1) return null;
+    if (!Number.isInteger(input.from) || !Number.isInteger(input.to)) return null;
+    if (input.from < 0 || input.to < input.from || input.to >= input.count) return null;
+    if (input.from === 0 && input.to === input.count - 1) return { action: "wrap" };
+    const ownNumber = (index: number) => input.ordered && wholeNumber(input.values?.[index]) !== null;
+    const keptStart = (index: number) => {
+        if (!input.ordered || ownNumber(index)) return null;
+        const number = orderedItemNumber({ start: input.start, values: input.values, index });
+        return number === 1 ? null : number;
+    };
+    const hasAfter = input.to + 1 < input.count;
+    return {
+        action: "split",
+        quoted: { start: keptStart(input.from) },
+        after: hasAfter ? { start: keptStart(input.to + 1) } : null,
+    };
+}
+
 export type QuoteToggle = "leave" | "quote";
 
 export function quoteToggle(input: { inside: boolean }): QuoteToggle {
