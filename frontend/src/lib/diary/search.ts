@@ -1,5 +1,5 @@
 import { SEARCH_MAX } from "./constants";
-import { entryInMonth, entrySearchParts, entryToOpenFromLink, entryToShowOnOpen, entryWritingText, formatDiaryDate, formatEntryLong } from "./text";
+import { entryInMonth, entrySearchParts, entryToOpenFromLink, entryToShowOnOpen, entryWasRevised, entryWritingText, formatDiaryDate, formatEntryLong, formatEntryTime } from "./text";
 
 type RegexQuery = { $regex: string; $options: "i" };
 
@@ -141,6 +141,13 @@ function descriptionSnippet(description: string, query: string): string | null {
     const opening = description.length <= CARD_OPENING ? description : description.slice(0, CARD_OPENING);
     if (foldedIncludes(opening, query)) return null;
     return matchWindow(description, query);
+}
+
+export function entryCardClock(createdAt: string, updatedAt: string): { time: string; edited: boolean } {
+    return {
+        time: formatEntryTime(createdAt),
+        edited: entryWasRevised(createdAt, updatedAt),
+    };
 }
 
 export function entryCardPreview(entry: {
