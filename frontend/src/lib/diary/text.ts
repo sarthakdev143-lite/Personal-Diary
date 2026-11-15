@@ -209,7 +209,7 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         return piece === " " || piece === "\u00a0" || piece === "\t";
     };
     const word = (index: number) => /[\p{L}\p{N}]/u.test(text[index] ?? "");
-    const joiner = (index: number) => text[index] === "&" || text[index] === "/" || text[index] === "-" || text[index] === "\u2010" || text[index] === "\u2011" || text[index] === "\u2013" || text[index] === "\u2014";
+    const joiner = (index: number) => text[index] === "&" || text[index] === "/" || text[index] === "@" || text[index] === "+" || text[index] === "-" || text[index] === "\u2010" || text[index] === "\u2011" || text[index] === "\u2013" || text[index] === "\u2014";
     const sticky = (index: number) => {
         const piece = text[index];
         return piece === "," || piece === ";" || piece === "!" || piece === "?" || piece === "\u2026";
