@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureForwardDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureForwardDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, pictureCutText, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -1609,10 +1609,14 @@ function selectCodeOffsets(code: HTMLElement, start: number, end: number) {
 
 const LINE_BLOCK = /^(P|H1|H2|H3|BLOCKQUOTE|LI)$/;
 
-function cutWordsBesidePicture(range: Range): string {
+function cutWordsBesidePicture(range: Range, names: "drop" | "keep" = "keep"): string {
     const holder = document.createElement("div");
     holder.appendChild(range.cloneContents());
     holder.querySelectorAll("figure").forEach((figure) => {
+        if (names === "drop") {
+            figure.remove();
+            return;
+        }
         const caption = figure.querySelector("figcaption");
         const words = caption ? [...caption.childNodes] : [];
         const following = figure.nextSibling;
@@ -1622,6 +1626,13 @@ function cutWordsBesidePicture(range: Range): string {
     });
     holder.querySelectorAll("img").forEach((image) => image.remove());
     return holder.innerHTML;
+}
+
+function cutPlainBesidePicture(range: Range): string {
+    const holder = document.createElement("div");
+    holder.appendChild(range.cloneContents());
+    holder.querySelectorAll("figure").forEach((figure) => figure.replaceWith(document.createTextNode("\n")));
+    return (holder.textContent ?? "").replace(/^\n+|\n+$/g, "");
 }
 
 function cutSelectionHtml(range: Range): string {
@@ -6281,10 +6292,32 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const crossed = selectionCrossesPicture(editor);
         if (pictureCutWords({ collapsed: selection.isCollapsed, touchesPicture: crossed.touchesPicture, outsideSelected: crossed.outsideSelected }) === "keep") {
             event.preventDefault();
-            event.clipboardData.setData("text/plain", selection.toString());
-            event.clipboardData.setData("text/html", cutWordsBesidePicture(range));
+            const figures = [...editor.querySelectorAll("figure")].filter((figure): figure is HTMLElement => {
+                try {
+                    return range.intersectsNode(figure);
+                } catch {
+                    return false;
+                }
+            });
+            const outside = figures.length > 0 && figures.every((figure) => {
+                const figureRange = document.createRange();
+                figureRange.selectNode(figure);
+                return pictureCutText({
+                    startsOutside: range.compareBoundaryPoints(Range.START_TO_START, figureRange) <= 0,
+                    endsOutside: range.compareBoundaryPoints(Range.END_TO_END, figureRange) >= 0,
+                }) === "outside";
+            });
+            event.clipboardData.setData("text/plain", outside ? cutPlainBesidePicture(range) : selection.toString());
+            event.clipboardData.setData("text/html", cutWordsBesidePicture(range, outside ? "drop" : "keep"));
             const mark = selectionUndo(editor);
             separatePictureSelection(editor, selection, false);
+            const kept = editor.querySelector("figure");
+            if (outside && kept instanceof HTMLElement && selection.rangeCount && !selection.isCollapsed) {
+                const paragraph = document.createElement("p");
+                paragraph.appendChild(document.createElement("br"));
+                kept.after(paragraph);
+                placeCaretAtStart(paragraph);
+            }
             keepReplacedSelection(mark);
             setHtmlContent(editor.innerHTML);
             return;
