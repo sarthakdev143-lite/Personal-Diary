@@ -870,6 +870,16 @@ export function quoteTouchedBlocks(input: { touched: number; consecutive: boolea
     return "browser";
 }
 
+export type QuoteListPortion = "list" | "part" | "skip";
+
+export function quoteListPortion(input: { count: number; from: number; to: number }): QuoteListPortion {
+    if (!Number.isInteger(input.count) || input.count < 1) return "skip";
+    if (!Number.isInteger(input.from) || !Number.isInteger(input.to)) return "skip";
+    if (input.from < 0 || input.to < input.from || input.to >= input.count) return "skip";
+    if (input.from === 0 && input.to === input.count - 1) return "list";
+    return "part";
+}
+
 export type QuoteListPlan =
     | { action: "wrap" }
     | { action: "split"; quoted: { start: number | null }; after: { start: number | null } | null };
