@@ -147,26 +147,25 @@ export type TextRun = { text: string; breakBefore: boolean };
 export type TextRunSlice = { run: number; start: number; end: number };
 
 export function textRunHits(runs: readonly TextRun[], rawQuery: string): TextRunSlice[][] {
-    const query = normalizeSearchQuery(rawQuery);
-    if (!query) return [];
-    const segments: { run: number; text: string }[][] = [];
+    const pieces: string[] = [];
+    const runForPiece: number[] = [];
     runs.forEach((run, index) => {
-        const piece = { run: index, text: run.text };
-        if (run.breakBefore || segments.length === 0) segments.push([piece]);
-        else segments[segments.length - 1].push(piece);
-    });
-    const matches: TextRunSlice[][] = [];
-    for (const segment of segments) {
-        const hits = textPieceHits(segment.map((piece) => piece.text), query);
-        for (const hit of hits) {
-            matches.push(hit.map((slice) => ({
-                run: segment[slice.piece].run,
-                start: slice.start,
-                end: slice.end,
-            })));
+        const previous = pieces[pieces.length - 1];
+        if (run.breakBefore && previous !== undefined && !previous.endsWith(" ")) {
+            pieces.push(" ");
+            runForPiece.push(-1);
         }
-    }
-    return matches;
+        pieces.push(run.text);
+        runForPiece.push(index);
+    });
+    return textPieceHits(pieces, rawQuery).flatMap((hit) => {
+        const slices = hit.flatMap((slice) => {
+            const run = runForPiece[slice.piece];
+            if (run === undefined || run < 0) return [];
+            return [{ run, start: slice.start, end: slice.end }];
+        });
+        return slices.length ? [slices] : [];
+    });
 }
 
 export function entryMatchCount(text: string, rawQuery: string): number {
