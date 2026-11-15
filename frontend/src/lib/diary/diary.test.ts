@@ -1329,6 +1329,26 @@ describe("search", () => {
         assert.equal(miss.snippet, null);
     });
 
+    it("shows the date and the first line when a search crosses them", () => {
+        const created = new Date(2026, 10, 15, 9, 30).toISOString();
+        const entry = {
+            id: "rain",
+            content: "<p>Quiet rain.</p>",
+            plainText: "Quiet rain.",
+            createdAt: created,
+            updatedAt: created,
+        };
+        const match = diaryListMatch({ title: "Window", description: "" }, [entry], "2026 Quiet");
+        assert.equal(match.matched, true);
+        assert.equal(match.entryId, "rain");
+        assert.match(match.snippet ?? "", /2026 Quiet/);
+        assert.deepEqual(
+            matchedTextParts(match.snippet ?? "", "2026 Quiet").filter((part) => part.match).map((part) => part.text),
+            ["2026 Quiet"],
+        );
+        assert.equal(entryCardPreview(entry, "2026 Quiet"), "Quiet rain.");
+    });
+
     it("opens the note that made a diary match", () => {
         const created = new Date(2026, 10, 14, 9, 30).toISOString();
         const older = new Date(2026, 1, 2, 15, 0).toISOString();

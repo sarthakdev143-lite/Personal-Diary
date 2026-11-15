@@ -67,7 +67,9 @@ type ListedEntry = {
 function matchingPiece(entry: ListedEntry, query: string): string {
     const writing = entry.plainText?.trim() || entryWritingText(entry.content);
     const needle = query.toLowerCase();
-    const piece = entrySearchParts(entry).find((item) => item.toLowerCase().includes(needle)) ?? writing;
+    const date = formatEntryLong(entry.createdAt);
+    const page = date && date !== "—" && writing ? `${date} ${writing}` : writing;
+    const piece = entrySearchParts(entry).find((item) => item.toLowerCase().includes(needle)) ?? page;
     if (piece.length <= 90) return piece;
     const index = piece.toLowerCase().indexOf(needle);
     const start = Math.max(0, index - 28);
