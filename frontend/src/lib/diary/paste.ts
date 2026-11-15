@@ -67,6 +67,15 @@ export function pictureAheadDelete(input: {
     return input.ahead === "space" ? "clear" : "remove";
 }
 
+export type PictureRemovalJoin = "space" | "tight";
+
+export function pictureRemovalJoin(input: { before: string; after: string }): PictureRemovalJoin {
+    const before = input.before.replace(/[\u00a0\s]+$/g, "");
+    const after = input.after.replace(/^[\u00a0\s]+/g, "");
+    if (!before || !after) return "tight";
+    return "space";
+}
+
 export type PictureInlineEnter = "split" | "pass";
 
 export function pictureInlineEnter(input: {

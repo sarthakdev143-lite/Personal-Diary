@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureRemovalJoin, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -403,7 +403,12 @@ function pictureAheadOfCaret(editor: HTMLElement, selection: Selection): { figur
 }
 
 function removePictureAhead(figure: HTMLElement, editor: HTMLElement) {
+    const previous = figure.previousSibling;
     const next = figure.nextSibling;
+    if (previous instanceof Text && next instanceof Text && pictureRemovalJoin({ before: previous.data, after: next.data }) === "space") {
+        previous.data = `${previous.data.replace(/[\u00a0\s]+$/g, "")} `;
+        next.data = next.data.replace(/^[\u00a0\s]+/g, "");
+    }
     const parent = figure.parentElement;
     figure.remove();
     const selection = window.getSelection();
