@@ -1257,6 +1257,13 @@ export function pictureCodeList(input: { inList: boolean; inCode: boolean; hasPi
     return "skip";
 }
 
+export type PictureTableList = "beside" | "skip";
+
+export function pictureTableList(input: { inList: boolean; inTable: boolean; hasPicture: boolean }): PictureTableList {
+    if (input.inList && input.inTable && input.hasPicture) return "beside";
+    return "skip";
+}
+
 export function pictureListReach(input: { inList: boolean; outsideList: boolean; hasPicture: boolean }): PictureListReach {
     if (input.inList && input.outsideList && input.hasPicture) return "lines";
     return "skip";
