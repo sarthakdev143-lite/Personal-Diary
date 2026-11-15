@@ -192,7 +192,8 @@ public final class DiarySearch {
         int index = folded.text().toLowerCase(Locale.ROOT).indexOf(query.toLowerCase(Locale.ROOT));
         int origin = index >= 0 ? folded.starts()[index] : text.toLowerCase(Locale.ROOT).indexOf(query.toLowerCase(Locale.ROOT));
         int matchLength = index >= 0 ? folded.ends()[index + query.length() - 1] - origin : query.length();
-        int start = Math.max(0, origin - 28);
+        int lead = Math.min(28, Math.max(0, 48 - matchLength));
+        int start = Math.max(0, origin - lead);
         int end = Math.min(text.length(), Math.max(origin, 0) + matchLength + 36);
         String window = text.substring(start, end).trim();
         if (start > 0) {
