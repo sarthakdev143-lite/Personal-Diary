@@ -1321,8 +1321,9 @@ export function entryToShowOnOpen<T extends { createdAt: string }>(entries: read
 export function entryToOpenWhenHidden<T extends { _id: string; createdAt: string }>(
     visible: readonly T[],
     currentId: string | null,
+    mode: "compose" | "view" | "edit" = "view",
 ): T | null {
-    if (!visible.length) return null;
+    if (mode !== "view" || !visible.length) return null;
     if (currentId && visible.some((entry) => entry._id === currentId)) return null;
     return entryToShowOnOpen(visible);
 }

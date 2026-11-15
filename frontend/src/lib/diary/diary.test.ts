@@ -1993,6 +1993,9 @@ describe("entry date", () => {
         assert.equal(entryToOpenWhenHidden([february, olderFebruary], "rain")?._id, "garden");
         assert.equal(entryToOpenWhenHidden([], "rain"), null);
         assert.equal(entryToOpenWhenHidden([february, olderFebruary], null)?._id, "garden");
+        assert.equal(entryToOpenWhenHidden([february, olderFebruary], "rain", "edit"), null);
+        assert.equal(entryToOpenWhenHidden([february, olderFebruary], null, "compose"), null);
+        assert.equal(entryToOpenWhenHidden([february, olderFebruary], "rain", "view")?._id, "garden");
     });
 
     it("opens a match when find hides the open entry and leaves a new entry alone", () => {
