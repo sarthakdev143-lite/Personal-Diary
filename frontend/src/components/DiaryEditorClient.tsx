@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteToggle, italicInQuote, typedQuoteUndoCaret, quoteItalicKey, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteToggle, italicInQuote, typedQuoteUndoCaret, quoteItalicKey, styleStartType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -1201,6 +1201,30 @@ function insertPlainCharacter(range: Range, text: string) {
     placeCaretAt(written, text.length);
 }
 
+function insertStyleStart(style: HTMLElement, range: Range, text: string) {
+    const node = range.startContainer;
+    if (node instanceof Text && style.contains(node)) {
+        node.insertData(0, text);
+        placeCaretAt(node, text.length);
+        return;
+    }
+    const written = document.createTextNode(text);
+    style.prepend(written);
+    placeCaretAt(written, text.length);
+}
+
+function enterStyleAtCaret() {
+    const selection = window.getSelection();
+    if (!selection?.rangeCount || !selection.isCollapsed) return;
+    const node = selection.anchorNode;
+    if (!(node instanceof Text) || selection.anchorOffset !== node.data.length) return;
+    const next = node.nextSibling;
+    if (!(next instanceof HTMLElement) || !/^(B|STRONG|I|EM|U|S|STRIKE|DEL|CODE)$/.test(next.tagName) || next.closest("pre")) return;
+    const text = next.firstChild;
+    if (text instanceof Text) placeCaretAt(text, 0);
+    else placeCaretAtStart(next);
+}
+
 function edgeText(element: HTMLElement, edge: "start" | "end"): Text | null {
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
     let node = walker.nextNode();
@@ -2349,7 +2373,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const imageRange = useRef<Range | null>(null);
     const pictureRemoval = useRef<{ before: string; after: string } | null>(null);
     const headingSplit = useRef<{ before: string; after: string; tag: string; text: string; offset: number } | null>(null);
-    const blankLine = useRef<{ before: string; after: string; path?: number[]; caret?: number; breakIndex?: number; breakSide?: "before" | "after"; sticky?: boolean; typed?: string; typedCaret?: number; resume?: "plain" } | null>(null);
+    const blankLine = useRef<{ before: string; after: string; path?: number[]; caret?: number; breakIndex?: number; breakSide?: "before" | "after"; sticky?: boolean; typed?: string; typedCaret?: number; resume?: "plain"; enterStyle?: boolean } | null>(null);
     const editingForward = useRef(true);
     const selectionTyping = useRef(false);
     const selectionTypeStart = useRef<number | null>(null);
@@ -2376,8 +2400,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         sticky?: boolean;
         typedCaret?: number;
         resume?: "plain";
+        enterStyle?: boolean;
     } | null>(null);
-    const keepBlank = (page: { before: string; after: string; path?: number[]; caret?: number; breakIndex?: number; breakSide?: "before" | "after"; sticky?: boolean; resume?: "plain" }) => {
+    const keepBlank = (page: { before: string; after: string; path?: number[]; caret?: number; breakIndex?: number; breakSide?: "before" | "after"; sticky?: boolean; resume?: "plain"; enterStyle?: boolean }) => {
         blankLine.current = page;
         redoPage.current = null;
         selectionTyping.current = false;
@@ -3766,6 +3791,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         sticky?: boolean;
         typedCaret?: number;
         resume?: "plain";
+        enterStyle?: boolean;
     }) => {
         const mark = editorRef.current ? caretMark(editorRef.current) : null;
         redoPage.current = { ...page, caretPath: mark?.path, caretOffset: mark?.offset };
@@ -4517,7 +4543,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             if (decision === "clear") blankLine.current = null;
             return false;
         }
-        holdRedo({ undone: saved.before, redone: typedRedo({ redone: saved.after, typed: saved.typed, undone: saved.before }), kind: "blank", path: saved.path, undoCaret: saved.caret, breakIndex: saved.breakIndex, breakSide: saved.breakSide, sticky: saved.sticky, typedCaret: saved.typed ? saved.typedCaret : undefined, resume: saved.resume });
+        holdRedo({ undone: saved.before, redone: typedRedo({ redone: saved.after, typed: saved.typed, undone: saved.before }), kind: "blank", path: saved.path, undoCaret: saved.caret, breakIndex: saved.breakIndex, breakSide: saved.breakSide, sticky: saved.sticky, typedCaret: saved.typed ? saved.typedCaret : undefined, resume: saved.resume, enterStyle: saved.enterStyle });
         blankLine.current = null;
         selectionTyping.current = false;
         selectionTypeStart.current = null;
@@ -4539,6 +4565,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
         if (line instanceof HTMLElement && caret !== null) placeCaretAtTextOffset(line, caret);
         else if (line instanceof HTMLElement) placeCaretAtStart(line);
+        if (saved.enterStyle) enterStyleAtCaret();
         resumePlain();
         return true;
     };
@@ -4566,7 +4593,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         setHtmlContent(saved.redone);
         editor.focus();
         if (saved.kind === "blank") {
-            blankLine.current = { before: saved.undone, after: saved.redone, path: saved.path, caret: saved.undoCaret, breakIndex: saved.breakIndex, breakSide: saved.breakSide, sticky: saved.sticky, resume: saved.resume };
+            blankLine.current = { before: saved.undone, after: saved.redone, path: saved.path, caret: saved.undoCaret, breakIndex: saved.breakIndex, breakSide: saved.breakSide, sticky: saved.sticky, resume: saved.resume, enterStyle: saved.enterStyle };
             if (saved.resume === "plain") {
                 quoteItalic.current = null;
                 quoteItalicHold.current = false;
@@ -4854,10 +4881,34 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         keepBlank({ before, after: editor.innerHTML, path, ...(caret !== null ? { caret } : {}), ...(pending === "plain" ? { resume: "plain" as const } : {}) });
         setHtmlContent(editor.innerHTML);
     };
+    const applyStyleStart = (event: InputEvent) => {
+        if (event.inputType !== "insertText") return;
+        const typed = event.data ?? "";
+        if (!typed || /^\s+$/.test(typed)) return;
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection?.rangeCount || !selection.isCollapsed || !selection.anchorNode || !editor.contains(selection.anchorNode)) return;
+        const range = selection.getRangeAt(0);
+        const host = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+        const style = host?.closest("b, strong, i, em, u, s, strike, del, code");
+        if (!(style instanceof HTMLElement) || !editor.contains(style) || style.closest("pre")) return;
+        const offset = textOffsetWithin(style, range.startContainer, range.startOffset);
+        if (styleStartType({ inStyle: true, collapsed: true, atStart: offset <= 0 }) !== "start") return;
+        event.preventDefault();
+        const before = editor.innerHTML;
+        const block = lineBlock(range.startContainer);
+        const path = block instanceof HTMLElement ? childPath(editor, block) : undefined;
+        const caret = block instanceof HTMLElement ? styleUndoCaret(textOffsetWithin(block, range.startContainer, range.startOffset)) : null;
+        insertStyleStart(style, range, typed);
+        keepBlank({ before, after: editor.innerHTML, path, ...(caret !== null ? { caret } : {}), enterStyle: true });
+        setHtmlContent(editor.innerHTML);
+    };
     const applyWordGapRef = useRef(applyWordGap);
     applyWordGapRef.current = applyWordGap;
     const applyQuoteItalicTypeRef = useRef(applyQuoteItalicType);
     applyQuoteItalicTypeRef.current = applyQuoteItalicType;
+    const applyStyleStartRef = useRef(applyStyleStart);
+    applyStyleStartRef.current = applyStyleStart;
 
     const keepSelectionDelete = (e: React.KeyboardEvent) => {
         const editor = editorRef.current;
@@ -4962,6 +5013,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             if (event.defaultPrevented) return;
             if (event.inputType === "insertText") applyQuoteItalicTypeRef.current(event);
             else if (quoteItalic.current) quoteItalic.current = null;
+            if (event.defaultPrevented) return;
+            if (event.inputType === "insertText") applyStyleStartRef.current(event);
             if (event.defaultPrevented) return;
             keepWordDeleteRef.current({
                 nativeEvent: event,

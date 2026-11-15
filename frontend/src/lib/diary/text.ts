@@ -902,6 +902,13 @@ export function quoteItalicKey(input: {
     return "clear";
 }
 
+export type StyleStart = "start" | "pass";
+
+export function styleStartType(input: { inStyle: boolean; collapsed: boolean; atStart: boolean }): StyleStart {
+    if (input.inStyle && input.collapsed && input.atStart) return "start";
+    return "pass";
+}
+
 export type ListCommand = "lift" | "pass";
 
 export function listCommand(command: string): ListCommand {
