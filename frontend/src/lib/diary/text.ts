@@ -1290,6 +1290,13 @@ export function pictureLineItalic(input: { inQuote: boolean; covered: boolean })
     return input.covered ? "clear" : "mark";
 }
 
+export type PictureLinkField = "add" | "edit" | "pass";
+
+export function pictureLinkField(input: { crossesPicture: boolean; covered: boolean }): PictureLinkField {
+    if (!input.crossesPicture) return "pass";
+    return input.covered ? "edit" : "add";
+}
+
 export function pictureStyle(input: { command?: string; outsideSelected: boolean }): PictureStyle {
     if (!input.outsideSelected) return "pass";
     if (
