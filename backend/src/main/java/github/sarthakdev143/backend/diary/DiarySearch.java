@@ -172,10 +172,19 @@ public final class DiarySearch {
     }
 
     private static String textWindow(String text, String query) {
-        if (text.length() <= 90) {
+        if (text.length() <= 90 && matchStart(text, query) < 48) {
             return text;
         }
         return matchWindow(text, query);
+    }
+
+    private static int matchStart(String text, String query) {
+        Fold folded = fold(text);
+        int index = folded.text().toLowerCase(Locale.ROOT).indexOf(query.toLowerCase(Locale.ROOT));
+        if (index < 0) {
+            return 0;
+        }
+        return folded.starts()[index];
     }
 
     private static String matchWindow(String text, String query) {

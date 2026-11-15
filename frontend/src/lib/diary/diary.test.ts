@@ -1433,6 +1433,25 @@ describe("search", () => {
         assert.equal(titleCardText(title, "   "), title);
     });
 
+    it("shows a short note word the diary card would cut off", () => {
+        const created = new Date(2026, 10, 14, 15).toISOString();
+        const writing = "The morning stayed ordinary and quiet beside the old glass before lantern.";
+        const entry = {
+            id: "rain",
+            content: `<p>${writing}</p>`,
+            plainText: writing,
+            createdAt: created,
+            updatedAt: created,
+        };
+        const match = diaryListMatch({ title: "Window notes", description: "" }, [entry], "lantern");
+        assert.equal(match.matched, true);
+        assert.equal(match.entryId, "rain");
+        const shown = (match.snippet ?? "").replace(/^…/, "");
+        assert.match(shown, /lantern/i);
+        assert.ok(shown.toLowerCase().indexOf("lantern") <= 32);
+        assert.equal(entryCardPreview(entry, "lantern"), writing);
+    });
+
     it("shows the date and the first line when a search crosses them", () => {
         const created = new Date(2026, 10, 15, 9, 30).toISOString();
         const entry = {
