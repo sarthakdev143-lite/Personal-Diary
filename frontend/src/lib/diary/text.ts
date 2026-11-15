@@ -1131,6 +1131,24 @@ export function listLeaveKey(input: {
     return input.nested ? "outdent" : "leave";
 }
 
+export type NestedListJoin = "join" | "pass";
+
+export function nestedListJoinKey(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    atNestedStart: boolean;
+    atParentEnd: boolean;
+}): NestedListJoin {
+    if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey || !input.collapsed) return "pass";
+    if (input.key === "Backspace" && input.atNestedStart) return "join";
+    if (input.key === "Delete" && input.atParentEnd) return "join";
+    return "pass";
+}
+
 export function orderedItemNumber(input: { start?: string | null; values?: Array<string | null | undefined>; index: number }): number {
     const start = wholeNumber(input.start);
     let number = start ?? 1;
