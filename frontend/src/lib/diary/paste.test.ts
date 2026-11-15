@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalJoin, pictureRemovalSpace, pictureRemovalHost, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalJoin, pictureRemovalSpace, pictureRemovalHost, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameContinue, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -272,6 +272,13 @@ describe("entry paste", () => {
         assert.equal(pictureNameEnter({ key: "Enter", ctrlKey: true, collapsed: false, ...named }), "pass");
         assert.equal(pictureNameEnter({ key: "Enter", collapsed: false, inName: false }), "pass");
         assert.equal(pictureNameEnter({ key: "Delete", collapsed: false, ...named }), "pass");
+    });
+
+    it("keeps the writing after a picture on the next line when the name continues", () => {
+        assert.equal(pictureNameContinue({ next: "text" }), "apart");
+        assert.equal(pictureNameContinue({ next: "none" }), "paragraph");
+        assert.equal(pictureNameContinue({ next: "block" }), "paragraph");
+        assert.equal(pictureNameContinue({ next: "picture" }), "break");
     });
 
     it("deletes a word in a picture name without the words beside the picture", () => {

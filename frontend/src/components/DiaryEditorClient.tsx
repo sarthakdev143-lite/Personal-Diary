@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameContinue, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -5107,9 +5107,43 @@ function placeNameContinuation(figure: HTMLElement, block: HTMLElement) {
         return;
     }
     if (line === "break") {
+        const onlyBreak = block.childNodes.length === 1 && block.firstChild instanceof HTMLBRElement;
+        let neighbor: ChildNode | null = figure.nextSibling;
+        while (neighbor instanceof Text && !neighbor.data.replace(/[\u00a0\s\u200b]/g, "")) neighbor = neighbor.nextSibling;
+        const next = neighbor instanceof Text
+            ? "text"
+            : neighbor instanceof HTMLElement && neighbor.tagName === "FIGURE"
+                ? "picture"
+                : neighbor instanceof HTMLElement && neighbor.tagName !== "BR"
+                    ? "block"
+                    : "none";
+        if (onlyBreak) {
+            const continued = pictureNameContinue({ next });
+            if (continued === "apart" && neighbor instanceof Text) {
+                const opening = document.createElement("br");
+                const closing = document.createElement("br");
+                neighbor.before(opening, closing);
+                const parent = opening.parentNode;
+                const selection = window.getSelection();
+                if (parent && selection) {
+                    const caret = document.createRange();
+                    caret.setStart(parent, [...parent.childNodes].indexOf(closing));
+                    caret.collapse(true);
+                    selection.removeAllRanges();
+                    selection.addRange(caret);
+                }
+                return;
+            }
+            if (continued === "paragraph") {
+                const paragraph = document.createElement("p");
+                paragraph.appendChild(document.createElement("br"));
+                figure.after(paragraph);
+                placeCaretAtStart(paragraph);
+                return;
+            }
+        }
         const br = document.createElement("br");
         figure.after(br);
-        const onlyBreak = block.childNodes.length === 1 && block.firstChild instanceof HTMLBRElement;
         if (!onlyBreak) {
             let anchor: ChildNode = br;
             while (block.firstChild) {

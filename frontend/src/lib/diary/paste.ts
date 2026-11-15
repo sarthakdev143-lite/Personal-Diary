@@ -416,6 +416,14 @@ export function pictureNameEnter(input: {
     return input.collapsed ? "continue" : "replace";
 }
 
+export type PictureNameContinue = "paragraph" | "apart" | "break";
+
+export function pictureNameContinue(input: { next: "block" | "text" | "picture" | "none" }): PictureNameContinue {
+    if (input.next === "block" || input.next === "none") return "paragraph";
+    if (input.next === "text") return "apart";
+    return "break";
+}
+
 export function captionBreakText(before: string, after: string): { name: string; next: string } {
     const cut = boundarySpaceCut(before, after);
     if (!cut) return { name: before, next: after };
