@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { diaryListKeyAction, diarySearchShortcut, searchShortcutLabel } from "./keys";
+import { diaryListKeyAction, diaryListStep, diarySearchShortcut, searchShortcutLabel } from "./keys";
 
 const plain = { key: "i", ctrlKey: false, metaKey: false, altKey: false, shiftKey: false };
 
@@ -58,5 +58,15 @@ describe("diary search shortcut", () => {
         assert.equal(diaryListKeyAction({ ...plain, key: "Enter", searchFocused: true, themeOpen: true }), null);
         assert.equal(diaryListKeyAction({ ...plain, key: "Enter", searchFocused: true, shiftKey: true }), null);
         assert.equal(diaryListKeyAction({ ...plain, key: "Enter", searchFocused: true, ctrlKey: true }), null);
+    });
+
+    it("returns to the search from the first diary", () => {
+        assert.equal(diaryListStep(["harbor", "garden"], "harbor", "previous"), "search");
+        assert.equal(diaryListStep(["harbor", "garden"], "garden", "previous"), "harbor");
+        assert.equal(diaryListStep(["harbor", "garden"], "harbor", "next"), "garden");
+        assert.equal(diaryListStep(["harbor", "garden"], "garden", "next"), null);
+        assert.equal(diaryListStep(["harbor", "garden"], null, "next"), "harbor");
+        assert.equal(diaryListStep(["harbor", "garden"], null, "previous"), "garden");
+        assert.equal(diaryListStep([], "harbor", "previous"), null);
     });
 });
