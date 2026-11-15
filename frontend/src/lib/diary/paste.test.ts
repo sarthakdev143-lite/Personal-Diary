@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalJoin, pictureRemovalSpace, pictureRemovalHost, pictureInlineEnter, pictureEdgeOffset, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalJoin, pictureRemovalSpace, pictureRemovalHost, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -465,6 +465,12 @@ describe("entry paste", () => {
         assert.equal(pictureEdgeOffset({ textOffset: null, atStart: true }), 0);
         assert.equal(pictureEdgeOffset({ textOffset: null, atStart: false }), null);
         assert.equal(pictureEdgeOffset({ textOffset: 4, atStart: false }), 4);
+        const block = { key: "Enter", collapsed: true, beforePicture: true, previous: "none" as const };
+        assert.equal(pictureBlockEnter(block), "line");
+        assert.equal(pictureBlockEnter({ ...block, previous: "empty" }), "into");
+        assert.equal(pictureBlockEnter({ ...block, previous: "writing" }), "line");
+        assert.equal(pictureBlockEnter({ ...block, beforePicture: false }), "pass");
+        assert.equal(pictureBlockEnter({ ...block, key: "Backspace" }), "pass");
         assert.equal(pictureInlineEnter({ key: "Enter", collapsed: true, besidePicture: false }), "pass");
         assert.equal(pictureInlineEnter({ key: "Enter", collapsed: false, besidePicture: true }), "pass");
         assert.equal(pictureInlineEnter({ key: "Enter", shiftKey: true, ...beside }), "pass");
