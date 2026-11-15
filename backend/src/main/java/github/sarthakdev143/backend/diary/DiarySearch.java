@@ -73,7 +73,7 @@ public final class DiarySearch {
             return new Hit(true, null, null, null, 0);
         }
         List<Note> hits = notes.stream()
-                .filter(note -> contains(searchText(note, zone), query))
+                .filter(note -> noteMatches(note, query, zone))
                 .sorted(Comparator.comparing(Note::createdAt, Comparator.nullsFirst(Comparator.naturalOrder())).reversed())
                 .toList();
         if (!hits.isEmpty()) {
@@ -94,7 +94,41 @@ public final class DiarySearch {
         if (query.isEmpty()) {
             return true;
         }
-        return contains(searchText(note, zone), query);
+        return noteMatches(note, query, zone);
+    }
+
+    private static boolean noteMatches(Note note, String query, ZoneId zone) {
+        if (pieces(note, zone).stream().anyMatch(item -> contains(item, query))) {
+            return true;
+        }
+        String page = pageText(note, zone);
+        return !page.isBlank() && contains(page, query);
+    }
+
+    private static String pageText(Note note, ZoneId zone) {
+        String writing = writing(note);
+        String date = longDate(note.createdAt(), zone);
+        if (writing.isBlank() || date.isBlank() || "—".equals(date)) {
+            return "";
+        }
+        return date + " " + writing;
+    }
+
+    private static List<String> pieces(Note note, ZoneId zone) {
+        String clock = clock(note.createdAt(), zone);
+        String looseClock = clock.startsWith("0") ? clock.substring(1) : clock;
+        List<String> pieces = new ArrayList<>();
+        pieces.add(writing(note));
+        pieces.add(diaryDate(note.createdAt(), zone));
+        pieces.add(longDate(note.createdAt(), zone));
+        pieces.add(clock);
+        if (!looseClock.equals(clock)) {
+            pieces.add(looseClock);
+        }
+        if (revised(note)) {
+            pieces.add("edited");
+        }
+        return pieces.stream().filter(item -> item != null && !item.isBlank()).toList();
     }
 
     private record Fold(String text, int[] starts, int[] ends) {
@@ -145,23 +179,6 @@ public final class DiarySearch {
         return new Fold(chars.toString(), Arrays.copyOf(starts, count), Arrays.copyOf(ends, count));
     }
 
-    private static String searchText(Note note, ZoneId zone) {
-        String clock = clock(note.createdAt(), zone);
-        String looseClock = clock.startsWith("0") ? clock.substring(1) : clock;
-        StringBuilder text = new StringBuilder();
-        append(text, writing(note));
-        append(text, diaryDate(note.createdAt(), zone));
-        append(text, longDate(note.createdAt(), zone));
-        append(text, clock);
-        if (!looseClock.equals(clock)) {
-            append(text, looseClock);
-        }
-        if (revised(note)) {
-            append(text, "edited");
-        }
-        return text.toString();
-    }
-
     private static String descriptionSnippet(String description, String query) {
         // Two lines of a diary card fit about this many characters.
         String opening = description.length() <= 48 ? description : description.substring(0, 48);
@@ -206,32 +223,8 @@ public final class DiarySearch {
     }
 
     private static String snippet(Note note, String query, ZoneId zone) {
-        String writing = writing(note);
-        String clock = clock(note.createdAt(), zone);
-        String looseClock = clock.startsWith("0") ? clock.substring(1) : clock;
-        List<String> pieces = new ArrayList<>();
-        pieces.add(writing);
-        pieces.add(longDate(note.createdAt(), zone));
-        pieces.add(diaryDate(note.createdAt(), zone));
-        pieces.add(clock);
-        if (!looseClock.equals(clock)) {
-            pieces.add(looseClock);
-        }
-        if (revised(note)) {
-            pieces.add("edited");
-        }
-        String piece = pieces.stream().filter(item -> contains(item, query)).findFirst().orElse(searchText(note, zone));
+        String piece = pieces(note, zone).stream().filter(item -> contains(item, query)).findFirst().orElse(pageText(note, zone));
         return textWindow(piece, query);
-    }
-
-    private static void append(StringBuilder text, String piece) {
-        if (piece == null || piece.isBlank()) {
-            return;
-        }
-        if (!text.isEmpty()) {
-            text.append(' ');
-        }
-        text.append(piece);
     }
 
     private static String writing(Note note) {
