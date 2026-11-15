@@ -145,6 +145,23 @@ export function pictureEdgeOffset(input: { textOffset: number | null; atStart: b
     return input.atStart ? 0 : null;
 }
 
+export type PictureBlockEnter = "line" | "into" | "pass";
+
+export function pictureBlockEnter(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    beforePicture: boolean;
+    previous: "empty" | "writing" | "none";
+}): PictureBlockEnter {
+    if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.key !== "Enter" || !input.collapsed || !input.beforePicture) return "pass";
+    return input.previous === "empty" ? "into" : "line";
+}
+
 export type PictureInlineBackspace = "name" | "remove" | "pass";
 
 export function pictureInlineBackspace(input: {
