@@ -865,8 +865,15 @@ export function quoteCoveredBlocks(input: { covered: number; consecutive: boolea
     return "browser";
 }
 
-export function quoteTouchedBlocks(input: { touched: number; consecutive: boolean; crossesList: boolean }): QuoteBlocks {
-    if (input.crossesList && input.touched > 1 && input.consecutive) return "together";
+export type QuoteCoveredReach = "inside" | "beyond";
+
+export function quoteCoveredReach(input: { covered: number; touched: number }): QuoteCoveredReach {
+    if (Number.isInteger(input.covered) && Number.isInteger(input.touched) && input.touched <= input.covered) return "inside";
+    return "beyond";
+}
+
+export function quoteTouchedBlocks(input: { touched: number; consecutive: boolean; crossesList: boolean; crossesBreak?: boolean }): QuoteBlocks {
+    if ((input.crossesList || input.crossesBreak) && input.touched > 1 && input.consecutive) return "together";
     return "browser";
 }
 
@@ -1217,6 +1224,13 @@ export type ListHeadingAcross = "lines" | "pass";
 
 export function listHeadingAcross(input: { touchesList: boolean; across: boolean }): ListHeadingAcross {
     if (input.touchesList && input.across) return "lines";
+    return "pass";
+}
+
+export type BreakHeadingAcross = "lines" | "pass";
+
+export function breakHeadingAcross(input: { crossesBreak: boolean; across: boolean }): BreakHeadingAcross {
+    if (input.crossesBreak && input.across) return "lines";
     return "pass";
 }
 
