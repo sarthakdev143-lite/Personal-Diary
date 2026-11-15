@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -256,6 +256,12 @@ function typeAfterPicture(range: Range): HTMLElement | null {
     if (!range.collapsed || !(range.startContainer instanceof Element)) return null;
     const before = range.startContainer.childNodes[range.startOffset - 1];
     return before instanceof HTMLElement && before.tagName === "FIGURE" ? before : null;
+}
+
+function typeBeforePicture(range: Range): HTMLElement | null {
+    if (!range.collapsed || !(range.startContainer instanceof Element)) return null;
+    const next = range.startContainer.childNodes[range.startOffset];
+    return next instanceof HTMLElement && next.tagName === "FIGURE" ? next : null;
 }
 
 function separatePictureSelection(editor: HTMLElement, selection: Selection, typing: boolean): HTMLElement | null {
@@ -7186,29 +7192,26 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const editor = editorRef.current;
         const selection = window.getSelection();
         if (!editor || !selection?.rangeCount || mode === "view" || !selection.isCollapsed) return false;
-        const figure = typeAfterPicture(selection.getRangeAt(0));
+        const range = selection.getRangeAt(0);
+        const after = typeAfterPicture(range);
+        const figure = after ?? typeBeforePicture(range);
         if (!(figure instanceof HTMLElement) || !editor.contains(figure)) return false;
-        let sibling: ChildNode | null = figure.nextSibling;
-        while (sibling instanceof Text && !sibling.data.replace(/[\u00a0\s\u200b]/g, "")) sibling = sibling.nextSibling;
+        let sibling: ChildNode | null = after ? figure.nextSibling : figure.previousSibling;
+        while (sibling instanceof Text && !sibling.data.replace(/[\u00a0\s\u200b]/g, "")) sibling = after ? sibling.nextSibling : sibling.previousSibling;
         const empty = sibling instanceof HTMLElement && !(sibling.textContent ?? "").replace(/[\u00a0\s]/g, "");
-        const next = sibling instanceof Text ? "text" : sibling instanceof HTMLElement ? (empty ? "empty" : "element") : "none";
+        const side = sibling instanceof Text ? "text" : sibling instanceof HTMLElement ? (empty ? "empty" : "element") : "none";
         const parent = figure.parentElement;
-        const place = pictureLetterAfter({
-            key: e.key,
-            altKey: e.altKey,
-            ctrlKey: e.ctrlKey,
-            metaKey: e.metaKey,
-            collapsed: true,
-            afterPicture: true,
-            next,
-            line: pictureNameLine(parent?.tagName ?? "DIV"),
-        });
+        const line = pictureNameLine(parent?.tagName ?? "DIV");
+        const place = after
+            ? pictureLetterAfter({ key: e.key, altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, collapsed: true, afterPicture: true, next: side, line })
+            : pictureLetterBefore({ key: e.key, altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, collapsed: true, beforePicture: true, previous: side, line });
         if (place !== "beside" && place !== "line" && place !== "block") return false;
         e.preventDefault();
         const before = editor.innerHTML;
         if (place === "beside") {
             const text = document.createTextNode(e.key);
-            figure.after(text);
+            if (after) figure.after(text);
+            else figure.before(text);
             placeCaretInText(text, text.data.length);
         } else if (place === "block" && sibling instanceof HTMLElement) {
             sibling.replaceChildren(document.createTextNode(e.key));
@@ -7217,7 +7220,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             const paragraph = document.createElement("p");
             paragraph.appendChild(document.createTextNode(e.key));
             const host = parent instanceof HTMLElement && parent !== editor && /^(P|H1|H2|H3|LI|BLOCKQUOTE)$/.test(parent.tagName) ? parent : figure;
-            host.after(paragraph);
+            if (after) host.after(paragraph);
+            else host.before(paragraph);
             placeCaretAtEnd(paragraph);
         }
         keepBlank({ before, after: editor.innerHTML });

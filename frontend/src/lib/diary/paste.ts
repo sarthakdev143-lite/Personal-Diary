@@ -243,6 +243,21 @@ export function pictureLetterAfter(input: {
     return pictureTypedPlace({ next: input.next === "empty" ? "element" : "none", line: input.line });
 }
 
+export function pictureLetterBefore(input: {
+    key: string;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    beforePicture: boolean;
+    previous: "text" | "empty" | "element" | "none";
+    line: PictureNameLine;
+}): PictureTypedPlace | "pass" {
+    if (input.altKey || input.ctrlKey || input.metaKey || !input.collapsed || !input.beforePicture || input.key.length !== 1) return "pass";
+    if (input.previous === "text" || input.previous === "element") return "pass";
+    return pictureTypedPlace({ next: input.previous === "empty" ? "element" : "none", line: input.line });
+}
+
 export type PictureCutWords = "keep" | "pass";
 
 export function pictureCutWords(input: { collapsed: boolean; touchesPicture: boolean; outsideSelected: boolean }): PictureCutWords {
