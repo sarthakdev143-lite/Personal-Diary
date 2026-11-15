@@ -1277,6 +1277,19 @@ export function pictureStyleHold(input: { containsEdge: boolean }): PictureStyle
     return input.containsEdge ? "inside" : "aside";
 }
 
+export type PictureStyleSeat = "line" | "between";
+
+export function pictureStyleSeat(input: { inlineSibling: boolean }): PictureStyleSeat {
+    return input.inlineSibling ? "line" : "between";
+}
+
+export type PictureLineItalic = "mark" | "clear" | "browser";
+
+export function pictureLineItalic(input: { inQuote: boolean; covered: boolean }): PictureLineItalic {
+    if (!input.inQuote) return "browser";
+    return input.covered ? "clear" : "mark";
+}
+
 export function pictureStyle(input: { command?: string; outsideSelected: boolean }): PictureStyle {
     if (!input.outsideSelected) return "pass";
     if (

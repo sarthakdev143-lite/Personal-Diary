@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, listReachBlock, pictureCodeList, pictureTableList, pictureStyle, pictureStyleHold, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, listReachBlock, pictureCodeList, pictureTableList, pictureStyle, pictureStyleHold, pictureStyleSeat, pictureLineItalic, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
 type Entry = { _id: string; diaryId: string; content: string; plainText?: string; createdAt: string; updatedAt: string; };
@@ -1858,6 +1858,171 @@ const PICTURE_STYLE: Record<string, { tag: string; host: string }> = {
     strikeThrough: { tag: "s", host: "s, strike, del" },
 };
 
+const INLINE_PICTURE_SIBLING = new Set(["B", "STRONG", "I", "EM", "U", "S", "STRIKE", "DEL", "SPAN", "A", "CODE", "SUB", "SUP", "MARK"]);
+
+let pictureStyleDirect = false;
+
+function inlinePictureSibling(figure: HTMLElement): boolean {
+    return [...(figure.parentNode?.childNodes ?? [])].some((child) => {
+        if (child === figure) return false;
+        if (child instanceof Text) return child.data.replace(/[\s\u00a0\u200b]/g, "") !== "";
+        return child instanceof HTMLElement && INLINE_PICTURE_SIBLING.has(child.tagName);
+    });
+}
+
+function indexPath(root: Node, node: Node): number[] {
+    const path: number[] = [];
+    let current: Node | null = node;
+    while (current && current !== root) {
+        const parent: Node | null = current.parentNode;
+        if (!parent) return [];
+        path.unshift(Array.prototype.indexOf.call(parent.childNodes, current));
+        current = parent;
+    }
+    return path;
+}
+
+function nodeAtIndex(root: Node, path: number[]): Node | null {
+    let current: Node = root;
+    for (const index of path) {
+        const next = current.childNodes[index];
+        if (!next) return null;
+        current = next;
+    }
+    return current;
+}
+
+function pictureStyleHost(editor: HTMLElement, range: Range, figures: HTMLElement[]): HTMLElement {
+    const fits = (node: HTMLElement) => node.contains(range.startContainer)
+        && node.contains(range.endContainer)
+        && figures.every((figure) => node.contains(figure));
+    let host: HTMLElement | null = figures[0]?.parentElement ?? null;
+    while (host && host !== editor && !fits(host)) host = host.parentElement;
+    return host && fits(host) ? host : editor;
+}
+
+function quoteItalicCovered(editor: HTMLElement, range: Range): boolean {
+    const quote = quoteHolding(editor, range);
+    if (!quote) return false;
+    const slices = italicSlices(range, quote).filter((slice) => !slice.text.parentElement?.closest("figure"));
+    return slices.length > 0 && slices.every((slice) => slice.text.parentElement?.closest("i, em"));
+}
+
+function styledQuoteAroundPicture(editor: HTMLElement, range: Range, action: "mark" | "clear"): string | null {
+    const quote = quoteHolding(editor, range);
+    if (!quote) return null;
+    const scratch = document.createElement("div");
+    scratch.innerHTML = editor.innerHTML;
+    const quoteCopy = nodeAtPath(scratch, childPath(editor, quote));
+    const start = nodeAtIndex(scratch, indexPath(editor, range.startContainer));
+    const end = nodeAtIndex(scratch, indexPath(editor, range.endContainer));
+    if (!(quoteCopy instanceof HTMLElement) || !start || !end) return null;
+    const copy = document.createRange();
+    copy.setStart(start, range.startOffset);
+    copy.setEnd(end, range.endOffset);
+    const slices = italicSlices(copy, quoteCopy).filter((slice) => !slice.text.parentElement?.closest("figure"));
+    for (let index = slices.length - 1; index >= 0; index -= 1) {
+        const slice = slices[index];
+        if (action === "mark") markItalicSlice(slice.text, slice.start, slice.end);
+        else clearItalicSlice(slice.text, slice.start, slice.end);
+    }
+    return scratch.innerHTML;
+}
+
+function styledCopyAroundPicture(editor: HTMLElement, range: Range, command: string, lineFigures: HTMLElement[], between: HTMLElement[]): string | null {
+    const scratch = document.createElement("div");
+    scratch.contentEditable = "true";
+    scratch.style.position = "fixed";
+    scratch.style.left = "-10000px";
+    scratch.style.top = "0";
+    scratch.innerHTML = editor.innerHTML;
+    document.body.append(scratch);
+    try {
+        const copies = [...lineFigures, ...between].map((figure) => nodeAtIndex(scratch, indexPath(editor, figure)));
+        if (copies.some((copy) => !(copy instanceof HTMLElement))) return null;
+        const holds = copies.map((copy) => {
+            const hold = document.createElement("span");
+            hold.contentEditable = "false";
+            const figure = copy as HTMLElement;
+            figure.replaceWith(hold);
+            return { figure, hold };
+        });
+        const start = nodeAtIndex(scratch, indexPath(editor, range.startContainer));
+        const end = nodeAtIndex(scratch, indexPath(editor, range.endContainer));
+        if (!start || !end) return null;
+        const copy = document.createRange();
+        copy.setStart(start, range.startOffset);
+        copy.setEnd(end, range.endOffset);
+        const selection = window.getSelection();
+        if (!selection) return null;
+        selection.removeAllRanges();
+        selection.addRange(copy);
+        document.execCommand(command, false);
+        for (const hold of holds) {
+            if (hold.hold.isConnected) hold.hold.replaceWith(hold.figure);
+            else scratch.append(hold.figure);
+        }
+        return scratch.innerHTML;
+    } finally {
+        scratch.remove();
+    }
+}
+
+function pageInsertNests(current: string, next: string): boolean {
+    const currentBox = document.createElement("div");
+    const nextBox = document.createElement("div");
+    currentBox.innerHTML = current;
+    nextBox.innerHTML = next;
+    const currentFirst = currentBox.firstElementChild;
+    const nextFirst = nextBox.firstElementChild;
+    if (!currentFirst || !nextFirst) return false;
+    const list = currentFirst.tagName === "UL" || currentFirst.tagName === "OL";
+    const nextList = nextFirst.tagName === "UL" || nextFirst.tagName === "OL";
+    return list && nextList && nextBox.children.length > 1;
+}
+
+function replacePictureHost(editor: HTMLElement, host: HTMLElement, afterHtml: string) {
+    const template = document.createElement("div");
+    template.innerHTML = afterHtml;
+    const selection = window.getSelection();
+    if (!selection) return;
+    const range = document.createRange();
+    if (host === editor && pageInsertNests(editor.innerHTML, template.innerHTML)) {
+        editor.innerHTML = template.innerHTML;
+        pictureStyleDirect = true;
+        return;
+    }
+    if (host === editor) {
+        range.selectNodeContents(editor);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        document.execCommand("insertHTML", false, template.innerHTML);
+        return;
+    }
+    const path = childPath(editor, host);
+    const copy = nodeAtPath(template, path);
+    const target = nodeAtPath(editor, path);
+    if (!(copy instanceof HTMLElement) || !(target instanceof HTMLElement)) return;
+    range.selectNodeContents(target);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    document.execCommand("insertHTML", false, copy.innerHTML);
+}
+
+function stylePictureInLine(editor: HTMLElement, range: Range, command: string, lineFigures: HTMLElement[], between: HTMLElement[]) {
+    const host = pictureStyleHost(editor, range, [...lineFigures, ...between]);
+    const quoteAction = pictureLineItalic({
+        inQuote: command === "italic" && Boolean(quoteHolding(editor, range)),
+        covered: quoteItalicCovered(editor, range),
+    });
+    const after = quoteAction === "browser"
+        ? styledCopyAroundPicture(editor, range, command, lineFigures, between)
+        : styledQuoteAroundPicture(editor, range, quoteAction);
+    if (!after) return;
+    editor.focus();
+    replacePictureHost(editor, host, after);
+}
+
 function styleOutsidePicture(editor: HTMLElement, range: Range, command: string): boolean {
     if (!PICTURE_STYLE[command] || !editor.contains(range.commonAncestorContainer)) return false;
     const figures = [...editor.querySelectorAll("figure")].filter((figure) => {
@@ -1870,6 +2035,12 @@ function styleOutsidePicture(editor: HTMLElement, range: Range, command: string)
         }
     });
     if (!figures.length) return false;
+    pictureStyleDirect = false;
+    const line = figures.filter((figure) => pictureStyleSeat({ inlineSibling: inlinePictureSibling(figure) }) === "line");
+    if (line.length) {
+        stylePictureInLine(editor, range, command, line, figures.filter((figure) => !line.includes(figure)));
+        return true;
+    }
     const spots = figures.map((figure) => ({ figure, parent: figure.parentNode, next: figure.nextSibling }));
     for (const figure of figures) figure.remove();
     const selection = window.getSelection();
@@ -4294,8 +4465,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const linkUnderlineMode = useRef<"underline" | "plain" | null>(null);
     const linkUnderlineHold = useRef(false);
     const deletedStrikeMode = useRef<"plain" | null>(null);
-    const styleUndo = useRef<{ before: string; after: string; path: number[]; caret: number } | null>(null);
-    const styleRedo = useRef<{ undone: string; redone: string; path: number[]; caret: number } | null>(null);
+    const styleUndo = useRef<{ before: string; after: string; path: number[]; caret: number; direct?: boolean } | null>(null);
+    const styleRedo = useRef<{ undone: string; redone: string; path: number[]; caret: number; direct?: boolean } | null>(null);
     const redoPage = useRef<{
         undone: string;
         redone: string;
@@ -4617,7 +4788,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
     const keepSelectionUndo = (mark: { before: string; path: number[]; caret: number } | null, host: HTMLElement | null) => {
         if (!mark || !host || host.innerHTML === mark.before) return;
-        styleUndo.current = { before: mark.before, after: host.innerHTML, path: mark.path, caret: mark.caret };
+        styleUndo.current = { before: mark.before, after: host.innerHTML, path: mark.path, caret: mark.caret, direct: pictureStyleDirect };
         styleRedo.current = null;
     };
 
@@ -6778,6 +6949,14 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             if (saved && editor && editor.innerHTML !== saved.after) styleUndo.current = null;
             return false;
         }
+        if (saved.direct) {
+            editor.innerHTML = saved.before;
+            styleUndo.current = null;
+            setHtmlContent(editor.innerHTML);
+            styleRedo.current = { undone: editor.innerHTML, redone: saved.after, path: saved.path, caret: saved.caret, direct: true };
+            placeStyleCaret(saved.path, saved.caret);
+            return true;
+        }
         if (!document.execCommand("undo")) return false;
         styleUndo.current = null;
         setHtmlContent(editor.innerHTML);
@@ -6793,6 +6972,14 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (!editor || !saved || editor.innerHTML !== saved.undone) {
             if (saved && editor && editor.innerHTML !== saved.undone) styleRedo.current = null;
             return false;
+        }
+        if (saved.direct) {
+            editor.innerHTML = saved.redone;
+            styleRedo.current = null;
+            setHtmlContent(editor.innerHTML);
+            styleUndo.current = { before: saved.undone, after: editor.innerHTML, path: saved.path, caret: saved.caret, direct: true };
+            placeStyleCaret(saved.path, saved.caret);
+            return true;
         }
         if (!document.execCommand("redo")) return false;
         styleRedo.current = null;
