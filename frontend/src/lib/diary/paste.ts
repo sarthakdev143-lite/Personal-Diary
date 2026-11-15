@@ -514,9 +514,12 @@ export function pictureHeadingContinue(input: { heading: boolean; next: "text" |
     return "into";
 }
 
-export function pictureListContinue(input: { item: boolean; next: "text" | "block" | "none" }): PictureHeadingContinue {
-    if (input.item && input.next !== "none") return "apart";
-    return "into";
+export type PictureListContinue = "apart" | "with" | "into";
+
+export function pictureListContinue(input: { item: boolean; next: "text" | "list" | "block" | "none" }): PictureListContinue {
+    if (!input.item || input.next === "none") return "into";
+    if (input.next === "list") return "with";
+    return "apart";
 }
 
 export function pictureHeadingBefore(input: { heading: boolean }): PictureHeadingContinue {

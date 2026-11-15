@@ -630,7 +630,29 @@ function splitBesidePicture(block: HTMLElement, figure: HTMLElement, side: "befo
             placeCaretAtStart(paragraph);
             return;
         }
-        if (pictureListContinue({ item: block.tagName === "LI", next: kind }) === "apart" && neighbor) {
+        const listNext = neighbor instanceof Text
+            ? "text"
+            : neighbor instanceof HTMLElement && (neighbor.tagName === "UL" || neighbor.tagName === "OL")
+                ? "list"
+                : neighbor instanceof HTMLElement
+                    ? "block"
+                    : "none";
+        const listPlace = pictureListContinue({ item: block.tagName === "LI", next: listNext });
+        if (listPlace === "with" && neighbor) {
+            const opening = document.createElement("li");
+            const lead = document.createTextNode("\u200b");
+            opening.append(lead);
+            let moving: ChildNode | null = neighbor;
+            while (moving) {
+                const following: ChildNode | null = moving.nextSibling;
+                opening.append(moving);
+                moving = following;
+            }
+            block.after(opening);
+            placeCaretInText(lead, lead.data.length);
+            return;
+        }
+        if (listPlace === "apart" && neighbor) {
             const opening = document.createElement("li");
             opening.appendChild(document.createElement("br"));
             const rest = document.createElement("li");

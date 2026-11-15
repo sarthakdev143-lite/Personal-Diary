@@ -297,7 +297,9 @@ describe("entry paste", () => {
         assert.equal(pictureListContinue({ item: true, next: "text" }), "apart");
         assert.equal(pictureListContinue({ item: true, next: "block" }), "apart");
         assert.equal(pictureListContinue({ item: true, next: "none" }), "into");
+        assert.equal(pictureListContinue({ item: true, next: "list" }), "with");
         assert.equal(pictureListContinue({ item: false, next: "text" }), "into");
+        assert.equal(pictureListContinue({ item: false, next: "list" }), "into");
     });
 
     it("deletes a word in a picture name without the words beside the picture", () => {
