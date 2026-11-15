@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureInlineBackspace, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -313,7 +313,12 @@ function captionCaret(caption: HTMLElement, selection: Selection): { collapsed: 
     };
 }
 
-function inlinePictureBeforeCaret(editor: HTMLElement, selection: Selection): HTMLElement | null {
+function pictureGap(range: Range): boolean {
+    if (range.toString().length !== 0) return false;
+    return range.cloneContents().querySelector("br, img, figure, table, pre") === null;
+}
+
+function inlinePictureBesideCaret(editor: HTMLElement, selection: Selection): { figure: HTMLElement; side: "before" | "after" } | null {
     if (!selection.rangeCount || !selection.isCollapsed) return null;
     const range = selection.getRangeAt(0);
     if (!editor.contains(range.startContainer)) return null;
@@ -321,19 +326,78 @@ function inlinePictureBeforeCaret(editor: HTMLElement, selection: Selection): HT
     const host = anchor instanceof Element ? anchor : anchor.parentElement;
     const block = host?.closest("p, li, h1, h2, h3, blockquote, td, th");
     if (!(block instanceof HTMLElement) || !editor.contains(block) || host?.closest("figcaption")) return null;
-    const figures = [...block.querySelectorAll("figure")].filter((figure) => figure.parentElement === block || block.contains(figure));
-    for (const figure of figures) {
-        if (figure.contains(range.startContainer)) continue;
-        const between = document.createRange();
-        try {
-            between.setStartAfter(figure);
-            between.setEnd(range.startContainer, range.startOffset);
-        } catch {
+    let after: HTMLElement | null = null;
+    let before: HTMLElement | null = null;
+    const caret = document.createRange();
+    caret.setStart(range.startContainer, range.startOffset);
+    caret.collapse(true);
+    for (const figure of block.querySelectorAll("figure")) {
+        if (!(figure instanceof HTMLElement) || figure.contains(range.startContainer)) continue;
+        const afterPoint = document.createRange();
+        afterPoint.setStartAfter(figure);
+        afterPoint.collapse(true);
+        const order = afterPoint.compareBoundaryPoints(Range.START_TO_START, caret);
+        if (order <= 0) {
+            const gap = document.createRange();
+            gap.setStartAfter(figure);
+            gap.setEnd(range.startContainer, range.startOffset);
+            if (pictureGap(gap)) after = figure;
             continue;
         }
-        if (between.toString().length === 0 && between.cloneContents().querySelector("br, img, figure, table, pre") === null) return figure;
+        const gap = document.createRange();
+        gap.setStart(range.startContainer, range.startOffset);
+        gap.setEndBefore(figure);
+        if (pictureGap(gap)) before = before ?? figure;
     }
+    if (after) return { figure: after, side: "after" };
+    if (before) return { figure: before, side: "before" };
     return null;
+}
+
+function splitBesidePicture(block: HTMLElement, figure: HTMLElement, side: "before" | "after") {
+    const line = block.tagName === "BLOCKQUOTE" || block.tagName === "TD" || block.tagName === "TH";
+    if (line) {
+        const br = document.createElement("br");
+        if (side === "after") figure.after(br);
+        else figure.before(br);
+        const caret = document.createRange();
+        if (br.nextElementSibling?.tagName === "FIGURE") {
+            const lead = document.createTextNode("\u200b");
+            br.after(lead);
+            caret.setStart(lead, lead.data.length);
+        } else caret.setStartAfter(br);
+        caret.collapse(true);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(caret);
+        return;
+    }
+    const next = document.createElement(block.tagName === "LI" ? "li" : "p");
+    let node: ChildNode | null = side === "after" ? figure.nextSibling : figure;
+    while (node) {
+        const following: ChildNode | null = node.nextSibling;
+        next.append(node);
+        node = following;
+    }
+    if (!next.childNodes.length) next.append(document.createElement("br"));
+    block.after(next);
+    const selection = window.getSelection();
+    if (next.firstElementChild?.tagName === "FIGURE") {
+        const lead = document.createTextNode("\u200b");
+        next.insertBefore(lead, next.firstElementChild);
+        const caret = document.createRange();
+        caret.setStart(lead, lead.data.length);
+        caret.collapse(true);
+        selection?.removeAllRanges();
+        selection?.addRange(caret);
+        return;
+    }
+    placeCaretAtStart(next);
+}
+
+function inlinePictureBeforeCaret(editor: HTMLElement, selection: Selection): HTMLElement | null {
+    const beside = inlinePictureBesideCaret(editor, selection);
+    return beside?.side === "after" ? beside.figure : null;
 }
 
 function lineAfterPicture(editor: HTMLElement, selection: Selection): { block: HTMLElement; caption: HTMLElement; atStart: boolean; empty: boolean } | null {
@@ -6264,6 +6328,34 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const keepInlinePictureEnter = (e: React.KeyboardEvent) => {
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection || mode === "view") return false;
+        const beside = inlinePictureBesideCaret(editor, selection);
+        const action = pictureInlineEnter({
+            key: e.key,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            collapsed: selection.isCollapsed,
+            besidePicture: Boolean(beside),
+        });
+        if (action !== "split" || !beside) return false;
+        const anchor = selection.anchorNode;
+        const host = anchor instanceof Element ? anchor : anchor?.parentElement ?? null;
+        const block = host?.closest("p, li, h1, h2, h3, blockquote, td, th");
+        if (!(block instanceof HTMLElement) || !editor.contains(block)) return false;
+        e.preventDefault();
+        const before = editor.innerHTML;
+        const path = childPath(editor, block);
+        splitBesidePicture(block, beside.figure, beside.side);
+        keepBlank({ before, after: editor.innerHTML, path });
+        setHtmlContent(editor.innerHTML);
+        return true;
+    };
+
     const keepInlinePictureBackspace = (e: React.KeyboardEvent) => {
         const editor = editorRef.current;
         const selection = window.getSelection();
@@ -7734,6 +7826,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
         if (keepPictureBounds(e)) return;
         if (keepDateLine(e)) return;
+        if (keepInlinePictureEnter(e)) return;
         if (keepHeadingLine(e)) return;
         if (keepCodeLine(e)) return;
         if (keepStyledLine(e)) return;

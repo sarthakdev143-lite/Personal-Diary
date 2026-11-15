@@ -50,6 +50,22 @@ export function lineAfterPictureKey(input: {
     return input.empty ? "remove" : "move";
 }
 
+export type PictureInlineEnter = "split" | "pass";
+
+export function pictureInlineEnter(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    besidePicture: boolean;
+}): PictureInlineEnter {
+    if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.key !== "Enter" || !input.collapsed || !input.besidePicture) return "pass";
+    return "split";
+}
+
 export type PictureInlineBackspace = "name" | "pass";
 
 export function pictureInlineBackspace(input: {
