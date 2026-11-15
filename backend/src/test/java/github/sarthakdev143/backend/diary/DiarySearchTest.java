@@ -71,6 +71,13 @@ class DiarySearchTest {
         assertTrue(shortMatch.snippet().contains("lantern"));
         assertTrue(shortMatch.snippet().replaceFirst("^…", "").toLowerCase().indexOf("lantern") <= 32);
 
+        String phrase = "extraordinary lantern festival tonight";
+        String longDescription = "The morning stayed ordinary and quiet beside the old glass. The " + phrase + " kept the street warm and bright.";
+        DiarySearch.Hit longPhrase = DiarySearch.match("Window notes", longDescription, List.of(), phrase, ZoneOffset.UTC);
+        String longShown = longPhrase.snippet().replaceFirst("^…", "");
+        assertTrue(longShown.contains(phrase));
+        assertTrue(longShown.toLowerCase().indexOf(phrase) <= 48 - phrase.length());
+
         DiarySearch.Note shortNote = new DiarySearch.Note(
                 "rain",
                 "<p>The morning stayed ordinary and quiet beside the old glass before lantern.</p>",

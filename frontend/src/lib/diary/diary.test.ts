@@ -1406,6 +1406,15 @@ describe("search", () => {
         assert.equal(titled.snippet, null);
     });
 
+    it("keeps a long description phrase on the two lines of the card", () => {
+        const phrase = "extraordinary lantern festival tonight";
+        const description = `The morning stayed ordinary and quiet beside the old glass. The ${phrase} kept the street warm and bright.`;
+        const match = diaryListMatch({ title: "Window notes", description }, [], phrase);
+        const shown = (match.snippet ?? "").replace(/^…/, "");
+        assert.match(shown, /extraordinary lantern festival tonight/);
+        assert.ok(shown.toLowerCase().indexOf(phrase) <= 48 - phrase.length);
+    });
+
     it("finds a description phrase across an extra space", () => {
         const description = `${"Notes from the path. ".repeat(8)}Harbor  light at the end.`;
         const match = diaryListMatch({ title: "Window notes", description }, [], "harbor light");

@@ -108,11 +108,12 @@ const CARD_OPENING = 48;
 // Two lines of an entry card fit about this many characters.
 const ENTRY_LINE = 76;
 
-function matchWindow(text: string, query: string): string {
+function matchWindow(text: string, query: string, fit = CARD_OPENING): string {
     const range = matchRange(text, query);
     const index = range ? range.start : text.toLowerCase().indexOf(query.toLowerCase());
     const matchLength = range ? range.end - range.start : query.length;
-    const start = Math.max(0, index - 28);
+    const lead = Math.min(28, Math.max(0, fit - matchLength));
+    const start = Math.max(0, index - lead);
     const end = Math.min(text.length, Math.max(index, 0) + matchLength + 36);
     let snippet = text.slice(start, end).trim();
     if (start > 0) snippet = `…${snippet}`;
@@ -124,7 +125,7 @@ function textWindow(text: string, query: string, visible = 90): string {
     const range = matchRange(text, query);
     const index = range ? range.start : text.toLowerCase().indexOf(query.toLowerCase());
     if (text.length <= 90 && index < visible) return text;
-    return matchWindow(text, query);
+    return matchWindow(text, query, visible);
 }
 
 function matchingPiece(entry: ListedEntry, query: string, visible = 90): string {
