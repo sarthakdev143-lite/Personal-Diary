@@ -13,8 +13,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import { importNotice, importedDiaryPath, rememberImportNotice } from "@/lib/diary/import";
 import { diaryListKeyAction, diarySearchShortcut, searchShortcutLabel } from "@/lib/diary/keys";
+import { diaryListAddress } from "@/lib/diary/search";
 
-const DiaryDashboardClient = () => {
+const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) => {
     const router = useRouter();
     const { toast } = useToast();
     const infoParentRef = useRef<HTMLDivElement>(null);
@@ -22,9 +23,9 @@ const DiaryDashboardClient = () => {
     const [newDiaryFormActive, setNewDiaryFormActive] = useState(false);
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [refetchTrigger, setRefetchTrigger] = useState(0);
-    const [query, setQuery] = useState("");
+    const [query, setQuery] = useState(initialQuery);
     const searchKeyRef = useRef<HTMLSpanElement>(null);
-    const [debouncedQuery, setDebouncedQuery] = useState("");
+    const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
     const [isImporting, setIsImporting] = useState(false);
     const queryRef = useRef(query);
     const formActiveRef = useRef(newDiaryFormActive);
@@ -40,6 +41,13 @@ const DiaryDashboardClient = () => {
     useEffect(() => {
         const timeout = window.setTimeout(() => setDebouncedQuery(query), 250);
         return () => window.clearTimeout(timeout);
+    }, [query]);
+
+    useEffect(() => {
+        const next = diaryListAddress(query);
+        const current = `${window.location.pathname}${window.location.search}`;
+        if (window.location.pathname !== "/diary" || current === next) return;
+        window.history.replaceState(window.history.state, "", next);
     }, [query]);
 
     useEffect(() => {
