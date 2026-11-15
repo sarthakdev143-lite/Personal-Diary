@@ -347,6 +347,35 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         if (word(end - 1) && held(end)) {
             while (held(end)) end += 1;
         }
+        const plusSuffix = (index: number) => {
+            if (text[index] !== "+") return undefined;
+            let plusStart = index;
+            while (text[plusStart - 1] === "+") plusStart -= 1;
+            let plusEnd = index + 1;
+            while (text[plusEnd] === "+") plusEnd += 1;
+            if (word(plusEnd) || !word(plusStart - 1)) return undefined;
+            let wordStart = plusStart - 1;
+            while (word(wordStart - 1)) wordStart -= 1;
+            return { wordStart, plusStart, end: plusEnd };
+        };
+        let plusProbe = -1;
+        if (text[start] === "+") plusProbe = start;
+        else if (text[end] === "+") plusProbe = end;
+        else if (text[end - 1] === "+") plusProbe = end - 1;
+        else if (text[start - 1] === "+") plusProbe = start - 1;
+        const suffix = plusProbe >= 0 ? plusSuffix(plusProbe) : undefined;
+        if (suffix) {
+            let tail = suffix.end;
+            while (tail < end && (space(tail) || held(tail))) tail += 1;
+            const touchesPlus = start < suffix.end && end > suffix.plusStart;
+            const entireWord = start <= suffix.wordStart && end >= suffix.plusStart;
+            const markAfter = start === suffix.end && held(start);
+            if ((touchesPlus || entireWord || markAfter) && (end <= suffix.end || tail === end)) {
+                start = suffix.wordStart;
+                end = suffix.end;
+                while (held(end)) end += 1;
+            }
+        }
         const closer = text[end];
         if (closer !== undefined && pairs.get(text[start - 1] ?? "") === closer && word(start)) {
             start -= 1;
