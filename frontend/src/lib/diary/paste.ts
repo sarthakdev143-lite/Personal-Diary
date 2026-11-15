@@ -161,11 +161,12 @@ export function pictureUndo(input: {
     return "restore";
 }
 
-export type PictureInsert = "line" | "after" | "pass";
+export type PictureInsert = "line" | "after" | "split" | "pass";
 
-export function pictureInsert(input: { inPicture: boolean; inItem: boolean }): PictureInsert {
+export function pictureInsert(input: { inPicture: boolean; inItem: boolean; inLine?: boolean }): PictureInsert {
     if (input.inPicture) return "after";
     if (input.inItem) return "line";
+    if (input.inLine) return "split";
     return "pass";
 }
 

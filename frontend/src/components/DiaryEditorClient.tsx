@@ -2749,18 +2749,85 @@ function openPictureOnDate(editor: HTMLElement, range: Range, src: string, name:
     return { before, path: childPath(editor, heading) };
 }
 
+function placePictureInLine(block: HTMLParagraphElement, range: Range, picture: HTMLElement) {
+    if (!range.collapsed && block.contains(range.startContainer) && block.contains(range.endContainer)) range.deleteContents();
+    if (blockIsEmpty(block) || !block.contains(range.startContainer)) {
+        block.replaceWith(picture);
+        return;
+    }
+    const before = range.cloneRange();
+    before.selectNodeContents(block);
+    before.setEnd(range.startContainer, range.startOffset);
+    const after = range.cloneRange();
+    after.selectNodeContents(block);
+    after.setStart(range.endContainer, range.endOffset);
+    const blank = (value: string) => value.replace(/[\u200b\u00a0]/g, "").trim() === "";
+    if (blank(after.toString())) {
+        block.after(picture);
+        return;
+    }
+    if (blank(before.toString())) {
+        block.before(picture);
+        return;
+    }
+    const next = document.createElement("p");
+    next.append(after.extractContents());
+    trimPictureEdge(block, "end");
+    trimPictureEdge(next, "start");
+    if (blockIsEmpty(block)) block.appendChild(document.createElement("br"));
+    if (blockIsEmpty(next)) next.appendChild(document.createElement("br"));
+    block.after(picture);
+    picture.after(next);
+}
+
+function trimPictureEdge(block: HTMLElement, edge: "start" | "end") {
+    const texts: Text[] = [];
+    const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+    let current = walker.nextNode();
+    while (current) {
+        if (current instanceof Text) texts.push(current);
+        current = walker.nextNode();
+    }
+    const node = edge === "start" ? texts[0] : texts[texts.length - 1];
+    if (!node) return;
+    const space = /^[\s\u00a0]/.test(node.data);
+    const endSpace = /[\s\u00a0]$/.test(node.data);
+    if (edge === "start" ? !space : !endSpace) return;
+    node.data = edge === "start" ? node.data.slice(1) : node.data.slice(0, -1);
+    if (!node.data) node.remove();
+}
+
+function pictureLine(editor: HTMLElement, range: Range): HTMLParagraphElement | null {
+    const host = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+    const block = host?.closest("p");
+    if (!(block instanceof HTMLParagraphElement) || !editor.contains(block)) return null;
+    if (block.closest("li, pre, figure")) return null;
+    if (!range.collapsed) {
+        const endHost = range.endContainer instanceof Element ? range.endContainer : range.endContainer.parentElement;
+        if (endHost?.closest("p") !== block) return null;
+    }
+    return block;
+}
+
 function openPicture(editor: HTMLElement, range: Range, src: string, name: string): { before: string; path: number[] } | null {
     const anchor = anchoredPicture(range, editor);
     const host = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
     const item = host?.closest("li");
     const inItem = item instanceof HTMLElement && editor.contains(item);
-    const action = pictureInsert({ inPicture: Boolean(anchor), inItem });
+    const line = pictureLine(editor, range);
+    const action = pictureInsert({ inPicture: Boolean(anchor), inItem, inLine: Boolean(line) });
     if (action === "pass") return null;
     const before = editor.innerHTML;
     const picture = buildPicture(src, name);
     if (action === "after" && anchor) {
         const path = childPath(editor, anchor);
         anchor.after(picture);
+        placeCaretInPicture(picture);
+        return { before, path };
+    }
+    if (action === "split" && line) {
+        const path = childPath(editor, line);
+        placePictureInLine(line, range, picture);
         placeCaretInPicture(picture);
         return { before, path };
     }
