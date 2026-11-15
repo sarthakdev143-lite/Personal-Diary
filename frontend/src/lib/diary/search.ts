@@ -239,22 +239,24 @@ export function diaryListMatch(
 ): { matched: boolean; snippet: string | null; entryId: string | null; entryAt: string | null; count: number } {
     const query = normalizeSearchQuery(rawQuery);
     if (!query) return { matched: true, snippet: null, entryId: null, entryAt: null, count: 0 };
-    if (diaryFieldsMatch(diary.title, diary.description ?? "", query)) {
-        return { matched: true, snippet: null, entryId: null, entryAt: null, count: 0 };
-    }
 
     const hits = entries
         .filter((entry) => entryMatchesListQuery(entry, query))
         .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
     const newest = hits[0];
-    if (!newest) return { matched: false, snippet: null, entryId: null, entryAt: null, count: 0 };
-    return {
-        matched: true,
-        snippet: matchingPiece(newest, query),
-        entryId: newest.id || null,
-        entryAt: newest.createdAt,
-        count: hits.length,
-    };
+    if (newest) {
+        return {
+            matched: true,
+            snippet: matchingPiece(newest, query),
+            entryId: newest.id || null,
+            entryAt: newest.createdAt,
+            count: hits.length,
+        };
+    }
+    if (diaryFieldsMatch(diary.title, diary.description ?? "", query)) {
+        return { matched: true, snippet: null, entryId: null, entryAt: null, count: 0 };
+    }
+    return { matched: false, snippet: null, entryId: null, entryAt: null, count: 0 };
 }
 
 export function diaryCardWhen(input: {

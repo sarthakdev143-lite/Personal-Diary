@@ -37,8 +37,13 @@ class DiarySearchTest {
 
         DiarySearch.Hit title = DiarySearch.match("Window notes", "Two mornings", List.of(rain), "window", ZoneOffset.UTC);
         assertTrue(title.matched());
-        assertNull(title.snippet());
-        assertNull(title.entryId());
+        assertEquals("Quiet rain on the window.", title.snippet());
+        assertEquals("rain", title.entryId());
+
+        DiarySearch.Hit titleOnly = DiarySearch.match("Window notes", "Two mornings", List.of(rain), "mornings", ZoneOffset.UTC);
+        assertTrue(titleOnly.matched());
+        assertNull(titleOnly.snippet());
+        assertNull(titleOnly.entryId());
 
         DiarySearch.Hit note = DiarySearch.match("Window notes", "Two mornings", List.of(garden, rain), "quiet", ZoneOffset.UTC);
         assertTrue(note.matched());
