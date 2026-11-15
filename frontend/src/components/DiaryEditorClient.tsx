@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, pictureStyle, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, listReachBlock, pictureStyle, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -3068,6 +3068,35 @@ function changeListAroundPicture(editor: HTMLElement, range: Range, command: "in
     return true;
 }
 
+function linesFromQuote(quote: HTMLElement, range: Range): HTMLElement[] {
+    const children = [...quote.children].filter((child): child is HTMLElement => child instanceof HTMLElement);
+    const touched = children.filter((child) => {
+        try {
+            return range.intersectsNode(child);
+        } catch {
+            return false;
+        }
+    });
+    if (!touched.length) return nodesAroundListPicture(quote, "li");
+    const nodes: HTMLElement[] = [];
+    const first = children.indexOf(touched[0]);
+    const last = children.indexOf(touched[touched.length - 1]);
+    const keep = (group: HTMLElement[]) => {
+        if (!group.length) return;
+        const stay = document.createElement("blockquote");
+        for (const child of group) stay.append(child);
+        nodes.push(stay);
+    };
+    keep(children.slice(0, first));
+    for (const child of touched) {
+        if (listReachBlock(child.tagName) === "line" && child.tagName !== "BLOCKQUOTE") nodes.push(...nodesAroundListPicture(child, "li"));
+        else nodes.push(child);
+        child.remove();
+    }
+    keep(children.slice(last + 1));
+    return nodes;
+}
+
 function reachListAroundPicture(editor: HTMLElement, range: Range, command: "insertUnorderedList" | "insertOrderedList"): boolean {
     const blocks = touchedQuoteBlocks(editor, range);
     if (blocks.length < 2 || !blocksAreConsecutive(editor, blocks)) return false;
@@ -3081,8 +3110,8 @@ function reachListAroundPicture(editor: HTMLElement, range: Range, command: "ins
         && startItem.parentElement === endItem.parentElement
         && (startItem.parentElement instanceof HTMLUListElement || startItem.parentElement instanceof HTMLOListElement)
     ) return false;
-    const outsideList = blocks.some((block) => block.matches("p, h1, h2, h3"));
-    const inList = blocks.some((block) => block.matches("ul, ol"));
+    const outsideList = blocks.some((block) => listReachBlock(block.tagName) === "line");
+    const inList = blocks.some((block) => listReachBlock(block.tagName) === "list");
     const hasPicture = blocks.some((block) => {
         const figures = block.tagName === "FIGURE" ? [block] : [...block.querySelectorAll("figure")];
         return figures.some((figure) => {
@@ -3132,7 +3161,11 @@ function reachListAroundPicture(editor: HTMLElement, range: Range, command: "ins
             if (!listItems(block).length) block.remove();
             continue;
         }
-        if (block.matches("p, h1, h2, h3")) {
+        if (listReachBlock(block.tagName) === "line") {
+            if (block.tagName === "BLOCKQUOTE") {
+                produced.push(...linesFromQuote(block, range));
+                continue;
+            }
             produced.push(...nodesAroundListPicture(block, "li"));
             block.remove();
             continue;
