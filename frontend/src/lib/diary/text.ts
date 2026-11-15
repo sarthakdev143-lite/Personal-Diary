@@ -1047,6 +1047,16 @@ export function dateHeadingCommand(command: string, inDate: boolean): "run" | "h
     return "hold";
 }
 
+export function dateLineTyping(input: { writing: boolean; peeled: boolean }): "new-line" | "into-line" {
+    if (input.peeled || !input.writing) return "into-line";
+    return "new-line";
+}
+
+export function freshDateLineMarkup(letter: string, following: string): string {
+    const safe = letter.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return `<p>${safe}</p>${following}`;
+}
+
 export function entryWritingText(html: string): string {
     return entryPlainText(withoutGeneratedDateHeading(html));
 }
