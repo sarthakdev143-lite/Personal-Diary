@@ -93,6 +93,8 @@ type ListedEntry = {
 
 // Two lines of a diary card fit about this many characters.
 const CARD_OPENING = 48;
+// Two lines of an entry card fit about this many characters.
+const ENTRY_LINE = 76;
 
 function matchWindow(text: string, query: string): string {
     const range = matchRange(text, query);
@@ -138,11 +140,11 @@ export function entryCardPreview(entry: {
     const query = normalizeSearchQuery(rawQuery);
     if (!query) return writing.slice(0, 90);
     const needle = query.toLowerCase();
-    if (writing.toLowerCase().includes(needle)) return matchingPiece(entry, query);
+    if (writing.toLowerCase().includes(needle)) return matchingPiece(entry, query, ENTRY_LINE);
     if (entrySearchParts(entry).some((part) => part.toLowerCase().includes(needle))) return writing.slice(0, 90);
     const date = formatEntryLong(entry.createdAt);
     const page = date && date !== "—" && writing ? `${date} ${writing}` : writing;
-    if (page.toLowerCase().includes(needle)) return matchingPiece(entry, query);
+    if (page.toLowerCase().includes(needle)) return matchingPiece(entry, query, ENTRY_LINE);
     return writing.slice(0, 90);
 }
 
