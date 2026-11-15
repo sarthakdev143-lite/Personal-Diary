@@ -3093,6 +3093,15 @@ function placePictureAcross(editor: HTMLElement, range: Range, picture: HTMLElem
     if (following instanceof HTMLElement) trimPictureEdge(following, "start");
     if (previous instanceof HTMLElement && blockIsEmpty(previous)) previous.remove();
     if (following instanceof HTMLElement && blockIsEmpty(following)) following.remove();
+    clearPictureListEdge(picture.previousElementSibling, "end");
+    clearPictureListEdge(picture.nextElementSibling, "start");
+}
+
+function clearPictureListEdge(block: Element | null, edge: "start" | "end") {
+    if (!(block instanceof HTMLUListElement || block instanceof HTMLOListElement)) return;
+    const items = listItems(block);
+    clearPictureItem(edge === "end" ? items.at(-1) ?? null : items[0] ?? null);
+    if (!listItems(block).length) block.remove();
 }
 
 function pictureLine(editor: HTMLElement, range: Range): HTMLParagraphElement | null {
