@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, picturePasteWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -6876,15 +6876,20 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             keepPicture({ before, after: editor.innerHTML });
         } else if (action === "name") {
             typePictureName(picture, image, e.key, selection);
-        } else {
-            const next = picture.nextElementSibling;
-            if (next instanceof HTMLElement && editor.contains(next)) placeCaretAtStart(next);
-            else {
+        } else if (picture instanceof HTMLElement) {
+            const sibling = pictureBesideNode(picture, "after");
+            const next = sibling instanceof Text ? "text" : sibling instanceof HTMLElement ? "block" : "none";
+            const inLine = pictureNameLine(picture.parentElement?.tagName ?? "DIV") !== "page";
+            if (selectedPictureEnter({ next, inLine }) === "line") {
                 const paragraph = document.createElement("p");
                 paragraph.appendChild(document.createElement("br"));
                 picture.after(paragraph);
                 placeCaretAtStart(paragraph);
-            }
+            } else if (next === "none") {
+                const lead = document.createTextNode("\u200b");
+                picture.after(lead);
+                placeCaretInText(lead, lead.data.length);
+            } else moveBesidePicture(picture, "after");
         }
         setHtmlContent(editor.innerHTML);
         return true;
