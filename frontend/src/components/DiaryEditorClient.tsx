@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteListPlan, quoteListAgain, quotedListJoinValue, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteListPlan, quoteListAgain, quotedListJoinValue, keptListNumber, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -1441,6 +1441,52 @@ function elementFullyInside(range: Range, element: HTMLElement): boolean {
     }
     return range.compareBoundaryPoints(Range.START_TO_START, bounds) <= 0
         && range.compareBoundaryPoints(Range.END_TO_END, bounds) >= 0;
+}
+
+function snapshotOrderedNumbers(editor: HTMLElement): Map<HTMLElement, number> {
+    const numbers = new Map<HTMLElement, number>();
+    for (const list of editor.querySelectorAll("ol")) {
+        if (!(list instanceof HTMLOListElement)) continue;
+        const items = listItems(list);
+        items.forEach((item, index) => {
+            numbers.set(item, orderedItemNumber({
+                start: list.getAttribute("start"),
+                values: items.map((entry) => entry.getAttribute("value")),
+                index,
+            }));
+        });
+    }
+    return numbers;
+}
+
+function restoreOrderedNumbers(numbers: Map<HTMLElement, number>) {
+    const lists = new Set<HTMLOListElement>();
+    for (const item of numbers.keys()) {
+        if (item.parentElement instanceof HTMLOListElement) lists.add(item.parentElement);
+    }
+    for (const list of lists) {
+        const items = listItems(list);
+        let previous: number | null = null;
+        items.forEach((item, index) => {
+            const number = numbers.get(item);
+            if (number === undefined) {
+                previous = orderedItemNumber({
+                    start: list.getAttribute("start"),
+                    values: items.map((entry) => entry.getAttribute("value")),
+                    index,
+                });
+                return;
+            }
+            const kept = keptListNumber({ first: index === 0, previous, number });
+            if (index === 0) {
+                if (kept === null) list.removeAttribute("start");
+                else list.setAttribute("start", String(kept));
+                item.removeAttribute("value");
+            } else if (kept === null) item.removeAttribute("value");
+            else item.setAttribute("value", String(kept));
+            previous = number;
+        });
+    }
 }
 
 function listItems(list: HTMLElement): HTMLElement[] {
@@ -3138,6 +3184,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             ? { fromList: block.tagName === "LI", text: (block.textContent ?? "").replace(/\u00a0/g, " "), offset: textOffsetWithin(block, range.endContainer, range.endOffset) }
             : null;
         const lifting = Boolean(editor && listCommand(cmd) === "lift");
+        const orderedNumbers = lifting && editor ? snapshotOrderedNumbers(editor) : null;
         const listBefore = lifting && editor ? editor.innerHTML : null;
         const listCaret = lifting && editor && range && block instanceof HTMLElement && editor.contains(block)
             ? listUndoCaret(textOffsetWithin(block, range.endContainer, range.endOffset))
@@ -3149,6 +3196,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         document.execCommand(cmd, false, value);
         keepSelectionUndo(formatMark, editor);
         if (editor && lifting) liftNestedLists(editor);
+        if (orderedNumbers) restoreOrderedNumbers(orderedNumbers);
         if (editor && caret) placeListCaret(editor, caret.fromList, caret.text, caret.offset);
         if (listBefore !== null && editor && editor.innerHTML !== listBefore) {
             keepBlank({ before: listBefore, after: editor.innerHTML, path: listPath, caret: listCaret ?? undefined });

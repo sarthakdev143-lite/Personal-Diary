@@ -909,6 +909,13 @@ export function quotedListJoinValue(input: { ordered: boolean; previous: number 
     return input.number;
 }
 
+export function keptListNumber(input: { first: boolean; previous: number | null; number: number }): number | null {
+    if (!Number.isInteger(input.number)) return null;
+    if (input.first || input.previous === null) return input.number === 1 ? null : input.number;
+    if (input.number === input.previous + 1) return null;
+    return input.number;
+}
+
 export type QuoteToggle = "leave" | "quote";
 
 export function quoteToggle(input: { inside: boolean }): QuoteToggle {
