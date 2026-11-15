@@ -215,6 +215,8 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         return piece === "," || piece === ";" || piece === "!" || piece === "?" || piece === "\u2026";
     };
     const held = (index: number) => sticky(index) || ((text[index] === "." || text[index] === ":") && !word(index + 1));
+    const apostrophe = (index: number) => text[index] === "'" || text[index] === "\u2019" || text[index] === "\u2018";
+    const contraction = (index: number) => apostrophe(index) && word(index - 1) && word(index + 1);
     const pairs = new Map<string, string>([
         ['"', '"'],
         ["(", ")"],
@@ -233,6 +235,25 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
             end += 1;
             while (word(end)) end += 1;
         } else if (joiner(end) && word(end - 1) && word(end + 1)) end += 1;
+        if (apostrophe(start - 1) && apostrophe(end) && word(start) && !word(start - 2) && !word(end + 1)) {
+            start -= 1;
+            end += 1;
+        }
+        if (contraction(end)) {
+            end += 1;
+            while (word(end)) end += 1;
+        } else if (contraction(end - 1)) {
+            while (word(end)) end += 1;
+        }
+        if (contraction(start - 1)) {
+            start -= 1;
+            while (word(start - 1)) start -= 1;
+        } else if (contraction(start)) {
+            while (word(start - 1)) start -= 1;
+            if (apostrophe(end)) end += 1;
+            while (word(end)) end += 1;
+        }
+        if (apostrophe(end) && word(end - 1) && !word(end + 1)) end += 1;
         if (word(end - 1) && held(end)) {
             while (held(end)) end += 1;
         }
