@@ -1391,6 +1391,21 @@ describe("search", () => {
         assert.equal(entryCardPreview(entry, "   "), opening);
     });
 
+    it("keeps the writing on the card when the search is the date", () => {
+        const created = new Date(2026, 10, 15, 9, 30).toISOString();
+        const entry = {
+            content: "<p>Quiet rain.</p>",
+            plainText: "Quiet rain.",
+            createdAt: created,
+            updatedAt: created,
+        };
+        assert.equal(entryMatchesListQuery(entry, "November"), true);
+        assert.equal(entryCardPreview(entry, "November"), "Quiet rain.");
+        assert.equal(entryCardPreview(entry, "Sunday"), "Quiet rain.");
+        assert.equal(entryCardPreview(entry, "09:30"), "Quiet rain.");
+        assert.equal(entryCardPreview(entry, "Quiet"), "Quiet rain.");
+    });
+
     it("marks each matched word without changing its letters", () => {
         assert.deepEqual(matchedTextParts("the Quiet rain", "quiet"), [
             { text: "the ", match: false },
