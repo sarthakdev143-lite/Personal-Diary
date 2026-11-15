@@ -251,6 +251,24 @@ export function diaryListMatch(
     return { matched: true, snippet: matchingPiece(newest, query), entryId: newest.id || null };
 }
 
+export function diaryListAddress(rawQuery: string): string {
+    const query = normalizeSearchQuery(rawQuery);
+    if (!query) return "/diary";
+    return `/diary?q=${encodeURIComponent(query)}`;
+}
+
+export function openedDiaryQuery(rawQuery: string | null): string {
+    return normalizeSearchQuery(rawQuery ?? "");
+}
+
+export function diaryListNavigation(currentPath: string, rawQuery: string): string | null {
+    const path = currentPath.split("?")[0];
+    if (path !== "/diary") return null;
+    const next = diaryListAddress(rawQuery);
+    if (currentPath === next) return null;
+    return next;
+}
+
 export function diaryMatchPath(diaryId: string, entryId: string | null | undefined, rawQuery?: string | null): string {
     if (!entryId) return `/diary/${diaryId}`;
     const path = `/diary/${diaryId}?entry=${encodeURIComponent(entryId)}`;
