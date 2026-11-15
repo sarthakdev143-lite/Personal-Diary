@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { isObjectId } from "./ids";
 import { buildEntrySearchFilter, diaryFieldsMatch, diaryListMatch, diaryMatchPath, entriesForQuery, entryCardPreview, entryMatchCount, entryMatchCursor, entryMatchesListQuery, entryPageAddress, entryShareAddress, escapeRegExp, matchedTextParts, normalizeSearchQuery, textPieceHits, textRunHits } from "./search";
-import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatEntryLong, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, codePullUndoCaret, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, blankUndoCaret, joinUndoCaret, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
+import { calendarDate, emptyEntryListMessage, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryListSearchText, entryMonths, entryPlainText, entrySelectionAction, entryToOpenForFilter, entryToOpenFromLink, entryToOpenWhenHidden, entryToShowAfterDelete, entryToShowByStep, entryToShowOnOpen, entryUndoBody, entryWasRevised, entryWritingChanged, entryWritingText, codeLineKey, codeLeaveRemoval, dateHeadingKey, datePaste, dateSelectionKey, formatDiaryDate, formatEntryLong, formatEntryTime, freshEntryHtml, hasEntryContent, boundarySpaceCut, codeGap, codePullKey, codePullUndoCaret, dividerCaret, headingEnterKey, headingSplitUndo, splitSpace, blankUndoCaret, joinUndoCaret, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, laterEntryTime, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, sameEditingPage, savedRedo, undoButton, listLeaveKey, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, separateGluedDateHeading, monthForSavedEntry, monthKey, monthLabel, nextEntryRevision, retitleEntryDate, showOpenEntry, storedPlainText, wordCount } from "./text";
 import { compareDiaries } from "./order";
 import { appliedPin, pinFailureMessage } from "./pin";
 import {
@@ -1522,6 +1522,22 @@ describe("search", () => {
         assert.equal(entryMatchesListQuery(entry, "09:30"), true);
         assert.equal(entryMatchesListQuery(entry, "garden"), false);
         assert.equal(entryMatchesListQuery(entry, ""), true);
+
+        const written = { ...entry, plainText: "Quiet rain.", content: "<p>Quiet rain.</p>" };
+        const dateSeam = `rain. ${formatDiaryDate(created).slice(0, 3)}`;
+        const yearSeam = `${formatDiaryDate(created).slice(-4)} ${formatEntryLong(created).slice(0, 3)}`;
+        assert.equal(entryListSearchText(written).includes(dateSeam), true);
+        assert.equal(entryListSearchText(written).includes(yearSeam), true);
+        assert.equal(entryMatchesListQuery(written, dateSeam), false);
+        assert.equal(entryMatchesListQuery(written, yearSeam), false);
+        assert.equal(entryMatchesListQuery(written, "Quiet rain"), true);
+        assert.equal(diaryListMatch({ title: "Window", description: "" }, [written], dateSeam).matched, false);
+
+        const revised = { ...written, updatedAt: new Date(new Date(created).getTime() + 5000).toISOString() };
+        const clockSeam = `${formatEntryTime(created).slice(-2)} edited`;
+        assert.equal(entryListSearchText(revised).includes(clockSeam), true);
+        assert.equal(entryMatchesListQuery(revised, clockSeam), false);
+        assert.equal(entryMatchesListQuery(revised, "edited"), true);
     });
 });
 

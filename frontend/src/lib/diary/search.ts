@@ -1,5 +1,5 @@
 import { SEARCH_MAX } from "./constants";
-import { entryListSearchText, entryWasRevised, entryWritingText, formatDiaryDate, formatEntryLong, formatEntryTime } from "./text";
+import { entrySearchParts, entryWritingText } from "./text";
 
 type RegexQuery = { $regex: string; $options: "i" };
 
@@ -31,7 +31,9 @@ export function entryMatchesListQuery(entry: {
     createdAt: string;
     updatedAt: string;
 }, rawQuery: string): boolean {
-    return diaryFieldsMatch(entryListSearchText(entry), "", rawQuery);
+    const query = normalizeSearchQuery(rawQuery).toLowerCase();
+    if (!query) return true;
+    return entrySearchParts(entry).some((part) => part.toLowerCase().includes(query));
 }
 
 export function entriesForQuery<T extends {
@@ -60,13 +62,8 @@ type ListedEntry = {
 
 function matchingPiece(entry: ListedEntry, query: string): string {
     const writing = entry.plainText?.trim() || entryWritingText(entry.content);
-    const clock = formatEntryTime(entry.createdAt);
-    const looseClock = clock.replace(/^0/, "");
-    const pieces = [writing, formatEntryLong(entry.createdAt), formatDiaryDate(entry.createdAt), clock];
-    if (looseClock !== clock) pieces.push(looseClock);
-    if (entryWasRevised(entry.createdAt, entry.updatedAt)) pieces.push("edited");
     const needle = query.toLowerCase();
-    const piece = pieces.find((item) => item.toLowerCase().includes(needle)) ?? entryListSearchText(entry);
+    const piece = entrySearchParts(entry).find((item) => item.toLowerCase().includes(needle)) ?? writing;
     if (piece.length <= 90) return piece;
     const index = piece.toLowerCase().indexOf(needle);
     const start = Math.max(0, index - 28);
