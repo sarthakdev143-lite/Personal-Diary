@@ -1421,6 +1421,15 @@ describe("search", () => {
         ]);
         assert.deepEqual(textPieceHits(["See ", "Harbor"], "   "), []);
         assert.deepEqual(textPieceHits(["See ", "Harbor"], "garden"), []);
+        assert.deepEqual(textPieceHits(["See Harbor  rain"], "Harbor rain"), [
+            [{ piece: 0, start: 4, end: 16 }],
+        ]);
+        assert.deepEqual(textPieceHits(["Hello , rain"], "Hello,"), [
+            [{ piece: 0, start: 0, end: 7 }],
+        ]);
+        assert.deepEqual(textPieceHits(["Hello , rain"], "Hello"), [
+            [{ piece: 0, start: 0, end: 5 }],
+        ]);
     });
 
     it("treats a line break as a space when finding a phrase", () => {
