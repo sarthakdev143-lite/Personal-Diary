@@ -1391,6 +1391,12 @@ describe("search", () => {
         assert.equal(early.matched, true);
         assert.equal(early.snippet, null);
 
+        const clipped = "The morning stayed ordinary and quiet beside the window. lantern appeared before the card opening ended.";
+        const hidden = diaryListMatch({ title: "Window notes", description: clipped }, [], "lantern");
+        assert.match(hidden.snippet ?? "", /lantern/);
+        const shown = (hidden.snippet ?? "").replace(/^…/, "");
+        assert.ok(shown.toLowerCase().indexOf("lantern") <= 32);
+
         const titled = diaryListMatch({ title: "Harbor", description }, [], "harbor");
         assert.equal(titled.snippet, null);
     });
