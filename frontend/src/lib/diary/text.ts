@@ -863,6 +863,13 @@ export function quoteCoveredBlocks(input: { covered: number; consecutive: boolea
     return "browser";
 }
 
+export type QuoteToggle = "leave" | "quote";
+
+export function quoteToggle(input: { inside: boolean }): QuoteToggle {
+    if (input.inside) return "leave";
+    return "quote";
+}
+
 export type ListCommand = "lift" | "pass";
 
 export function listCommand(command: string): ListCommand {
