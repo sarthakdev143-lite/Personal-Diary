@@ -176,6 +176,12 @@ export function pictureNameSelection(input: {
     return cut || removing ? "edit" : "pass";
 }
 
+export type PictureNameWord = "name" | "line";
+
+export function pictureNameWord(input: { inName: boolean }): PictureNameWord {
+    return input.inName ? "name" : "line";
+}
+
 export type PictureNameEnter = "replace" | "continue" | "pass";
 
 export function pictureNameEnter(input: {

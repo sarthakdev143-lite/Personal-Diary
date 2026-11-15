@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -1891,10 +1891,12 @@ function removeTextSpan(block: HTMLElement, start: number, end: number) {
 }
 
 function wordBlock(node: Node | null): HTMLElement | null {
+    const host = node instanceof Element ? node : node?.parentElement ?? null;
+    const name = host?.closest("figcaption");
+    if (name instanceof HTMLElement && pictureNameWord({ inName: true }) === "name") return name;
     const line = lineBlock(node);
     if (line) return line;
-    const host = node instanceof Element ? node : node?.parentElement ?? null;
-    const block = host?.closest("figcaption, pre");
+    const block = host?.closest("pre");
     return block instanceof HTMLElement ? block : null;
 }
 
@@ -7962,6 +7964,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const before = editor.innerHTML;
         const path = childPath(editor, block);
         removeTextSpan(block, span.start, span.end);
+        if (block.tagName === "FIGCAPTION") {
+            const figure = block.closest("figure");
+            if (figure instanceof HTMLElement) syncPictureAlt(figure);
+        }
         if (editor.innerHTML === before) return;
         keepBlank({ before, after: editor.innerHTML, path, caret, sticky: true });
         rememberWordGap(editor, block, blockIsEmpty(block) ? "none" : gap);
