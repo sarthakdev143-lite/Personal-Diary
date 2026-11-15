@@ -312,6 +312,18 @@ public final class DiaryMarkdown {
     }
 
     private static String wrapInline(String inner, String open, String close) {
+        String[] lines = inner.split("\n", -1);
+        StringBuilder body = new StringBuilder();
+        for (int index = 0; index < lines.length; index += 1) {
+            if (index > 0) {
+                body.append('\n');
+            }
+            body.append(wrapInlineLine(lines[index], open, close));
+        }
+        return body.toString();
+    }
+
+    private static String wrapInlineLine(String inner, String open, String close) {
         int start = 0;
         int end = inner.length();
         while (start < end && isGap(inner.charAt(start))) {
@@ -325,6 +337,52 @@ public final class DiaryMarkdown {
             return inner;
         }
         return inner.substring(0, start) + open + core + close + inner.substring(end);
+    }
+
+    private static String wrapCode(String inner) {
+        String[] lines = inner.split("\n", -1);
+        StringBuilder body = new StringBuilder();
+        for (int index = 0; index < lines.length; index += 1) {
+            if (index > 0) {
+                body.append('\n');
+            }
+            if (!lines[index].isEmpty()) {
+                body.append('`').append(lines[index]).append('`');
+            }
+        }
+        return body.toString();
+    }
+
+    private static String renderLink(String inner, String href) {
+        String[] lines = inner.split("\n", -1);
+        StringBuilder body = new StringBuilder();
+        for (int index = 0; index < lines.length; index += 1) {
+            if (index > 0) {
+                body.append('\n');
+            }
+            body.append(linkLine(lines[index], href, lines.length == 1));
+        }
+        return body.toString();
+    }
+
+    private static String linkLine(String line, String href, boolean only) {
+        int start = 0;
+        int end = line.length();
+        while (start < end && isGap(line.charAt(start))) {
+            start += 1;
+        }
+        while (end > start && isGap(line.charAt(end - 1))) {
+            end -= 1;
+        }
+        String label = line.substring(start, end);
+        if (label.isEmpty()) {
+            if (!only) {
+                return line;
+            }
+            label = href;
+        }
+        label = label.replace("[", "").replace("]", "");
+        return line.substring(0, start) + "[" + label + "](" + href + ")" + line.substring(end);
     }
 
     private static String renderInline(List<Node> nodes) {
@@ -363,29 +421,10 @@ public final class DiaryMarkdown {
             } else if (tag.equals("u")) {
                 builder.append(inner.isBlank() ? inner : wrapInline(inner, "<u>", "</u>"));
             } else if (tag.equals("code")) {
-                builder.append("`").append(inner).append("`");
+                builder.append(wrapCode(inner));
             } else if (tag.equals("a")) {
                 String href = element.attr("href");
-                if (href.isEmpty()) {
-                    builder.append(inner);
-                } else {
-                    int start = 0;
-                    int end = inner.length();
-                    while (start < end && isGap(inner.charAt(start))) {
-                        start += 1;
-                    }
-                    while (end > start && isGap(inner.charAt(end - 1))) {
-                        end -= 1;
-                    }
-                    String label = inner.substring(start, end);
-                    if (label.isEmpty()) {
-                        label = href;
-                    }
-                    label = label.replace("[", "").replace("]", "");
-                    builder.append(inner, 0, start);
-                    builder.append("[").append(label).append("](").append(href).append(")");
-                    builder.append(inner.substring(end));
-                }
+                builder.append(href.isEmpty() ? inner : renderLink(inner, href));
             } else {
                 builder.append(inner);
             }
