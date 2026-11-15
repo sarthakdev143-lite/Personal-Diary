@@ -528,6 +528,11 @@ describe("code block", () => {
         assert.equal(dragSelectionUndo({ collapsed: true, inWriting: true }), "pass");
         assert.equal(dragSelectionUndo({ collapsed: false, inWriting: false }), "pass");
         assert.deepEqual(wordDeleteSpan("See Harbor rain", 4, 10), { start: 4, end: 11 });
+        assert.deepEqual(wordDeleteSpan("See  Harbor rain", 5, 11), { start: 4, end: 12 });
+        assert.deepEqual(wordDeleteSpan("See Harbor  rain", 4, 10), { start: 4, end: 12 });
+        assert.deepEqual(wordDeleteSpan("See   Harbor   rain", 6, 12), { start: 4, end: 15 });
+        assert.deepEqual(wordDeleteSpan("See  Harbor", 5, 11), { start: 3, end: 11 });
+        assert.deepEqual(wordDeleteSpan("Harbor  rain", 0, 6), { start: 0, end: 8 });
         assert.deepEqual(wordDeleteSpan("See Harbor rain", 0, 3), { start: 0, end: 4 });
         assert.deepEqual(wordDeleteSpan("See Harbor", 4, 10), { start: 3, end: 10 });
         assert.deepEqual(wordDeleteSpan("See Harbor rain", 4, 7), { start: 4, end: 7 });
@@ -572,6 +577,8 @@ describe("code block", () => {
 
     it("keeps a space on both sides of the word typed after a deleted word", () => {
         assert.equal(wordDeleteGap("See Harbor rain", 4, 10), "after");
+        assert.equal(wordDeleteGap("See  Harbor rain", 5, 11), "after");
+        assert.equal(wordDeleteGap("See  Harbor", 5, 11), "before");
         assert.equal(wordDeleteGap("See Harbor rain", 4, 11), "after");
         assert.equal(wordDeleteGap("See Harbor rain", 3, 10), "before");
         assert.equal(wordDeleteGap("Harbor rain", 0, 6), "after");

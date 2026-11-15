@@ -265,10 +265,19 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
     }
     const before = text.slice(0, start).replace(/[\u00a0\s]/g, "");
     const after = text.slice(end).replace(/[\u00a0\s]/g, "");
-    if (end < text.length && space(end) && (start > 0 && space(start - 1) || before === "")) {
-        return { start, end: end + 1 };
+    if (end < text.length && space(end) && start > 0 && space(start - 1) && before !== "") {
+        while (end < text.length && space(end)) end += 1;
+        while (start > 1 && space(start - 1) && space(start - 2)) start -= 1;
+        return { start, end };
     }
-    if (start > 0 && space(start - 1) && after === "") return { start: start - 1, end };
+    if (end < text.length && space(end) && before === "") {
+        while (end < text.length && space(end)) end += 1;
+        return { start, end };
+    }
+    if (start > 0 && space(start - 1) && after === "") {
+        while (start > 0 && space(start - 1)) start -= 1;
+        return { start, end };
+    }
     return { start, end };
 }
 
