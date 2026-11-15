@@ -895,6 +895,22 @@ export function quoteListPlan(input: {
     };
 }
 
+export type QuotedListLift = "keep" | "lift-start" | "lift-end" | "lift-both" | "stop";
+
+export function quotedListLift(input: {
+    sameParent: boolean;
+    startContainsEnd: boolean;
+    endContainsStart: boolean;
+    startNested: boolean;
+    endNested: boolean;
+}): QuotedListLift {
+    if (input.sameParent || input.startContainsEnd || input.endContainsStart) return "keep";
+    if (input.startNested && input.endNested) return "lift-both";
+    if (input.startNested) return "lift-start";
+    if (input.endNested) return "lift-end";
+    return "stop";
+}
+
 export type QuoteListKind = "ul" | "ol" | "other" | "none";
 
 export function quoteListAgain(input: { quoted: QuoteListKind; previous: QuoteListKind; next: QuoteListKind }): { previous: boolean; next: boolean } {
