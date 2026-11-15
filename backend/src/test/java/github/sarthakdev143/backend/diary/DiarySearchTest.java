@@ -133,6 +133,24 @@ class DiarySearchTest {
         assertTrue(clock.matched());
         assertEquals("09:30 AM", clock.snippet());
 
+        DiarySearch.Note quiet = new DiarySearch.Note(
+                "quiet",
+                "<p>Quiet rain.</p>",
+                "Quiet rain.",
+                NOVEMBER,
+                NOVEMBER);
+        DiarySearch.Hit ontoLine = DiarySearch.match("Window notes", "", List.of(quiet), "2026 Quiet", ZoneOffset.UTC);
+        assertTrue(ontoLine.matched());
+        assertEquals("quiet", ontoLine.entryId());
+        assertTrue(ontoLine.snippet().contains("2026 Quiet"));
+        assertTrue(DiarySearch.pageMatches(quiet, "2026 Quiet", ZoneOffset.UTC));
+
+        assertFalse(DiarySearch.match("Window notes", "", List.of(rain), "window. Nov", ZoneOffset.UTC).matched());
+        assertFalse(DiarySearch.pageMatches(rain, "window. Nov", ZoneOffset.UTC));
+        assertFalse(DiarySearch.match("Window notes", "", List.of(rain), "2026 Saturday", ZoneOffset.UTC).matched());
+        assertFalse(DiarySearch.match("Window notes", "", List.of(rain), "2026 09:30", ZoneOffset.UTC).matched());
+        assertFalse(DiarySearch.match("Window notes", "", List.of(revised), "AM edited", ZoneOffset.UTC).matched());
+
         assertEquals("hello", DiarySearch.normalize("  hello  "));
         assertEquals(80, DiarySearch.normalize("x".repeat(100)).length());
     }
