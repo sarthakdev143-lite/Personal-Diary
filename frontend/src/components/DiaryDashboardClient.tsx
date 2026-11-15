@@ -13,7 +13,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import { importNotice, importedDiaryPath, rememberImportNotice } from "@/lib/diary/import";
 import { diaryListKeyAction, diarySearchShortcut, searchShortcutLabel } from "@/lib/diary/keys";
-import { diaryListAddress } from "@/lib/diary/search";
+import { diaryListNavigation } from "@/lib/diary/search";
 
 const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) => {
     const router = useRouter();
@@ -44,11 +44,10 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
     }, [query]);
 
     useEffect(() => {
-        const next = diaryListAddress(query);
-        const current = `${window.location.pathname}${window.location.search}`;
-        if (window.location.pathname !== "/diary" || current === next) return;
-        window.history.replaceState(window.history.state, "", next);
-    }, [query]);
+        const next = diaryListNavigation(`${window.location.pathname}${window.location.search}`, query);
+        if (!next) return;
+        router.replace(next, { scroll: false });
+    }, [query, router]);
 
     useEffect(() => {
         if (searchKeyRef.current) {
