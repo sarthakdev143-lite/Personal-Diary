@@ -159,6 +159,13 @@ describe("entry paste", () => {
         assert.equal(pictureInsert({ inPicture: false, inItem: false, inLine: false }), "pass");
     });
 
+    it("keeps a picture on its own line in the middle of a code block", () => {
+        assert.equal(pictureInsert({ inPicture: false, inItem: false, inCode: true }), "code");
+        assert.equal(pictureInsert({ inPicture: false, inItem: true, inCode: true }), "line");
+        assert.equal(pictureInsert({ inPicture: true, inItem: false, inCode: true }), "after");
+        assert.equal(pictureInsert({ inPicture: false, inItem: false, inCode: false }), "pass");
+    });
+
     it("names a pasted picture and keeps the name out of the markup", () => {
         assert.equal(imageAltText("  sketch   of rain  "), "sketch of rain");
         assert.equal(imageAltText("a".repeat(200)).length, 180);
