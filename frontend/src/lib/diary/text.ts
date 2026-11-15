@@ -1232,6 +1232,13 @@ export function listHeadingPicture(input: { inItem: boolean; hasPicture: boolean
     return "keep";
 }
 
+export type PictureListChange = "leave" | "switch" | "skip";
+
+export function pictureListChange(input: { inList: boolean; hasPicture: boolean; sameKind: boolean }): PictureListChange {
+    if (!input.inList || !input.hasPicture) return "skip";
+    return input.sameKind ? "leave" : "switch";
+}
+
 export type ListHeadingAcross = "lines" | "pass";
 
 export function listHeadingAcross(input: { touchesList: boolean; across: boolean }): ListHeadingAcross {
