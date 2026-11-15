@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureAheadDelete, pictureInlineEnter, pictureInlineBackspace, pictureBoundsKey, pictureNameLine, pictureTypedPlace, pictureCutWords, pictureNameEnter, pictureNameSelection, pictureNameWord, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -1347,6 +1347,21 @@ function selectCodeOffsets(code: HTMLElement, start: number, end: number) {
 }
 
 const LINE_BLOCK = /^(P|H1|H2|H3|BLOCKQUOTE|LI)$/;
+
+function cutWordsBesidePicture(range: Range): string {
+    const holder = document.createElement("div");
+    holder.appendChild(range.cloneContents());
+    holder.querySelectorAll("figure").forEach((figure) => {
+        const caption = figure.querySelector("figcaption");
+        const words = caption ? [...caption.childNodes] : [];
+        const following = figure.nextSibling;
+        const breakLine = Boolean(following && (following.textContent ?? "").replace(/[\u00a0\s]/g, ""));
+        figure.replaceWith(...words);
+        if (breakLine && following?.parentNode) following.parentNode.insertBefore(document.createElement("br"), following);
+    });
+    holder.querySelectorAll("img").forEach((image) => image.remove());
+    return holder.innerHTML;
+}
 
 function cutSelectionHtml(range: Range): string {
     const holder = document.createElement("div");
@@ -5885,6 +5900,17 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }
         if (!selection.rangeCount) return;
         const range = selection.getRangeAt(0);
+        const crossed = selectionCrossesPicture(editor);
+        if (pictureCutWords({ collapsed: selection.isCollapsed, touchesPicture: crossed.touchesPicture, outsideSelected: crossed.outsideSelected }) === "keep") {
+            event.preventDefault();
+            event.clipboardData.setData("text/plain", selection.toString());
+            event.clipboardData.setData("text/html", cutWordsBesidePicture(range));
+            const mark = selectionUndo(editor);
+            separatePictureSelection(editor, selection, false);
+            keepReplacedSelection(mark);
+            setHtmlContent(editor.innerHTML);
+            return;
+        }
         if (selectionCutUndo({ collapsed: range.collapsed, inWriting: writingSelection(editor, range) }) !== "place") return;
         const mark = selectionUndo(editor);
         if (!mark) return;
