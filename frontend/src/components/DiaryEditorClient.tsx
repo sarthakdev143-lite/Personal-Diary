@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";
 import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
@@ -2703,21 +2703,26 @@ function shapeListAroundPicture(list: HTMLElement, range: Range, role: "start" |
 function placeBlockInsideListItem(editor: HTMLElement, range: Range, kind: "divider" | "code", list: HTMLElement): boolean {
     const startItem = directListItem(list, range.startContainer);
     const endItem = directListItem(list, range.endContainer);
-    if (!startItem || startItem !== endItem) return false;
-    const figures = [...startItem.querySelectorAll("figure")].filter((figure): figure is HTMLElement => {
+    if (!startItem || !endItem) return false;
+    const boundaryHost = (node: Node) => node instanceof Element ? node : node.parentElement;
+    if (boundaryHost(range.startContainer)?.closest("figure") || boundaryHost(range.endContainer)?.closest("figure")) return false;
+    const items = listItems(list);
+    const startIndex = items.indexOf(startItem);
+    const endIndex = items.indexOf(endItem);
+    if (startIndex < 0 || endIndex < startIndex) return false;
+    const covered = items.slice(startIndex, endIndex + 1);
+    const figures = covered.flatMap((item) => [...item.querySelectorAll("figure")]).filter((figure): figure is HTMLElement => {
         try {
             return range.intersectsNode(figure);
         } catch {
             return false;
         }
     });
-    if (!figures.length) return false;
+    const span = pictureItemSpan({ sameItem: startItem === endItem, hasPicture: figures.length > 0 });
+    if (span === "skip") return false;
     const numbers = orderedListNumbers(list);
-    const items = listItems(list);
-    const index = items.indexOf(startItem);
-    if (index < 0) return false;
-    const following = items.slice(index + 1);
-    const itemNumber = numbers?.get(startItem) ?? index + 1;
+    const following = items.slice(endIndex + 1);
+    const itemNumber = numbers?.get(startItem) ?? startIndex + 1;
     const prefix = sidePiece(startItem, range, "before");
     const suffix = sidePiece(endItem, range, "after");
     for (const figure of figures) figure.remove();
@@ -2728,14 +2733,15 @@ function placeBlockInsideListItem(editor: HTMLElement, range: Range, kind: "divi
         if (blockIsEmpty(startItem)) startItem.remove();
         else keptPrefix = true;
     } else startItem.remove();
-    const suffixItem = document.createElement("li");
+    for (const item of items.slice(startIndex + 1, endIndex)) item.remove();
+    const suffixItem = span === "across" ? endItem : document.createElement("li");
     let keptSuffix = false;
     if (pieceKept(suffix)) {
-        suffixItem.append(suffix);
+        suffixItem.replaceChildren(suffix);
         trimPictureEdge(suffixItem, "start");
-        keptSuffix = !blockIsEmpty(suffixItem);
-    }
-    for (const item of following) item.remove();
+        if (blockIsEmpty(suffixItem)) suffixItem.remove();
+        else keptSuffix = true;
+    } else suffixItem.remove();
     const afterItems = [...(keptSuffix ? [suffixItem] : []), ...following];
     const afterList = afterItems.length ? document.createElement(list.tagName.toLowerCase()) : null;
     if (afterList) for (const item of afterItems) afterList.append(item);
@@ -2753,7 +2759,16 @@ function placeBlockInsideListItem(editor: HTMLElement, range: Range, kind: "divi
     if (numbers && afterList) {
         const followingNumbers = following.map((item) => numbers.get(item) ?? itemNumber);
         const bumped = new Map<HTMLElement, number>();
-        if (keptPrefix && keptSuffix) {
+        if (span === "across") {
+            if (keptSuffix) {
+                const endNumber = numbers.get(endItem);
+                if (endNumber !== undefined) bumped.set(endItem, endNumber);
+            }
+            following.forEach((item) => {
+                const number = numbers.get(item);
+                if (number !== undefined) bumped.set(item, number);
+            });
+        } else if (keptPrefix && keptSuffix) {
             const assigned = listBlockNumbers({ item: itemNumber, following: followingNumbers, split: true });
             afterItems.forEach((item, position) => bumped.set(item, assigned[position] ?? itemNumber + 1 + position));
         } else if (keptSuffix) {
