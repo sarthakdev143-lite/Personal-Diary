@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureInlineBackspace, pictureBoundsKey, pictureCaptionKey, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureSelectionMark, pictureUndo, selectedPictureKey } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -311,6 +311,29 @@ function captionCaret(caption: HTMLElement, selection: Selection): { collapsed: 
         atStart: before.toString().length === 0,
         atEnd: after.toString().length === 0,
     };
+}
+
+function inlinePictureBeforeCaret(editor: HTMLElement, selection: Selection): HTMLElement | null {
+    if (!selection.rangeCount || !selection.isCollapsed) return null;
+    const range = selection.getRangeAt(0);
+    if (!editor.contains(range.startContainer)) return null;
+    const anchor = range.startContainer;
+    const host = anchor instanceof Element ? anchor : anchor.parentElement;
+    const block = host?.closest("p, li, h1, h2, h3, blockquote, td, th");
+    if (!(block instanceof HTMLElement) || !editor.contains(block) || host?.closest("figcaption")) return null;
+    const figures = [...block.querySelectorAll("figure")].filter((figure) => figure.parentElement === block || block.contains(figure));
+    for (const figure of figures) {
+        if (figure.contains(range.startContainer)) continue;
+        const between = document.createRange();
+        try {
+            between.setStartAfter(figure);
+            between.setEnd(range.startContainer, range.startOffset);
+        } catch {
+            continue;
+        }
+        if (between.toString().length === 0 && between.cloneContents().querySelector("br, img, figure, table, pre") === null) return figure;
+    }
+    return null;
 }
 
 function lineAfterPicture(editor: HTMLElement, selection: Selection): { block: HTMLElement; caption: HTMLElement; atStart: boolean; empty: boolean } | null {
@@ -6241,6 +6264,33 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const keepInlinePictureBackspace = (e: React.KeyboardEvent) => {
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection || mode === "view") return false;
+        const figure = inlinePictureBeforeCaret(editor, selection);
+        const action = pictureInlineBackspace({
+            key: e.key,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            collapsed: selection.isCollapsed,
+            afterPicture: Boolean(figure),
+        });
+        if (action !== "name" || !(figure instanceof HTMLElement)) return false;
+        e.preventDefault();
+        const caption = figure.querySelector("figcaption");
+        if (caption instanceof HTMLElement) placeCaretAtEnd(caption);
+        else {
+            const caret = document.createRange();
+            caret.setStartBefore(figure);
+            caret.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(caret);
+        }
+        return true;
+    };
+
     const keepPictureNameApart = (e: React.KeyboardEvent) => {
         const editor = editorRef.current;
         const selection = window.getSelection();
@@ -7691,6 +7741,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (keepListLine(e)) return;
         if (keepQuoteLine(e)) return;
         if (editSelectedPicture(e)) return;
+        if (keepInlinePictureBackspace(e)) return;
         if (keepPictureNameApart(e)) return;
         if (moveAroundPicture(e)) return;
         if (pullCodeEdge(e)) return;
