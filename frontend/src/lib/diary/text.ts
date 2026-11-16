@@ -1761,6 +1761,12 @@ export function codeQuotedPicture(input: { picture: boolean }): CodeQuotedPictur
     return input.picture ? "stay" : "pass";
 }
 
+export type CodeNestedCode = "words" | "pass";
+
+export function codeNestedCode(input: { nested: boolean }): CodeNestedCode {
+    return input.nested ? "words" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
