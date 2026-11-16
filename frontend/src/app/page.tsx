@@ -19,7 +19,6 @@ export default function Home() {
           </div>
           <WhyChooseThis />
         </div>
-        <div className="h-screen w-full pointer-events-none"></div>
       </LenisProvider>
     </>
   );
