@@ -1623,6 +1623,12 @@ export function codeListHost(input: { list: boolean }): CodeListHost {
     return input.list ? "pull" : "pass";
 }
 
+export type CodePictureHost = "pull" | "pass";
+
+export function codePictureHost(input: { picture: boolean }): CodePictureHost {
+    return input.picture ? "pull" : "pass";
+}
+
 export type CodeDividerLead = "pull" | "pass";
 
 export function codeDividerLead(input: { divider: boolean }): CodeDividerLead {
