@@ -1449,6 +1449,16 @@ describe("code block", () => {
         assert.deepEqual(wordDeleteSpan("See [$20] rain", 4, 6), { start: 4, end: 10 });
         assert.deepEqual(wordDeleteSpan("See (3.14) rain", 4, 5), { start: 4, end: 5 });
         assert.deepEqual(wordDeleteSpan("See (harbor bay) rain", 4, 5), { start: 4, end: 5 });
+        assert.deepEqual(wordDeleteSpan("See ($20%) rain", 4, 6), { start: 4, end: 11 });
+        assert.equal(wordDeleteGap("See ($20%) rain", 4, 6), "after");
+        assert.deepEqual(wordDeleteSpan("See ($20%) rain", 8, 10), { start: 4, end: 11 });
+        assert.deepEqual(wordDeleteSpan("See ($20\u00b0) rain", 4, 6), { start: 4, end: 11 });
+        assert.deepEqual(wordDeleteSpan("See ($20.50%) rain", 4, 6), { start: 4, end: 14 });
+        assert.deepEqual(wordDeleteSpan("See (20%) rain", 4, 5), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See (20%) rain", 7, 9), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See (Harbor%) rain", 4, 5), { start: 4, end: 14 });
+        assert.deepEqual(wordDeleteSpan("See (3.14%) rain", 4, 5), { start: 4, end: 5 });
+        assert.deepEqual(wordDeleteSpan("See (3.14%) rain", 9, 11), { start: 9, end: 11 });
         assert.deepEqual(wordDeleteSpan('See "Harbor", rain', 5, 11), { start: 4, end: 14 });
         assert.deepEqual(wordDeleteSpan('See "Harbor", rain', 11, 12), { start: 4, end: 14 });
         assert.deepEqual(wordDeleteSpan('See "Harbor", rain', 11, 13), { start: 4, end: 14 });
