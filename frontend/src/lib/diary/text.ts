@@ -107,6 +107,12 @@ export function quoteLineEdge(input: { parent: "quote" | "other"; atEdge: boolea
     return input.parent === "quote" && input.atEdge ? "out" : "stay";
 }
 
+export type QuoteJoinTarget = "line" | "quote";
+
+export function quoteJoinTarget(input: { direction: "next" | "previous"; hasLine: boolean }): QuoteJoinTarget {
+    return input.direction === "next" && input.hasLine ? "line" : "quote";
+}
+
 export type LineJoin = "join" | "clear" | "drop" | "pass";
 
 export function lineJoinKey(input: {
