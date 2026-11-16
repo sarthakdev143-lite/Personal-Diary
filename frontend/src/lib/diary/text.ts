@@ -1544,6 +1544,13 @@ export function codePictureWords(input: { before: boolean }): CodePictureWords {
     return input.before ? "words" : "pass";
 }
 
+export type CodeAhead = "code" | "words" | "pass";
+
+export function codeAhead(input: { code: boolean; wordsBefore: boolean }): CodeAhead {
+    if (!input.code) return "pass";
+    return input.wordsBefore ? "words" : "code";
+}
+
 export function codePullUndoCaret(offset: number | null): number | null {
     if (offset === null || !Number.isFinite(offset) || offset < 0) return null;
     return Math.floor(offset);
