@@ -336,7 +336,9 @@ export function selectedPictureKey(input: {
     metaKey?: boolean;
     imageSelected: boolean;
 }): SelectedPictureKey {
-    if (!input.imageSelected || input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (!input.imageSelected || input.altKey) return "pass";
+    const word = Boolean(input.ctrlKey || input.metaKey);
+    if (word && input.key !== "Backspace" && input.key !== "Delete") return "pass";
     if (input.key === "Backspace" || input.key === "Delete") return "remove";
     if (input.key === "Enter") return "after";
     if (input.key.length === 1) return "name";

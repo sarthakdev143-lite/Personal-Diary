@@ -666,7 +666,13 @@ describe("entry paste", () => {
         assert.equal(selectedPictureKey({ key: "Delete", imageSelected: true }), "remove");
         assert.equal(selectedPictureKey({ key: "Backspace", imageSelected: true }), "remove");
         assert.equal(selectedPictureKey({ key: "Delete", imageSelected: false }), "pass");
-        assert.equal(selectedPictureKey({ key: "Delete", ctrlKey: true, imageSelected: true }), "pass");
+        assert.equal(selectedPictureKey({ key: "Delete", ctrlKey: true, imageSelected: true }), "remove");
+        assert.equal(selectedPictureKey({ key: "Backspace", ctrlKey: true, imageSelected: true }), "remove");
+        assert.equal(selectedPictureKey({ key: "Delete", metaKey: true, imageSelected: true }), "remove");
+        assert.equal(selectedPictureKey({ key: "Backspace", metaKey: true, imageSelected: true }), "remove");
+        assert.equal(selectedPictureKey({ key: "Delete", altKey: true, imageSelected: true }), "pass");
+        assert.equal(selectedPictureKey({ key: "Enter", ctrlKey: true, imageSelected: true }), "pass");
+        assert.equal(selectedPictureKey({ key: "s", ctrlKey: true, imageSelected: true }), "pass");
         assert.equal(selectedPictureKey({ key: "Enter", imageSelected: true }), "after");
         assert.equal(selectedPictureEnter({ next: "text", inLine: true }), "writing");
         assert.equal(selectedPictureEnter({ next: "block", inLine: false }), "writing");
