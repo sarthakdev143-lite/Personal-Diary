@@ -1767,6 +1767,12 @@ export function codeNestedCode(input: { nested: boolean }): CodeNestedCode {
     return input.nested ? "words" : "pass";
 }
 
+export type CodeNestedHeld = "words" | "pass";
+
+export function codeNestedHeld(input: { nested: boolean }): CodeNestedHeld {
+    return input.nested ? "words" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
