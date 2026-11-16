@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { usePathname } from "next/navigation";
@@ -18,6 +18,7 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
     const pathName = usePathname();
     const texture = selectedTexture || "/textures/leather-texture.jpg";
     const initialTextureRef = useRef(texture);
+    const [bookShown, setBookShown] = useState(false);
 
     const {
         sceneRef,
@@ -51,6 +52,7 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
         try {
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         } catch {
+            setBookShown(false);
             return;
         }
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -91,6 +93,7 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
             spine,
             pageGroup,
         };
+        setBookShown(true);
 
         handleResize();
 
@@ -174,9 +177,10 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
             <div
                 ref={mountRef}
                 className="absolute left-0 top-0 h-screen w-full overflow-hidden z-10"
-                title="Drag to interact with the diary"
-                onTouchStart={handleTouchStart}
+                title={bookShown ? "Drag to interact with the diary" : undefined}
+                onTouchStart={bookShown ? handleTouchStart : undefined}
             >
+                {bookShown && (
                 <div className="absolute bottom-20 left-1/2 z-20 flex -translate-x-1/2">
                     <button
                         onClick={toggleDiary}
@@ -188,6 +192,7 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
                         {isOpened ? "Close Diary" : "Open Diary"}
                     </button>
                 </div>
+                )}
             </div>
         </div>
     ) : null;
