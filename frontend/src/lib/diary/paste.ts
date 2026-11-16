@@ -106,7 +106,7 @@ export function pictureForwardDelete(input: {
     afterPicture: boolean;
     next: "writing" | "empty" | "none";
 }): PictureForwardDelete {
-    if (input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.altKey) return "pass";
     if (input.key !== "Delete" || !input.collapsed || !input.afterPicture || input.next !== "writing") return "pass";
     return "into";
 }
