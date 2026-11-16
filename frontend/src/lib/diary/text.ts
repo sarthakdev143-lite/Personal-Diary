@@ -1605,6 +1605,12 @@ export function codeInside(input: { code: boolean }): CodeInside {
     return input.code ? "line" : "pass";
 }
 
+export type CodeAfterHost = "pull" | "pass";
+
+export function codeAfterHost(input: { words: boolean }): CodeAfterHost {
+    return input.words ? "pull" : "pass";
+}
+
 export type CodePictureLead = "pull" | "pass";
 
 export function codePictureLead(input: { picture: boolean }): CodePictureLead {
