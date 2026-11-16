@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codeForwardJoin, codeAhead, codeListNest, codePastItem, codePictureWords, codePullUndoCaret, codeTail, codeLead, codeForwardLead, codeMarkTail, codeTailBack, codePriorItem, codeHostItem, codeBreakLead, codeDeepHost, codeListLead, codeBeside, codeInside, codeAfterHost, codeShellLead, codeEdgeLead, codePictureLead, codeTableLead, codeTableHost, codeListHost, codePictureHost, codeDividerHost, codeQuoteHost, codeDividerLead, codeDivLead, codeQuoteShell, codeQuoteLead, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, dropCaretMarker, caretMarkBeside, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, quoteLineEdge, quoteJoinTarget, quotePictureJoin, quoteTrailingLeave, quoteListTail, quoteAfterList, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, listReachBlock, pictureCodeList, pictureTableList, pictureStyle, pictureStyleHold, pictureStyleSeat, pictureLineItalic, pictureLinkField, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codeForwardJoin, codeAhead, codeListNest, codePastItem, codePictureWords, codePullUndoCaret, codeTail, codeLead, codeForwardLead, codeMarkTail, codeTailBack, codeBlockTail, codePriorItem, codeHostItem, codeBreakLead, codeDeepHost, codeListLead, codeBeside, codeInside, codeAfterHost, codeShellLead, codeEdgeLead, codePictureLead, codeTableLead, codeTableHost, codeListHost, codePictureHost, codeDividerHost, codeQuoteHost, codeDividerLead, codeDivLead, codeQuoteShell, codeQuoteLead, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, dropCaretMarker, caretMarkBeside, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, quoteLineEdge, quoteJoinTarget, quotePictureJoin, quoteTrailingLeave, quoteListTail, quoteAfterList, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, listReachBlock, pictureCodeList, pictureTableList, pictureStyle, pictureStyleHold, pictureStyleSeat, pictureLineItalic, pictureLinkField, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
 type Entry = { _id: string; diaryId: string; content: string; plainText?: string; createdAt: string; updatedAt: string; };
@@ -3727,6 +3727,77 @@ function preBeforeCaret(selection: Selection): HTMLPreElement | null {
         return null;
     }
     return null;
+}
+
+function preAtEnd(node: HTMLElement): HTMLPreElement | null {
+    let last: ChildNode | null = node.lastChild;
+    while (last instanceof Text && !last.data.replace(/[\u00a0\s\u200b]/g, "")) last = last.previousSibling;
+    if (last instanceof HTMLBRElement) {
+        let before: ChildNode | null = last.previousSibling;
+        while (before instanceof Text && !before.data.replace(/[\u00a0\s\u200b]/g, "")) before = before.previousSibling;
+        return before instanceof HTMLPreElement ? before : null;
+    }
+    if (last instanceof HTMLPreElement) return last;
+    if (last instanceof HTMLDivElement && !last.querySelector("p, h1, h2, h3, blockquote, ul, ol, table, hr, img, figure")) return preAtEnd(last);
+    return null;
+}
+
+function preBeforeWriting(block: HTMLElement): HTMLPreElement | null {
+    if (!/^(P|H1|H2|H3|BLOCKQUOTE)$/.test(block.tagName) || codeBlockTail({ block: true }) !== "pull") return null;
+    let current: HTMLElement | null = block;
+    let guard = 0;
+    while (current && guard < 4) {
+        let sibling: ChildNode | null = current.previousSibling;
+        while (sibling instanceof Text && !sibling.data.replace(/[\u00a0\s\u200b]/g, "")) sibling = sibling.previousSibling;
+        if (sibling instanceof HTMLPreElement) return sibling;
+        if (sibling instanceof HTMLDivElement && !sibling.querySelector("table, hr, img, figure, ul, ol, blockquote")) {
+            const pre = preAtEnd(sibling);
+            if (pre) return pre;
+            return null;
+        }
+        if (sibling) return null;
+        const parent: HTMLElement | null = current.parentElement;
+        if (!(parent instanceof HTMLElement) || parent.tagName !== "BLOCKQUOTE") return null;
+        current = parent;
+        guard += 1;
+    }
+    return null;
+}
+
+function pullCodeIntoBlock(pre: HTMLElement, block: HTMLElement): "after" | "none" {
+    const code = pre.querySelector("code");
+    const source = code instanceof HTMLElement ? code : pre;
+    const lines = codeLines(source);
+    const line = lines[lines.length - 1] ?? "";
+    const rest = lines.slice(0, -1).join("\n");
+    if (!line.trim()) {
+        if (!rest.trim()) pre.remove();
+        else source.textContent = rest;
+        placeCaretAtStart(block);
+        return "none";
+    }
+    const gap = joinGap(line, block.textContent ?? "");
+    if (!rest.trim()) pre.remove();
+    else source.textContent = rest;
+    if (gap.trimNext) trimLeadingText(block, gap.trimNext);
+    let following: ChildNode | null = block.firstChild;
+    while (following instanceof Text && !following.data.replace(/[\u00a0\s\u200b]/g, "")) following = following.nextSibling;
+    if (following instanceof HTMLBRElement && !following.nextSibling) {
+        following.remove();
+        following = null;
+    }
+    const text = document.createTextNode(`${line.slice(0, Math.max(0, line.length - gap.trimPrevious))}${gap.insert ? " " : ""}`);
+    block.insertBefore(text, block.firstChild);
+    if (following?.parentNode) placeCaretAtTail(following);
+    else {
+        const selection = window.getSelection();
+        const caret = document.createRange();
+        caret.setStart(text, text.data.length);
+        caret.collapse(true);
+        selection?.removeAllRanges();
+        selection?.addRange(caret);
+    }
+    return gap.separate ? "after" : "none";
 }
 
 function pullFirstCodeLine(into: HTMLElement, pre: HTMLElement): "after" | "none" {
@@ -9861,6 +9932,34 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 const path = childPath(editor, host);
                 const separated = pullLastCodeLine(behind, textBeforeNode(behind));
                 rememberWordGap(editor, writingHost(host), separated);
+                keepBlank({ before, after: editor.innerHTML, path });
+                setHtmlContent(editor.innerHTML);
+                return true;
+            }
+        }
+        const writing = lineBlock(selection.anchorNode);
+        const writingEdges = writing ? caretEdges(writing, selection) : null;
+        const behindBlock = writing && writing !== dateHeading && writingEdges?.collapsed && writingEdges.atStart ? preBeforeWriting(writing) : null;
+        if (writing && behindBlock && editor.contains(behindBlock) && !behindBlock.closest("figcaption") && !writing.closest("figcaption")) {
+            const intoBlock = codePullKey({
+                key: e.key,
+                shiftKey: e.shiftKey,
+                altKey: e.altKey,
+                ctrlKey: e.ctrlKey,
+                metaKey: e.metaKey,
+                collapsed: selection.isCollapsed,
+                atStart: true,
+                atEnd: false,
+                neighbor: "text",
+            });
+            if (intoBlock === "pull") {
+                e.preventDefault();
+                const before = editor.innerHTML;
+                const path = childPath(editor, writing);
+                const home = behindBlock.parentElement;
+                const separated = pullCodeIntoBlock(behindBlock, writing);
+                dropBlankCodeShell(home instanceof HTMLElement ? home : null, editor);
+                rememberWordGap(editor, writingHost(writing), separated);
                 keepBlank({ before, after: editor.innerHTML, path });
                 setHtmlContent(editor.innerHTML);
                 return true;
