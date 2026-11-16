@@ -1707,6 +1707,12 @@ export function codeDivBack(input: { line: boolean }): CodeDivBack {
     return input.line ? "line" : "pass";
 }
 
+export type CodeDivJoin = "line" | "pass";
+
+export function codeDivJoin(input: { line: boolean }): CodeDivJoin {
+    return input.line ? "line" : "pass";
+}
+
 export type CodeBackBreak = "line" | "pass";
 
 export function codeBackBreak(input: { broken: boolean }): CodeBackBreak {
