@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, dropCaretMarker, caretMarkBeside, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, quoteLineEdge, quoteJoinTarget, quotePictureJoin, quoteTrailingLeave, quoteListTail, quoteAfterList, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, listReachBlock, pictureCodeList, pictureTableList, pictureStyle, pictureStyleHold, pictureStyleSeat, pictureLineItalic, pictureLinkField, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codeForwardJoin, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, dropCaretMarker, caretMarkBeside, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, quoteLineEdge, quoteJoinTarget, quotePictureJoin, quoteTrailingLeave, quoteListTail, quoteAfterList, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, listReachBlock, pictureCodeList, pictureTableList, pictureStyle, pictureStyleHold, pictureStyleSeat, pictureLineItalic, pictureLinkField, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
 type Entry = { _id: string; diaryId: string; content: string; plainText?: string; createdAt: string; updatedAt: string; };
@@ -3355,6 +3355,51 @@ function pullFirstCodeLine(into: HTMLElement, pre: HTMLElement): "after" | "none
     if (!rest.trim()) pre.remove();
     else source.textContent = rest;
     return separated;
+}
+
+function writingAfterCode(pre: HTMLElement): HTMLElement | null {
+    let sibling = pre.nextElementSibling;
+    let edge = pre.parentElement;
+    let guard = 0;
+    while (!sibling && edge instanceof HTMLElement && edge.tagName === "BLOCKQUOTE" && guard < 8) {
+        sibling = edge.nextElementSibling;
+        edge = edge.parentElement;
+        guard += 1;
+    }
+    if (!(sibling instanceof HTMLElement) || !/^(P|H1|H2|H3)$/.test(sibling.tagName)) return null;
+    if (sibling.querySelector("img, figure, table, pre, ul, ol, hr")) return null;
+    return sibling;
+}
+
+function leaveTrailingCode(pre: HTMLElement, from: HTMLElement) {
+    let guard = 0;
+    while (guard < 8) {
+        guard += 1;
+        const quote = pre.parentElement;
+        if (!(quote instanceof HTMLElement) || quote.tagName !== "BLOCKQUOTE" || pre.nextElementSibling) break;
+        if (quoteTrailingLeave({ trailing: true, outside: !quote.contains(from) }) !== "leave") break;
+        quote.after(pre);
+        closeEmptyHost(quote);
+    }
+}
+
+function joinWritingIntoCode(pre: HTMLElement, next: HTMLElement) {
+    const code = pre.querySelector("code");
+    const source = code instanceof HTMLElement ? code : pre;
+    const body = (next.textContent ?? "").replace(/\u200b/g, "").replace(/\u00a0/g, " ").trim();
+    leaveTrailingCode(pre, next);
+    source.removeAttribute("data-fresh");
+    if (!body) {
+        placeCaretAtEnd(source);
+        removeJoined(next);
+        return;
+    }
+    const existing = (source.textContent ?? "").replace(/\u200b/g, "");
+    const oldLength = existing.replace(/\u00a0/g, " ").length;
+    const broken = existing.length > 0 && !existing.endsWith("\n");
+    source.appendChild(document.createTextNode(`${broken ? "\n" : ""}${body}`));
+    placeCaretAtTextOffset(source, oldLength + (broken ? 1 : 0));
+    removeJoined(next);
 }
 
 function followingCode(block: HTMLElement): HTMLPreElement | null {
@@ -8590,6 +8635,26 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             const target = code instanceof HTMLElement ? code : pre;
             const offset = textOffsetWithin(target, range.startContainer, range.startOffset);
             const atStart = (target.textContent ?? "").slice(0, offset).replace(/[\u200b\u00a0]/g, "") === "";
+            const nextWriting = writingAfterCode(pre);
+            const forward = codeForwardJoin({
+                key: e.key,
+                shiftKey: e.shiftKey,
+                altKey: e.altKey,
+                ctrlKey: e.ctrlKey,
+                metaKey: e.metaKey,
+                collapsed: selection.isCollapsed,
+                atEnd: caretAtBlockEnd(target, range),
+                next: nextWriting && nextWriting !== dateHeading ? "writing" : "none",
+            });
+            if (forward === "line" && nextWriting && nextWriting !== dateHeading) {
+                e.preventDefault();
+                const before = editor.innerHTML;
+                const path = childPath(editor, pre);
+                joinWritingIntoCode(pre, nextWriting);
+                keepBlank({ before, after: editor.innerHTML, path });
+                setHtmlContent(editor.innerHTML);
+                return true;
+            }
             const neighbor = adjacentTextBlock(pre, "previous");
             const action = codePullKey({
                 key: e.key,
@@ -8645,6 +8710,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const editor = editorRef.current;
         const selection = window.getSelection();
         if (!editor || !selection?.rangeCount || mode === "view") return false;
+        const anchorHost = selection.anchorNode instanceof Element ? selection.anchorNode : selection.anchorNode?.parentElement ?? null;
+        if (anchorHost?.closest("pre")) return false;
         const block = lineBlock(selection.anchorNode);
         if (!block || !editor.contains(block) || block.closest("pre") || block.closest("figcaption")) return false;
         const captionHost = selection.anchorNode instanceof Element ? selection.anchorNode : selection.anchorNode?.parentElement ?? null;

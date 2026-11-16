@@ -1509,6 +1509,23 @@ export function codePullKey(input: {
     return "pass";
 }
 
+export type CodeForwardJoin = "line" | "pass";
+
+export function codeForwardJoin(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    atEnd: boolean;
+    next: "writing" | "none";
+}): CodeForwardJoin {
+    if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey || !input.collapsed || !input.atEnd) return "pass";
+    if (input.key !== "Delete" || input.next !== "writing") return "pass";
+    return "line";
+}
+
 export function codePullUndoCaret(offset: number | null): number | null {
     if (offset === null || !Number.isFinite(offset) || offset < 0) return null;
     return Math.floor(offset);
