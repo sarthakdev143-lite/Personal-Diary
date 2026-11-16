@@ -5,29 +5,42 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
 import { ShieldCheck, PaintBucket, Search, PenLine, Clock, Code2 } from "lucide-react";
+import { openSourceHref } from "@/lib/diary/source";
 const features = [
     { icon: ShieldCheck, title: "Private to you", description: "Each diary stays on your account. Other people cannot open it." },
     { icon: PenLine, title: "Rich entries", description: "Write with headings, lists, links, and images, then revise an entry later." },
     { icon: PaintBucket, title: "Cover themes", description: "Pick a cover when you create a diary, and change it later." },
     { icon: Search, title: "Search", description: "Find a diary from its title, description, or the words in an entry. Narrow one diary to a month." },
     { icon: Clock, title: "Your history", description: "Past entries stay in the diary. Download a JSON backup and import it back into your account." },
-    { icon: Code2, title: "Open source", description: "The project is public. You can read how it works and run it yourself." },
+    { icon: Code2, title: "Open source", description: "The project is public. You can read how it works and run it yourself.", href: openSourceHref() },
 ];
 
 interface FeatureCardProps {
     icon: ComponentType<React.SVGProps<SVGSVGElement>>;
     title: string;
     description: string;
+    href?: string;
 }
 
-const FeatureCard = ({ icon: Icon, title, description }: FeatureCardProps) => {
+const sourcePhrase = "read how it works";
+
+const FeatureCard = ({ icon: Icon, title, description, href }: FeatureCardProps) => {
+    const phraseAt = href ? description.indexOf(sourcePhrase) : -1;
     return (
         <div className="feature-card p-6 rounded-xl bg-white/5 shadow-lg flex flex-col items-center text-white/80 max-w-xs group border border-white/10 hover:border-white/30 transition-[border]">
             <div className="p-3 rounded-lg bg-white/10 mb-3 group-hover:bg-white/15 transition-[border] border border-white/10 group-hover:border-white/30">
                 <Icon width={35} height={35} className="text-white/90" />
             </div>
             <h3 className="font-semibold text-lg">{title}</h3>
-            <p className="text-[0.9rem] tracking-wider text-white/60 mt-1">{description}</p>
+            <p className="text-[0.9rem] tracking-wider text-white/60 mt-1">
+                {href && phraseAt >= 0 ? (
+                    <>
+                        {description.slice(0, phraseAt)}
+                        <a href={href} className="underline decoration-white/40 underline-offset-4 hover:text-white" target="_blank" rel="noreferrer">{sourcePhrase}</a>
+                        {description.slice(phraseAt + sourcePhrase.length)}
+                    </>
+                ) : description}
+            </p>
         </div>
     );
 };
