@@ -133,8 +133,8 @@ export function quoteListTail(input: { last: "list" | "writing" | "other" }): Qu
 
 export type QuoteAfterList = "out" | "stay";
 
-export function quoteAfterList(input: { listParent: "quote" | "other" }): QuoteAfterList {
-    return input.listParent === "quote" ? "out" : "stay";
+export function quoteAfterList(input: { listParent: "quote" | "item" | "other" }): QuoteAfterList {
+    return input.listParent === "quote" || input.listParent === "item" ? "out" : "stay";
 }
 
 export type LineJoin = "join" | "clear" | "drop" | "pass";

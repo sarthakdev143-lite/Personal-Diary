@@ -2594,17 +2594,28 @@ function firstQuoteLine(quote: HTMLElement): HTMLElement | null {
 function adjacentTextBlock(block: HTMLElement, direction: "previous" | "next"): HTMLElement | null {
     const siblingOf = (node: Element) => direction === "previous" ? node.previousElementSibling : node.nextElementSibling;
     let sibling = siblingOf(block);
-    let quote = block.parentElement;
-    if (!sibling && quote && (quote.tagName === "UL" || quote.tagName === "OL")) {
-        sibling = siblingOf(quote);
-        if (!sibling && quoteAfterList({ listParent: quote.parentElement?.tagName === "BLOCKQUOTE" ? "quote" : "other" }) === "out") quote = quote.parentElement;
-    }
-    while (!sibling && quote instanceof HTMLElement && quoteLineEdge({
-        parent: quote.tagName === "BLOCKQUOTE" ? "quote" : "other",
-        atEdge: true,
-    }) === "out") {
-        sibling = siblingOf(quote);
-        quote = quote.parentElement;
+    let edge = block.parentElement;
+    let guard = 0;
+    while (!sibling && edge instanceof HTMLElement && guard < 12) {
+        guard += 1;
+        if (edge.tagName === "UL" || edge.tagName === "OL") {
+            sibling = siblingOf(edge);
+            if (sibling) break;
+            const parent = edge.parentElement;
+            const listParent = parent?.tagName === "BLOCKQUOTE" ? "quote" : direction === "next" && parent?.tagName === "LI" ? "item" : "other";
+            if (quoteAfterList({ listParent }) !== "out") break;
+            edge = parent;
+            continue;
+        }
+        if (direction === "next" && edge.tagName === "LI") {
+            sibling = siblingOf(edge);
+            if (sibling) break;
+            edge = edge.parentElement;
+            continue;
+        }
+        if (quoteLineEdge({ parent: edge.tagName === "BLOCKQUOTE" ? "quote" : "other", atEdge: true }) !== "out") break;
+        sibling = siblingOf(edge);
+        edge = edge.parentElement;
     }
     if (!sibling) return null;
     if (sibling.tagName === "UL" || sibling.tagName === "OL") {

@@ -758,6 +758,7 @@ describe("code block", () => {
         assert.equal(quoteListTail({ last: "writing" }), "line");
         assert.equal(quoteListTail({ last: "other" }), "quote");
         assert.equal(quoteAfterList({ listParent: "quote" }), "out");
+        assert.equal(quoteAfterList({ listParent: "item" }), "out");
         assert.equal(quoteAfterList({ listParent: "other" }), "stay");
         assert.equal(lineJoinKey(join), "join");
         assert.equal(lineJoinKey({ ...join, key: "Delete", atStart: false, atEnd: true }), "join");
