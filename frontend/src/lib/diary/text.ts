@@ -669,6 +669,7 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         } else {
             let closeEnd = end;
             if (space(closeEnd - 1) && closeEnd - start > 1) closeEnd -= 1;
+            while (closeEnd > start && held(closeEnd - 1)) closeEnd -= 1;
             let mark = start;
             while (mark < closeEnd && held(mark)) mark += 1;
             if (closeEnd - mark >= 2) {
