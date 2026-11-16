@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureForwardDelete, pictureGapDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureUnderLine, pictureLineJoin, pictureInlineBackspace, pictureBackspaceFollows, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, pictureCutText, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureListContinue, pictureItemCaret, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureForwardDelete, pictureGapDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureUnderLine, pictureLineJoin, pictureJoinCaret, pictureInlineBackspace, pictureBackspaceFollows, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, pictureCutText, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureListContinue, pictureItemCaret, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -3418,6 +3418,14 @@ function joinBrokenLine(br: HTMLBRElement): "after" | "none" {
     const after = textBesideBreak(br, "next");
     const following = firstTextAfter(br);
     const marker = br.nextSibling;
+    let neighbor: ChildNode | null = br.nextSibling;
+    while (neighbor instanceof Text && !neighbor.data.replace(/[\u00a0\s\u200b]/g, "")) neighbor = neighbor.nextSibling;
+    const next = neighbor instanceof HTMLElement && neighbor.tagName === "FIGURE"
+        ? "picture"
+        : neighbor instanceof Text || (neighbor instanceof HTMLElement && (neighbor.textContent ?? "").replace(/[\u00a0\s\u200b]/g, ""))
+            ? "writing"
+            : "none";
+    const picture = next === "picture" && neighbor instanceof HTMLElement ? neighbor : null;
     const gap = pictureLineJoin({ besidePicture: pictureBesideBreak(br) }) === "flush"
         ? { trimPrevious: 0, trimNext: 0, insert: false, separate: false }
         : joinGap(before, after);
@@ -3430,7 +3438,14 @@ function joinBrokenLine(br: HTMLBRElement): "after" | "none" {
     }
     br.remove();
     const fallback = block instanceof HTMLElement ? block : following?.parentElement;
-    if (following?.isConnected && fallback instanceof HTMLElement) placeCaretOn(following, fallback);
+    if (pictureJoinCaret({ next }) === "before" && picture?.isConnected) {
+        const selection = window.getSelection();
+        const caret = document.createRange();
+        caret.setStartBefore(picture);
+        caret.collapse(true);
+        selection?.removeAllRanges();
+        selection?.addRange(caret);
+    } else if (following?.isConnected && fallback instanceof HTMLElement) placeCaretOn(following, fallback);
     else if (marker?.parentNode) {
         const caret = document.createRange();
         caret.setStartBefore(marker);

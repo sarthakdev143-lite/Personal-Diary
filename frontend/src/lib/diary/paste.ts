@@ -259,6 +259,12 @@ export function pictureLineJoin(input: { besidePicture: boolean }): PictureLineJ
     return input.besidePicture ? "flush" : "words";
 }
 
+export type PictureJoinCaret = "before" | "writing";
+
+export function pictureJoinCaret(input: { next: "picture" | "writing" | "none" }): PictureJoinCaret {
+    return input.next === "picture" ? "before" : "writing";
+}
+
 export type PictureInlineBackspace = "name" | "remove" | "pass";
 
 export function pictureInlineBackspace(input: {
