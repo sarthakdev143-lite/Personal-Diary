@@ -1617,6 +1617,12 @@ export function codeDividerLead(input: { divider: boolean }): CodeDividerLead {
     return input.divider ? "pull" : "pass";
 }
 
+export type CodeDivLead = "pull" | "pass";
+
+export function codeDivLead(input: { block: boolean }): CodeDivLead {
+    return input.block ? "pull" : "pass";
+}
+
 export function codePullUndoCaret(offset: number | null): number | null {
     if (offset === null || !Number.isFinite(offset) || offset < 0) return null;
     return Math.floor(offset);
