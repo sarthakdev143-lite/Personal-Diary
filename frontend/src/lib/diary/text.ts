@@ -1575,6 +1575,12 @@ export function codeMarkTail(input: { mark: boolean }): CodeMarkTail {
     return input.mark ? "space" : "keep";
 }
 
+export type CodeTailBack = "pull" | "pass";
+
+export function codeTailBack(input: { tail: boolean }): CodeTailBack {
+    return input.tail ? "pull" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
