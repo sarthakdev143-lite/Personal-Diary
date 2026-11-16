@@ -1599,6 +1599,12 @@ export function codeListEnd(input: { list: boolean }): CodeListEnd {
     return input.list ? "pull" : "pass";
 }
 
+export type CodeNextItem = "pull" | "pass";
+
+export function codeNextItem(input: { item: boolean }): CodeNextItem {
+    return input.item ? "pull" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
