@@ -445,10 +445,11 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
             };
             const leadingSign = (place: number) => LEADING_WORD_MARKS.has(text[place] ?? "") && !word(place - 1);
             const insideWord = (place: number) => mark(place) && word(place - 1) && word(place + 1);
+            const internalDot = (place: number) => text[place] === "." && word(place - 1) && word(place + 1);
             let left = from;
             if (word(from - 1) || wordSuffix(from - 1)) {
                 while (wordSuffix(left - 1)) left -= 1;
-                while (left > 0 && (word(left - 1) || (apostrophe(left - 1) && word(left - 2)) || insideWord(left - 1))) left -= 1;
+                while (left > 0 && (word(left - 1) || (apostrophe(left - 1) && word(left - 2)) || insideWord(left - 1) || internalDot(left - 1))) left -= 1;
                 if (leadingSign(left - 1)) left -= 1;
             } else {
                 const opens: string[] = [];
@@ -467,7 +468,7 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
                     return undefined;
                 }
                 if (opens.length === 0 || !word(cursor - 1)) return undefined;
-                while (cursor > 0 && (word(cursor - 1) || (apostrophe(cursor - 1) && word(cursor - 2)) || insideWord(cursor - 1))) cursor -= 1;
+                while (cursor > 0 && (word(cursor - 1) || (apostrophe(cursor - 1) && word(cursor - 2)) || insideWord(cursor - 1) || internalDot(cursor - 1))) cursor -= 1;
                 if (leadingSign(cursor - 1)) cursor -= 1;
                 for (let index = opens.length - 1; index >= 0; index -= 1) {
                     if (text[cursor - 1] !== opens[index]) return undefined;
@@ -484,7 +485,7 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
             };
             let right = to;
             if (word(to)) {
-                while (word(right) || insideWord(right)) right += 1;
+                while (word(right) || insideWord(right) || internalDot(right)) right += 1;
             } else {
                 const closes: string[] = [];
                 let cursor = to;
@@ -495,7 +496,7 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
                 if (closes.length === 0) return undefined;
                 if (leadingSign(cursor)) cursor += 1;
                 if (!word(cursor)) return undefined;
-                while (word(cursor) || insideWord(cursor)) cursor += 1;
+                while (word(cursor) || insideWord(cursor) || internalDot(cursor)) cursor += 1;
                 while (wordSuffix(cursor)) cursor += 1;
                 for (let index = closes.length - 1; index >= 0; index -= 1) {
                     if (text[cursor] !== closes[index]) return undefined;

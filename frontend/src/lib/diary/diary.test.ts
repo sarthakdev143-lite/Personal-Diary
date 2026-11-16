@@ -1799,6 +1799,31 @@ describe("code block", () => {
         assert.deepEqual(wordDeleteSpan("See C++...rain", 5, 7), { start: 4, end: 10 });
     });
 
+    it("keeps a dotted word beside an ellipsis with one word", () => {
+        assert.deepEqual(wordDeleteSpan("See notes.txt...next", 9, 10), { start: 4, end: 16 });
+        assert.equal(wordDeleteGap("See notes.txt...next", 9, 10), "after");
+        assert.deepEqual(wordDeleteSpan("See notes.txt...next", 10, 13), { start: 4, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See file.txt rain", 8, 9), { start: 8, end: 12 });
+        assert.deepEqual(wordDeleteSpan("See 3.14...next", 5, 8), { start: 4, end: 11 });
+        assert.deepEqual(wordDeleteSpan("See 3.14...next", 4, 8), { start: 4, end: 11 });
+        assert.deepEqual(wordDeleteSpan("See 3.14 rain", 5, 8), { start: 5, end: 8 });
+        assert.deepEqual(wordDeleteSpan("See $20.50...next", 7, 10), { start: 4, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See $20.50...next", 4, 10), { start: 4, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See notes.txt...next", 13, 14), { start: 4, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See notes.txt...next", 15, 16), { start: 13, end: 20 });
+        assert.equal(wordDeleteGap("See notes.txt...next", 15, 16), "before");
+        assert.deepEqual(wordDeleteSpan("See notes.txt...next", 13, 16), { start: 13, end: 20 });
+        assert.deepEqual(wordDeleteSpan("See notes...file.txt", 9, 12), { start: 9, end: 20 });
+        assert.equal(wordDeleteGap("See notes...file.txt", 9, 12), "before");
+        assert.deepEqual(wordDeleteSpan("See notes...file.txt", 12, 16), { start: 9, end: 20 });
+        assert.deepEqual(wordDeleteSpan("See notes...3.14", 9, 12), { start: 9, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See notes...file.txt next", 9, 12), { start: 9, end: 20 });
+        assert.deepEqual(wordDeleteSpan("See a...b.c", 5, 8), { start: 5, end: 11 });
+        assert.deepEqual(wordDeleteSpan("See notes.txt!!!next", 9, 10), { start: 4, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See notes.txt\u2026next", 9, 10), { start: 4, end: 14 });
+        assert.deepEqual(wordDeleteSpan("See 1,000.50...next", 10, 12), { start: 4, end: 15 });
+    });
+
     it("keeps a plus at the end of a word with that word", () => {
         assert.deepEqual(wordDeleteSpan("See (C++) rain", 4, 5), { start: 4, end: 10 });
         assert.equal(wordDeleteGap("See (C++) rain", 4, 5), "after");
