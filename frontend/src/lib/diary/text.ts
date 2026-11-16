@@ -1806,6 +1806,12 @@ export function codeItemLine(input: { line: boolean }): CodeItemLine {
     return input.line ? "words" : "pass";
 }
 
+export type CodeHeadingLine = "words" | "pass";
+
+export function codeHeadingLine(input: { line: boolean }): CodeHeadingLine {
+    return input.line ? "words" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
