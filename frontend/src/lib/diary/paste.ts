@@ -61,6 +61,14 @@ export function pictureBehindLine(input: { sibling: "picture" | "list" | "other"
     return (input.sibling === "other" || input.sibling === "list") && input.tail === "picture";
 }
 
+export type PictureListTail = "picture" | "writing" | "empty" | "none";
+
+export function pictureListTail(input: { child: "picture" | "list" | "writing" | "empty" | "none"; nestedTail: PictureListTail }): PictureListTail {
+    if (input.child === "list") return input.nestedTail;
+    if (input.child === "picture" || input.child === "writing" || input.child === "empty") return input.child;
+    return "none";
+}
+
 export type PictureForwardDelete = "into" | "pass";
 
 export function pictureForwardDelete(input: {
