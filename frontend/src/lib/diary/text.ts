@@ -461,14 +461,18 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         else if (trailingMark(start - 1)) plusProbe = start - 1;
         const suffix = plusProbe >= 0 ? plusSuffix(plusProbe) : undefined;
         if (suffix) {
-            let tail = suffix.end;
+            let limit = suffix.end;
+            const pairClose = pairs.get(text[suffix.wordStart - 1] ?? "");
+            const paired = pairClose !== undefined && text[suffix.end] === pairClose && !word(suffix.wordStart - 2);
+            if (paired) limit += 1;
+            let tail = limit;
             while (tail < end && (space(tail) || held(tail))) tail += 1;
             const touchesPlus = start < suffix.end && end > suffix.plusStart;
             const entireWord = start <= suffix.wordStart && end >= suffix.plusStart;
             const markAfter = start === suffix.end && held(start);
-            if ((touchesPlus || entireWord || markAfter) && (end <= suffix.end || tail === end)) {
-                start = suffix.wordStart;
-                end = suffix.end;
+            if ((touchesPlus || entireWord || markAfter) && (end <= limit || tail === end)) {
+                start = paired ? suffix.wordStart - 1 : suffix.wordStart;
+                end = limit;
                 while (held(end)) end += 1;
             }
         }
@@ -545,7 +549,11 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
                 covered = true;
             } else {
                 while (cursor < text.length && (word(cursor) || (apostrophe(cursor) && word(cursor + 1)))) cursor += 1;
-                if (text[cursor] === expectedClose && wrappedWord(start + 1, cursor)) covered = true;
+                const mark = trailingMark(cursor) ? plusSuffix(cursor) : undefined;
+                if (mark && mark.wordStart === start + 1 && text[mark.end] === expectedClose) {
+                    cursor = mark.end;
+                    covered = true;
+                } else if (text[cursor] === expectedClose && wrappedWord(start + 1, cursor)) covered = true;
                 else if ((text[cursor] === "%" || text[cursor] === "\u00b0") && text[cursor + 1] === expectedClose && wrappedWord(start + 1, cursor)) {
                     cursor += 1;
                     covered = true;
