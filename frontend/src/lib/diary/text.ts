@@ -402,19 +402,59 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         }
         if (text[start - 1] === "." && digit(start) && !word(start - 2)) start -= 1;
         if ((text[start - 1] === "$" || text[start - 1] === "\u20ac" || text[start - 1] === "\u00a3" || text[start - 1] === "\u20b9" || text[start - 1] === "\u00a5" || text[start - 1] === "#") && !word(start - 2) && (word(start) || (text[start] === "." && digit(start + 1)))) start -= 1;
+        const markStart = start;
+        const markEnd = end;
         if (end === start + 1 && word(start - 1) && (sticky(start) || ((text[start] === "." || text[start] === ":") && !word(end)))) {
             while (word(start - 1) || (text[start - 1] === "," && digit(start - 2) && digit(start))) start -= 1;
             if (text[start - 1] === "." && digit(start) && !word(start - 2)) start -= 1;
             if ((text[start - 1] === "$" || text[start - 1] === "\u20ac" || text[start - 1] === "\u00a3" || text[start - 1] === "\u20b9" || text[start - 1] === "\u00a5" || text[start - 1] === "#") && !word(start - 2) && (word(start) || (text[start] === "." && digit(start + 1)))) start -= 1;
         }
         const pulled = pullJoiner(start - 1);
-        if (pulled !== undefined && word(start)) start = pulled;
-        else if (word(start - 1) && word(end) && joinerSpan(start, end)) {
+        if (pulled !== undefined && word(start)) {
+            let boundary = start;
+            while (word(boundary)) boundary += 1;
+            if (end >= boundary) start = pulled;
+        } else if (word(start - 1) && word(end) && joinerSpan(start, end)) {
             end += 1;
             while (word(end)) end += 1;
         } else if (word(end - 1) || text[end - 1] === "%" || text[end - 1] === "\u00b0") {
             const next = afterJoiner(end);
             if (next !== undefined) end = next;
+        }
+        const joiningMark = (index: number) => {
+            const piece = text[index];
+            return piece === "." || piece === "!" || piece === "?" || piece === "\u2026";
+        };
+        const joiningRun = (index: number) => {
+            if (!joiningMark(index)) return undefined;
+            let from = index;
+            while (joiningMark(from - 1)) from -= 1;
+            let to = index + 1;
+            while (joiningMark(to)) to += 1;
+            if ((to - from < 2 && text[from] !== "\u2026") || !word(from - 1) || !word(to)) return undefined;
+            let left = from;
+            while (left > 0 && (word(left - 1) || (apostrophe(left - 1) && word(left - 2)))) left -= 1;
+            let right = to;
+            while (word(right)) right += 1;
+            return { from, to, left, right };
+        };
+        let run = joiningRun(markStart) ?? joiningRun(markEnd - 1);
+        if (!run && word(markStart) && joiningMark(markStart - 1)) run = joiningRun(markStart - 1);
+        if (run && markStart >= run.left && markEnd <= run.right && markEnd > run.from && markStart < run.right) {
+            if (markEnd <= run.to && (markStart < run.from || markEnd < run.to)) {
+                start = run.left;
+                end = run.to;
+            } else if (markStart < run.from && markEnd > run.to) {
+                start = run.left;
+                end = run.right;
+            } else if (markStart >= run.from && markStart < run.to) {
+                start = run.from;
+                end = run.right;
+            } else if (markStart === run.to && markEnd > run.to) {
+                let boundary = markStart;
+                while (word(boundary)) boundary += 1;
+                if (markEnd >= boundary) start = run.from;
+            }
         }
         if (apostrophe(start - 1) && apostrophe(end) && word(start) && !word(start - 2) && !word(end + 1)) {
             start -= 1;
