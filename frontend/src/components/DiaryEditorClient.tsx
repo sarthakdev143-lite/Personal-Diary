@@ -12705,7 +12705,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     background:#0f0d0b;
                     border-top:1px solid #1a1814;
                 }
-                .de-footer-actions{display:flex;gap:8px;align-items:center;}
+                .de-footer-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
                 .de-discard{
                     flex-shrink:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
                     padding:8px 28px;background:#1a1210;border-top:1px solid #3a2a24;
@@ -12729,7 +12729,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     font-size:9px;letter-spacing:0.22em;text-transform:uppercase;
                     color:#a79f93;border:1px solid #3a362e;
                     padding:6px 14px;border-radius:2px;background:transparent;
-                    cursor:pointer;transition:all 0.15s;
+                    cursor:pointer;transition:all 0.15s;white-space:nowrap;
                 }
                 .de-ghost-btn:hover{color:#e0d6c8;border-color:#6a5a48;}
                 .de-ghost-btn:disabled{opacity:0.4;cursor:not-allowed;}
@@ -12738,7 +12738,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     font-size:9px;letter-spacing:0.18em;text-transform:uppercase;
                     color:#e7b2a4;border:1px solid #6a3a32;
                     padding:6px 14px;border-radius:2px;background:transparent;
-                    cursor:pointer;
+                    cursor:pointer;white-space:nowrap;
                 }
                 .de-danger-btn:hover{color:#1a0d0b;background:#e7b2a4;border-color:#e7b2a4;}
                 .de-danger-btn:disabled{opacity:0.4;cursor:not-allowed;}
@@ -12775,7 +12775,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     .de-details{grid-template-columns:1fr;}
                     .de-header{flex-wrap:wrap;align-items:flex-start;gap:10px;padding:10px 14px;}
                     .de-header-actions{width:100%;justify-content:flex-start;flex-wrap:wrap;gap:8px;}
-                    .de-ghost-btn{padding:6px 10px;letter-spacing:0.12em;}
+                    .de-ghost-btn,.de-danger-btn{padding:6px 10px;letter-spacing:0.12em;}
                     .de-body{flex-direction:column;}
                     .de-left{
                         width:100%;max-height:min(280px,36vh);flex-shrink:0;
@@ -12783,7 +12783,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     }
                     #de-editor{padding:52px 18px 48px;}
                     .de-link input{flex-basis:100%;}
-                    .de-footer{padding:9px 14px;gap:8px;flex-wrap:wrap;}
+                    .de-footer{padding:9px 10px;gap:8px;flex-wrap:wrap;}
+                    .de-footer-actions{gap:6px;}
                     .de-discard{padding:8px 14px;}
                     .de-save-btn,.de-footer-actions{margin-left:auto;}
                     .de-kbd-hint{display:none;}
