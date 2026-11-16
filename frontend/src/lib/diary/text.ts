@@ -1569,6 +1569,12 @@ export function codeForwardLead(input: { words: boolean }): CodeForwardLead {
     return input.words ? "pull" : "pass";
 }
 
+export type CodeMarkTail = "space" | "keep";
+
+export function codeMarkTail(input: { mark: boolean }): CodeMarkTail {
+    return input.mark ? "space" : "keep";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
