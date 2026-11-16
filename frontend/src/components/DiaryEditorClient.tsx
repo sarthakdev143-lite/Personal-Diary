@@ -9838,7 +9838,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     };
 
     const keepPictureNameBack = (e: React.KeyboardEvent) => {
-        if (e.key !== "Backspace" || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return false;
+        if (e.key !== "Backspace" || e.altKey || e.shiftKey) return false;
         const editor = editorRef.current;
         const selection = window.getSelection();
         if (!editor || !selection?.rangeCount || mode === "view" || !selection.isCollapsed) return false;
@@ -9857,6 +9857,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             atStart: caret.atStart,
             previous: previous instanceof HTMLElement,
             date: previous === dateHeading,
+            word: e.ctrlKey || e.metaKey,
         });
         if (action === "pass") return false;
         e.preventDefault();

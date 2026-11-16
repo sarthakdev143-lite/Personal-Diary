@@ -600,7 +600,13 @@ describe("entry paste", () => {
         assert.equal(lineAfterPictureKey({ key: "Backspace", ...atStart }), "move");
         assert.equal(lineAfterPictureKey({ key: "Backspace", collapsed: true, atStart: true, empty: true }), "remove");
         assert.equal(lineAfterPictureKey({ key: "Backspace", collapsed: true, atStart: false, empty: false }), "pass");
-        assert.equal(lineAfterPictureKey({ key: "Backspace", ctrlKey: true, ...atStart }), "pass");
+        assert.equal(lineAfterPictureKey({ key: "Backspace", ctrlKey: true, ...atStart }), "move");
+        assert.equal(lineAfterPictureKey({ key: "Backspace", metaKey: true, ...atStart }), "move");
+        assert.equal(lineAfterPictureKey({ key: "Backspace", ctrlKey: true, collapsed: true, atStart: true, empty: true }), "remove");
+        assert.equal(lineAfterPictureKey({ key: "Backspace", ctrlKey: true, collapsed: true, atStart: false, empty: false }), "pass");
+        assert.equal(lineAfterPictureKey({ key: "Backspace", altKey: true, ...atStart }), "pass");
+        assert.equal(pictureNameBack({ atStart: true, previous: true, word: true }), "line");
+        assert.equal(pictureNameBack({ atStart: false, previous: true, word: true }), "pass");
         assert.equal(lineAfterPictureKey({ key: "Delete", ...atStart }), "pass");
         assert.equal(lineAfterPictureKey({ key: "Enter", ...atStart }), "pass");
         assert.equal(pictureBehindLine({ sibling: "picture", tail: "none" }), true);
