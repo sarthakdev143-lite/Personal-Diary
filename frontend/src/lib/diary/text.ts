@@ -1526,6 +1526,12 @@ export function codeForwardJoin(input: {
     return "line";
 }
 
+export type CodeListNest = "keep" | "drop";
+
+export function codeListNest(input: { nested: boolean }): CodeListNest {
+    return input.nested ? "keep" : "drop";
+}
+
 export function codePullUndoCaret(offset: number | null): number | null {
     if (offset === null || !Number.isFinite(offset) || offset < 0) return null;
     return Math.floor(offset);
