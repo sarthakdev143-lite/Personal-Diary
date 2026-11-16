@@ -9,7 +9,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ToastAction } from "@/components/ui/toast";
 import { MatchedText } from "@/components/MatchedText";
 import { DESCRIPTION_MAX, DIARY_THEMES, TITLE_MAX, coverForTheme, isAllowedTheme } from "@/lib/diary/constants";
-import { entryShareMarkdown } from "@/lib/diary/export";
+import { entryShareMarkdown, diaryDownloadLabel } from "@/lib/diary/export";
 import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
@@ -12862,7 +12862,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             {entries.length} {entries.length === 1 ? "entry" : "entries"}
                         </span>
                         <button type="button" onClick={() => void downloadExport("md")} className="de-ghost-btn" disabled={isExporting !== null}>
-                            {isExporting === "md" ? "exporting" : "export"}
+                            {diaryDownloadLabel("md", isExporting === "md")}
                         </button>
                         <button type="button" onClick={() => setDetailsOpen((open) => !open)} className="de-ghost-btn">
                             {detailsOpen ? "close details" : "details"}
@@ -12938,7 +12938,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 {isSavingDiary ? "saving" : "save details"}
                             </button>
                             <button type="button" className="de-ghost-btn" onClick={() => void downloadExport("json")} disabled={isExporting !== null}>
-                                {isExporting === "json" ? "exporting" : "json backup"}
+                                {diaryDownloadLabel("json", isExporting === "json")}
                             </button>
                             {confirmDelete === "diary" ? (
                                 <>
