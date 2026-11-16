@@ -1552,6 +1552,16 @@ describe("code block", () => {
         assert.deepEqual(wordDeleteSpan("See  (Harbor) rain", 4, 6), { start: 4, end: 14 });
     });
 
+    it("keeps a mark after nested closing marks with that word", () => {
+        assert.deepEqual(wordDeleteSpan("See ((Harbor)). rain", 12, 15), { start: 4, end: 16 });
+        assert.equal(wordDeleteGap("See ((Harbor)). rain", 12, 15), "after");
+        assert.deepEqual(wordDeleteSpan("See ((Harbor)), rain", 12, 15), { start: 4, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See ((Harbor))! rain", 12, 15), { start: 4, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See ([Harbor]). rain", 12, 15), { start: 4, end: 16 });
+        assert.deepEqual(wordDeleteSpan('See ("Harbor"). rain', 12, 15), { start: 4, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See ((harbor bay)). rain", 16, 19), { start: 16, end: 19 });
+    });
+
     it("keeps a plus at the end of a word with that word", () => {
         assert.deepEqual(wordDeleteSpan("See (C++) rain", 4, 5), { start: 4, end: 10 });
         assert.equal(wordDeleteGap("See (C++) rain", 4, 5), "after");
