@@ -1725,6 +1725,18 @@ export function codeTableStay(input: { table: boolean }): CodeTableStay {
     return input.table ? "stay" : "pass";
 }
 
+export type CodeQuotedTable = "stay" | "pass";
+
+export function codeQuotedTable(input: { quoted: boolean }): CodeQuotedTable {
+    return input.quoted ? "stay" : "pass";
+}
+
+export type CodeQuotedWords = "words" | "pass";
+
+export function codeQuotedWords(input: { quoted: boolean }): CodeQuotedWords {
+    return input.quoted ? "words" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
