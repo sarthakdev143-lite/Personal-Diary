@@ -14,7 +14,7 @@ import {
 } from "./validation";
 import { prepareEntryContent, presentEntry } from "./content";
 import { codeBlockHtml } from "./markup";
-import { buildDiaryExport, diaryToMarkdown, entryShareMarkdown, exportFilename, htmlToMarkdown } from "./export";
+import { buildDiaryExport, diaryDownloadLabel, diaryToMarkdown, entryShareMarkdown, exportFilename, htmlToMarkdown } from "./export";
 import { readJsonBody } from "./json";
 import { CONTENT_MAX, DEFAULT_DIARY_THEME, MAX_DATA_IMAGE_LENGTH, coverForTheme, coverPreviewImage } from "./constants";
 
@@ -3340,6 +3340,10 @@ describe("export", () => {
         assert.ok(markdown.indexOf("Dawn") < markdown.indexOf("Later"));
         assert.equal(exportFilename(diary.title, "md"), "morning-pages.md");
         assert.equal(exportFilename("!!!", "json"), "diary.json");
+        assert.equal(diaryDownloadLabel("md", false), "markdown");
+        assert.equal(diaryDownloadLabel("json", false), "json backup");
+        assert.equal(diaryDownloadLabel("md", true), "exporting");
+        assert.equal(diaryDownloadLabel("json", true), "exporting");
     });
 
     it("builds a markdown or json download and rejects an unknown format", () => {

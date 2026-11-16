@@ -332,6 +332,11 @@ export function exportFilename(title: string, extension: "md" | "json"): string 
     return `${slug || "diary"}.${extension}`;
 }
 
+export function diaryDownloadLabel(format: "md" | "json", busy: boolean): string {
+    if (busy) return "exporting";
+    return format === "md" ? "markdown" : "json backup";
+}
+
 export function contentDisposition(filename: string): string {
     const ascii = filename.replace(/[^\w.-]+/g, "_");
     return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(filename)}`;
