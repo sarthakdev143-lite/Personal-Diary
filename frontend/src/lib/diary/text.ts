@@ -2106,7 +2106,8 @@ export function dateHeadingKey(input: {
         && !input.altKey
         && ["b", "i", "u"].includes(input.key.toLowerCase());
     if (formatsDate) return "hold";
-    if (input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    const word = Boolean(input.ctrlKey || input.metaKey);
+    if (input.altKey || (word && input.key !== "Backspace" && input.key !== "Delete")) return "pass";
     if (input.where === "heading") {
         if (input.key.length === 1 || input.key === "Enter") return "write";
         if (input.key === "Backspace" || input.key === "Delete") return "leave";
