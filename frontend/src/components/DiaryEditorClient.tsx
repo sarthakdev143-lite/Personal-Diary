@@ -10508,7 +10508,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const editor = editorRef.current;
         const selection = window.getSelection();
         if (!editor || !selection?.rangeCount || mode === "view") return false;
-        if (e.key !== "Backspace" || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey || !selection.isCollapsed) return false;
+        if (e.key !== "Backspace" || e.shiftKey || e.altKey || !selection.isCollapsed) return false;
         if (codeBackLine({ back: true }) !== "line") return false;
         const anchor = selection.anchorNode;
         const host = anchor instanceof Element ? anchor : anchor?.parentElement ?? null;

@@ -255,7 +255,9 @@ describe("code block", () => {
         assert.equal(codePullKey({ ...start, neighbor: "none" }), "pass");
         assert.equal(codePullKey({ ...start, collapsed: false }), "pass");
         assert.equal(codePullKey({ ...start, shiftKey: true }), "pass");
-        assert.equal(codePullKey({ ...start, ctrlKey: true }), "pass");
+        assert.equal(codePullKey({ ...start, ctrlKey: true }), "pull");
+        assert.equal(codePullKey({ ...start, metaKey: true }), "pull");
+        assert.equal(codePullKey({ ...start, ctrlKey: true, atStart: false }), "pass");
         assert.equal(codePullKey({ key: "Delete", collapsed: true, atStart: false, atEnd: true, neighbor: "code" }), "pull");
         assert.equal(codePullKey({ key: "Delete", collapsed: true, atStart: false, atEnd: true, neighbor: "text" }), "pass");
         const intoCode = { key: "Delete", collapsed: true, atEnd: true, next: "writing" as const };
@@ -268,6 +270,10 @@ describe("code block", () => {
         assert.equal(codeForwardJoin({ ...intoCode, collapsed: false }), "pass");
         assert.equal(codeForwardJoin({ ...intoCode, key: "Backspace" }), "pass");
         assert.equal(codeForwardJoin({ ...intoCode, shiftKey: true }), "pass");
+        assert.equal(codeForwardJoin({ ...intoCode, ctrlKey: true }), "line");
+        assert.equal(codeForwardJoin({ ...intoCode, metaKey: true }), "line");
+        assert.equal(codeForwardJoin({ ...intoCode, ctrlKey: true, atEnd: false }), "pass");
+        assert.equal(codeForwardJoin({ ...intoCode, altKey: true }), "pass");
         assert.equal(codeListNest({ nested: true }), "keep");
         assert.equal(codeListNest({ nested: false }), "drop");
         assert.equal(codePastItem({ host: "item" }), "out");
