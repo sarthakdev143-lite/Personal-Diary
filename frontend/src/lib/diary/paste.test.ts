@@ -599,6 +599,9 @@ describe("entry paste", () => {
         assert.equal(pictureBehindLine({ sibling: "other", tail: "picture" }), true);
         assert.equal(pictureBehindLine({ sibling: "other", tail: "writing" }), false);
         assert.equal(pictureBehindLine({ sibling: "none", tail: "none" }), false);
+        assert.equal(pictureBehindLine({ sibling: "list", tail: "picture" }), true);
+        assert.equal(pictureBehindLine({ sibling: "list", tail: "writing" }), false);
+        assert.equal(pictureBehindLine({ sibling: "list", tail: "none" }), false);
         const atPicture = { collapsed: true, afterPicture: true, next: "writing" as const };
         assert.equal(pictureForwardDelete({ key: "Delete", ...atPicture }), "into");
         assert.equal(pictureForwardDelete({ key: "Delete", ...atPicture, next: "empty" }), "pass");

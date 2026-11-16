@@ -789,7 +789,10 @@ function lineAfterPicture(editor: HTMLElement, selection: Selection): { block: H
     const block = host?.closest("p, h1, h2, h3, li, blockquote, pre");
     if (!(block instanceof HTMLElement) || !editor.contains(block)) return null;
     const sibling = block.previousElementSibling;
-    let tailNode: ChildNode | null = sibling instanceof HTMLElement ? sibling.lastChild : null;
+    const list = sibling instanceof HTMLElement && (sibling.tagName === "UL" || sibling.tagName === "OL");
+    const item = list ? [...sibling.children].reverse().find((child) => child.tagName === "LI") : null;
+    const tailHost = item instanceof HTMLElement ? item : sibling instanceof HTMLElement ? sibling : null;
+    let tailNode: ChildNode | null = tailHost ? tailHost.lastChild : null;
     while (tailNode instanceof Text && !tailNode.data.replace(/[\u00a0\s\u200b]/g, "")) tailNode = tailNode.previousSibling;
     const tail = tailNode instanceof HTMLElement && tailNode.tagName === "FIGURE"
         ? "picture"
@@ -799,7 +802,7 @@ function lineAfterPicture(editor: HTMLElement, selection: Selection): { block: H
                 ? "empty"
                 : "none";
     const behind = pictureBehindLine({
-        sibling: sibling instanceof HTMLElement && sibling.tagName === "FIGURE" ? "picture" : sibling instanceof HTMLElement ? "other" : "none",
+        sibling: sibling instanceof HTMLElement && sibling.tagName === "FIGURE" ? "picture" : list ? "list" : sibling instanceof HTMLElement ? "other" : "none",
         tail,
     });
     const figure = sibling instanceof HTMLElement && sibling.tagName === "FIGURE"
