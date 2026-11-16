@@ -9809,7 +9809,14 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const figure = caption.closest("figure");
         if (!caret || !(figure instanceof HTMLElement) || !editor.contains(figure)) return false;
         const previous = lineBeforePicture(figure);
-        const action = pictureNameBack({ atStart: caret.atStart, previous: previous instanceof HTMLElement });
+        const instant = instantFor(entryDate);
+        const label = instant ? fmtLong(instant.toISOString()) : "";
+        const dateHeading = label ? [...editor.querySelectorAll("h2")].find((heading) => (heading.textContent ?? "").trim() === label) : null;
+        const action = pictureNameBack({
+            atStart: caret.atStart,
+            previous: previous instanceof HTMLElement,
+            date: previous === dateHeading,
+        });
         if (action === "pass") return false;
         e.preventDefault();
         if (action === "line" && previous instanceof HTMLElement) {

@@ -430,6 +430,8 @@ describe("entry paste", () => {
         assert.equal(pictureLetterBefore(before), "beside");
         assert.equal(pictureLetterBefore({ ...before, line: "page" }), "line");
         assert.equal(pictureLetterBefore({ ...before, previous: "text" }), "pass");
+        assert.equal(pictureLetterBefore({ ...before, previous: "element", line: "page" }), "line");
+        assert.equal(pictureLetterBefore({ ...before, previous: "element", line: "item" }), "beside");
         assert.equal(pictureLetterBefore({ ...before, previous: "empty", line: "page" }), "block");
         assert.equal(pictureLetterBefore({ ...before, beforePicture: false }), "pass");
     });
@@ -593,6 +595,7 @@ describe("entry paste", () => {
         assert.equal(pictureNameMove({ caption: false }), "before");
         assert.equal(pictureNameBack({ atStart: true, previous: true }), "line");
         assert.equal(pictureNameBack({ atStart: true, previous: false }), "before");
+        assert.equal(pictureNameBack({ atStart: true, previous: true, date: true }), "before");
         assert.equal(pictureNameBack({ atStart: false, previous: true }), "pass");
         assert.equal(lineAfterPictureKey({ key: "Backspace", ...atStart }), "move");
         assert.equal(lineAfterPictureKey({ key: "Backspace", collapsed: true, atStart: true, empty: true }), "remove");
