@@ -772,6 +772,12 @@ export function blockBesideJoin(input: { beside: "quote" | "list" | "none" }): B
     return input.beside === "none" ? "pass" : "line";
 }
 
+export type ItemBlockJoin = "line" | "pass";
+
+export function itemBlockJoin(input: { beside: boolean }): ItemBlockJoin {
+    return input.beside ? "line" : "pass";
+}
+
 export type BreakJoinSpace = "tight" | "pass";
 
 export function breakJoinSpace(input: { afterBreak: boolean }): BreakJoinSpace {
