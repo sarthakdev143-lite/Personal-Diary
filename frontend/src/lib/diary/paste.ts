@@ -550,7 +550,8 @@ export function pictureNameBoundary(input: {
     metaKey?: boolean;
 }): PictureNameBoundary {
     if (!input.startsInName || input.endsInName || !input.boundaryOnly) return "pass";
-    if (input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    const word = Boolean(input.ctrlKey || input.metaKey);
+    if (input.altKey || (word && input.key !== "Backspace" && input.key !== "Delete")) return "pass";
     if (input.key === "Backspace" || input.key === "Delete" || input.key === "Enter") return "name";
     return input.key.length === 1 ? "name" : "pass";
 }
