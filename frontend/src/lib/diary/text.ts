@@ -1617,6 +1617,12 @@ export function codeTableHost(input: { table: boolean }): CodeTableHost {
     return input.table ? "pull" : "pass";
 }
 
+export type CodeListHost = "pull" | "pass";
+
+export function codeListHost(input: { list: boolean }): CodeListHost {
+    return input.list ? "pull" : "pass";
+}
+
 export type CodeDividerLead = "pull" | "pass";
 
 export function codeDividerLead(input: { divider: boolean }): CodeDividerLead {
