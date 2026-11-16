@@ -101,6 +101,12 @@ export function separateGluedDateHeading(html: string): string {
     return `${heading}<p>${escaped}</p>${rest}`;
 }
 
+export type QuoteLineEdge = "out" | "stay";
+
+export function quoteLineEdge(input: { parent: "quote" | "other"; atEdge: boolean }): QuoteLineEdge {
+    return input.parent === "quote" && input.atEdge ? "out" : "stay";
+}
+
 export type LineJoin = "join" | "clear" | "drop" | "pass";
 
 export function lineJoinKey(input: {
