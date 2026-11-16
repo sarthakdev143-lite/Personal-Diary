@@ -1587,6 +1587,12 @@ export function codeDeepHost(input: { host: boolean }): CodeDeepHost {
     return input.host ? "pull" : "pass";
 }
 
+export type CodeListLead = "pull" | "pass";
+
+export function codeListLead(input: { block: boolean }): CodeListLead {
+    return input.block ? "pull" : "pass";
+}
+
 export function codePullUndoCaret(offset: number | null): number | null {
     if (offset === null || !Number.isFinite(offset) || offset < 0) return null;
     return Math.floor(offset);
