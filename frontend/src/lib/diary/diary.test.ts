@@ -480,7 +480,12 @@ describe("code block", () => {
         assert.equal(listEdgeKey({ ...edge, atStart: false }), "pass");
         assert.equal(listEdgeKey({ ...edge, inItem: false }), "pass");
         assert.equal(listEdgeKey({ ...edge, key: "Delete" }), "pass");
-        assert.equal(listEdgeKey({ ...edge, ctrlKey: true }), "pass");
+        assert.equal(listEdgeKey({ ...edge, ctrlKey: true }), "outdent");
+        assert.equal(listEdgeKey({ ...edge, metaKey: true }), "outdent");
+        assert.equal(listEdgeKey({ ...edge, neighbor: "none", ctrlKey: true }), "outdent");
+        assert.equal(listEdgeKey({ ...edge, neighbor: "text", ctrlKey: true }), "pass");
+        assert.equal(listEdgeKey({ ...edge, ctrlKey: true, atStart: false }), "pass");
+        assert.equal(listEdgeKey({ ...edge, altKey: true }), "pass");
     });
 
     it("leaves a list when Enter is pressed on a blank item", () => {

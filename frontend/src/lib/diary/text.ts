@@ -1241,7 +1241,7 @@ export function listEdgeKey(input: {
     inItem: boolean;
     neighbor: "date" | "none" | "text";
 }): ListEdge {
-    if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.shiftKey || input.altKey) return "pass";
     if (!input.inItem || !input.collapsed || !input.atStart || input.key !== "Backspace") return "pass";
     if (input.neighbor === "text") return "pass";
     return "outdent";
