@@ -439,20 +439,32 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
                 }
                 return undefined;
             };
+            const wordSuffix = (place: number) => text[place] === "+" || text[place] === "%" || text[place] === "\u00b0";
+            const leadingSign = (place: number) => LEADING_WORD_MARKS.has(text[place] ?? "") && !word(place - 1);
             let left = from;
-            if (word(from - 1)) {
+            if (word(from - 1) || wordSuffix(from - 1)) {
+                while (wordSuffix(left - 1)) left -= 1;
                 while (left > 0 && (word(left - 1) || (apostrophe(left - 1) && word(left - 2)))) left -= 1;
+                if (leadingSign(left - 1)) left -= 1;
             } else {
                 const opens: string[] = [];
                 let cursor = from;
                 while (cursor > 0 && !word(cursor - 1)) {
                     const open = openForClose(cursor - 1);
-                    if (open === undefined) return undefined;
-                    opens.push(open);
-                    cursor -= 1;
+                    if (open !== undefined) {
+                        opens.push(open);
+                        cursor -= 1;
+                        continue;
+                    }
+                    if (wordSuffix(cursor - 1)) {
+                        cursor -= 1;
+                        continue;
+                    }
+                    return undefined;
                 }
                 if (opens.length === 0 || !word(cursor - 1)) return undefined;
                 while (cursor > 0 && (word(cursor - 1) || (apostrophe(cursor - 1) && word(cursor - 2)))) cursor -= 1;
+                if (leadingSign(cursor - 1)) cursor -= 1;
                 for (let index = opens.length - 1; index >= 0; index -= 1) {
                     if (text[cursor - 1] !== opens[index]) return undefined;
                     cursor -= 1;
@@ -525,7 +537,8 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         else if (trailingMark(end - 1)) plusProbe = end - 1;
         else if (trailingMark(start - 1)) plusProbe = start - 1;
         const suffix = plusProbe >= 0 ? plusSuffix(plusProbe) : undefined;
-        if (suffix) {
+        const claimedRun = joiningRun(start);
+        if (suffix && !(claimedRun && start === claimedRun.from && end > claimedRun.to)) {
             let limit = suffix.end;
             const pairClose = pairs.get(text[suffix.wordStart - 1] ?? "");
             let paired = false;
@@ -817,6 +830,10 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         }
         const followed = joiningRun(end) ?? joiningRun(end - 1);
         if (followed && start <= followed.left && end > followed.from && end < followed.to) end = followed.to;
+        else if (followed && start >= followed.left && start < followed.from && end > followed.from && end <= followed.to) {
+            start = followed.left;
+            end = followed.to;
+        }
     }
     const before = text.slice(0, start).replace(/[\u00a0\s]/g, "");
     const after = text.slice(end).replace(/[\u00a0\s]/g, "");
@@ -855,6 +872,7 @@ export function wordDeleteGap(text: string, start: number, end: number): "before
     if (widened.start < start && word(text[widened.start - 1])) return "before";
     if (widened.end > end && word(text[widened.start - 1]) && (widened.end >= text.length || space(text[widened.end]))) return "before";
     if (widened.end > end && widened.start === start && (text[start] === "." || text[start] === "!" || text[start] === "?" || text[start] === "\u2026") && (widened.end >= text.length || space(text[widened.end]))) return "before";
+    if (widened.start < start && (widened.start === 0 || space(text[widened.start - 1])) && word(text[widened.end]) && (text[widened.end - 1] === "." || text[widened.end - 1] === "!" || text[widened.end - 1] === "?" || text[widened.end - 1] === "\u2026")) return "after";
     const digit = (piece: string | undefined) => Boolean(piece && /\p{N}/u.test(piece));
     const joiner = (index: number) => {
         const piece = text[index];
