@@ -1737,6 +1737,18 @@ export function codeQuotedWords(input: { quoted: boolean }): CodeQuotedWords {
     return input.quoted ? "words" : "pass";
 }
 
+export type CodeQuotedCode = "line" | "pass";
+
+export function codeQuotedCode(input: { quoted: boolean }): CodeQuotedCode {
+    return input.quoted ? "line" : "pass";
+}
+
+export type CodeQuotedCodeWords = "words" | "pass";
+
+export function codeQuotedCodeWords(input: { quoted: boolean }): CodeQuotedCodeWords {
+    return input.quoted ? "words" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
