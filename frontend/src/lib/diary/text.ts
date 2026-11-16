@@ -1677,6 +1677,12 @@ export function codeDivHead(input: { head: boolean }): CodeDivHead {
     return input.head ? "line" : "pass";
 }
 
+export type CodeLineBreak = "line" | "pass";
+
+export function codeLineBreak(input: { line: boolean }): CodeLineBreak {
+    return input.line ? "line" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
