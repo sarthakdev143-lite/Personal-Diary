@@ -559,12 +559,16 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
             return { from: colon, to, left, right };
         };
         let scheme = schemeSeparator(start) ?? (end > start ? schemeSeparator(end - 1) : undefined);
+        if (!scheme) scheme = schemeSeparator(end);
         if (!scheme) {
             for (let index = start; index < end && !scheme; index += 1) {
                 if (text[index] === ":" || text[index] === "/") scheme = schemeSeparator(index);
             }
         }
-        if (scheme && start >= scheme.from && start < scheme.to && end > scheme.from && end <= scheme.right) {
+        if (scheme && start === scheme.left && end === scheme.from) {
+            start = scheme.left;
+            end = scheme.to;
+        } else if (scheme && start >= scheme.from && start < scheme.to && end > scheme.from && end <= scheme.right) {
             if (end < scheme.to) {
                 start = scheme.left;
                 end = scheme.to;
