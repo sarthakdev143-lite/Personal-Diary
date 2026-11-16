@@ -766,6 +766,12 @@ export function joinGap(previous: string, next: string): { trimPrevious: number;
     };
 }
 
+export type BreakJoinSpace = "tight" | "pass";
+
+export function breakJoinSpace(input: { afterBreak: boolean }): BreakJoinSpace {
+    return input.afterBreak ? "tight" : "pass";
+}
+
 export function joinNeedsSpace(previous: string, next: string): boolean {
     const gap = joinGap(previous, next);
     return gap.insert && gap.trimPrevious === 0 && gap.trimNext === 0;
