@@ -7687,6 +7687,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const selectionTypeLine = useRef<HTMLElement | null>(null);
     const dragUndo = useRef<{ before: string; path: number[]; caret: number } | null>(null);
     const wordGap = useRef<{ path: number[]; offset: number; gap: "before" | "after" } | null>(null);
+    const holdDateDelete = useRef(false);
     const quoteItalic = useRef<"italic" | "plain" | null>(null);
     const quoteItalicHold = useRef(false);
     const linkUnderlineMode = useRef<"underline" | "plain" | null>(null);
@@ -10163,7 +10164,17 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (action === "hold") return true;
         if (action === "leave") {
             const next = line.heading.nextElementSibling;
+            if (e.key === "Delete") holdDateDelete.current = true;
             if (!(next instanceof HTMLElement) || dateLeaveTarget(next.tagName) === "past") return true;
+            const heading = line.heading;
+            const before = editor.innerHTML;
+            queueMicrotask(() => {
+                if (!editor.contains(heading)) return;
+                const peeled = peelDateLine(heading, label);
+                placeCaretIn(peeled.paragraph, 0);
+                if (editor.innerHTML !== before) setHtmlContent(editor.innerHTML);
+            });
+            return true;
         }
         if (action === "drop") {
             const next = line.block.nextElementSibling;
@@ -11883,6 +11894,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const word = native.inputType === "deleteWordBackward" || native.inputType === "deleteWordForward";
         const selected = native.inputType === "deleteContentBackward" || native.inputType === "deleteContentForward";
         if (!word && !selected) return;
+        if (word && holdDateDelete.current) {
+            holdDateDelete.current = false;
+            event.preventDefault();
+            return;
+        }
         const editor = editorRef.current;
         const selection = window.getSelection();
         if (!editor || !selection?.rangeCount || !(event.target instanceof Node) || !editor.contains(event.target)) return;
@@ -11890,7 +11906,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (word ? !range.collapsed : range.collapsed) return;
         const instant = instantFor(entryDate);
         const label = instant ? fmtLong(instant.toISOString()) : "";
-        if (selectedDateHeading(editor, selection, label)) return;
+        const onDate = selectedDateHeading(editor, selection, label);
+        if (onDate) {
+            if (word) event.preventDefault();
+            return;
+        }
         const target = word ? native.getTargetRanges()[0] : range;
         if (!target) return;
         if (word) {
@@ -12013,6 +12033,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             return;
         }
         if (mode === "view") return;
+        holdDateDelete.current = false;
         if (e.key === "Tab" && keepListIndent(e)) return;
         if (wordGap.current && wordGapKey({ key: e.key, shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey }) === "clear") wordGap.current = null;
         const styleCommand = styleShortcut({

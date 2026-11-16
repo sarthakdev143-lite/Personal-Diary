@@ -167,6 +167,13 @@ describe("blank entry", () => {
         assert.equal(dateHeadingKey({ ...plain, key: "Enter", where: "heading" }), "write");
         assert.equal(dateHeadingKey({ ...plain, key: "Backspace", where: "heading" }), "leave");
         assert.equal(dateHeadingKey({ ...plain, key: "Delete", where: "heading" }), "leave");
+        assert.equal(dateHeadingKey({ ...plain, key: "Delete", ctrlKey: true, where: "heading" }), "leave");
+        assert.equal(dateHeadingKey({ ...plain, key: "Backspace", ctrlKey: true, where: "heading" }), "leave");
+        assert.equal(dateHeadingKey({ ...plain, key: "Delete", metaKey: true, where: "heading" }), "leave");
+        assert.equal(dateHeadingKey({ ...plain, key: "Backspace", metaKey: true, where: "heading" }), "leave");
+        assert.equal(dateHeadingKey({ ...plain, key: "Delete", altKey: true, where: "heading" }), "pass");
+        assert.equal(dateHeadingKey({ ...plain, key: "Backspace", ctrlKey: true, where: "after", atStart: true }), "hold");
+        assert.equal(dateHeadingKey({ ...plain, key: "Delete", ctrlKey: true, where: "after", atStart: true, empty: true, followed: true }), "drop");
         assert.equal(dateHeadingKey({ ...plain, key: "Backspace", where: "after", atStart: true }), "hold");
         assert.equal(dateHeadingKey({ ...plain, key: "Backspace", where: "after", atStart: true, empty: true, followed: true }), "drop");
         assert.equal(dateHeadingKey({ ...plain, key: "Delete", where: "after", atStart: true, empty: true, followed: true }), "drop");
