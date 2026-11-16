@@ -1764,6 +1764,41 @@ describe("code block", () => {
         assert.deepEqual(wordDeleteSpan("See C\\...rain", 6, 9), { start: 6, end: 13 });
     });
 
+    it("keeps a joined word beside an ellipsis with one word", () => {
+        assert.deepEqual(wordDeleteSpan("See a/b...c", 6, 7), { start: 4, end: 10 });
+        assert.equal(wordDeleteGap("See a/b...c", 6, 7), "after");
+        assert.deepEqual(wordDeleteSpan("See a/b...c", 5, 6), { start: 4, end: 10 });
+        assert.equal(wordDeleteGap("See a/b...c", 5, 6), "after");
+        assert.deepEqual(wordDeleteSpan("See a/b...c", 7, 10), { start: 7, end: 11 });
+        assert.equal(wordDeleteGap("See a/b...c", 7, 10), "before");
+        assert.deepEqual(wordDeleteSpan("See a/b rain", 6, 7), { start: 5, end: 7 });
+        assert.deepEqual(wordDeleteSpan("See rock/roll...next", 9, 13), { start: 4, end: 16 });
+        assert.equal(wordDeleteGap("See rock/roll...next", 9, 13), "after");
+        assert.deepEqual(wordDeleteSpan("See rock/roll...next", 8, 9), { start: 4, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See rock/roll...next", 13, 16), { start: 13, end: 20 });
+        assert.deepEqual(wordDeleteSpan("See rock/roll rain", 9, 13), { start: 8, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See well-known...place", 8, 9), { start: 4, end: 17 });
+        assert.deepEqual(wordDeleteSpan("See well-known...place", 9, 14), { start: 4, end: 17 });
+        assert.deepEqual(wordDeleteSpan("See well-known rain", 9, 14), { start: 8, end: 14 });
+        assert.deepEqual(wordDeleteSpan("See rock&roll...next", 9, 13), { start: 4, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See rock&roll...next", 8, 9), { start: 4, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See rock+roll...next", 9, 13), { start: 4, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See 3:14...next", 6, 8), { start: 4, end: 11 });
+        assert.deepEqual(wordDeleteSpan("See 3:14...next", 5, 6), { start: 4, end: 11 });
+        assert.deepEqual(wordDeleteSpan("See 1,000...next", 6, 9), { start: 4, end: 12 });
+        assert.deepEqual(wordDeleteSpan("See 1,000...next", 5, 6), { start: 4, end: 12 });
+        assert.deepEqual(wordDeleteSpan("See a/b/c...d", 8, 9), { start: 4, end: 12 });
+        assert.deepEqual(wordDeleteSpan("See a...b/c", 5, 8), { start: 5, end: 11 });
+        assert.equal(wordDeleteGap("See a...b/c", 5, 8), "before");
+        assert.deepEqual(wordDeleteSpan("See a...b/c", 8, 9), { start: 5, end: 11 });
+        assert.deepEqual(wordDeleteSpan("See a...b/c", 9, 10), { start: 9, end: 11 });
+        assert.deepEqual(wordDeleteSpan("See Harbor...rock/roll", 10, 13), { start: 10, end: 22 });
+        assert.equal(wordDeleteGap("See Harbor...rock/roll", 10, 13), "before");
+        assert.deepEqual(wordDeleteSpan("See Harbor...rock/roll", 13, 17), { start: 10, end: 22 });
+        assert.deepEqual(wordDeleteSpan("See C++...rain", 7, 10), { start: 7, end: 14 });
+        assert.deepEqual(wordDeleteSpan("See C++...rain", 5, 7), { start: 4, end: 10 });
+    });
+
     it("keeps a plus at the end of a word with that word", () => {
         assert.deepEqual(wordDeleteSpan("See (C++) rain", 4, 5), { start: 4, end: 10 });
         assert.equal(wordDeleteGap("See (C++) rain", 4, 5), "after");
