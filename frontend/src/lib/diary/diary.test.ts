@@ -1505,6 +1505,34 @@ describe("code block", () => {
         assert.deepEqual(cutRemoval("See Harbor rain", 4, 7), { start: 4, end: 7, gap: "none" });
     });
 
+    it("keeps nested marks around one word with that word", () => {
+        assert.deepEqual(wordDeleteSpan("See ((Harbor)) rain", 4, 6), { start: 4, end: 15 });
+        assert.equal(wordDeleteGap("See ((Harbor)) rain", 4, 6), "after");
+        assert.deepEqual(wordDeleteSpan("See ((Harbor)) rain", 12, 14), { start: 4, end: 15 });
+        assert.deepEqual(wordDeleteSpan("See ((Harbor)) rain", 12, 13), { start: 4, end: 15 });
+        assert.deepEqual(wordDeleteSpan("See ((Harbor)) rain", 6, 12), { start: 4, end: 15 });
+        assert.deepEqual(wordDeleteSpan("See (((Harbor))) rain", 4, 7), { start: 4, end: 17 });
+        assert.deepEqual(wordDeleteSpan("See (((Harbor))) rain", 13, 16), { start: 4, end: 17 });
+        assert.deepEqual(wordDeleteSpan("See ((Harbor.)) rain", 4, 6), { start: 4, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See ((Harbor.)) rain", 12, 15), { start: 4, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See ((Harbor)), rain", 4, 6), { start: 4, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See ((Harbor)), rain", 12, 14), { start: 4, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See ([Harbor]) rain", 4, 6), { start: 4, end: 15 });
+        assert.deepEqual(wordDeleteSpan("See ([Harbor]) rain", 12, 14), { start: 4, end: 15 });
+        assert.deepEqual(wordDeleteSpan('See ("Harbor") rain', 4, 6), { start: 4, end: 15 });
+        assert.deepEqual(wordDeleteSpan('See ("Harbor") rain', 12, 14), { start: 4, end: 15 });
+        assert.deepEqual(wordDeleteSpan('See ("Harbor.") rain', 4, 6), { start: 4, end: 16 });
+        assert.deepEqual(wordDeleteSpan('See ("Harbor.") rain', 12, 15), { start: 4, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See (\u201cHarbor\u201d) rain", 4, 6), { start: 4, end: 15 });
+        assert.deepEqual(wordDeleteSpan("See (\u201cHarbor\u201d) rain", 12, 14), { start: 4, end: 15 });
+        assert.deepEqual(wordDeleteSpan("See [[Harbor]] rain", 4, 6), { start: 4, end: 15 });
+        assert.deepEqual(wordDeleteSpan("See [[Harbor]] rain", 12, 14), { start: 4, end: 15 });
+        assert.deepEqual(wordDeleteSpan("See {{Harbor}} rain", 4, 6), { start: 4, end: 15 });
+        assert.deepEqual(wordDeleteSpan("See {{\u00abHarbor\u00bb}} rain", 4, 7), { start: 4, end: 17 });
+        assert.deepEqual(wordDeleteSpan("See ((harbor bay)) rain", 4, 6), { start: 4, end: 6 });
+        assert.deepEqual(wordDeleteSpan("See ((harbor bay)) rain", 13, 16), { start: 13, end: 16 });
+    });
+
     it("keeps a plus at the end of a word with that word", () => {
         assert.deepEqual(wordDeleteSpan("See (C++) rain", 4, 5), { start: 4, end: 10 });
         assert.equal(wordDeleteGap("See (C++) rain", 4, 5), "after");
