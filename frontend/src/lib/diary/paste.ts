@@ -67,6 +67,12 @@ export function pictureLineHost(input: { parent: "quote" | "other"; leading: boo
     return input.parent === "quote" && input.leading ? "quote" : "self";
 }
 
+export type PictureQuoteShell = "close" | "keep";
+
+export function pictureQuoteShell(input: { quoted: boolean; alone: boolean }): PictureQuoteShell {
+    return input.quoted && input.alone ? "close" : "keep";
+}
+
 export type PictureListTail = "picture" | "writing" | "empty" | "none";
 
 export function pictureListTail(input: { child: "picture" | "list" | "inside" | "writing" | "empty" | "none"; nestedTail: PictureListTail }): PictureListTail {
