@@ -369,7 +369,13 @@ describe("entry paste", () => {
         assert.equal(pictureBoundsKey({ key: "Backspace", ...crossed, collapsed: true }), "pass");
         assert.equal(pictureBoundsKey({ key: "Backspace", ...crossed, outsideSelected: false }), "pass");
         assert.equal(pictureBoundsKey({ key: "Backspace", ...crossed, touchesPicture: false }), "pass");
-        assert.equal(pictureBoundsKey({ key: "Backspace", ...crossed, ctrlKey: true }), "pass");
+        assert.equal(pictureBoundsKey({ key: "Backspace", ...crossed, ctrlKey: true }), "clear");
+        assert.equal(pictureBoundsKey({ key: "Delete", ...crossed, ctrlKey: true }), "clear");
+        assert.equal(pictureBoundsKey({ key: "Backspace", ...crossed, metaKey: true }), "clear");
+        assert.equal(pictureBoundsKey({ key: "Delete", ...crossed, metaKey: true }), "clear");
+        assert.equal(pictureBoundsKey({ key: "Backspace", ...crossed, altKey: true }), "pass");
+        assert.equal(pictureBoundsKey({ key: "Enter", ...crossed, ctrlKey: true }), "pass");
+        assert.equal(pictureBoundsKey({ key: "b", ...crossed, ctrlKey: true }), "pass");
         assert.equal(pictureBoundsKey({ key: "ArrowLeft", ...crossed }), "pass");
         assert.equal(pictureNameClear({ startsOutside: true, endsOutside: true }), "keep");
         assert.equal(pictureNameClear({ startsOutside: true, endsOutside: false }), "slice");
