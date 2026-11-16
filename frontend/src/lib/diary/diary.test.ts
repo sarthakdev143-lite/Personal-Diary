@@ -1824,6 +1824,26 @@ describe("code block", () => {
         assert.deepEqual(wordDeleteSpan("See 1,000.50...next", 10, 12), { start: 4, end: 15 });
     });
 
+    it("keeps two amounts beside an ellipsis with one amount", () => {
+        assert.deepEqual(wordDeleteSpan("See $20.50...$10.00", 7, 10), { start: 4, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See $20.50...$10.00", 10, 14), { start: 10, end: 19 });
+        assert.equal(wordDeleteGap("See $20.50...$10.00", 10, 14), "before");
+        assert.deepEqual(wordDeleteSpan("See $20.50...$10.00", 11, 14), { start: 10, end: 19 });
+        assert.deepEqual(wordDeleteSpan("See $20.50...$10.00", 12, 14), { start: 10, end: 19 });
+        assert.deepEqual(wordDeleteSpan("See $20.50...$10.00", 10, 12), { start: 4, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See $20.50...$10.00", 10, 13), { start: 10, end: 19 });
+        assert.deepEqual(wordDeleteSpan("See $20.50...$10.00", 13, 19), { start: 10, end: 19 });
+        assert.deepEqual(wordDeleteSpan("See $20.50...$10.00", 4, 10), { start: 4, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See $20.50 $10.00", 7, 10), { start: 7, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See $20.50...next", 7, 10), { start: 4, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See $20.50...$10.00 next", 10, 13), { start: 10, end: 19 });
+        assert.equal(wordDeleteGap("See $20.50...$10.00 next", 10, 13), "before");
+        assert.deepEqual(wordDeleteSpan("See notes...$20.50", 9, 12), { start: 9, end: 18 });
+        assert.deepEqual(wordDeleteSpan("See €20.50...€10.00", 7, 10), { start: 4, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See $20.50!!!$10.00", 7, 10), { start: 4, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See $20.50\u2026$10.00", 7, 10), { start: 4, end: 11 });
+    });
+
     it("keeps a plus at the end of a word with that word", () => {
         assert.deepEqual(wordDeleteSpan("See (C++) rain", 4, 5), { start: 4, end: 10 });
         assert.equal(wordDeleteGap("See (C++) rain", 4, 5), "after");

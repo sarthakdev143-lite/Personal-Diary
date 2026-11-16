@@ -484,7 +484,12 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
                 return undefined;
             };
             let right = to;
-            if (word(to)) {
+            const signedAmount = leadingSign(to) && (word(to + 1) || (text[to + 1] === "." && digit(to + 2)));
+            if (word(to) || signedAmount) {
+                if (signedAmount) {
+                    right += 1;
+                    if (text[right] === "." && digit(right + 1)) right += 1;
+                }
                 while (word(right) || insideWord(right) || internalDot(right)) right += 1;
             } else {
                 const closes: string[] = [];
