@@ -1629,6 +1629,12 @@ export function codePictureHost(input: { picture: boolean }): CodePictureHost {
     return input.picture ? "pull" : "pass";
 }
 
+export type CodeDividerHost = "pull" | "pass";
+
+export function codeDividerHost(input: { divider: boolean }): CodeDividerHost {
+    return input.divider ? "pull" : "pass";
+}
+
 export type CodeDividerLead = "pull" | "pass";
 
 export function codeDividerLead(input: { divider: boolean }): CodeDividerLead {
