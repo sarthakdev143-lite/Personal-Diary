@@ -1611,6 +1611,12 @@ export function codeAfterHost(input: { words: boolean }): CodeAfterHost {
     return input.words ? "pull" : "pass";
 }
 
+export type CodeShellLead = "pull" | "pass";
+
+export function codeShellLead(input: { shell: boolean }): CodeShellLead {
+    return input.shell ? "pull" : "pass";
+}
+
 export type CodePictureLead = "pull" | "pass";
 
 export function codePictureLead(input: { picture: boolean }): CodePictureLead {
