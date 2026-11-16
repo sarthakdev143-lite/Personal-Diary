@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureForwardDelete, pictureGapDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureUnderLine, pictureLineJoin, pictureJoinCaret, picturePieceJoin, pictureInlineBackspace, pictureBackspaceFollows, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, pictureCutText, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureListContinue, pictureItemCaret, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureListTail, pictureForwardDelete, pictureGapDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureUnderLine, pictureLineJoin, pictureJoinCaret, picturePieceJoin, pictureInlineBackspace, pictureBackspaceFollows, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, pictureCutText, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureListContinue, pictureItemCaret, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -790,20 +790,33 @@ function lineAfterPicture(editor: HTMLElement, selection: Selection): { block: H
     if (!(block instanceof HTMLElement) || !editor.contains(block)) return null;
     const sibling = block.previousElementSibling;
     const list = sibling instanceof HTMLElement && (sibling.tagName === "UL" || sibling.tagName === "OL");
-    const item = list ? [...sibling.children].reverse().find((child) => child.tagName === "LI") : null;
-    const tailHost = item instanceof HTMLElement ? item : sibling instanceof HTMLElement ? sibling : null;
-    let tailNode: ChildNode | null = tailHost ? tailHost.lastChild : null;
-    while (tailNode instanceof Text && !tailNode.data.replace(/[\u00a0\s\u200b]/g, "")) tailNode = tailNode.previousSibling;
-    const tail = tailNode instanceof HTMLElement && tailNode.tagName === "FIGURE"
-        ? "picture"
-        : tailNode instanceof Text || (tailNode instanceof HTMLElement && (tailNode.textContent ?? "").replace(/[\u00a0\s\u200b]/g, ""))
-            ? "writing"
-            : tailNode
-                ? "empty"
-                : "none";
+    const skipBlank = (node: ChildNode | null) => {
+        let tail = node;
+        while (tail instanceof Text && !tail.data.replace(/[\u00a0\s\u200b]/g, "")) tail = tail.previousSibling;
+        return tail;
+    };
+    const tailOf = (node: ChildNode | null): { node: ChildNode | null; kind: "picture" | "writing" | "empty" | "none" } => {
+        const current = skipBlank(node);
+        if (current instanceof HTMLElement && (current.tagName === "UL" || current.tagName === "OL")) {
+            const item = [...current.children].reverse().find((child) => child.tagName === "LI");
+            const nested = tailOf(item instanceof HTMLElement ? item.lastChild : null);
+            return { node: nested.node, kind: pictureListTail({ child: "list", nestedTail: nested.kind }) };
+        }
+        if (current instanceof HTMLElement && current.tagName === "LI") return tailOf(current.lastChild);
+        if (current instanceof HTMLElement && current.tagName === "FIGURE") return { node: current, kind: "picture" };
+        if (current instanceof Text || (current instanceof HTMLElement && (current.textContent ?? "").replace(/[\u00a0\s\u200b]/g, ""))) {
+            return { node: current, kind: pictureListTail({ child: "writing", nestedTail: "none" }) };
+        }
+        if (current) return { node: current, kind: pictureListTail({ child: "empty", nestedTail: "none" }) };
+        return { node: null, kind: pictureListTail({ child: "none", nestedTail: "none" }) };
+    };
+    const ended = sibling instanceof HTMLElement && sibling.tagName === "FIGURE"
+        ? { node: sibling, kind: "picture" as const }
+        : tailOf(sibling instanceof HTMLElement ? sibling.lastChild : null);
+    const tailNode = ended.node;
     const behind = pictureBehindLine({
         sibling: sibling instanceof HTMLElement && sibling.tagName === "FIGURE" ? "picture" : list ? "list" : sibling instanceof HTMLElement ? "other" : "none",
-        tail,
+        tail: ended.kind,
     });
     const figure = sibling instanceof HTMLElement && sibling.tagName === "FIGURE"
         ? sibling
