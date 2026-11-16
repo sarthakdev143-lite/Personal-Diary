@@ -1773,6 +1773,13 @@ export function codeNestedHeld(input: { nested: boolean }): CodeNestedHeld {
     return input.nested ? "words" : "pass";
 }
 
+export type CodeShellTable = "stay" | "words" | "pass";
+
+export function codeShellTable(input: { table: boolean; words: boolean }): CodeShellTable {
+    if (!input.table) return "pass";
+    return input.words ? "words" : "stay";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
