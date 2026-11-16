@@ -1,6 +1,6 @@
 import { MAX_IMAGE_BYTES } from "./constants";
 import { sanitizeEntryHtml } from "./sanitize";
-import { boundarySpaceCut, listLineSpace, sameEditingPage } from "./text";
+import { boundarySpaceCut, joinNeedsSpace, listLineSpace, sameEditingPage } from "./text";
 
 const IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/gif", "image/webp"]);
 
@@ -263,6 +263,13 @@ export type PictureJoinCaret = "before" | "writing";
 
 export function pictureJoinCaret(input: { next: "picture" | "writing" | "none" }): PictureJoinCaret {
     return input.next === "picture" ? "before" : "writing";
+}
+
+export type PicturePieceJoin = "flush" | "space" | "tight";
+
+export function picturePieceJoin(input: { picture: boolean; previous: string; next: string }): PicturePieceJoin {
+    if (input.picture || !input.previous || !input.next) return input.picture ? "flush" : "tight";
+    return joinNeedsSpace(input.previous, input.next) ? "space" : "tight";
 }
 
 export type PictureInlineBackspace = "name" | "remove" | "pass";
