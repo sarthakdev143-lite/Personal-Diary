@@ -548,14 +548,16 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
             }
             return from < to;
         };
+        const repeated = (piece: string | undefined) => piece === "." || piece === "!" || piece === "?";
         let dot = start;
-        while (dot < end && text[dot] !== ".") dot += 1;
-        if (dot === end && text[end] === ".") dot = end;
-        if (text[dot] === ".") {
+        while (dot < end && !repeated(text[dot])) dot += 1;
+        if (dot === end && repeated(text[end])) dot = end;
+        if (repeated(text[dot])) {
+            const piece = text[dot];
             let from = dot;
-            while (text[from - 1] === ".") from -= 1;
+            while (text[from - 1] === piece) from -= 1;
             let to = dot + 1;
-            while (text[to] === ".") to += 1;
+            while (text[to] === piece) to += 1;
             if (to - from >= 2 && !word(to)) {
                 let limit = to;
                 while (space(limit)) limit += 1;
