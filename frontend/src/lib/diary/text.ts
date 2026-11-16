@@ -1629,6 +1629,12 @@ export function codeDivForward(input: { block: boolean }): CodeDivForward {
     return input.block ? "line" : "pass";
 }
 
+export type CodeDivLine = "line" | "pass";
+
+export function codeDivLine(input: { block: boolean }): CodeDivLine {
+    return input.block ? "line" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
