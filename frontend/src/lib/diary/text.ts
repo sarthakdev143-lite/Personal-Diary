@@ -2958,6 +2958,10 @@ export function entryToOpenForFilter<T extends { _id: string; createdAt: string 
     return entryToOpenWhenHidden(visible, currentId);
 }
 
+export function savedEntryClose(): "leave" {
+    return "leave";
+}
+
 export function showOpenEntry<T extends { _id: string }>(
     visible: readonly T[],
     currentId: string | null,
