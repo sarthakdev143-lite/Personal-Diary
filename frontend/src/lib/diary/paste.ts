@@ -146,7 +146,7 @@ export function pictureAheadDelete(input: {
     collapsed: boolean;
     ahead: PictureAhead;
 }): PictureAheadDelete {
-    if (input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.altKey) return "pass";
     if (input.key !== "Delete" || !input.collapsed || input.ahead === "none") return "pass";
     return input.ahead === "space" ? "clear" : "remove";
 }

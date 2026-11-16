@@ -505,7 +505,12 @@ describe("entry paste", () => {
         assert.equal(pictureAheadDelete({ key: "Delete", collapsed: true, ahead: "none" }), "pass");
         assert.equal(pictureAheadDelete({ key: "Delete", collapsed: false, ahead: "picture" }), "pass");
         assert.equal(pictureAheadDelete({ key: "Backspace", ...picture }), "pass");
-        assert.equal(pictureAheadDelete({ key: "Delete", ctrlKey: true, ...picture }), "pass");
+        assert.equal(pictureAheadDelete({ key: "Delete", ctrlKey: true, ...picture }), "remove");
+        assert.equal(pictureAheadDelete({ key: "Delete", metaKey: true, ...picture }), "remove");
+        assert.equal(pictureAheadDelete({ key: "Delete", ctrlKey: true, collapsed: true, ahead: "space" }), "clear");
+        assert.equal(pictureAheadDelete({ key: "Delete", ctrlKey: true, collapsed: true, ahead: "none" }), "pass");
+        assert.equal(pictureAheadDelete({ key: "Delete", altKey: true, ...picture }), "pass");
+        assert.equal(pictureAheadDelete({ key: "Backspace", ctrlKey: true, ...picture }), "pass");
     });
 
     it("starts the next line beside a picture and leaves the picture whole", () => {
