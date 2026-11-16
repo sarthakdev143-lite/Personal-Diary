@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureForwardDelete, pictureGapDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureUnderLine, pictureLineJoin, pictureJoinCaret, pictureInlineBackspace, pictureBackspaceFollows, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, pictureCutText, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureListContinue, pictureItemCaret, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureForwardDelete, pictureGapDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureUnderLine, pictureLineJoin, pictureJoinCaret, picturePieceJoin, pictureInlineBackspace, pictureBackspaceFollows, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, pictureCutText, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureListContinue, pictureItemCaret, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -3245,6 +3245,20 @@ function trimSpacesBeside(br: HTMLBRElement, direction: "previous" | "next", cou
     }
 }
 
+function writingWithoutPicture(node: Node): string {
+    if (node instanceof Text) return node.data;
+    if (node instanceof HTMLElement && (node.tagName === "FIGURE" || node.tagName === "FIGCAPTION")) return "";
+    let text = "";
+    for (const child of node.childNodes) text += writingWithoutPicture(child);
+    return text;
+}
+
+function pictureAtEnd(host: HTMLElement): boolean {
+    let node: ChildNode | null = host.lastChild;
+    while (node instanceof Text && !node.data.replace(/[\u00a0\s\u200b]/g, "")) node = node.previousSibling;
+    return node instanceof HTMLElement && node.tagName === "FIGURE";
+}
+
 function joinBlock(target: HTMLElement, source: HTMLElement): "after" | "none" {
     const into = writingHost(target);
     const after = source.textContent ?? "";
@@ -3259,19 +3273,26 @@ function joinBlock(target: HTMLElement, source: HTMLElement): "after" | "none" {
             if (child instanceof HTMLBRElement || (child instanceof Text && !child.data.replace(/[\u200b\u00a0]/g, "").trim())) child.remove();
         }
     }
-    const gap = joinGap(into.textContent ?? "", source.textContent ?? "");
-    trimEdgeSpaces(into, "end", gap.trimPrevious);
-    trimEdgeSpaces(source, "start", gap.trimNext);
     const pieces = piecesOf(source);
     const start = pieces.find((node) => {
         if (node instanceof Text) return node.data.replace(/[\u200b\u00a0]/g, "") !== "";
         return !(node instanceof HTMLBRElement);
     }) ?? pieces[0] ?? null;
+    const startsWithPicture = start instanceof HTMLElement && start.tagName === "FIGURE";
+    const gap = startsWithPicture
+        ? { trimPrevious: 0, trimNext: 0, insert: false, separate: false }
+        : joinGap(writingWithoutPicture(into), writingWithoutPicture(source));
+    trimEdgeSpaces(into, "end", gap.trimPrevious);
+    trimEdgeSpaces(source, "start", gap.trimNext);
     for (const node of pieces) {
-        const incoming = node.textContent ?? "";
-        if (incoming.replace(/[\u200b\u00a0]/g, "").trim() && joinNeedsSpace(into.textContent ?? "", incoming)) {
-            into.appendChild(document.createTextNode(" "));
-        }
+        const picture = node instanceof HTMLElement && node.tagName === "FIGURE";
+        const besidePicture = picture || pictureAtEnd(into);
+        const joined = picturePieceJoin({
+            picture,
+            previous: besidePicture ? "" : (into.textContent ?? ""),
+            next: picture ? "" : (node.textContent ?? ""),
+        });
+        if (joined === "space") into.appendChild(document.createTextNode(" "));
         into.appendChild(node);
     }
     removeJoined(source);
