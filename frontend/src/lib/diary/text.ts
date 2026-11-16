@@ -2081,7 +2081,9 @@ export function dateSelectionKey(input: {
     touchesDate: boolean;
     writingSelected: boolean;
 }): DateSelectionKey {
-    if (input.altKey || input.ctrlKey || input.metaKey || input.collapsed || !input.touchesDate) return "pass";
+    if (input.altKey || input.collapsed || !input.touchesDate) return "pass";
+    const word = Boolean(input.ctrlKey || input.metaKey);
+    if (word && input.key !== "Backspace" && input.key !== "Delete") return "pass";
     if (input.key === "Backspace" || input.key === "Delete") return input.writingSelected ? "clear" : "leave";
     if (input.key === "Enter" || input.key.length === 1) return "type";
     return "pass";
