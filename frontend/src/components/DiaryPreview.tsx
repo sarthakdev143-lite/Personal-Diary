@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 import { disposeThreeObject, useSetupScene } from "@/hooks/diary3d/useSetupScene";
+import { coverPreviewImage } from "@/lib/diary/constants";
 
 interface DiaryPreviewProps {
     selectedTexture: string;
@@ -22,7 +23,9 @@ const DiaryPreview: React.FC<DiaryPreviewProps> = ({ selectedTexture }) => {
     const controlsRef = useRef<OrbitControls | null>(null);
     const previewMeshesRef = useRef<PreviewMeshes | null>(null);
     const animationIdRef = useRef<number | null>(null);
-    const initialTextureRef = useRef(selectedTexture);
+    const webglFailedRef = useRef(false);
+    const textureRef = useRef(selectedTexture);
+    textureRef.current = selectedTexture;
 
     const { createDiaryCover, createDiarySpine, createLighting, createPages, diaryGroup, loadTexture, scene } =
         useSetupScene(selectedTexture);
@@ -42,7 +45,8 @@ const DiaryPreview: React.FC<DiaryPreviewProps> = ({ selectedTexture }) => {
         try {
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         } catch {
-            mountElement.style.backgroundImage = `url("${initialTextureRef.current.replace(/["\\]/g, "")}")`;
+            webglFailedRef.current = true;
+            mountElement.style.backgroundImage = coverPreviewImage(textureRef.current);
             mountElement.style.backgroundSize = "cover";
             mountElement.style.backgroundPosition = "center";
             return;
@@ -66,7 +70,7 @@ const DiaryPreview: React.FC<DiaryPreviewProps> = ({ selectedTexture }) => {
         controls.minPolarAngle = Math.PI * 0.2;
         controlsRef.current = controls;
 
-        const coverTexture = loadTexture(initialTextureRef.current);
+        const coverTexture = loadTexture(textureRef.current);
         const { frontCover, backCover } = createDiaryCover(coverTexture);
         const spine = createDiarySpine(coverTexture);
         createPages({ pageCount: 40, includeContentPages: false, pageSpread: 0.05 });
@@ -125,6 +129,15 @@ const DiaryPreview: React.FC<DiaryPreviewProps> = ({ selectedTexture }) => {
         loadTexture,
         scene,
     ]);
+
+    useEffect(() => {
+        const mountElement = mountRef.current;
+        if (!mountElement || !webglFailedRef.current) return;
+
+        mountElement.style.backgroundImage = coverPreviewImage(selectedTexture);
+        mountElement.style.backgroundSize = "cover";
+        mountElement.style.backgroundPosition = "center";
+    }, [selectedTexture]);
 
     return (
         <div ref={mountRef} className="relative flex h-full w-full items-center justify-center" />

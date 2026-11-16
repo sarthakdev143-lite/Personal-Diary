@@ -16,7 +16,7 @@ import { prepareEntryContent, presentEntry } from "./content";
 import { codeBlockHtml } from "./markup";
 import { buildDiaryExport, diaryToMarkdown, entryShareMarkdown, exportFilename, htmlToMarkdown } from "./export";
 import { readJsonBody } from "./json";
-import { CONTENT_MAX, DEFAULT_DIARY_THEME, MAX_DATA_IMAGE_LENGTH, coverForTheme } from "./constants";
+import { CONTENT_MAX, DEFAULT_DIARY_THEME, MAX_DATA_IMAGE_LENGTH, coverForTheme, coverPreviewImage } from "./constants";
 
 describe("pinned diaries", () => {
     it("puts a pinned diary ahead of a newer unpinned diary", () => {
@@ -2284,9 +2284,17 @@ describe("diary fields", () => {
     });
 
     it("names a known cover and ignores an unknown one", () => {
-        assert.equal(coverForTheme("/textures/wooden_garage_door.webp")?.name, "Wooden Garage Door");
+        assert.equal(coverForTheme("/textures/leather-texture.jpg")?.name, "Worn leather");
+        assert.equal(coverForTheme("/textures/leather-bound.webp")?.name, "Tan leather");
+        assert.equal(coverForTheme("/textures/wooden_garage_door.webp")?.name, "Studded wood");
         assert.equal(coverForTheme("/textures/missing.jpg"), null);
         assert.equal(coverForTheme(null), null);
+        assert.equal(coverPreviewImage("/textures/leather-texture.jpg"), 'url("/textures/leather-texture.jpg")');
+        assert.equal(
+            coverPreviewImage("/textures/wooden_garage_door.webp"),
+            'url("/textures/wooden_garage_door.webp")',
+        );
+        assert.equal(coverPreviewImage('/textures/a"b\\c.jpg'), 'url("/textures/abc.jpg")');
     });
 
     it("defaults a missing theme and rejects an unknown one", () => {
