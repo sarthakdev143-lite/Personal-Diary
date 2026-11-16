@@ -1617,6 +1617,12 @@ export function codeHeadingEnd(input: { heading: boolean }): CodeHeadingEnd {
     return input.heading ? "pull" : "pass";
 }
 
+export type CodeHeadingForward = "line" | "pass";
+
+export function codeHeadingForward(input: { heading: boolean }): CodeHeadingForward {
+    return input.heading ? "line" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
