@@ -1328,6 +1328,13 @@ describe("code block", () => {
         assert.deepEqual(wordLeadSpan("See \u20b91,500.00 rain", 4, 5), { start: 4, end: 13 });
         assert.deepEqual(wordLeadSpan("See $20. rain", 4, 5), { start: 4, end: 7 });
         assert.deepEqual(wordLeadSpan("See $20.txt rain", 4, 5), { start: 4, end: 7 });
+        assert.deepEqual(wordLeadSpan("See $.50 rain", 4, 6), { start: 4, end: 8 });
+        assert.deepEqual(wordLeadSpan("See $.50 rain", 4, 5), { start: 4, end: 8 });
+        assert.deepEqual(wordLeadSpan("See .50 rain", 4, 5), { start: 4, end: 7 });
+        assert.deepEqual(wordLeadSpan("See 3.14 rain", 5, 6), { start: 5, end: 6 });
+        assert.deepEqual(wordDeleteSpan("See .50 rain", 5, 7), { start: 4, end: 8 });
+        assert.deepEqual(wordDeleteSpan("See $.50 rain", 6, 8), { start: 4, end: 9 });
+        assert.deepEqual(wordDeleteSpan("See $20.50 rain", 8, 10), { start: 7, end: 10 });
         assert.deepEqual(wordLeadSpan("See $12 rain", 5, 7), { start: 5, end: 7 });
         assert.deepEqual(wordLeadSpan("See C#5 rain", 5, 6), { start: 5, end: 6 });
         assert.deepEqual(wordLeadSpan("See $ rain", 4, 5), { start: 4, end: 5 });

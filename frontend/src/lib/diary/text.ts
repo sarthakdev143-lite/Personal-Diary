@@ -266,17 +266,25 @@ export function selectionTypeUndo(input: {
 const LEADING_WORD_MARKS = new Set(["$", "\u20ac", "\u00a3", "\u20b9", "\u00a5", "#"]);
 
 export function wordLeadSpan(text: string, start: number, end: number): { start: number; end: number } {
-    if (end !== start + 1 || !LEADING_WORD_MARKS.has(text[start] ?? "")) return { start, end };
     const word = (index: number) => /[\p{L}\p{N}]/u.test(text[index] ?? "");
     const digit = (index: number) => /\p{N}/u.test(text[index] ?? "");
-    if (word(start - 1) || !word(start + 1)) return { start, end };
-    let cursor = start + 1;
+    const sign = LEADING_WORD_MARKS.has(text[start] ?? "");
+    const signAndDot = end === start + 2 && sign && text[start + 1] === "." && digit(start + 2);
+    const one = end === start + 1 && (sign || (text[start] === "." && !word(start - 1)));
+    if ((!one && !signAndDot) || word(start - 1)) return { start, end };
+    let cursor = signAndDot ? start + 2 : start + 1;
+    if (text[start] === "." && one) {
+        if (!digit(cursor)) return { start, end };
+        while (digit(cursor)) cursor += 1;
+        return { start, end: cursor };
+    }
+    if (!word(cursor) && !(text[cursor] === "." && digit(cursor + 1))) return { start, end };
     while (word(cursor)) cursor += 1;
     while (digit(cursor - 1) && text[cursor] === "," && digit(cursor + 1)) {
         cursor += 2;
         while (digit(cursor)) cursor += 1;
     }
-    if (digit(cursor - 1) && text[cursor] === "." && digit(cursor + 1)) {
+    if ((digit(cursor - 1) || text[cursor] === ".") && text[cursor] === "." && digit(cursor + 1)) {
         cursor += 2;
         while (digit(cursor)) cursor += 1;
     }
@@ -392,7 +400,8 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
                 end = tail;
             }
         }
-        if ((text[start - 1] === "$" || text[start - 1] === "\u20ac" || text[start - 1] === "\u00a3" || text[start - 1] === "\u20b9" || text[start - 1] === "\u00a5" || text[start - 1] === "#") && !word(start - 2) && word(start)) start -= 1;
+        if (text[start - 1] === "." && digit(start) && !word(start - 2)) start -= 1;
+        if ((text[start - 1] === "$" || text[start - 1] === "\u20ac" || text[start - 1] === "\u00a3" || text[start - 1] === "\u20b9" || text[start - 1] === "\u00a5" || text[start - 1] === "#") && !word(start - 2) && (word(start) || (text[start] === "." && digit(start + 1)))) start -= 1;
         if (end === start + 1 && word(start - 1) && (sticky(start) || ((text[start] === "." || text[start] === ":") && !word(end)))) {
             while (word(start - 1)) start -= 1;
         }
