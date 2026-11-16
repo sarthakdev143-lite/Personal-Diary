@@ -263,6 +263,17 @@ export function selectionTypeUndo(input: {
     return "place";
 }
 
+const LEADING_WORD_MARKS = new Set(["$", "\u20ac", "\u00a3", "\u20b9", "\u00a5", "#"]);
+
+export function wordLeadSpan(text: string, start: number, end: number): { start: number; end: number } {
+    if (end !== start + 1 || !LEADING_WORD_MARKS.has(text[start] ?? "")) return { start, end };
+    const word = (index: number) => /[\p{L}\p{N}]/u.test(text[index] ?? "");
+    if (word(start - 1) || !word(start + 1)) return { start, end };
+    let cursor = start + 1;
+    while (word(cursor)) cursor += 1;
+    return { start, end: cursor };
+}
+
 export function wordDeleteSpan(text: string, start: number, end: number): { start: number; end: number } {
     const space = (index: number) => {
         const piece = text[index];
