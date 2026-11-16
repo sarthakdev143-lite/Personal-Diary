@@ -1492,6 +1492,13 @@ describe("code block", () => {
         assert.deepEqual(wordDeleteSpan("See (C++) rain", 4, 5), { start: 4, end: 10 });
         assert.equal(wordDeleteGap("See (C++) rain", 4, 5), "after");
         assert.deepEqual(wordDeleteSpan("See (C++) rain", 6, 9), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See (C++.) rain", 4, 5), { start: 4, end: 11 });
+        assert.equal(wordDeleteGap("See (C++.) rain", 4, 5), "after");
+        assert.deepEqual(wordDeleteSpan("See (C++.) rain", 6, 10), { start: 4, end: 11 });
+        assert.deepEqual(wordDeleteSpan("See (C#,) rain", 4, 5), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See (C#,) rain", 6, 9), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan('See "C++." rain', 6, 10), { start: 4, end: 11 });
+        assert.deepEqual(wordDeleteSpan("See (note*.) rain", 9, 12), { start: 4, end: 13 });
         assert.deepEqual(wordDeleteSpan("See (C#) rain", 4, 5), { start: 4, end: 9 });
         assert.deepEqual(wordDeleteSpan("See (C#) rain", 6, 8), { start: 4, end: 9 });
         assert.deepEqual(wordDeleteSpan('See "C++" rain', 4, 5), { start: 4, end: 10 });
