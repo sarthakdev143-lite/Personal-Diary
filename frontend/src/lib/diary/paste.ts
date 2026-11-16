@@ -522,6 +522,12 @@ export function pictureListContinue(input: { item: boolean; next: "text" | "list
     return "apart";
 }
 
+export type PictureItemCaret = "after" | "end";
+
+export function pictureItemCaret(input: { endsWithPicture: boolean }): PictureItemCaret {
+    return input.endsWithPicture ? "after" : "end";
+}
+
 export function pictureHeadingBefore(input: { heading: boolean }): PictureHeadingContinue {
     return input.heading ? "apart" : "into";
 }
