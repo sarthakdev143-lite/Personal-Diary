@@ -1695,6 +1695,12 @@ export function codeBackBreak(input: { broken: boolean }): CodeBackBreak {
     return input.broken ? "line" : "pass";
 }
 
+export type CodeHeldWords = "words" | "pass";
+
+export function codeHeldWords(input: { held: boolean }): CodeHeldWords {
+    return input.held ? "words" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
