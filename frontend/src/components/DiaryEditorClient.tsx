@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, dropCaretMarker, caretMarkBeside, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, quoteLineEdge, quoteJoinTarget, quotePictureJoin, quoteTrailingLeave, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, listReachBlock, pictureCodeList, pictureTableList, pictureStyle, pictureStyleHold, pictureStyleSeat, pictureLineItalic, pictureLinkField, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, dropCaretMarker, caretMarkBeside, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, quoteLineEdge, quoteJoinTarget, quotePictureJoin, quoteTrailingLeave, quoteListTail, quoteAfterList, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, listReachBlock, pictureCodeList, pictureTableList, pictureStyle, pictureStyleHold, pictureStyleSeat, pictureLineItalic, pictureLinkField, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
 type Entry = { _id: string; diaryId: string; content: string; plainText?: string; createdAt: string; updatedAt: string; };
@@ -2505,28 +2505,56 @@ function writingSelection(editor: HTMLElement, range: Range): boolean {
     return held.querySelector("img, figure, hr") === null;
 }
 
+function lastListItem(list: HTMLElement): HTMLElement | null {
+    const item = [...list.children].reverse().find((node) => node instanceof HTMLElement && node.tagName === "LI");
+    if (!(item instanceof HTMLElement)) return null;
+    const last = [...item.children].reverse().find((node) => node instanceof HTMLElement);
+    if (last instanceof HTMLElement && (last.tagName === "UL" || last.tagName === "OL")) {
+        const deeper = lastListItem(last);
+        if (deeper) return deeper;
+    }
+    return item;
+}
+
 function lastQuoteLine(quote: HTMLElement): HTMLElement | null {
     for (const child of [...quote.children].reverse()) {
         if (!(child instanceof HTMLElement)) continue;
-        if (child.tagName === "P" || /^H[1-3]$/.test(child.tagName)) return child;
+        if (child.tagName === "P" || /^H[1-3]$/.test(child.tagName)) return quoteListTail({ last: "writing" }) === "line" ? child : null;
         if (child.tagName === "BLOCKQUOTE") {
             const nested = lastQuoteLine(child);
             if (nested) return nested;
             continue;
+        }
+        if ((child.tagName === "UL" || child.tagName === "OL") && quoteListTail({ last: "list" }) === "line") {
+            return lastListItem(child);
         }
         return null;
     }
     return null;
 }
 
-function leaveClosedQuotes(line: HTMLElement, from: HTMLElement) {
+function trailingQuoteBlock(line: HTMLElement): HTMLElement | null {
     let current = line;
-    while (current.parentElement instanceof HTMLElement) {
-        const quote = current.parentElement;
-        const trailing = quote.tagName === "BLOCKQUOTE" && !current.nextElementSibling;
-        const outside = !quote.contains(from);
-        if (quoteTrailingLeave({ trailing, outside }) !== "leave") break;
-        quote.after(current);
+    while (current.parentElement instanceof HTMLElement && current.parentElement.tagName !== "BLOCKQUOTE") {
+        if (current.nextElementSibling) return null;
+        const parent = current.parentElement;
+        if (parent.tagName !== "UL" && parent.tagName !== "OL" && parent.tagName !== "LI") return null;
+        current = parent;
+    }
+    const quote = current.parentElement;
+    if (!(quote instanceof HTMLElement) || quote.tagName !== "BLOCKQUOTE" || current.nextElementSibling) return null;
+    return current;
+}
+
+function leaveClosedQuotes(line: HTMLElement, from: HTMLElement) {
+    let guard = 0;
+    while (guard < 8) {
+        guard += 1;
+        const block = trailingQuoteBlock(line);
+        if (!(block instanceof HTMLElement)) break;
+        const quote = block.parentElement;
+        if (!(quote instanceof HTMLElement) || quoteTrailingLeave({ trailing: true, outside: !quote.contains(from) }) !== "leave") break;
+        quote.after(block);
         closeEmptyHost(quote);
     }
 }
@@ -2535,11 +2563,12 @@ function quoteJoinHost(into: HTMLElement, from: HTMLElement): HTMLElement {
     if (blockIsEmpty(from)) return into;
     const line = into.tagName === "BLOCKQUOTE" ? lastQuoteLine(into) : into;
     if (!(line instanceof HTMLElement)) return into;
-    const parent = line.parentElement;
-    if (quoteTrailingLeave({
-        trailing: parent?.tagName === "BLOCKQUOTE" && !line.nextElementSibling,
-        outside: parent instanceof HTMLElement && !parent.contains(from),
-    }) !== "leave") return into;
+    const edge = trailingQuoteBlock(line);
+    const quote = edge?.parentElement;
+    if (!(edge instanceof HTMLElement) || !(quote instanceof HTMLElement) || quoteTrailingLeave({
+        trailing: true,
+        outside: !quote.contains(from),
+    }) !== "leave") return into.tagName === "BLOCKQUOTE" ? into : line;
     leaveClosedQuotes(line, from);
     return line;
 }
@@ -2565,9 +2594,11 @@ function firstQuoteLine(quote: HTMLElement): HTMLElement | null {
 function adjacentTextBlock(block: HTMLElement, direction: "previous" | "next"): HTMLElement | null {
     const siblingOf = (node: Element) => direction === "previous" ? node.previousElementSibling : node.nextElementSibling;
     let sibling = siblingOf(block);
-    const parent = block.parentElement;
-    if (!sibling && parent && (parent.tagName === "UL" || parent.tagName === "OL")) sibling = siblingOf(parent);
-    let quote = parent;
+    let quote = block.parentElement;
+    if (!sibling && quote && (quote.tagName === "UL" || quote.tagName === "OL")) {
+        sibling = siblingOf(quote);
+        if (!sibling && quoteAfterList({ listParent: quote.parentElement?.tagName === "BLOCKQUOTE" ? "quote" : "other" }) === "out") quote = quote.parentElement;
+    }
     while (!sibling && quote instanceof HTMLElement && quoteLineEdge({
         parent: quote.tagName === "BLOCKQUOTE" ? "quote" : "other",
         atEdge: true,
