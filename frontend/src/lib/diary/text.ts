@@ -1557,6 +1557,12 @@ export function codeTail(input: { text: boolean }): CodeTail {
     return input.text ? "line" : "pass";
 }
 
+export type CodeLead = "pull" | "pass";
+
+export function codeLead(input: { words: boolean }): CodeLead {
+    return input.words ? "pull" : "pass";
+}
+
 export function codePullUndoCaret(offset: number | null): number | null {
     if (offset === null || !Number.isFinite(offset) || offset < 0) return null;
     return Math.floor(offset);
