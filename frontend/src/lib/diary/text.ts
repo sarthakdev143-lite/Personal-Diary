@@ -1769,7 +1769,7 @@ export function codeTableStay(input: { table: boolean }): CodeTableStay {
 
 export type TableLineBack = "cell" | "pass";
 
-export function tableLineBack(input: { atStart: boolean; table: boolean; empty: boolean }): TableLineBack {
+export function tableLineBack(input: { atStart: boolean; table: boolean; empty: boolean; word?: boolean }): TableLineBack {
     if (!input.atStart || !input.table || input.empty) return "pass";
     return "cell";
 }

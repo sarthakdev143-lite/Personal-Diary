@@ -11040,7 +11040,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     };
 
     const keepTableLine = (e: React.KeyboardEvent) => {
-        if (e.key !== "Backspace" || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return false;
+        if (e.key !== "Backspace" || e.altKey || e.shiftKey) return false;
         const editor = editorRef.current;
         const selection = window.getSelection();
         if (!editor || !selection?.rangeCount || mode === "view" || !selection.isCollapsed) return false;
@@ -11052,7 +11052,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const edges = caretEdges(block, selection);
         if (!edges?.collapsed || !edges.atStart) return false;
         const table = tableBeforeWriting(block, editor);
-        if (tableLineBack({ atStart: true, table: table instanceof HTMLTableElement, empty: blockIsEmpty(block) }) !== "cell" || !(table instanceof HTMLTableElement)) return false;
+        if (tableLineBack({
+            atStart: true,
+            table: table instanceof HTMLTableElement,
+            empty: blockIsEmpty(block),
+            word: e.ctrlKey || e.metaKey,
+        }) !== "cell" || !(table instanceof HTMLTableElement)) return false;
         const cell = lastTableCell(table);
         if (!cell) return false;
         e.preventDefault();
