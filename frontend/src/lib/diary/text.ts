@@ -1635,6 +1635,12 @@ export function codeDividerHost(input: { divider: boolean }): CodeDividerHost {
     return input.divider ? "pull" : "pass";
 }
 
+export type CodeQuoteHost = "pull" | "pass";
+
+export function codeQuoteHost(input: { quote: boolean }): CodeQuoteHost {
+    return input.quote ? "pull" : "pass";
+}
+
 export type CodeDividerLead = "pull" | "pass";
 
 export function codeDividerLead(input: { divider: boolean }): CodeDividerLead {
