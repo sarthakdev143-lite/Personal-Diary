@@ -1521,7 +1521,7 @@ export function codePullKey(input: {
     atEnd: boolean;
     neighbor: "text" | "code" | "none";
 }): CodePull {
-    if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey || !input.collapsed) return "pass";
+    if (input.shiftKey || input.altKey || !input.collapsed) return "pass";
     if (input.key === "Backspace" && input.atStart && (input.neighbor === "text" || input.neighbor === "code")) return "pull";
     if (input.key === "Delete" && input.atEnd && input.neighbor === "code") return "pull";
     return "pass";
@@ -1539,7 +1539,7 @@ export function codeForwardJoin(input: {
     atEnd: boolean;
     next: "writing" | "list" | "quote" | "code" | "none";
 }): CodeForwardJoin {
-    if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey || !input.collapsed || !input.atEnd) return "pass";
+    if (input.shiftKey || input.altKey || !input.collapsed || !input.atEnd) return "pass";
     if (input.key !== "Delete" || input.next === "none") return "pass";
     return "line";
 }
