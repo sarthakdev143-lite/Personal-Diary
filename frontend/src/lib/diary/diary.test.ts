@@ -349,6 +349,8 @@ describe("code block", () => {
         assert.equal(tableLineBack({ atStart: true, table: true, empty: true }), "pass");
         assert.equal(tableLineBack({ atStart: false, table: true, empty: false }), "pass");
         assert.equal(tableLineBack({ atStart: true, table: false, empty: false }), "pass");
+        assert.equal(tableLineBack({ atStart: true, table: true, empty: false, word: true }), "cell");
+        assert.equal(tableLineBack({ atStart: false, table: true, empty: false, word: true }), "pass");
         assert.equal(codeQuotedTable({ quoted: true }), "stay");
         assert.equal(codeQuotedTable({ quoted: false }), "pass");
         assert.equal(codeQuotedWords({ quoted: true }), "words");
