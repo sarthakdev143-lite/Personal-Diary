@@ -412,7 +412,7 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         else if (word(start - 1) && word(end) && joinerSpan(start, end)) {
             end += 1;
             while (word(end)) end += 1;
-        } else if (word(end - 1)) {
+        } else if (word(end - 1) || text[end - 1] === "%" || text[end - 1] === "\u00b0") {
             const next = afterJoiner(end);
             if (next !== undefined) end = next;
         }
@@ -435,7 +435,7 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
             while (word(end)) end += 1;
         }
         if (apostrophe(end) && word(end - 1) && !word(end + 1)) end += 1;
-        if (word(end - 1) && held(end)) {
+        if ((word(end - 1) || text[end - 1] === "%" || text[end - 1] === "\u00b0") && held(end)) {
             while (held(end)) end += 1;
         }
         const trailingMark = (index: number) => {
