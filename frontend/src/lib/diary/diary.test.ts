@@ -1890,6 +1890,23 @@ describe("code block", () => {
         assert.deepEqual(wordDeleteSpan("See http://example.com next", 0, 8), { start: 0, end: 9 });
     });
 
+    it("keeps the two sides of a windows path apart", () => {
+        assert.deepEqual(wordDeleteSpan("See C:\\Users next", 4, 5), { start: 4, end: 7 });
+        assert.equal(wordDeleteGap("See C:\\Users next", 4, 5), "after");
+        assert.deepEqual(wordDeleteSpan("See C:\\Users next", 5, 7), { start: 5, end: 12 });
+        assert.equal(wordDeleteGap("See C:\\Users next", 5, 7), "before");
+        assert.deepEqual(wordDeleteSpan("See C:\\Users next", 6, 7), { start: 5, end: 12 });
+        assert.deepEqual(wordDeleteSpan("See C:\\Users next", 5, 6), { start: 4, end: 7 });
+        assert.deepEqual(wordDeleteSpan("See C:/Users next", 5, 6), { start: 4, end: 7 });
+        assert.deepEqual(wordDeleteSpan("See http://example.com next", 4, 9), { start: 4, end: 11 });
+        assert.deepEqual(wordDeleteSpan("See C:\\Users next", 3, 5), { start: 4, end: 7 });
+        assert.deepEqual(wordDeleteSpan("See C:\\Users next", 7, 12), { start: 7, end: 12 });
+        assert.deepEqual(wordDeleteSpan("See C:\\Users\\Ada next", 4, 5), { start: 4, end: 7 });
+        assert.deepEqual(wordDeleteSpan("See C:\\Users\\Ada next", 5, 7), { start: 5, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See C:\\Users\\Ada next", 7, 12), { start: 7, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See rock\\roll rain", 4, 8), { start: 4, end: 9 });
+    });
+
     it("keeps a plus at the end of a word with that word", () => {
         assert.deepEqual(wordDeleteSpan("See (C++) rain", 4, 5), { start: 4, end: 10 });
         assert.equal(wordDeleteGap("See (C++) rain", 4, 5), "after");
