@@ -22,7 +22,7 @@ const Landing = () => {
                 Scribble your thoughts, ideas, and todos in a clean and minimal interface.
             </p>
 
-            <div className="mt-6 flex gap-2 max-xxs:flex-col max-xxs:gap-3">
+            <div className="mt-6 flex w-full flex-wrap items-center justify-center gap-2">
                 {startReady ? (
                     <Button
                         className="pointer-events-auto rounded-md bg-white text-base font-semibold text-zinc-950 hover:bg-zinc-200"
