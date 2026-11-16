@@ -1605,6 +1605,12 @@ export function codePictureLead(input: { picture: boolean }): CodePictureLead {
     return input.picture ? "pull" : "pass";
 }
 
+export type CodeTableLead = "pull" | "pass";
+
+export function codeTableLead(input: { table: boolean }): CodeTableLead {
+    return input.table ? "pull" : "pass";
+}
+
 export function codePullUndoCaret(offset: number | null): number | null {
     if (offset === null || !Number.isFinite(offset) || offset < 0) return null;
     return Math.floor(offset);
