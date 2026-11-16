@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codeForwardJoin, codeAhead, codeListNest, codePastItem, codePictureWords, codePullUndoCaret, codeTail, codeLead, codePriorItem, codeHostItem, codeBreakLead, codeDeepHost, codeListLead, codeBeside, codePictureLead, codeTableLead, codeDividerLead, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, dropCaretMarker, caretMarkBeside, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, quoteLineEdge, quoteJoinTarget, quotePictureJoin, quoteTrailingLeave, quoteListTail, quoteAfterList, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, listReachBlock, pictureCodeList, pictureTableList, pictureStyle, pictureStyleHold, pictureStyleSeat, pictureLineItalic, pictureLinkField, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codeForwardJoin, codeAhead, codeListNest, codePastItem, codePictureWords, codePullUndoCaret, codeTail, codeLead, codePriorItem, codeHostItem, codeBreakLead, codeDeepHost, codeListLead, codeBeside, codePictureLead, codeTableLead, codeDividerLead, codeDivLead, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, dropCaretMarker, caretMarkBeside, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, quoteLineEdge, quoteJoinTarget, quotePictureJoin, quoteTrailingLeave, quoteListTail, quoteAfterList, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, listReachBlock, pictureCodeList, pictureTableList, pictureStyle, pictureStyleHold, pictureStyleSeat, pictureLineItalic, pictureLinkField, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
 type Entry = { _id: string; diaryId: string; content: string; plainText?: string; createdAt: string; updatedAt: string; };
@@ -3714,6 +3714,13 @@ function tailAfterCode(pre: HTMLElement): { text: string; nodes: ChildNode[] } |
 
 function blockStaysBeforeCode(block: HTMLElement): boolean {
     return block.tagName === "IMG" || block.tagName === "FIGURE" || block.tagName === "TABLE" || block.tagName === "HR";
+}
+
+function divBeforeCode(pre: HTMLElement): HTMLElement | null {
+    const previous = pre.previousElementSibling;
+    if (!(previous instanceof HTMLDivElement) || previous.querySelector("table, pre, hr, ul, ol, blockquote, img, figure")) return null;
+    if (codeDivLead({ block: true }) !== "pull") return null;
+    return previous;
 }
 
 function dividerBeforeCode(pre: HTMLElement): HTMLElement | null {
@@ -9425,6 +9432,28 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 const host = broken.breakNode.parentElement instanceof HTMLElement ? broken.breakNode.parentElement : editor;
                 const separated = pullCodeAcrossBreak(pre, broken.breakNode, broken.text);
                 rememberWordGap(editor, writingHost(host), separated);
+                keepBlank({ before, after: editor.innerHTML, path });
+                setHtmlContent(editor.innerHTML);
+                return true;
+            }
+            const plainBlock = divBeforeCode(pre);
+            const plainPull = codePullKey({
+                key: e.key,
+                shiftKey: e.shiftKey,
+                altKey: e.altKey,
+                ctrlKey: e.ctrlKey,
+                metaKey: e.metaKey,
+                collapsed: selection.isCollapsed,
+                atStart,
+                atEnd: false,
+                neighbor: plainBlock ? "text" : "none",
+            });
+            if (plainBlock && plainPull === "pull") {
+                e.preventDefault();
+                const before = editor.innerHTML;
+                const path = childPath(editor, plainBlock);
+                const separated = pullFirstCodeLine(plainBlock, pre);
+                rememberWordGap(editor, writingHost(plainBlock), separated);
                 keepBlank({ before, after: editor.innerHTML, path });
                 setHtmlContent(editor.innerHTML);
                 return true;
