@@ -61,10 +61,16 @@ export function pictureBehindLine(input: { sibling: "picture" | "list" | "other"
     return (input.sibling === "other" || input.sibling === "list") && input.tail === "picture";
 }
 
+export type PictureLineHost = "quote" | "self";
+
+export function pictureLineHost(input: { parent: "quote" | "other"; leading: boolean }): PictureLineHost {
+    return input.parent === "quote" && input.leading ? "quote" : "self";
+}
+
 export type PictureListTail = "picture" | "writing" | "empty" | "none";
 
-export function pictureListTail(input: { child: "picture" | "list" | "writing" | "empty" | "none"; nestedTail: PictureListTail }): PictureListTail {
-    if (input.child === "list") return input.nestedTail;
+export function pictureListTail(input: { child: "picture" | "list" | "inside" | "writing" | "empty" | "none"; nestedTail: PictureListTail }): PictureListTail {
+    if (input.child === "list" || input.child === "inside") return input.nestedTail;
     if (input.child === "picture" || input.child === "writing" || input.child === "empty") return input.child;
     return "none";
 }
