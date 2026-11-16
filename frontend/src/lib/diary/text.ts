@@ -1563,6 +1563,12 @@ export function codeLead(input: { words: boolean }): CodeLead {
     return input.words ? "pull" : "pass";
 }
 
+export type CodePriorItem = "pull" | "pass";
+
+export function codePriorItem(input: { item: boolean }): CodePriorItem {
+    return input.item ? "pull" : "pass";
+}
+
 export function codePullUndoCaret(offset: number | null): number | null {
     if (offset === null || !Number.isFinite(offset) || offset < 0) return null;
     return Math.floor(offset);
