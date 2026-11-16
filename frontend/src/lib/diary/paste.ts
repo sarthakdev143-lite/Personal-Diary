@@ -390,7 +390,9 @@ export function pictureBoundsKey(input: {
     touchesPicture: boolean;
     outsideSelected: boolean;
 }): PictureBoundsKey {
-    if (input.altKey || input.ctrlKey || input.metaKey || input.collapsed || !input.touchesPicture || !input.outsideSelected) return "pass";
+    if (input.altKey || input.collapsed || !input.touchesPicture || !input.outsideSelected) return "pass";
+    const word = Boolean(input.ctrlKey || input.metaKey);
+    if (word && input.key !== "Backspace" && input.key !== "Delete") return "pass";
     if (input.key === "Backspace" || input.key === "Delete") return "clear";
     if (input.key === "Enter" || input.key.length === 1) return "type";
     return "pass";
