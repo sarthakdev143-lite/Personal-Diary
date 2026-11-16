@@ -541,6 +541,38 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
                 }
             }
         }
+        const hostInside = (place: number) => (mark(place) || text[place] === ".") && word(place - 1) && word(place + 1);
+        const schemeSeparator = (index: number) => {
+            let colon = index;
+            if (text[colon] === "/") {
+                while (text[colon - 1] === "/") colon -= 1;
+                colon -= 1;
+            }
+            if (text[colon] !== ":" || text[colon + 1] !== "/" || !word(colon - 1)) return undefined;
+            let to = colon + 1;
+            while (text[to] === "/") to += 1;
+            if (!word(to)) return undefined;
+            let left = colon;
+            while (word(left - 1)) left -= 1;
+            let right = to;
+            while (word(right) || hostInside(right)) right += 1;
+            return { from: colon, to, left, right };
+        };
+        let scheme = schemeSeparator(start) ?? (end > start ? schemeSeparator(end - 1) : undefined);
+        if (!scheme) {
+            for (let index = start; index < end && !scheme; index += 1) {
+                if (text[index] === ":" || text[index] === "/") scheme = schemeSeparator(index);
+            }
+        }
+        if (scheme && start >= scheme.from && start < scheme.to && end > scheme.from && end <= scheme.right) {
+            if (end < scheme.to) {
+                start = scheme.left;
+                end = scheme.to;
+            } else {
+                start = scheme.from;
+                end = scheme.right;
+            }
+        }
         if (apostrophe(start - 1) && apostrophe(end) && word(start) && !word(start - 2) && !word(end + 1)) {
             start -= 1;
             end += 1;

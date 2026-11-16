@@ -1419,7 +1419,7 @@ describe("code block", () => {
         assert.equal(wordDeleteGap("See 3:14 rain", 6, 8), "before");
         assert.equal(wordDeleteGap("See 3:14 rain", 5, 8), "before");
         assert.equal(wordDeleteGap("See 3.14 rain", 5, 8), "before");
-        assert.equal(wordDeleteGap("Open http://example now", 9, 12), "after");
+        assert.equal(wordDeleteGap("Open http://example now", 9, 12), "before");
         assert.deepEqual(wordDeleteSpan("See file.txt rain", 4, 8), { start: 4, end: 9 });
         assert.deepEqual(wordDeleteSpan("See file.txt rain", 8, 9), { start: 8, end: 12 });
         assert.deepEqual(wordDeleteSpan("See file.txt rain", 9, 12), { start: 8, end: 12 });
@@ -1842,6 +1842,28 @@ describe("code block", () => {
         assert.deepEqual(wordDeleteSpan("See €20.50...€10.00", 7, 10), { start: 4, end: 13 });
         assert.deepEqual(wordDeleteSpan("See $20.50!!!$10.00", 7, 10), { start: 4, end: 13 });
         assert.deepEqual(wordDeleteSpan("See $20.50\u2026$10.00", 7, 10), { start: 4, end: 11 });
+    });
+
+    it("keeps the two sides of a web address apart", () => {
+        assert.deepEqual(wordDeleteSpan("See http://example.com next", 8, 11), { start: 8, end: 22 });
+        assert.equal(wordDeleteGap("See http://example.com next", 8, 11), "before");
+        assert.deepEqual(wordDeleteSpan("See http://example.com next", 9, 11), { start: 8, end: 22 });
+        assert.deepEqual(wordDeleteSpan("See http://example.com next", 10, 11), { start: 8, end: 22 });
+        assert.deepEqual(wordDeleteSpan("See http://example.com next", 8, 10), { start: 4, end: 11 });
+        assert.equal(wordDeleteGap("See http://example.com next", 8, 10), "after");
+        assert.deepEqual(wordDeleteSpan("See http://example.com next", 4, 8), { start: 4, end: 9 });
+        assert.deepEqual(wordDeleteSpan("See http://example.com next", 11, 22), { start: 11, end: 22 });
+        assert.deepEqual(wordDeleteSpan("Open http://example now", 9, 12), { start: 9, end: 19 });
+        assert.deepEqual(wordDeleteSpan("Open http://example now", 12, 19), { start: 12, end: 19 });
+        assert.deepEqual(wordDeleteSpan("See https://example.com next", 9, 12), { start: 9, end: 23 });
+        assert.deepEqual(wordDeleteSpan("See http://example.com/path next", 8, 11), { start: 8, end: 27 });
+        assert.deepEqual(wordDeleteSpan("See http://my-site.com next", 8, 11), { start: 8, end: 22 });
+        assert.deepEqual(wordDeleteSpan("See C:/Users next", 5, 7), { start: 5, end: 12 });
+        assert.equal(wordDeleteGap("See C:/Users next", 5, 7), "before");
+        assert.deepEqual(wordDeleteSpan("See C:/Users next", 6, 7), { start: 5, end: 12 });
+        assert.deepEqual(wordDeleteSpan("See http:/example next", 8, 10), { start: 8, end: 17 });
+        assert.deepEqual(wordDeleteSpan("See http :// example next", 9, 12), { start: 9, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See 3:14 rain", 5, 6), { start: 5, end: 8 });
     });
 
     it("keeps a plus at the end of a word with that word", () => {
