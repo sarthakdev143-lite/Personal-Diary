@@ -113,6 +113,12 @@ export function quoteJoinTarget(input: { direction: "next" | "previous"; hasLine
     return input.direction === "next" && input.hasLine ? "line" : "quote";
 }
 
+export type QuotePictureJoin = "part" | "whole";
+
+export function quotePictureJoin(input: { leading: "picture" | "writing" | "none" }): QuotePictureJoin {
+    return input.leading === "none" ? "whole" : "part";
+}
+
 export type LineJoin = "join" | "clear" | "drop" | "pass";
 
 export function lineJoinKey(input: {
