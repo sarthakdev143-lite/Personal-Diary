@@ -1617,6 +1617,12 @@ export function codeShellLead(input: { shell: boolean }): CodeShellLead {
     return input.shell ? "pull" : "pass";
 }
 
+export type CodeEdgeLead = "pull" | "pass";
+
+export function codeEdgeLead(input: { edge: boolean }): CodeEdgeLead {
+    return input.edge ? "pull" : "pass";
+}
+
 export type CodePictureLead = "pull" | "pass";
 
 export function codePictureLead(input: { picture: boolean }): CodePictureLead {
