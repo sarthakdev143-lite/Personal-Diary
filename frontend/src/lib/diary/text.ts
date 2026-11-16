@@ -1593,6 +1593,12 @@ export function codeQuoteEnd(input: { quote: boolean }): CodeQuoteEnd {
     return input.quote ? "pull" : "pass";
 }
 
+export type CodeListEnd = "pull" | "pass";
+
+export function codeListEnd(input: { list: boolean }): CodeListEnd {
+    return input.list ? "pull" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
