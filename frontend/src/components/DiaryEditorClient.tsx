@@ -12319,6 +12319,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const detailsDescriptionMessage = descriptionCheck.ok ? null : descriptionCheck.error;
     const canSaveDetails = titleCheck.ok && descriptionCheck.ok;
     const cover = coverForTheme(diary?.theme);
+    const coverChoice = coverForTheme(diaryDraft.theme)?.name;
     const months = useMemo(() => entryFindMonths(entries.map((entry) => ({
         createdAt: entry.createdAt,
         matches: entryMatchesListQuery(entry, entryQuery),
@@ -12769,6 +12770,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 }
                 .de-covers button[aria-pressed="true"]{border-color:#c4a882;outline:1px solid #c4a882;}
                 .de-covers img{width:100%;height:100%;object-fit:cover;display:block;}
+                .de-cover-name{font-family:'Lora',Georgia,serif;font-size:14px;letter-spacing:0;text-transform:none;color:#ede5d8;}
                 .de-cover-mark{width:28px;height:36px;object-fit:cover;border-radius:2px;border:1px solid #3a362e;flex-shrink:0;}
                 .de-details-actions{grid-column:1 / -1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;color:#a79f93;font-size:12px;}
                 @media (max-width:720px){
@@ -12923,6 +12925,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                     <Image src={theme.textureUrl} alt="" width={52} height={64} />
                                 </button>
                             ))}
+                            {coverChoice && <span className="de-cover-name">{coverChoice}</span>}
                         </div>
                         <div className="de-details-actions">
                             <button
