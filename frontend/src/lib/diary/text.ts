@@ -1794,6 +1794,12 @@ export function codeShellCode(input: { code: boolean; words: boolean }): CodeShe
     return input.words ? "words" : "line";
 }
 
+export type CodeQuoteInline = "words" | "pass";
+
+export function codeQuoteInline(input: { inline: boolean }): CodeQuoteInline {
+    return input.inline ? "words" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
