@@ -2637,6 +2637,11 @@ export function hasEntryContent(html: string): boolean {
     return /<img\b[^>]*\bsrc\s*=\s*["'][^"']+/i.test(writing);
 }
 
+export function entryWriteHint(html: string, editing: boolean): string | null {
+    if (!editing || hasEntryContent(html)) return null;
+    return "How was your day?";
+}
+
 export function storedPlainText(entry: { content: string; plainText?: string | null }): {
     plainText: string;
     needsWrite: boolean;
