@@ -4,9 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { showSignIn } from "@/lib/diary/session";
 
 export function AuthButton({ pathName }: { pathName: string }) {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const router = useRouter();
 
     const [loading, setLoading] = useState(false);
@@ -60,12 +61,12 @@ export function AuthButton({ pathName }: { pathName: string }) {
                         >
                             Sign Out
                         </button>
-                    </div> : <button
+                    </div> : showSignIn(status) ? <button
                         onClick={() => handleOperation("signin")}
                         className="bg-zinc-900 border border-zinc-700 px-4 py-[0.3rem] text-zinc-300 hover:bg-zinc-800 transition rounded ml-auto mr-3"
                     >
                         Sign in
-                    </button>
+                    </button> : null
             } {
                 loading && <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
