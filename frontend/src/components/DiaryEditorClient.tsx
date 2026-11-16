@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureNameMove, pictureBehindLine, pictureListTail, pictureLineHost, pictureQuoteShell, pictureForwardDelete, pictureGapDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureUnderLine, pictureLineJoin, pictureJoinCaret, picturePieceJoin, pictureInlineBackspace, pictureBackspaceFollows, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, pictureCutText, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureListContinue, pictureItemCaret, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureNameMove, pictureNameBack, pictureBehindLine, pictureListTail, pictureLineHost, pictureQuoteShell, pictureForwardDelete, pictureGapDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureUnderLine, pictureLineJoin, pictureJoinCaret, picturePieceJoin, pictureInlineBackspace, pictureBackspaceFollows, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, pictureCutText, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureListContinue, pictureItemCaret, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -399,6 +399,22 @@ function captionCaret(caption: HTMLElement, selection: Selection): { collapsed: 
         atStart: before.toString().length === 0,
         atEnd: after.toString().length === 0,
     };
+}
+
+function lineBeforePicture(figure: HTMLElement): HTMLElement | null {
+    const sibling = figure.previousElementSibling;
+    if (!(sibling instanceof HTMLElement)) return null;
+    if (sibling.tagName === "FIGURE") {
+        const name = sibling.querySelector("figcaption");
+        return name instanceof HTMLElement ? name : null;
+    }
+    if (sibling.tagName === "UL" || sibling.tagName === "OL") {
+        const items = [...sibling.querySelectorAll("li")];
+        const item = items[items.length - 1];
+        return item instanceof HTMLElement ? item : null;
+    }
+    if (/^(P|H1|H2|H3|LI|BLOCKQUOTE|DIV|PRE)$/.test(sibling.tagName)) return sibling;
+    return null;
 }
 
 function pictureAheadOfCaret(editor: HTMLElement, selection: Selection): { figure: HTMLElement; ahead: "picture" | "space" } | null {
@@ -9780,6 +9796,34 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const keepPictureNameBack = (e: React.KeyboardEvent) => {
+        if (e.key !== "Backspace" || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return false;
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection?.rangeCount || mode === "view" || !selection.isCollapsed) return false;
+        const anchor = selection.anchorNode;
+        const host = anchor instanceof Element ? anchor : anchor?.parentElement ?? null;
+        const caption = host?.closest("figcaption");
+        if (!(caption instanceof HTMLElement) || !editor.contains(caption)) return false;
+        const caret = captionCaret(caption, selection);
+        const figure = caption.closest("figure");
+        if (!caret || !(figure instanceof HTMLElement) || !editor.contains(figure)) return false;
+        const previous = lineBeforePicture(figure);
+        const action = pictureNameBack({ atStart: caret.atStart, previous: previous instanceof HTMLElement });
+        if (action === "pass") return false;
+        e.preventDefault();
+        if (action === "line" && previous instanceof HTMLElement) {
+            placeCaretAtEnd(previous);
+            return true;
+        }
+        const range = document.createRange();
+        range.setStartBefore(figure);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        return true;
+    };
+
     const keepPictureNameApart = (e: React.KeyboardEvent) => {
         const editor = editorRef.current;
         const selection = window.getSelection();
@@ -11912,6 +11956,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (keepPictureLetter(e)) return;
         if (keepPictureGapDelete(e)) return;
         if (keepInlinePictureBackspace(e)) return;
+        if (keepPictureNameBack(e)) return;
         if (keepPictureNameApart(e)) return;
         if (moveAroundPicture(e)) return;
         if (pullWritingBack(e)) return;

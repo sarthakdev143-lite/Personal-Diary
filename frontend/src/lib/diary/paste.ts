@@ -48,6 +48,13 @@ export function pictureNameMove(input: { caption: boolean }): PictureNameMove {
     return input.caption ? "caption" : "before";
 }
 
+export type PictureNameBack = "line" | "before" | "pass";
+
+export function pictureNameBack(input: { atStart: boolean; previous: boolean }): PictureNameBack {
+    if (!input.atStart) return "pass";
+    return input.previous ? "line" : "before";
+}
+
 export function lineAfterPictureKey(input: {
     key: string;
     altKey?: boolean;
