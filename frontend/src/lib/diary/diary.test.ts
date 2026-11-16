@@ -1177,8 +1177,13 @@ describe("code block", () => {
         assert.equal(pasteSelectionUndo({ collapsed: false, action: "image" }), "keep");
         assert.equal(selectionDeleteUndo({ key: "Backspace", collapsed: false }), "place");
         assert.equal(selectionDeleteUndo({ key: "Delete", collapsed: false }), "place");
+        assert.equal(selectionDeleteUndo({ key: "Backspace", collapsed: false, ctrlKey: true }), "place");
+        assert.equal(selectionDeleteUndo({ key: "Delete", collapsed: false, ctrlKey: true }), "place");
+        assert.equal(selectionDeleteUndo({ key: "Backspace", collapsed: false, metaKey: true }), "place");
+        assert.equal(selectionDeleteUndo({ key: "Delete", collapsed: false, metaKey: true }), "place");
+        assert.equal(selectionDeleteUndo({ key: "Backspace", collapsed: false, altKey: true }), "pass");
+        assert.equal(selectionDeleteUndo({ key: "x", collapsed: false, ctrlKey: true }), "pass");
         assert.equal(selectionDeleteUndo({ key: "Backspace", collapsed: true }), "pass");
-        assert.equal(selectionDeleteUndo({ key: "Delete", collapsed: false, ctrlKey: true }), "pass");
         assert.equal(selectionDeleteUndo({ key: "Enter", collapsed: false }), "pass");
         assert.equal(selectionCutUndo({ collapsed: false, inWriting: true }), "place");
         assert.equal(selectionCutUndo({ collapsed: true, inWriting: true }), "pass");

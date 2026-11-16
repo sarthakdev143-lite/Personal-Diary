@@ -228,7 +228,9 @@ export function selectionDeleteUndo(input: {
     metaKey?: boolean;
     collapsed: boolean;
 }): "place" | "pass" {
-    if (input.collapsed || input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.collapsed || input.altKey) return "pass";
+    const word = Boolean(input.ctrlKey || input.metaKey);
+    if (word && input.key !== "Backspace" && input.key !== "Delete") return "pass";
     if (input.key !== "Backspace" && input.key !== "Delete") return "pass";
     return "place";
 }
