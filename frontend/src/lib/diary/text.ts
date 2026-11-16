@@ -1719,6 +1719,12 @@ export function codeHeldCode(input: { held: boolean }): CodeHeldCode {
     return input.held ? "line" : "pass";
 }
 
+export type CodeTableStay = "stay" | "pass";
+
+export function codeTableStay(input: { table: boolean }): CodeTableStay {
+    return input.table ? "stay" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
