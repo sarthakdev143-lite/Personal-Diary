@@ -1538,6 +1538,12 @@ export function codePastItem(input: { host: "item" | "list" | "other" }): CodePa
     return input.host === "other" ? "stay" : "out";
 }
 
+export type CodePictureWords = "words" | "pass";
+
+export function codePictureWords(input: { before: boolean }): CodePictureWords {
+    return input.before ? "words" : "pass";
+}
+
 export function codePullUndoCaret(offset: number | null): number | null {
     if (offset === null || !Number.isFinite(offset) || offset < 0) return null;
     return Math.floor(offset);
