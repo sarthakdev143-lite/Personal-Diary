@@ -1707,6 +1707,12 @@ export function codeHeldStay(input: { held: boolean }): CodeHeldStay {
     return input.held ? "stay" : "pass";
 }
 
+export type CodeWrappedStay = "stay" | "pass";
+
+export function codeWrappedStay(input: { wrapped: boolean }): CodeWrappedStay {
+    return input.wrapped ? "stay" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
