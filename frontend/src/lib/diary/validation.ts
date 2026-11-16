@@ -26,6 +26,13 @@ export function normalizeTitle(value: unknown): FieldResult<string> {
     return { ok: true, value: title };
 }
 
+export function newDiaryTitleNote(value: string): { tone: "hint" | "error"; text: string } | null {
+    if (!value.trim()) return { tone: "hint", text: "At least 3 characters." };
+    const title = normalizeTitle(value);
+    if (!title.ok) return { tone: "error", text: title.error };
+    return null;
+}
+
 export function normalizeDescription(value: unknown): FieldResult<string> {
     if (value === undefined || value === null) {
         return { ok: true, value: "" };

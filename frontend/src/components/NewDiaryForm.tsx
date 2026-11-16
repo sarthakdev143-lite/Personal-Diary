@@ -10,7 +10,7 @@ import DiaryPreview from "./DiaryPreview";
 import { useDiary } from "@/context/DiaryContext";
 import { useToast } from "@/hooks/use-toast";
 import { DESCRIPTION_MAX, DIARY_THEMES, TITLE_MAX } from "@/lib/diary/constants";
-import { normalizeTitle } from "@/lib/diary/validation";
+import { newDiaryTitleNote } from "@/lib/diary/validation";
 
 const themes = DIARY_THEMES;
 
@@ -34,12 +34,10 @@ const NewDiaryForm = ({
         title: "",
         description: "",
     });
-    const [errors, setErrors] = useState<{ title?: string }>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const selectedTheme = themes.find((theme) => theme.textureUrl === selectedTexture);
     const trimmedTitle = formData.title.trim();
-    const liveTitle = trimmedTitle ? normalizeTitle(formData.title) : null;
-    const titleMessage = liveTitle && !liveTitle.ok ? liveTitle.error : errors.title;
+    const titleNote = newDiaryTitleNote(formData.title);
 
     useEffect(() => {
         if (!formActive) return;
@@ -87,29 +85,16 @@ const NewDiaryForm = ({
         }
     }, [isFullScreen]);
 
-    const validate = () => {
-        const title = normalizeTitle(formData.title);
-        const newErrors: { title?: string } = {};
-        if (!title.ok) newErrors.title = title.error;
-
-        setErrors(newErrors);
-        return title.ok;
-    };
+    const validate = () => newDiaryTitleNote(formData.title) === null;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
-        if (name === "title" && value.trim().length >= 3) setErrors({});
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (validate()) {
-            setIsFullScreen(true);
-            // Don't reset form data here - we still need it for the theme selection
-            setErrors({});
-            // Don't close the form yet - we're showing theme selection
-        }
+        if (validate()) setIsFullScreen(true);
     };
 
     const handleCloseThemeSelection = () => {
@@ -197,12 +182,16 @@ const NewDiaryForm = ({
                                 value={formData.title}
                                 onChange={handleChange}
                                 maxLength={TITLE_MAX}
-                                aria-invalid={Boolean(titleMessage)}
-                                aria-describedby={titleMessage ? "diary-title-error" : undefined}
+                                aria-invalid={titleNote?.tone === "error"}
+                                aria-describedby={titleNote ? "diary-title-note" : undefined}
                                 className="w-full rounded-lg border border-white/15 bg-zinc-900 p-2 px-3 tracking-wide text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/70"
                                 placeholder="Enter your diary's name..."
                             />
-                            {titleMessage && <p id="diary-title-error" className="mt-1 text-sm text-red-300">{titleMessage}</p>}
+                            {titleNote && (
+                                <p id="diary-title-note" className={`mt-1 text-sm ${titleNote.tone === "error" ? "text-red-300" : "text-zinc-400"}`}>
+                                    {titleNote.text}
+                                </p>
+                            )}
                         </div>
                         <div>
                             <label htmlFor="diary-description" className="block text-lg mb-2">Description</label>
