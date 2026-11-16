@@ -548,15 +548,16 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
             }
         }
         const hostInside = (place: number) => (mark(place) || text[place] === ".") && word(place - 1) && word(place + 1);
+        const slash = (place: number) => text[place] === "/" || text[place] === "\\";
         const schemeSeparator = (index: number) => {
             let colon = index;
-            if (text[colon] === "/") {
-                while (text[colon - 1] === "/") colon -= 1;
+            if (slash(colon)) {
+                while (slash(colon - 1)) colon -= 1;
                 colon -= 1;
             }
-            if (text[colon] !== ":" || text[colon + 1] !== "/" || !word(colon - 1)) return undefined;
+            if (text[colon] !== ":" || !slash(colon + 1) || !word(colon - 1)) return undefined;
             let to = colon + 1;
-            while (text[to] === "/") to += 1;
+            while (slash(to)) to += 1;
             if (!word(to)) return undefined;
             let left = colon;
             while (word(left - 1)) left -= 1;
@@ -568,7 +569,7 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         if (!scheme) scheme = schemeSeparator(end);
         if (!scheme) {
             for (let index = start; index < end && !scheme; index += 1) {
-                if (text[index] === ":" || text[index] === "/") scheme = schemeSeparator(index);
+                if (text[index] === ":" || text[index] === "/" || text[index] === "\\") scheme = schemeSeparator(index);
             }
         }
         if (scheme && end === scheme.from) {
@@ -578,6 +579,8 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
                 start = scheme.left;
                 end = scheme.to;
             }
+        } else if (scheme && start === scheme.left && end > scheme.from && end < scheme.to) {
+            end = scheme.to;
         } else if (scheme && start >= scheme.from && start < scheme.to && end > scheme.from && end <= scheme.right) {
             if (end < scheme.to) {
                 start = scheme.left;
