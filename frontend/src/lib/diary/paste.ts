@@ -253,6 +253,12 @@ export function pictureUnderLine(input: {
     return "pass";
 }
 
+export type PictureLineJoin = "flush" | "words";
+
+export function pictureLineJoin(input: { besidePicture: boolean }): PictureLineJoin {
+    return input.besidePicture ? "flush" : "words";
+}
+
 export type PictureInlineBackspace = "name" | "remove" | "pass";
 
 export function pictureInlineBackspace(input: {
