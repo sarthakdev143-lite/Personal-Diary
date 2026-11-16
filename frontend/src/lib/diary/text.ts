@@ -1587,6 +1587,12 @@ export function codeBlockTail(input: { block: boolean }): CodeBlockTail {
     return input.block ? "pull" : "pass";
 }
 
+export type CodeQuoteEnd = "pull" | "pass";
+
+export function codeQuoteEnd(input: { quote: boolean }): CodeQuoteEnd {
+    return input.quote ? "pull" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
