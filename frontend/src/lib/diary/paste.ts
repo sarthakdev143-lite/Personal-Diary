@@ -50,7 +50,7 @@ export function pictureNameMove(input: { caption: boolean }): PictureNameMove {
 
 export type PictureNameBack = "line" | "before" | "pass";
 
-export function pictureNameBack(input: { atStart: boolean; previous: boolean; date?: boolean }): PictureNameBack {
+export function pictureNameBack(input: { atStart: boolean; previous: boolean; date?: boolean; word?: boolean }): PictureNameBack {
     if (!input.atStart) return "pass";
     if (!input.previous || input.date) return "before";
     return "line";
@@ -65,7 +65,7 @@ export function lineAfterPictureKey(input: {
     atStart: boolean;
     empty: boolean;
 }): LineAfterPictureKey {
-    if (input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.altKey) return "pass";
     if (input.key !== "Backspace" || !input.collapsed || !input.atStart) return "pass";
     return input.empty ? "remove" : "move";
 }
