@@ -1605,6 +1605,12 @@ export function codeNextItem(input: { item: boolean }): CodeNextItem {
     return input.item ? "pull" : "pass";
 }
 
+export type CodeNestedItem = "pull" | "pass";
+
+export function codeNestedItem(input: { nested: boolean }): CodeNestedItem {
+    return input.nested ? "pull" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
