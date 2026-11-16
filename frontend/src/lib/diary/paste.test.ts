@@ -347,6 +347,13 @@ describe("entry paste", () => {
         assert.equal(pictureNameBoundary({ ...boundary, key: "Q" }), "name");
         assert.equal(pictureNameBoundary({ ...boundary, key: "Backspace" }), "name");
         assert.equal(pictureNameBoundary({ ...boundary, key: "Enter" }), "name");
+        assert.equal(pictureNameBoundary({ ...boundary, key: "Backspace", ctrlKey: true }), "name");
+        assert.equal(pictureNameBoundary({ ...boundary, key: "Delete", ctrlKey: true }), "name");
+        assert.equal(pictureNameBoundary({ ...boundary, key: "Backspace", metaKey: true }), "name");
+        assert.equal(pictureNameBoundary({ ...boundary, key: "Delete", metaKey: true }), "name");
+        assert.equal(pictureNameBoundary({ ...boundary, key: "Backspace", altKey: true }), "pass");
+        assert.equal(pictureNameBoundary({ ...boundary, key: "Enter", ctrlKey: true }), "pass");
+        assert.equal(pictureNameBoundary({ ...boundary, key: "x", ctrlKey: true }), "pass");
         assert.equal(pictureNameBoundary({ ...boundary, key: "Q", ctrlKey: true }), "pass");
         assert.equal(pictureNameBoundary({ ...boundary, key: "ArrowRight" }), "pass");
         assert.equal(pictureNameBoundary({ startsInName: true, endsInName: false, boundaryOnly: false, key: "Q" }), "pass");
