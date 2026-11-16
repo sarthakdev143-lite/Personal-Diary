@@ -1671,6 +1671,12 @@ export function codeDivList(input: { list: boolean }): CodeDivList {
     return input.list ? "line" : "pass";
 }
 
+export type CodeDivHead = "line" | "pass";
+
+export function codeDivHead(input: { head: boolean }): CodeDivHead {
+    return input.head ? "line" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
