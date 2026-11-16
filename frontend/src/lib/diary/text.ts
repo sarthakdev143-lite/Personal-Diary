@@ -439,7 +439,10 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
                 }
                 return undefined;
             };
-            const wordSuffix = (place: number) => text[place] === "+" || text[place] === "%" || text[place] === "\u00b0";
+            const wordSuffix = (place: number) => {
+                const piece = text[place];
+                return piece === "+" || piece === "%" || piece === "\u00b0" || piece === "#" || piece === "*" || piece === "_" || piece === "&" || piece === "/" || piece === "@" || piece === "=" || piece === "|" || piece === "~" || piece === "\\" || piece === "^" || piece === "-" || piece === "\u2010" || piece === "\u2011" || piece === "\u2013" || piece === "\u2014";
+            };
             const leadingSign = (place: number) => LEADING_WORD_MARKS.has(text[place] ?? "") && !word(place - 1);
             let left = from;
             if (word(from - 1) || wordSuffix(from - 1)) {
@@ -910,6 +913,7 @@ export function wordDeleteGap(text: string, start: number, end: number): "before
     if (widened.start < start && word(text[widened.start - 1])) return "before";
     if (widened.end > end && word(text[widened.start - 1]) && (widened.end >= text.length || space(text[widened.end]))) return "before";
     if (widened.end > end && widened.start === start && (text[start] === "." || text[start] === "!" || text[start] === "?" || text[start] === "\u2026") && (widened.end >= text.length || space(text[widened.end]))) return "before";
+    if (widened.start < start && (text[widened.start] === "." || text[widened.start] === "!" || text[widened.start] === "?" || text[widened.start] === "\u2026") && (widened.end >= text.length || space(text[widened.end]))) return "before";
     const opener = (piece: string | undefined) => piece === "(" || piece === "[" || piece === "{" || piece === "\"" || piece === "\u201c" || piece === "\u2018" || piece === "\u00ab";
     if (widened.start < start && (widened.start === 0 || space(text[widened.start - 1])) && (word(text[widened.end]) || opener(text[widened.end])) && (text[widened.end - 1] === "." || text[widened.end - 1] === "!" || text[widened.end - 1] === "?" || text[widened.end - 1] === "\u2026")) return "after";
     const digit = (piece: string | undefined) => Boolean(piece && /\p{N}/u.test(piece));

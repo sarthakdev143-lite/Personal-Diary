@@ -1648,6 +1648,7 @@ describe("code block", () => {
         assert.equal(wordDeleteGap("See (Harbor)...rain", 5, 11), "after");
         assert.deepEqual(wordDeleteSpan("See (Harbor)...rain", 11, 15), { start: 4, end: 15 });
         assert.deepEqual(wordDeleteSpan("See (Harbor)...rain", 15, 19), { start: 12, end: 19 });
+        assert.equal(wordDeleteGap("See (Harbor)...rain", 15, 19), "before");
         assert.deepEqual(wordDeleteSpan("See ((Harbor))!!!rain", 14, 17), { start: 14, end: 21 });
         assert.deepEqual(wordDeleteSpan("See ((Harbor))!!!rain", 15, 17), { start: 14, end: 21 });
         assert.deepEqual(wordDeleteSpan("See ((Harbor))!!!rain", 16, 17), { start: 14, end: 21 });
@@ -1670,6 +1671,7 @@ describe("code block", () => {
         assert.equal(wordDeleteGap("See C++...rain", 5, 10), "after");
         assert.deepEqual(wordDeleteSpan("See C++...rain", 6, 10), { start: 4, end: 10 });
         assert.deepEqual(wordDeleteSpan("See C++...rain", 10, 14), { start: 7, end: 14 });
+        assert.equal(wordDeleteGap("See C++...rain", 10, 14), "before");
         assert.deepEqual(wordDeleteSpan("See C++...rain", 10, 11), { start: 10, end: 11 });
         assert.deepEqual(wordDeleteSpan("See 20%...rain", 7, 10), { start: 7, end: 14 });
         assert.deepEqual(wordDeleteSpan("See 20%...rain", 8, 10), { start: 7, end: 14 });
@@ -1715,6 +1717,51 @@ describe("code block", () => {
         assert.deepEqual(wordDeleteSpan('See Harbor..."Bay"', 4, 10), { start: 4, end: 13 });
         assert.deepEqual(wordDeleteSpan('See Harbor... "Bay"', 10, 13), { start: 4, end: 14 });
         assert.deepEqual(wordDeleteSpan("See (Harbor)... (Bay)", 12, 15), { start: 4, end: 16 });
+    });
+
+    it("keeps a joining mark run after a trailing mark with one word", () => {
+        assert.deepEqual(wordDeleteSpan("See C*...rain", 6, 9), { start: 6, end: 13 });
+        assert.equal(wordDeleteGap("See C*...rain", 6, 9), "before");
+        assert.deepEqual(wordDeleteSpan("See C*...rain", 7, 9), { start: 6, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See C*...rain", 8, 9), { start: 6, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See C*...rain", 5, 9), { start: 4, end: 9 });
+        assert.equal(wordDeleteGap("See C*...rain", 5, 9), "after");
+        assert.deepEqual(wordDeleteSpan("See C*...rain", 9, 13), { start: 6, end: 13 });
+        assert.equal(wordDeleteGap("See C*...rain", 9, 13), "before");
+        assert.equal(wordDeleteGap("See C*...rain", 8, 9), "before");
+        assert.equal(wordDeleteGap("See C*...rain today", 9, 13), "before");
+        assert.deepEqual(wordDeleteSpan("See C*...rain", 9, 10), { start: 9, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See C*!!!rain", 6, 9), { start: 6, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See C*!!!rain", 5, 9), { start: 4, end: 9 });
+        assert.deepEqual(wordDeleteSpan("See C*... rain", 6, 9), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See C* rain", 5, 6), { start: 4, end: 7 });
+        assert.deepEqual(wordDeleteSpan("See rock&...roll", 9, 12), { start: 9, end: 16 });
+        assert.equal(wordDeleteGap("See rock&...roll", 9, 12), "before");
+        assert.deepEqual(wordDeleteSpan("See rock&...roll", 10, 12), { start: 9, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See rock&...roll", 11, 12), { start: 9, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See rock&...roll", 8, 12), { start: 4, end: 12 });
+        assert.equal(wordDeleteGap("See rock&...roll", 8, 12), "after");
+        assert.deepEqual(wordDeleteSpan("See rock&...roll", 12, 16), { start: 9, end: 16 });
+        assert.equal(wordDeleteGap("See rock&...roll", 12, 16), "before");
+        assert.deepEqual(wordDeleteSpan("See rock&...roll", 12, 13), { start: 12, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See rock&roll rain", 8, 9), { start: 8, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See C#...rain", 6, 9), { start: 6, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See C#...rain", 5, 9), { start: 4, end: 9 });
+        assert.deepEqual(wordDeleteSpan("See name_...tag", 9, 12), { start: 9, end: 15 });
+        assert.deepEqual(wordDeleteSpan("See name_...tag", 8, 12), { start: 4, end: 12 });
+        assert.deepEqual(wordDeleteSpan("See rock=...roll", 9, 12), { start: 9, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See rock=...roll", 8, 12), { start: 4, end: 12 });
+        assert.deepEqual(wordDeleteSpan("See C^...rain", 6, 9), { start: 6, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See C^...rain", 5, 9), { start: 4, end: 9 });
+        assert.deepEqual(wordDeleteSpan("See rock-...roll", 9, 12), { start: 9, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See rock-...roll", 8, 12), { start: 4, end: 12 });
+        assert.deepEqual(wordDeleteSpan("See a/...b", 6, 9), { start: 6, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See a/...b", 5, 9), { start: 4, end: 9 });
+        assert.deepEqual(wordDeleteSpan("See file@...host", 9, 12), { start: 9, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See file@...host", 8, 12), { start: 4, end: 12 });
+        assert.deepEqual(wordDeleteSpan("See C|...rain", 6, 9), { start: 6, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See C~...rain", 6, 9), { start: 6, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See C\\...rain", 6, 9), { start: 6, end: 13 });
     });
 
     it("keeps a plus at the end of a word with that word", () => {
