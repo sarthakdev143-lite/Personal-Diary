@@ -4816,8 +4816,10 @@ function hostedBlockLine(host: HTMLElement): HTMLElement | null {
         if (first instanceof HTMLPreElement && codeAhead({ code: true, wordsBefore: false }) === "code") return first;
         if (quoteInlineWords(host)) return host;
         if (firstBrokenLine(host)) return host;
+        const lead = leadingQuoteDiv(host);
+        if (lead) return lead;
         const line = firstQuoteLine(host);
-        if (!(line instanceof HTMLElement) || !/^(P|H1|H2|H3|LI)$/.test(line.tagName)) return leadingQuoteDiv(host);
+        if (!(line instanceof HTMLElement) || !/^(P|H1|H2|H3|LI)$/.test(line.tagName)) return null;
         if (line.tagName === "LI") {
             if (line.querySelector("img, figure") && !pictureWords(line)) return null;
             const nested = itemCode(line);
