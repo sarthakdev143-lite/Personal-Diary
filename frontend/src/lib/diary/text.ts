@@ -891,6 +891,24 @@ export function dividerCaret(input: {
     return "stay";
 }
 
+export type DividerLineKey = "rule" | "pass";
+
+export function dividerLineKey(input: {
+    key: string;
+    shiftKey?: boolean;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    atEdge: boolean;
+    rule: boolean;
+}): DividerLineKey {
+    if (input.shiftKey || input.altKey || !input.collapsed || !input.atEdge || !input.rule) return "pass";
+    if (!(input.ctrlKey || input.metaKey)) return "pass";
+    if (input.key !== "Backspace" && input.key !== "Delete") return "pass";
+    return "rule";
+}
+
 export type QuoteEnter = "break" | "blank" | "above" | "pass";
 
 export function quoteEnterKey(input: {
