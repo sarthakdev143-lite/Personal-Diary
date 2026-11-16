@@ -1713,6 +1713,12 @@ export function codeWrappedStay(input: { wrapped: boolean }): CodeWrappedStay {
     return input.wrapped ? "stay" : "pass";
 }
 
+export type CodeHeldCode = "line" | "pass";
+
+export function codeHeldCode(input: { held: boolean }): CodeHeldCode {
+    return input.held ? "line" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
