@@ -1767,6 +1767,13 @@ export function codeTableStay(input: { table: boolean }): CodeTableStay {
     return input.table ? "stay" : "pass";
 }
 
+export type TableLineBack = "cell" | "pass";
+
+export function tableLineBack(input: { atStart: boolean; table: boolean; empty: boolean }): TableLineBack {
+    if (!input.atStart || !input.table || input.empty) return "pass";
+    return "cell";
+}
+
 export type CodeQuotedTable = "stay" | "pass";
 
 export function codeQuotedTable(input: { quoted: boolean }): CodeQuotedTable {
