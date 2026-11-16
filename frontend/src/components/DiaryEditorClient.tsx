@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, dropCaretMarker, caretMarkBeside, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, quoteLineEdge, quoteJoinTarget, quotePictureJoin, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, listReachBlock, pictureCodeList, pictureTableList, pictureStyle, pictureStyleHold, pictureStyleSeat, pictureLineItalic, pictureLinkField, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codePullUndoCaret, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, dropCaretMarker, caretMarkBeside, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, quoteLineEdge, quoteJoinTarget, quotePictureJoin, quoteTrailingLeave, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, listReachBlock, pictureCodeList, pictureTableList, pictureStyle, pictureStyleHold, pictureStyleSeat, pictureLineItalic, pictureLinkField, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
 type Entry = { _id: string; diaryId: string; content: string; plainText?: string; createdAt: string; updatedAt: string; };
@@ -2503,6 +2503,45 @@ function writingSelection(editor: HTMLElement, range: Range): boolean {
     const held = document.createElement("div");
     held.appendChild(range.cloneContents());
     return held.querySelector("img, figure, hr") === null;
+}
+
+function lastQuoteLine(quote: HTMLElement): HTMLElement | null {
+    for (const child of [...quote.children].reverse()) {
+        if (!(child instanceof HTMLElement)) continue;
+        if (child.tagName === "P" || /^H[1-3]$/.test(child.tagName)) return child;
+        if (child.tagName === "BLOCKQUOTE") {
+            const nested = lastQuoteLine(child);
+            if (nested) return nested;
+            continue;
+        }
+        return null;
+    }
+    return null;
+}
+
+function leaveClosedQuotes(line: HTMLElement, from: HTMLElement) {
+    let current = line;
+    while (current.parentElement instanceof HTMLElement) {
+        const quote = current.parentElement;
+        const trailing = quote.tagName === "BLOCKQUOTE" && !current.nextElementSibling;
+        const outside = !quote.contains(from);
+        if (quoteTrailingLeave({ trailing, outside }) !== "leave") break;
+        quote.after(current);
+        closeEmptyHost(quote);
+    }
+}
+
+function quoteJoinHost(into: HTMLElement, from: HTMLElement): HTMLElement {
+    if (blockIsEmpty(from)) return into;
+    const line = into.tagName === "BLOCKQUOTE" ? lastQuoteLine(into) : into;
+    if (!(line instanceof HTMLElement)) return into;
+    const parent = line.parentElement;
+    if (quoteTrailingLeave({
+        trailing: parent?.tagName === "BLOCKQUOTE" && !line.nextElementSibling,
+        outside: parent instanceof HTMLElement && !parent.contains(from),
+    }) !== "leave") return into;
+    leaveClosedQuotes(line, from);
+    return line;
 }
 
 function firstQuoteLine(quote: HTMLElement): HTMLElement | null {
@@ -8657,6 +8696,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         }) ?? undefined;
         const path = childPath(editor, block);
         let separated: "after" | "none" = "none";
+        let joined: HTMLElement | null = null;
         if (action === "clear") {
             removeJoined(backward ? neighbor : block);
             placeCaretAtStart(backward ? block : neighbor);
@@ -8665,16 +8705,18 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
             if (pictureItemCaret({ endsWithPicture: blockEndsWithPicture(neighbor) }) === "after") placeCaretAfterPicture(neighbor);
             else placeCaretAtEnd(neighbor);
         } else if (backward) {
-            const lifted = detachNestedLists(block, neighbor.tagName);
-            separated = joinBlock(neighbor, block);
-            placeLiftedLists(neighbor, lifted);
+            joined = quoteJoinHost(neighbor, block);
+            const lifted = detachNestedLists(block, joined.tagName);
+            separated = joinBlock(joined, block);
+            placeLiftedLists(joined, lifted);
         } else {
-            const lifted = detachNestedLists(neighbor, block.tagName);
-            separated = joinBlock(block, neighbor);
-            placeLiftedLists(block, lifted);
+            joined = quoteJoinHost(block, neighbor);
+            const lifted = detachNestedLists(neighbor, joined.tagName);
+            separated = joinBlock(joined, neighbor);
+            placeLiftedLists(joined, lifted);
         }
         if (numbers) restoreOrderedNumbers(numbers);
-        rememberWordGap(editor, writingHost(backward ? neighbor : block), separated);
+        rememberWordGap(editor, writingHost(joined ?? (backward ? neighbor : block)), separated);
         dropTypedCaretMarkers(editor);
         keepBlank({ before, after: editor.innerHTML, path, caret });
         setHtmlContent(editor.innerHTML);
