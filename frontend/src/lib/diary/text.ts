@@ -933,7 +933,7 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         }
         if (space(givenStart) && end > givenEnd && start <= givenStart) {
             const boundary = text[givenEnd];
-            if (boundary !== undefined && !space(boundary) && !word(givenEnd)) {
+            if (boundary !== undefined && !space(givenEnd) && !word(givenEnd)) {
                 let from = start;
                 while (space(from) && from < end) from += 1;
                 if (from < end) start = from;
