@@ -1551,6 +1551,12 @@ export function codeAhead(input: { code: boolean; wordsBefore: boolean }): CodeA
     return input.wordsBefore ? "words" : "code";
 }
 
+export type CodeTail = "line" | "pass";
+
+export function codeTail(input: { text: boolean }): CodeTail {
+    return input.text ? "line" : "pass";
+}
+
 export function codePullUndoCaret(offset: number | null): number | null {
     if (offset === null || !Number.isFinite(offset) || offset < 0) return null;
     return Math.floor(offset);
