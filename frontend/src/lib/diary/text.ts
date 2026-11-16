@@ -1611,6 +1611,12 @@ export function codeTableLead(input: { table: boolean }): CodeTableLead {
     return input.table ? "pull" : "pass";
 }
 
+export type CodeDividerLead = "pull" | "pass";
+
+export function codeDividerLead(input: { divider: boolean }): CodeDividerLead {
+    return input.divider ? "pull" : "pass";
+}
+
 export function codePullUndoCaret(offset: number | null): number | null {
     if (offset === null || !Number.isFinite(offset) || offset < 0) return null;
     return Math.floor(offset);
