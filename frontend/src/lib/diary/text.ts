@@ -125,6 +125,18 @@ export function quoteTrailingLeave(input: { trailing: boolean; outside: boolean 
     return input.trailing && input.outside ? "leave" : "stay";
 }
 
+export type QuoteListTail = "line" | "quote";
+
+export function quoteListTail(input: { last: "list" | "writing" | "other" }): QuoteListTail {
+    return input.last === "other" ? "quote" : "line";
+}
+
+export type QuoteAfterList = "out" | "stay";
+
+export function quoteAfterList(input: { listParent: "quote" | "other" }): QuoteAfterList {
+    return input.listParent === "quote" ? "out" : "stay";
+}
+
 export type LineJoin = "join" | "clear" | "drop" | "pass";
 
 export function lineJoinKey(input: {
