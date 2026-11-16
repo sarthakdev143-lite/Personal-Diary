@@ -1824,6 +1824,12 @@ export function codeInnerLine(input: { inner: boolean }): CodeInnerLine {
     return input.inner ? "words" : "pass";
 }
 
+export type CodeNextBlock = "words" | "pass";
+
+export function codeNextBlock(input: { block: boolean }): CodeNextBlock {
+    return input.block ? "words" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
