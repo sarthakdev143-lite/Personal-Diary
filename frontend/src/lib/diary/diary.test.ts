@@ -1489,6 +1489,14 @@ describe("code block", () => {
     });
 
     it("keeps a plus at the end of a word with that word", () => {
+        assert.deepEqual(wordDeleteSpan("See (C++) rain", 4, 5), { start: 4, end: 10 });
+        assert.equal(wordDeleteGap("See (C++) rain", 4, 5), "after");
+        assert.deepEqual(wordDeleteSpan("See (C++) rain", 6, 9), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See (C#) rain", 4, 5), { start: 4, end: 9 });
+        assert.deepEqual(wordDeleteSpan("See (C#) rain", 6, 8), { start: 4, end: 9 });
+        assert.deepEqual(wordDeleteSpan('See "C++" rain', 4, 5), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See (note*) rain", 4, 5), { start: 4, end: 12 });
+        assert.deepEqual(wordDeleteSpan("See (C++ bay) rain", 4, 5), { start: 4, end: 5 });
         assert.deepEqual(wordDeleteSpan("See C++ rain", 4, 5), { start: 4, end: 8 });
         assert.deepEqual(wordDeleteSpan("See C++ rain", 5, 6), { start: 4, end: 8 });
         assert.deepEqual(wordDeleteSpan("See C++ rain", 5, 7), { start: 4, end: 8 });
