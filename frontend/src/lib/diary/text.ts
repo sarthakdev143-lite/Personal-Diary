@@ -1800,6 +1800,12 @@ export function codeQuoteInline(input: { inline: boolean }): CodeQuoteInline {
     return input.inline ? "words" : "pass";
 }
 
+export type CodeItemLine = "words" | "pass";
+
+export function codeItemLine(input: { line: boolean }): CodeItemLine {
+    return input.line ? "words" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
