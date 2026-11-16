@@ -1836,6 +1836,12 @@ export function codeBreakLine(input: { broken: boolean }): CodeBreakLine {
     return input.broken ? "line" : "pass";
 }
 
+export type CodeBlankBreak = "drop" | "pass";
+
+export function codeBlankBreak(input: { blank: boolean }): CodeBlankBreak {
+    return input.blank ? "drop" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
