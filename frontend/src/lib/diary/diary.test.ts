@@ -492,7 +492,11 @@ describe("code block", () => {
         assert.equal(nestedListJoinKey({ ...nestedJoin, key: "Delete", atNestedStart: false, atParentEnd: true }), "join");
         assert.equal(nestedListJoinKey({ ...nestedJoin, atNestedStart: false }), "pass");
         assert.equal(nestedListJoinKey({ ...nestedJoin, key: "Delete" }), "pass");
-        assert.equal(nestedListJoinKey({ ...nestedJoin, ctrlKey: true }), "pass");
+        assert.equal(nestedListJoinKey({ ...nestedJoin, ctrlKey: true }), "join");
+        assert.equal(nestedListJoinKey({ ...nestedJoin, metaKey: true }), "join");
+        assert.equal(nestedListJoinKey({ ...nestedJoin, key: "Delete", atNestedStart: false, atParentEnd: true, ctrlKey: true }), "join");
+        assert.equal(nestedListJoinKey({ ...nestedJoin, ctrlKey: true, atNestedStart: false }), "pass");
+        assert.equal(nestedListJoinKey({ ...nestedJoin, altKey: true }), "pass");
         assert.equal(nestedListJoinKey({ ...nestedJoin, collapsed: false }), "pass");
         const nestedEnter = { key: "Enter", collapsed: true, atNestedStart: false, beforeChildList: true };
         assert.equal(nestedEnterKey(nestedEnter), "after");
