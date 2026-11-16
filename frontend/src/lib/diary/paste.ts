@@ -42,6 +42,12 @@ export function pictureCaptionKey(input: {
 
 export type LineAfterPictureKey = "move" | "remove" | "pass";
 
+export type PictureNameMove = "caption" | "before";
+
+export function pictureNameMove(input: { caption: boolean }): PictureNameMove {
+    return input.caption ? "caption" : "before";
+}
+
 export function lineAfterPictureKey(input: {
     key: string;
     altKey?: boolean;
