@@ -1599,6 +1599,12 @@ export function codeBeside(input: { code: boolean }): CodeBeside {
     return input.code ? "line" : "pass";
 }
 
+export type CodePictureLead = "pull" | "pass";
+
+export function codePictureLead(input: { picture: boolean }): CodePictureLead {
+    return input.picture ? "pull" : "pass";
+}
+
 export function codePullUndoCaret(offset: number | null): number | null {
     if (offset === null || !Number.isFinite(offset) || offset < 0) return null;
     return Math.floor(offset);
