@@ -119,6 +119,12 @@ export function quotePictureJoin(input: { leading: "picture" | "writing" | "none
     return input.leading === "none" ? "whole" : "part";
 }
 
+export type QuoteLineLeave = "leave" | "stay";
+
+export function quoteTrailingLeave(input: { trailing: boolean; outside: boolean }): QuoteLineLeave {
+    return input.trailing && input.outside ? "leave" : "stay";
+}
+
 export type LineJoin = "join" | "clear" | "drop" | "pass";
 
 export function lineJoinKey(input: {
