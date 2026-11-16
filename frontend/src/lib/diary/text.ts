@@ -1504,7 +1504,7 @@ export function codePullKey(input: {
     neighbor: "text" | "code" | "none";
 }): CodePull {
     if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey || !input.collapsed) return "pass";
-    if (input.key === "Backspace" && input.atStart && input.neighbor === "text") return "pull";
+    if (input.key === "Backspace" && input.atStart && (input.neighbor === "text" || input.neighbor === "code")) return "pull";
     if (input.key === "Delete" && input.atEnd && input.neighbor === "code") return "pull";
     return "pass";
 }
@@ -1591,6 +1591,12 @@ export type CodeListLead = "pull" | "pass";
 
 export function codeListLead(input: { block: boolean }): CodeListLead {
     return input.block ? "pull" : "pass";
+}
+
+export type CodeBeside = "line" | "pass";
+
+export function codeBeside(input: { code: boolean }): CodeBeside {
+    return input.code ? "line" : "pass";
 }
 
 export function codePullUndoCaret(offset: number | null): number | null {
