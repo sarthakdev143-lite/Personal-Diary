@@ -1851,7 +1851,16 @@ describe("code block", () => {
         assert.deepEqual(wordDeleteSpan("See http://example.com next", 10, 11), { start: 8, end: 22 });
         assert.deepEqual(wordDeleteSpan("See http://example.com next", 8, 10), { start: 4, end: 11 });
         assert.equal(wordDeleteGap("See http://example.com next", 8, 10), "after");
-        assert.deepEqual(wordDeleteSpan("See http://example.com next", 4, 8), { start: 4, end: 9 });
+        assert.deepEqual(wordDeleteSpan("See http://example.com next", 4, 8), { start: 4, end: 11 });
+        assert.deepEqual(wordDeleteSpan("See http://example.com next", 0, 8), { start: 0, end: 9 });
+        assert.equal(wordDeleteGap("See http://example.com next", 4, 8), "after");
+        assert.deepEqual(wordDeleteSpan("See http://example.com next", 5, 8), { start: 5, end: 9 });
+        assert.deepEqual(wordDeleteSpan("See https://example.com next", 4, 9), { start: 4, end: 12 });
+        assert.deepEqual(wordDeleteSpan("Open http://example now", 5, 9), { start: 5, end: 12 });
+        assert.deepEqual(wordDeleteSpan("See C:/Users next", 4, 5), { start: 4, end: 7 });
+        assert.equal(wordDeleteGap("See C:/Users next", 4, 5), "after");
+        assert.deepEqual(wordDeleteSpan("See http://example.com...next", 4, 8), { start: 4, end: 11 });
+        assert.deepEqual(wordDeleteSpan("See mailto:ada next", 4, 10), { start: 4, end: 11 });
         assert.deepEqual(wordDeleteSpan("See http://example.com next", 11, 22), { start: 11, end: 22 });
         assert.deepEqual(wordDeleteSpan("Open http://example now", 9, 12), { start: 9, end: 19 });
         assert.deepEqual(wordDeleteSpan("Open http://example now", 12, 19), { start: 12, end: 19 });
