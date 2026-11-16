@@ -638,6 +638,80 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
                 }
             }
         }
+        const nestedOpeners = (from: number, to: number) => {
+            if (to - from < 2) return false;
+            for (let index = from; index < to; index += 1) {
+                if (opening(index) === undefined) return false;
+            }
+            return true;
+        };
+        if (nestedOpeners(start, end)) {
+            const stack: string[] = [];
+            for (let index = start; index < end; index += 1) stack.push(opening(index) ?? "");
+            let cursor = end;
+            const wordStart = cursor;
+            while (word(cursor) || (apostrophe(cursor) && word(cursor + 1))) cursor += 1;
+            if (wrappedWord(wordStart, cursor)) {
+                while (held(cursor)) cursor += 1;
+                let matched = true;
+                for (let index = stack.length - 1; index >= 0; index -= 1) {
+                    if (text[cursor] !== stack[index]) {
+                        matched = false;
+                        break;
+                    }
+                    cursor += 1;
+                }
+                if (matched) {
+                    while (held(cursor)) cursor += 1;
+                    end = cursor;
+                }
+            }
+        } else {
+            let closeEnd = end;
+            if (space(closeEnd - 1) && closeEnd - start > 1) closeEnd -= 1;
+            let mark = start;
+            while (mark < closeEnd && held(mark)) mark += 1;
+            if (closeEnd - mark >= 2) {
+                const expected: string[] = [];
+                let matched = true;
+                for (let index = mark; index < closeEnd; index += 1) {
+                    const open = closing(index);
+                    if (open === undefined) {
+                        matched = false;
+                        break;
+                    }
+                    expected.push(open);
+                }
+                if (matched) {
+                    let wordEnd = start;
+                    while (wordEnd > 0 && held(wordEnd - 1)) wordEnd -= 1;
+                    let wordStart = wordEnd;
+                    while (wordStart > 0 && (word(wordStart - 1) || (apostrophe(wordStart - 1) && word(wordStart - 2)))) wordStart -= 1;
+                    if (wrappedWord(wordStart, wordEnd)) {
+                        let probe = wordStart - 1;
+                        for (const open of expected) {
+                            if (text[probe] !== open) {
+                                matched = false;
+                                break;
+                            }
+                            probe -= 1;
+                        }
+                        if (matched) {
+                            start = probe + 1;
+                            end = closeEnd;
+                            while (held(end)) end += 1;
+                        }
+                    }
+                }
+            }
+        }
+        while (start > 0 && end <= text.length) {
+            const close = pairs.get(text[start - 1] ?? "");
+            if (close === undefined || text[end] !== close) break;
+            start -= 1;
+            end += 1;
+            while (held(end)) end += 1;
+        }
     }
     const before = text.slice(0, start).replace(/[\u00a0\s]/g, "");
     const after = text.slice(end).replace(/[\u00a0\s]/g, "");
