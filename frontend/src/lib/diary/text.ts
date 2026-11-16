@@ -1755,6 +1755,12 @@ export function codeQuotedDivider(input: { quoted: boolean }): CodeQuotedDivider
     return input.quoted ? "words" : "pass";
 }
 
+export type CodeQuotedPicture = "stay" | "pass";
+
+export function codeQuotedPicture(input: { picture: boolean }): CodeQuotedPicture {
+    return input.picture ? "stay" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
