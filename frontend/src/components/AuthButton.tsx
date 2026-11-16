@@ -32,24 +32,24 @@ export function AuthButton({ pathName }: { pathName: string }) {
         <>
             {
                 session ?
-                    <div className="flex justify-between flex-1 mr-3 gap-3 items-center">
+                    <div className="mr-3 flex min-w-0 flex-1 items-center justify-between gap-3">
                         <Link
                             href="/diary"
                             aria-label={session.user?.name ? `Your diaries, ${session.user.name}` : "Your diaries"}
-                            className={`flex items-center gap-3 rounded-full bg-zinc-800 py-0.5 pr-3.5 transition hover:bg-zinc-900 ${pathName === "/info" ? "max-xxs:ml-auto" : ""}`}
+                            className={`flex min-w-0 items-center gap-3 rounded-full bg-zinc-800 py-0.5 pr-3.5 transition hover:bg-zinc-900 ${pathName === "/info" ? "max-xxs:ml-auto" : ""}`}
                         >
                             <Image
                                 src={profileImage}
                                 alt=""
                                 width={45}
                                 height={45}
-                                className="rounded-full"
+                                className="shrink-0 rounded-full"
                             />
-                            <div className="flex flex-col overflow-hidden">
+                            <div className="flex min-w-0 flex-col">
                                 <span className="truncate text-base capitalize text-zinc-100">{session.user?.name}</span>
                                 <span
-                                    className="max-w-36 truncate overflow-hidden text-xs text-zinc-400"
-                                    title={`Email: ${session.user?.email ?? "No email available"}`}>
+                                    className="truncate text-xs text-zinc-400"
+                                    title={session.user?.email ?? "No email available"}>
                                     {session.user?.email}
                                 </span>
                             </div>
@@ -57,7 +57,7 @@ export function AuthButton({ pathName }: { pathName: string }) {
 
                         <button
                             onClick={() => handleOperation("signout")}
-                            className="max-xs:hidden bg-red-500 text-white px-4 py-[0.3rem] rounded"
+                            className="max-xs:hidden shrink-0 rounded bg-red-500 px-4 py-[0.3rem] text-white"
                         >
                             Sign Out
                         </button>
