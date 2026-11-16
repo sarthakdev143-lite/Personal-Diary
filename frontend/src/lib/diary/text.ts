@@ -1641,6 +1641,12 @@ export function codeDivHost(input: { host: boolean }): CodeDivHost {
     return input.host ? "line" : "pass";
 }
 
+export type CodeDivRest = "line" | "pass";
+
+export function codeDivRest(input: { rest: boolean }): CodeDivRest {
+    return input.rest ? "line" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
