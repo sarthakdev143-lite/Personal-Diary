@@ -4,6 +4,10 @@ export type DiaryListResult<T> = {
     error: string | null;
 };
 
+export function emptyDiaryListMessage(): string {
+    return "No diaries yet. Add one, or import a backup.";
+}
+
 export function diaryListView<T>(input: {
     status: "loading" | "authenticated" | "unauthenticated";
     result: DiaryListResult<T> | null;

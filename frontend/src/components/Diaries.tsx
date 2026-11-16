@@ -11,7 +11,7 @@ import { diaryListKeyAction, diaryListStep } from "@/lib/diary/keys";
 import { compareDiaryMatches } from "@/lib/diary/order";
 import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { diaryCardWhen, diaryMatchPath, titleCardText } from "@/lib/diary/search";
-import { diaryEnterChoice, diaryFieldReady, diaryListView, diaryMatchCount, diaryPendingOpen } from "@/lib/diary/view";
+import { diaryEnterChoice, diaryFieldReady, diaryListView, diaryMatchCount, diaryPendingOpen, emptyDiaryListMessage } from "@/lib/diary/view";
 
 type Diary = {
     _id: string;
@@ -268,7 +268,11 @@ const Diaries = ({ query = "", typedQuery = query, refetchTrigger = 0, paused = 
     }
 
     if (!diaries.length) {
-        return null;
+        return (
+            <p className="w-full max-w-xs rounded-xl border border-white/10 bg-zinc-600/10 p-6 text-base text-zinc-300" role="status">
+                {emptyDiaryListMessage()}
+            </p>
+        );
     }
 
     return (
@@ -306,11 +310,13 @@ const Diaries = ({ query = "", typedQuery = query, refetchTrigger = 0, paused = 
                                         ? <MatchedText text={titleCardText(diary.title, query)} query={query} className="rounded-sm bg-amber-950/80 px-0.5 text-amber-100" />
                                         : diary.title}
                                 </h2>
+                                {(query ? diary.match || diary.description : diary.description) ? (
                                 <p className="line-clamp-2 text-sm leading-6 text-zinc-300">
                                     {query
-                                        ? <MatchedText text={diary.match || truncateDescription(diary.description || "No description")} query={query} className="rounded-sm bg-amber-950/80 px-0.5 text-amber-100" />
-                                        : truncateDescription(diary.description || "No description")}
+                                        ? <MatchedText text={diary.match || truncateDescription(diary.description)} query={query} className="rounded-sm bg-amber-950/80 px-0.5 text-amber-100" />
+                                        : truncateDescription(diary.description)}
                                 </p>
+                                ) : null}
                             </div>
                             <p className="text-xs tracking-wide text-zinc-400">
                                 {diaryCardWhen({

@@ -933,7 +933,7 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         }
         if (space(givenStart) && end > givenEnd && start <= givenStart) {
             const boundary = text[givenEnd];
-            if (boundary !== undefined && !space(boundary) && !word(givenEnd)) {
+            if (boundary !== undefined && !space(givenEnd) && !word(givenEnd)) {
                 let from = start;
                 while (space(from) && from < end) from += 1;
                 if (from < end) start = from;
@@ -2654,6 +2654,10 @@ export function storedPlainText(entry: { content: string; plainText?: string | n
 export function wordCount(html: string): number {
     const text = entryWritingText(html);
     return text ? text.split(/\s+/).filter(Boolean).length : 0;
+}
+
+export function countLabel(count: number, singular: string): string {
+    return `${count} ${count === 1 ? singular : `${singular}s`}`;
 }
 
 export function formatDiaryDate(value: string): string {

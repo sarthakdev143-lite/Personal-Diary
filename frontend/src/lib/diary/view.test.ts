@@ -1,9 +1,13 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { diaryEnterChoice, diaryFieldReady, diaryListView, diaryMatchCount, diaryPendingOpen } from "./view";
+import { diaryEnterChoice, diaryFieldReady, diaryListView, diaryMatchCount, diaryPendingOpen, emptyDiaryListMessage } from "./view";
 
 describe("diary list while a search loads", () => {
+    it("explains an empty shelf", () => {
+        assert.equal(emptyDiaryListMessage(), "No diaries yet. Add one, or import a backup.");
+    });
+
     const rain = { key: "auth:rain:0:0", diaries: [{ _id: "window" }], error: null };
 
     it("shows the previous diaries until the next search arrives", () => {
