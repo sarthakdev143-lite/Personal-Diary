@@ -1533,6 +1533,25 @@ describe("code block", () => {
         assert.deepEqual(wordDeleteSpan("See ((harbor bay)) rain", 13, 16), { start: 13, end: 16 });
     });
 
+    it("keeps a wrapped word when the delete starts on the space before it", () => {
+        assert.deepEqual(wordDeleteSpan("See (Harbor) rain", 3, 5), { start: 4, end: 13 });
+        assert.equal(wordDeleteGap("See (Harbor) rain", 3, 5), "after");
+        assert.deepEqual(wordDeleteSpan("See (Harbor!) rain", 3, 5), { start: 4, end: 14 });
+        assert.deepEqual(wordDeleteSpan("See (Harbor.) rain", 3, 5), { start: 4, end: 14 });
+        assert.deepEqual(wordDeleteSpan("See (Harbor), rain", 3, 5), { start: 4, end: 14 });
+        assert.deepEqual(wordDeleteSpan("See (C++) rain", 3, 5), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See ($20) rain", 3, 6), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See (20%) rain", 3, 5), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan('See "Harbor" rain', 3, 5), { start: 4, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See 'Harbor' rain", 3, 5), { start: 4, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See [Harbor] rain", 3, 5), { start: 4, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See {Harbor} rain", 3, 5), { start: 4, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See ((Harbor)) rain", 3, 6), { start: 4, end: 15 });
+        assert.deepEqual(wordDeleteSpan('See ("Harbor") rain', 3, 6), { start: 4, end: 15 });
+        assert.deepEqual(wordDeleteSpan("See (harbor bay) rain", 3, 5), { start: 3, end: 5 });
+        assert.deepEqual(wordDeleteSpan("See  (Harbor) rain", 4, 6), { start: 4, end: 14 });
+    });
+
     it("keeps a plus at the end of a word with that word", () => {
         assert.deepEqual(wordDeleteSpan("See (C++) rain", 4, 5), { start: 4, end: 10 });
         assert.equal(wordDeleteGap("See (C++) rain", 4, 5), "after");

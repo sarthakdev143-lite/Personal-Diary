@@ -712,6 +712,21 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
             end += 1;
             while (held(end)) end += 1;
         }
+        let spaced = start;
+        while (space(spaced) && spaced < end) spaced += 1;
+        if (spaced > start && spaced < end && opening(spaced) !== undefined) {
+            let openerEnd = spaced;
+            while (openerEnd < end && opening(openerEnd) !== undefined) openerEnd += 1;
+            let tail = openerEnd;
+            if (tail < end && LEADING_WORD_MARKS.has(text[tail] ?? "")) tail += 1;
+            if (tail === end) {
+                const widened = wordDeleteSpan(text, spaced, openerEnd);
+                if (widened.end > end) {
+                    start = widened.start;
+                    end = widened.end;
+                }
+            }
+        }
     }
     const before = text.slice(0, start).replace(/[\u00a0\s]/g, "");
     const after = text.slice(end).replace(/[\u00a0\s]/g, "");
