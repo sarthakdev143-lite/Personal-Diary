@@ -431,9 +431,34 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
             while (joiningMark(from - 1)) from -= 1;
             let to = index + 1;
             while (joiningMark(to)) to += 1;
-            if ((to - from < 2 && text[from] !== "\u2026") || !word(from - 1) || !word(to)) return undefined;
+            if ((to - from < 2 && text[from] !== "\u2026") || !word(to)) return undefined;
+            const openForClose = (place: number) => {
+                const piece = text[place];
+                for (const [open, close] of pairs) {
+                    if (close === piece) return open;
+                }
+                return undefined;
+            };
             let left = from;
-            while (left > 0 && (word(left - 1) || (apostrophe(left - 1) && word(left - 2)))) left -= 1;
+            if (word(from - 1)) {
+                while (left > 0 && (word(left - 1) || (apostrophe(left - 1) && word(left - 2)))) left -= 1;
+            } else {
+                const opens: string[] = [];
+                let cursor = from;
+                while (cursor > 0 && !word(cursor - 1)) {
+                    const open = openForClose(cursor - 1);
+                    if (open === undefined) return undefined;
+                    opens.push(open);
+                    cursor -= 1;
+                }
+                if (opens.length === 0 || !word(cursor - 1)) return undefined;
+                while (cursor > 0 && (word(cursor - 1) || (apostrophe(cursor - 1) && word(cursor - 2)))) cursor -= 1;
+                for (let index = opens.length - 1; index >= 0; index -= 1) {
+                    if (text[cursor - 1] !== opens[index]) return undefined;
+                    cursor -= 1;
+                }
+                left = cursor;
+            }
             let right = to;
             while (word(right)) right += 1;
             return { from, to, left, right };
@@ -790,6 +815,8 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
                 }
             }
         }
+        const followed = joiningRun(end) ?? joiningRun(end - 1);
+        if (followed && start <= followed.left && end > followed.from && end < followed.to) end = followed.to;
     }
     const before = text.slice(0, start).replace(/[\u00a0\s]/g, "");
     const after = text.slice(end).replace(/[\u00a0\s]/g, "");
@@ -827,6 +854,7 @@ export function wordDeleteGap(text: string, start: number, end: number): "before
     if (widened.end > end && word(text[widened.end])) return "after";
     if (widened.start < start && word(text[widened.start - 1])) return "before";
     if (widened.end > end && word(text[widened.start - 1]) && (widened.end >= text.length || space(text[widened.end]))) return "before";
+    if (widened.end > end && widened.start === start && (text[start] === "." || text[start] === "!" || text[start] === "?" || text[start] === "\u2026") && (widened.end >= text.length || space(text[widened.end]))) return "before";
     const digit = (piece: string | undefined) => Boolean(piece && /\p{N}/u.test(piece));
     const joiner = (index: number) => {
         const piece = text[index];
