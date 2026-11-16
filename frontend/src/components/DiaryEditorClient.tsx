@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codeForwardJoin, codeAhead, codeListNest, codePastItem, codePictureWords, codePullUndoCaret, codeTail, codeLead, codeForwardLead, codeMarkTail, codeTailBack, codeBlockTail, codeQuoteEnd, codeListEnd, codeNextItem, codeNestedItem, codeHeadingEnd, codeHeadingForward, codeDivForward, codeDivLine, codeDivHost, codeDivRest, codeDivNest, codeDivDeep, codeDivSide, codeDivList, codeDivHead, codeLineBreak, codeBackLine, codeBackBreak, codeHeldWords, codeHeldStay, codeWrappedStay, codeHeldCode, codeTableStay, codeQuotedTable, codeQuotedWords, codeQuotedCode, codeQuotedCodeWords, codeQuotedDivider, codeQuotedPicture, codeNestedCode, codeNestedHeld, codeShellTable, codeShellDivider, codeShellCode, codeQuoteInline, codeQuoteDiv, codeItemLine, codeHeadingLine, codeInnerLine, codePriorItem, codeHostItem, codeBreakLead, codeDeepHost, codeListLead, codeBeside, codeInside, codeAfterHost, codeShellLead, codeEdgeLead, codePictureLead, codeTableLead, codeTableHost, codeListHost, codePictureHost, codeDividerHost, codeQuoteHost, codeDividerLead, codeDivLead, codeQuoteShell, codeQuoteLead, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, dropCaretMarker, caretMarkBeside, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, quoteLineEdge, quoteJoinTarget, quotePictureJoin, quoteTrailingLeave, quoteListTail, quoteAfterList, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, listReachBlock, pictureCodeList, pictureTableList, pictureStyle, pictureStyleHold, pictureStyleSeat, pictureLineItalic, pictureLinkField, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codeForwardJoin, codeAhead, codeListNest, codePastItem, codePictureWords, codePullUndoCaret, codeTail, codeLead, codeForwardLead, codeMarkTail, codeTailBack, codeBlockTail, codeQuoteEnd, codeListEnd, codeNextItem, codeNestedItem, codeHeadingEnd, codeHeadingForward, codeDivForward, codeDivLine, codeDivHost, codeDivRest, codeDivNest, codeDivDeep, codeDivSide, codeDivList, codeDivHead, codeLineBreak, codeBackLine, codeBackBreak, codeHeldWords, codeHeldStay, codeWrappedStay, codeHeldCode, codeTableStay, codeQuotedTable, codeQuotedWords, codeQuotedCode, codeQuotedCodeWords, codeQuotedDivider, codeQuotedPicture, codeNestedCode, codeNestedHeld, codeShellTable, codeShellDivider, codeShellCode, codeQuoteInline, codeQuoteDiv, codeItemLine, codeHeadingLine, codeInnerLine, codeNextBlock, codePriorItem, codeHostItem, codeBreakLead, codeDeepHost, codeListLead, codeBeside, codeInside, codeAfterHost, codeShellLead, codeEdgeLead, codePictureLead, codeTableLead, codeTableHost, codeListHost, codePictureHost, codeDividerHost, codeQuoteHost, codeDividerLead, codeDivLead, codeQuoteShell, codeQuoteLead, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, dropCaretMarker, caretMarkBeside, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, quoteLineEdge, quoteJoinTarget, quotePictureJoin, quoteTrailingLeave, quoteListTail, quoteAfterList, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, listReachBlock, pictureCodeList, pictureTableList, pictureStyle, pictureStyleHold, pictureStyleSeat, pictureLineItalic, pictureLinkField, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
 type Entry = { _id: string; diaryId: string; content: string; plainText?: string; createdAt: string; updatedAt: string; };
 type DiaryResponse = { diary: Diary; entries: Entry[]; };
@@ -4693,6 +4693,35 @@ function innerLineHost(item: HTMLElement): HTMLElement {
     return only ?? item;
 }
 
+const lineBlockTag = /^(P|H1|H2|H3|PRE|TABLE|HR|FIGURE|BLOCKQUOTE|DIV)$/;
+
+function blockLineWords(host: HTMLElement): string | null {
+    let words = "";
+    let started = false;
+    for (const child of host.childNodes) {
+        if (!started && child instanceof Text && child.data.replace(/[\u00a0\s\u200b]/g, "") === "") continue;
+        if (child instanceof HTMLElement && (child.tagName === "UL" || child.tagName === "OL")) return null;
+        const block = child instanceof HTMLElement && lineBlockTag.test(child.tagName);
+        if (block && started) {
+            const text = words.replace(/\u200b/g, "").replace(/\u00a0/g, " ").trim();
+            return text || null;
+        }
+        if (
+            block &&
+            child instanceof HTMLElement &&
+            codeNextBlock({ block: true }) === "words" &&
+            !child.querySelector("table, pre, hr, ul, ol, blockquote, img, figure")
+        ) {
+            const inner = blockLineWords(child);
+            if (inner) return inner;
+        }
+        if (block) started = true;
+        else if (words || (child.textContent ?? "").replace(/[\u00a0\s\u200b]/g, "")) started = true;
+        words += child.textContent ?? "";
+    }
+    return null;
+}
+
 function itemLineWords(item: HTMLElement): string | null {
     const heading = /^H[1-3]$/.test(item.tagName);
     const quoteDiv = item.tagName === "DIV" && item.parentElement?.tagName === "BLOCKQUOTE";
@@ -4703,27 +4732,26 @@ function itemLineWords(item: HTMLElement): string | null {
     } else if (quoteDiv) {
         if (codeQuoteDiv({ div: true }) !== "line") return null;
     } else return null;
-    const host = innerLineHost(item);
-    const blockTag = /^(P|H1|H2|H3|PRE|TABLE|HR|FIGURE|BLOCKQUOTE|DIV)$/;
-    let words = "";
-    let started = false;
-    for (const child of host.childNodes) {
-        if (!started && child instanceof Text && child.data.replace(/[\u00a0\s\u200b]/g, "") === "") continue;
-        if (child instanceof HTMLElement && (child.tagName === "UL" || child.tagName === "OL")) return null;
-        const block = child instanceof HTMLElement && blockTag.test(child.tagName);
-        if (block && started) {
-            const text = words.replace(/\u200b/g, "").replace(/\u00a0/g, " ").trim();
-            return text || null;
-        }
-        if (block) started = true;
-        else if (words || (child.textContent ?? "").replace(/[\u00a0\s\u200b]/g, "")) started = true;
-        words += child.textContent ?? "";
-    }
-    return null;
+    return blockLineWords(innerLineHost(item));
 }
 
 function dropItemLine(item: HTMLElement) {
     const host = innerLineHost(item);
+    if (codeNextBlock({ block: true }) === "words") {
+        for (const child of host.childNodes) {
+            if (child instanceof Text && child.data.replace(/[\u00a0\s\u200b]/g, "") === "") continue;
+            if (
+                child instanceof HTMLElement &&
+                lineBlockTag.test(child.tagName) &&
+                !child.querySelector("table, pre, hr, ul, ol, blockquote, img, figure") &&
+                blockLineWords(child)
+            ) {
+                dropItemLine(child);
+                return;
+            }
+            break;
+        }
+    }
     const blockTag = /^(P|H1|H2|H3|PRE|TABLE|HR|FIGURE|BLOCKQUOTE|DIV)$/;
     let mode: "start" | "inline" | "block" = "start";
     for (const child of [...host.childNodes]) {
