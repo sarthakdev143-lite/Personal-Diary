@@ -1623,6 +1623,12 @@ export function codeDivLead(input: { block: boolean }): CodeDivLead {
     return input.block ? "pull" : "pass";
 }
 
+export type CodeQuoteShell = "close" | "keep";
+
+export function codeQuoteShell(input: { blank: boolean }): CodeQuoteShell {
+    return input.blank ? "close" : "keep";
+}
+
 export function codePullUndoCaret(offset: number | null): number | null {
     if (offset === null || !Number.isFinite(offset) || offset < 0) return null;
     return Math.floor(offset);
