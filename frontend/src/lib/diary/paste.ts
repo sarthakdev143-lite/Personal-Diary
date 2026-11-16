@@ -56,9 +56,9 @@ export function lineAfterPictureKey(input: {
     return input.empty ? "remove" : "move";
 }
 
-export function pictureBehindLine(input: { sibling: "picture" | "other" | "none"; tail: "picture" | "writing" | "empty" | "none" }): boolean {
+export function pictureBehindLine(input: { sibling: "picture" | "list" | "other" | "none"; tail: "picture" | "writing" | "empty" | "none" }): boolean {
     if (input.sibling === "picture") return true;
-    return input.sibling === "other" && input.tail === "picture";
+    return (input.sibling === "other" || input.sibling === "list") && input.tail === "picture";
 }
 
 export type PictureForwardDelete = "into" | "pass";
