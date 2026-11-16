@@ -1623,6 +1623,12 @@ export function codeHeadingForward(input: { heading: boolean }): CodeHeadingForw
     return input.heading ? "line" : "pass";
 }
 
+export type CodeDivForward = "line" | "pass";
+
+export function codeDivForward(input: { block: boolean }): CodeDivForward {
+    return input.block ? "line" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
