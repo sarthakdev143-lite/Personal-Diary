@@ -389,15 +389,21 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         ["\u00ab", "\u00bb"],
     ]);
     if (start < end) {
+        const givenStart = start;
+        const givenEnd = end;
         const bounds = initialism(start) ?? initialism(end - 1);
-        if (bounds && start >= bounds.start && start < bounds.end) {
-            let tail = bounds.end;
-            while (held(tail)) tail += 1;
-            let limit = tail;
-            while (space(limit)) limit += 1;
-            if (end <= limit) {
-                start = bounds.start;
-                end = tail;
+        if (bounds) {
+            let from = start;
+            while (space(from) && from < bounds.start) from += 1;
+            if (from >= bounds.start && from < bounds.end) {
+                let tail = bounds.end;
+                while (held(tail)) tail += 1;
+                let limit = tail;
+                while (space(limit)) limit += 1;
+                if (end <= limit) {
+                    start = bounds.start;
+                    end = tail;
+                }
             }
         }
         if (text[start - 1] === "." && digit(start) && !word(start - 2)) start -= 1;
@@ -565,9 +571,13 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
                 if (text[index] === ":" || text[index] === "/") scheme = schemeSeparator(index);
             }
         }
-        if (scheme && start === scheme.left && end === scheme.from) {
-            start = scheme.left;
-            end = scheme.to;
+        if (scheme && end === scheme.from) {
+            let from = start;
+            while (space(from) && from < scheme.left) from += 1;
+            if (from === scheme.left) {
+                start = scheme.left;
+                end = scheme.to;
+            }
         } else if (scheme && start >= scheme.from && start < scheme.to && end > scheme.from && end <= scheme.right) {
             if (end < scheme.to) {
                 start = scheme.left;
@@ -917,6 +927,14 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         else if (followed && start >= followed.left && start < followed.from && end > followed.from && end <= followed.to) {
             start = followed.left;
             end = followed.to;
+        }
+        if (space(givenStart) && end > givenEnd && start <= givenStart) {
+            const boundary = text[givenEnd];
+            if (boundary !== undefined && !space(boundary) && !word(givenEnd)) {
+                let from = start;
+                while (space(from) && from < end) from += 1;
+                if (from < end) start = from;
+            }
         }
     }
     const before = text.slice(0, start).replace(/[\u00a0\s]/g, "");

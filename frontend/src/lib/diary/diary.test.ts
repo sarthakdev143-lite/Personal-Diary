@@ -1875,6 +1875,21 @@ describe("code block", () => {
         assert.deepEqual(wordDeleteSpan("See 3:14 rain", 5, 6), { start: 5, end: 8 });
     });
 
+    it("keeps a space before a joined word", () => {
+        assert.deepEqual(wordDeleteSpan("See ada@example.com next", 3, 7), { start: 4, end: 8 });
+        assert.deepEqual(wordDeleteSpan("See 10:30 rain", 3, 6), { start: 4, end: 7 });
+        assert.deepEqual(wordDeleteSpan("See www.example.com next", 3, 7), { start: 4, end: 8 });
+        assert.deepEqual(wordDeleteSpan("See hello\u2014world rain", 3, 9), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See http://example.com next", 3, 8), { start: 4, end: 11 });
+        assert.deepEqual(wordDeleteSpan("See https://example.com next", 3, 9), { start: 4, end: 12 });
+        assert.deepEqual(wordDeleteSpan("See C:/Users next", 3, 5), { start: 4, end: 7 });
+        assert.deepEqual(wordDeleteSpan("See U.S. rain", 3, 5), { start: 4, end: 9 });
+        assert.deepEqual(wordDeleteSpan("See Ph.D. rain", 3, 6), { start: 4, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See Harbor rain", 3, 10), { start: 3, end: 10 });
+        assert.deepEqual(wordDeleteSpan("See ada@harbor rain", 4, 7), { start: 4, end: 8 });
+        assert.deepEqual(wordDeleteSpan("See http://example.com next", 0, 8), { start: 0, end: 9 });
+    });
+
     it("keeps a plus at the end of a word with that word", () => {
         assert.deepEqual(wordDeleteSpan("See (C++) rain", 4, 5), { start: 4, end: 10 });
         assert.equal(wordDeleteGap("See (C++) rain", 4, 5), "after");
