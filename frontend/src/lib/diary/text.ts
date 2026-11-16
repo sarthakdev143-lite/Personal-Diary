@@ -1599,6 +1599,12 @@ export function codeBeside(input: { code: boolean }): CodeBeside {
     return input.code ? "line" : "pass";
 }
 
+export type CodeInside = "line" | "pass";
+
+export function codeInside(input: { code: boolean }): CodeInside {
+    return input.code ? "line" : "pass";
+}
+
 export type CodePictureLead = "pull" | "pass";
 
 export function codePictureLead(input: { picture: boolean }): CodePictureLead {
