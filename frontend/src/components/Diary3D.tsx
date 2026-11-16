@@ -14,7 +14,7 @@ interface Diary3DProps {
 }
 
 const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
-    const { isRotating } = useDiary();
+    const { isRotating, setBookReady } = useDiary();
     const pathName = usePathname();
     const texture = selectedTexture || "/textures/leather-texture.jpg";
     const initialTextureRef = useRef(texture);
@@ -53,6 +53,7 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         } catch {
             setBookShown(false);
+            setBookReady(false);
             return;
         }
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -94,6 +95,7 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
             pageGroup,
         };
         setBookShown(true);
+        setBookReady(true);
 
         handleResize();
 
@@ -139,6 +141,7 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
             }
 
             sceneRef.current = null;
+            setBookReady(false);
         };
     }, [
         animationRef,
@@ -152,6 +155,7 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
         mountRef,
         scene,
         sceneRef,
+        setBookReady,
     ]);
 
     useEffect(() => {

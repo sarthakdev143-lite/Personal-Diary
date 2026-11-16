@@ -8,6 +8,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AuthButton } from "./AuthButton";
 import { signOut, useSession } from "next-auth/react";
+import { homeMenu } from "@/lib/diary/home";
 
 const Switch = ({
     checked,
@@ -44,12 +45,11 @@ const Navbar = () => {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const pathName = usePathname();
     const { data: session } = useSession();
-    const { isRotating, setIsRotating, resetDiaryPosition } = useDiary();
+    const { isRotating, setIsRotating, resetDiaryPosition, bookReady } = useDiary();
     const isDiaryDetailPage = /^\/diary\/.+/.test(pathName);
     const onHome = pathName === "/";
-    const showSignOut = isMobile && !!session;
-    const showMenu = onHome || showSignOut;
-    const menuOpen = showMenu && openPath === pathName;
+    const menu = homeMenu({ onHome, bookReady, narrow: isMobile, signedIn: !!session });
+    const menuOpen = menu.open && openPath === pathName;
 
     useEffect(() => {
         if (isDiaryDetailPage) return;
@@ -94,12 +94,12 @@ const Navbar = () => {
                 <AuthButton pathName={pathName} />
 
                 {/* Dropdown Trigger */}
-                {showMenu && (
+                {menu.open && (
                     <Button
                         onClick={() => setOpenPath(menuOpen ? null : pathName)}
                         variant="ghost"
                         aria-expanded={menuOpen}
-                        aria-label={onHome ? "Diary settings" : "Account"}
+                        aria-label={menu.settings ? "Diary settings" : "Account"}
                         className="border border-zinc-700 bg-zinc-900 py-5 text-white transition-colors duration-500 ease-in-out hover:bg-zinc-800 hover:text-white"
                     >
                         {menuOpen ? <X size={16}/> : <Menu size={16}/>}
@@ -108,7 +108,7 @@ const Navbar = () => {
 
                 {menuOpen && (
                     <div className="absolute top-full right-0 mt-2 w-56 rounded-md bg-zinc-900 shadow-lg selection:bg-slate-700">
-                        {onHome && (
+                        {menu.settings && (
                             <>
                                 <div className="border-b border-gray-700 px-4 py-2 text-base font-semibold text-white">Settings</div>
                                 <div className="flex items-center justify-between px-4 py-3">
@@ -127,8 +127,8 @@ const Navbar = () => {
                                 </div>
                             </>
                         )}
-                        {showSignOut && (
-                            <div className={`${onHome ? "border-t border-gray-700" : ""} px-4 py-3`}>
+                        {menu.account && (
+                            <div className={`${menu.settings ? "border-t border-gray-700" : ""} px-4 py-3`}>
                                 <Button
                                     variant="destructive"
                                     onClick={() => signOut({ callbackUrl: "/" })}
