@@ -4248,6 +4248,18 @@ function leadingDivider(block: HTMLElement, depth = 0): HTMLElement | null {
     return null;
 }
 
+function leadingTable(block: HTMLElement, depth = 0): HTMLElement | null {
+    if (depth > 6 || codeTableStay({ table: true }) !== "stay") return null;
+    if (block.tagName === "TABLE") return block;
+    for (const node of block.childNodes) {
+        if (node instanceof Text && node.data.replace(/[\u00a0\s\u200b]/g, "") === "") continue;
+        if (node instanceof HTMLTableElement) return node;
+        if (node instanceof HTMLElement && /^(P|H1|H2|H3|LI|DIV|BLOCKQUOTE|UL|OL)$/.test(node.tagName)) return leadingTable(node, depth + 1);
+        return null;
+    }
+    return null;
+}
+
 function writingAfterCode(pre: HTMLElement): HTMLElement | null {
     let sibling = pre.nextElementSibling;
     let edge = pre.parentElement;
@@ -4357,6 +4369,8 @@ function hostedBlockLine(host: HTMLElement): HTMLElement | null {
         return item;
     }
     if (host.tagName === "BLOCKQUOTE") {
+        const table = leadingTable(host);
+        if (table) return table;
         const first = host.firstElementChild;
         if (first instanceof HTMLPreElement && codeAhead({ code: true, wordsBefore: false }) === "code") return first;
         const line = firstQuoteLine(host);
