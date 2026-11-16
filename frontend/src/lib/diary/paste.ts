@@ -491,8 +491,10 @@ export function pictureNameSelection(input: {
     inName: boolean;
 }): PictureNameSelection {
     if (input.altKey || input.collapsed || !input.inName) return "pass";
-    const cut = (input.ctrlKey || input.metaKey) && (input.key === "x" || input.key === "X");
-    const removing = !input.ctrlKey && !input.metaKey && (input.key === "Backspace" || input.key === "Delete");
+    const word = Boolean(input.ctrlKey || input.metaKey);
+    if (word && input.key !== "Backspace" && input.key !== "Delete" && input.key !== "x" && input.key !== "X") return "pass";
+    const cut = word && (input.key === "x" || input.key === "X");
+    const removing = input.key === "Backspace" || input.key === "Delete";
     return cut || removing ? "edit" : "pass";
 }
 

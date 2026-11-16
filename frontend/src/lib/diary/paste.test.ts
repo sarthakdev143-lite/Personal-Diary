@@ -259,7 +259,13 @@ describe("entry paste", () => {
         assert.equal(pictureNameSelection({ key: "Delete", ...selected }), "edit");
         assert.equal(pictureNameSelection({ key: "Backspace", ...selected }), "edit");
         assert.equal(pictureNameSelection({ key: "Delete", collapsed: true, inName: true }), "pass");
-        assert.equal(pictureNameSelection({ key: "Delete", ctrlKey: true, ...selected }), "pass");
+        assert.equal(pictureNameSelection({ key: "Delete", ctrlKey: true, ...selected }), "edit");
+        assert.equal(pictureNameSelection({ key: "Backspace", ctrlKey: true, ...selected }), "edit");
+        assert.equal(pictureNameSelection({ key: "Delete", metaKey: true, ...selected }), "edit");
+        assert.equal(pictureNameSelection({ key: "Backspace", metaKey: true, ...selected }), "edit");
+        assert.equal(pictureNameSelection({ key: "Backspace", altKey: true, ...selected }), "pass");
+        assert.equal(pictureNameSelection({ key: "b", ctrlKey: true, ...selected }), "pass");
+        assert.equal(pictureNameSelection({ key: "Enter", ctrlKey: true, ...selected }), "pass");
         assert.equal(pictureNameSelection({ key: "Delete", collapsed: false, inName: false }), "pass");
         assert.equal(pictureNameSelection({ key: "x", ...selected }), "pass");
         assert.equal(pictureNameSelection({ key: "x", ctrlKey: true, ...selected }), "edit");
