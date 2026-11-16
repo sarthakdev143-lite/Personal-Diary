@@ -463,8 +463,15 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         if (suffix) {
             let limit = suffix.end;
             const pairClose = pairs.get(text[suffix.wordStart - 1] ?? "");
-            const paired = pairClose !== undefined && text[suffix.end] === pairClose && !word(suffix.wordStart - 2);
-            if (paired) limit += 1;
+            let paired = false;
+            if (pairClose !== undefined && !word(suffix.wordStart - 2)) {
+                let cursor = suffix.end;
+                while (held(cursor)) cursor += 1;
+                if (text[cursor] === pairClose) {
+                    paired = true;
+                    limit = cursor + 1;
+                }
+            }
             let tail = limit;
             while (tail < end && (space(tail) || held(tail))) tail += 1;
             const touchesPlus = start < suffix.end && end > suffix.plusStart;
@@ -552,9 +559,13 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
             } else {
                 while (cursor < text.length && (word(cursor) || (apostrophe(cursor) && word(cursor + 1)))) cursor += 1;
                 const mark = trailingMark(cursor) ? plusSuffix(cursor) : undefined;
-                if (mark && mark.wordStart === start + 1 && text[mark.end] === expectedClose) {
-                    cursor = mark.end;
-                    covered = true;
+                if (mark && mark.wordStart === start + 1) {
+                    let afterMark = mark.end;
+                    while (held(afterMark)) afterMark += 1;
+                    if (text[afterMark] === expectedClose) {
+                        cursor = afterMark;
+                        covered = true;
+                    }
                 } else if (text[cursor] === expectedClose && wrappedWord(start + 1, cursor)) covered = true;
                 else if ((text[cursor] === "%" || text[cursor] === "\u00b0") && text[cursor + 1] === expectedClose && wrappedWord(start + 1, cursor)) {
                     cursor += 1;
