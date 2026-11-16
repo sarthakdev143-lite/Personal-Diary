@@ -38,6 +38,14 @@ export function dropCaretMarker(input: { text: string; offset: number }): { text
     return { text: visible, offset: Math.max(0, Math.min(input.offset - removedBefore, visible.length)) };
 }
 
+export type CaretMarkBeside = "drop" | "keep";
+
+export function caretMarkBeside(input: { text: string; caretInside: boolean; writingBeside: boolean }): CaretMarkBeside {
+    if (input.text.replace(/\u200b/g, "").replace(/[\u00a0\s]/g, "")) return "keep";
+    if (!input.text.includes("\u200b") || input.caretInside || !input.writingBeside) return "keep";
+    return "drop";
+}
+
 const MONTH_INDEX = new Map([
     ["January", 0],
     ["February", 1],
