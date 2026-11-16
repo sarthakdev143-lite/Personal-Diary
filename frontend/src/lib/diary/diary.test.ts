@@ -261,6 +261,9 @@ describe("code block", () => {
         assert.equal(codePullKey({ key: "Delete", collapsed: true, atStart: false, atEnd: true, neighbor: "text" }), "pass");
         const intoCode = { key: "Delete", collapsed: true, atEnd: true, next: "writing" as const };
         assert.equal(codeForwardJoin(intoCode), "line");
+        assert.equal(codeForwardJoin({ ...intoCode, next: "list" }), "line");
+        assert.equal(codeForwardJoin({ ...intoCode, next: "quote" }), "line");
+        assert.equal(codeForwardJoin({ ...intoCode, next: "code" }), "line");
         assert.equal(codeForwardJoin({ ...intoCode, next: "none" }), "pass");
         assert.equal(codeForwardJoin({ ...intoCode, atEnd: false }), "pass");
         assert.equal(codeForwardJoin({ ...intoCode, collapsed: false }), "pass");

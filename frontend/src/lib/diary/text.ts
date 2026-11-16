@@ -1519,10 +1519,10 @@ export function codeForwardJoin(input: {
     metaKey?: boolean;
     collapsed: boolean;
     atEnd: boolean;
-    next: "writing" | "none";
+    next: "writing" | "list" | "quote" | "code" | "none";
 }): CodeForwardJoin {
     if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey || !input.collapsed || !input.atEnd) return "pass";
-    if (input.key !== "Delete" || input.next !== "writing") return "pass";
+    if (input.key !== "Delete" || input.next === "none") return "pass";
     return "line";
 }
 

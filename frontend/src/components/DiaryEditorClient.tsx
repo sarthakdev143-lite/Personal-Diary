@@ -3357,6 +3357,10 @@ function pullFirstCodeLine(into: HTMLElement, pre: HTMLElement): "after" | "none
     return separated;
 }
 
+function plainCodeLine(block: HTMLElement): boolean {
+    return block.querySelector("img, figure, table, pre, hr") === null;
+}
+
 function writingAfterCode(pre: HTMLElement): HTMLElement | null {
     let sibling = pre.nextElementSibling;
     let edge = pre.parentElement;
@@ -3366,9 +3370,37 @@ function writingAfterCode(pre: HTMLElement): HTMLElement | null {
         edge = edge.parentElement;
         guard += 1;
     }
-    if (!(sibling instanceof HTMLElement) || !/^(P|H1|H2|H3)$/.test(sibling.tagName)) return null;
-    if (sibling.querySelector("img, figure, table, pre, ul, ol, hr")) return null;
-    return sibling;
+    if (!(sibling instanceof HTMLElement)) return null;
+    if (/^(P|H1|H2|H3)$/.test(sibling.tagName)) {
+        if (sibling.querySelector("img, figure, table, pre, ul, ol, hr")) return null;
+        return sibling;
+    }
+    if (sibling.tagName === "UL" || sibling.tagName === "OL") {
+        const item = [...sibling.children].find((child) => child instanceof HTMLElement && child.tagName === "LI");
+        if (!(item instanceof HTMLElement) || item.querySelector("ul, ol, img, figure, pre")) return null;
+        return item;
+    }
+    if (sibling.tagName === "BLOCKQUOTE") {
+        const line = firstQuoteLine(sibling);
+        if (!(line instanceof HTMLElement) || !/^(P|H1|H2|H3|LI)$/.test(line.tagName) || !plainCodeLine(line)) return null;
+        if (line.tagName === "LI" && line.querySelector("ul, ol")) return null;
+        return line;
+    }
+    if (sibling.tagName === "PRE") return sibling;
+    return null;
+}
+
+function codeForwardKind(next: HTMLElement | null): "writing" | "list" | "quote" | "code" | "none" {
+    if (!(next instanceof HTMLElement)) return "none";
+    if (next.tagName === "LI") return "list";
+    if (next.tagName === "PRE") return "code";
+    if (next.parentElement?.tagName === "BLOCKQUOTE") return "quote";
+    return "writing";
+}
+
+function codeJoinText(next: HTMLElement): string {
+    const root = next.tagName === "PRE" ? next.querySelector("code") ?? next : next;
+    return (root.textContent ?? "").replace(/\u200b/g, "").replace(/\u00a0/g, " ").trim();
 }
 
 function leaveTrailingCode(pre: HTMLElement, from: HTMLElement) {
@@ -3386,7 +3418,7 @@ function leaveTrailingCode(pre: HTMLElement, from: HTMLElement) {
 function joinWritingIntoCode(pre: HTMLElement, next: HTMLElement) {
     const code = pre.querySelector("code");
     const source = code instanceof HTMLElement ? code : pre;
-    const body = (next.textContent ?? "").replace(/\u200b/g, "").replace(/\u00a0/g, " ").trim();
+    const body = codeJoinText(next);
     leaveTrailingCode(pre, next);
     source.removeAttribute("data-fresh");
     if (!body) {
@@ -8644,7 +8676,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 metaKey: e.metaKey,
                 collapsed: selection.isCollapsed,
                 atEnd: caretAtBlockEnd(target, range),
-                next: nextWriting && nextWriting !== dateHeading ? "writing" : "none",
+                next: nextWriting && nextWriting !== dateHeading ? codeForwardKind(nextWriting) : "none",
             });
             if (forward === "line" && nextWriting && nextWriting !== dateHeading) {
                 e.preventDefault();
