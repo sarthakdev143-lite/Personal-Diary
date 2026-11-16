@@ -14,7 +14,7 @@ import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
 import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
-import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureForwardDelete, pictureGapDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBackspaceFollows, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, pictureCutText, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureListContinue, pictureItemCaret, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
+import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureForwardDelete, pictureGapDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureUnderLine, pictureInlineBackspace, pictureBackspaceFollows, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, pictureCutText, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureListContinue, pictureItemCaret, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
@@ -556,6 +556,13 @@ function inlinePictureBesideCaret(editor: HTMLElement, selection: Selection): { 
     return null;
 }
 
+function openLineUnderPicture(text: Text) {
+    const lead = document.createTextNode("\u200b");
+    const line = document.createElement("br");
+    text.before(lead, line);
+    placeCaretInText(lead, lead.data.length);
+}
+
 function splitBesidePicture(block: HTMLElement, figure: HTMLElement, side: "before" | "after") {
     const line = block.tagName === "BLOCKQUOTE" || block.tagName === "TD" || block.tagName === "TH";
     if (line) {
@@ -570,13 +577,17 @@ function splitBesidePicture(block: HTMLElement, figure: HTMLElement, side: "befo
                 : neighbor instanceof HTMLElement && neighbor.tagName !== "BR"
                     ? "block"
                     : "none";
-        const lineBreak = pictureBreakLine({ next });
+        const lineBreak = pictureBreakLine({ next, side });
         if (lineBreak === "paragraph") {
             const paragraph = document.createElement("p");
             paragraph.appendChild(document.createElement("br"));
             if (side === "after") figure.after(paragraph);
             else figure.before(paragraph);
             placeCaretAtStart(paragraph);
+            return;
+        }
+        if (lineBreak === "under" && neighbor instanceof Text) {
+            openLineUnderPicture(neighbor);
             return;
         }
         if (lineBreak === "apart" && neighbor instanceof Text) {
@@ -720,6 +731,42 @@ function splitBesidePicture(block: HTMLElement, figure: HTMLElement, side: "befo
 function inlinePictureBeforeCaret(editor: HTMLElement, selection: Selection): HTMLElement | null {
     const beside = inlinePictureBesideCaret(editor, selection);
     return beside?.side === "after" ? beside.figure : null;
+}
+
+function pictureUnderMark(selection: Selection): { br: HTMLBRElement; lead: Text | null } | null {
+    if (!selection.rangeCount || !selection.isCollapsed) return null;
+    const range = selection.getRangeAt(0);
+    const followsPicture = (node: ChildNode | null) => {
+        while (node instanceof Text && !node.data.replace(/[\u00a0\s\u200b]/g, "")) node = node.previousSibling;
+        return node instanceof HTMLElement && node.tagName === "FIGURE";
+    };
+    const node = range.startContainer;
+    if (node instanceof Text) {
+        if (node.data.replace(/\u200b/g, "") || !node.data.includes("\u200b") || !(node.nextSibling instanceof HTMLBRElement)) return null;
+        return followsPicture(node.previousSibling) ? { br: node.nextSibling, lead: node } : null;
+    }
+    if (node instanceof Element) {
+        const line = node.childNodes[range.startOffset];
+        if (!(line instanceof HTMLBRElement) || !followsPicture(line.previousSibling)) return null;
+        return { br: line, lead: null };
+    }
+    return null;
+}
+
+function closePictureUnderLine(mark: { br: HTMLBRElement; lead: Text | null }) {
+    const following = mark.br.nextSibling;
+    const parent = mark.br.parentNode;
+    mark.lead?.remove();
+    mark.br.remove();
+    const selection = window.getSelection();
+    if (!selection || !parent) return;
+    const caret = document.createRange();
+    if (following instanceof Text) caret.setStart(following, 0);
+    else if (following) caret.setStartBefore(following);
+    else caret.setStart(parent, parent.childNodes.length);
+    caret.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(caret);
 }
 
 function writingAfterPicture(figure: HTMLElement, selection: Selection): boolean {
@@ -5295,19 +5342,8 @@ function placeNameContinuation(figure: HTMLElement, block: HTMLElement) {
                     : "none";
         if (onlyBreak) {
             const continued = pictureNameContinue({ next });
-            if (continued === "apart" && neighbor instanceof Text) {
-                const opening = document.createElement("br");
-                const closing = document.createElement("br");
-                neighbor.before(opening, closing);
-                const parent = opening.parentNode;
-                const selection = window.getSelection();
-                if (parent && selection) {
-                    const caret = document.createRange();
-                    caret.setStart(parent, [...parent.childNodes].indexOf(closing));
-                    caret.collapse(true);
-                    selection.removeAllRanges();
-                    selection.addRange(caret);
-                }
+            if (continued === "under" && neighbor instanceof Text) {
+                openLineUnderPicture(neighbor);
                 return;
             }
             if (continued === "paragraph") {
@@ -7486,6 +7522,31 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         return true;
     };
 
+    const keepPictureUnderLine = (e: React.KeyboardEvent) => {
+        const editor = editorRef.current;
+        const selection = window.getSelection();
+        if (!editor || !selection || mode === "view") return false;
+        const mark = pictureUnderMark(selection);
+        const action = pictureUnderLine({
+            key: e.key,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            collapsed: selection.isCollapsed,
+            onMark: Boolean(mark && editor.contains(mark.br)),
+        });
+        if (action !== "close" || !mark) return false;
+        e.preventDefault();
+        const before = editor.innerHTML;
+        const block = mark.br.parentElement;
+        const path = block instanceof HTMLElement ? childPath(editor, block) : undefined;
+        const breakIndex = block instanceof HTMLElement ? [...block.querySelectorAll("br")].indexOf(mark.br) : -1;
+        closePictureUnderLine(mark);
+        keepBlank({ before, after: editor.innerHTML, path, ...(breakIndex >= 0 ? { breakIndex, breakSide: "before" as const } : {}) });
+        setHtmlContent(editor.innerHTML);
+        return true;
+    };
+
     const keepPictureBlockEnter = (e: React.KeyboardEvent) => {
         const editor = editorRef.current;
         const selection = window.getSelection();
@@ -9170,6 +9231,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         if (keepPictureNameEnter(e)) return;
         if (keepPictureNameSelection(e)) return;
         if (keepInlinePictureEnter(e)) return;
+        if (keepPictureUnderLine(e)) return;
         if (keepHeadingLine(e)) return;
         if (keepCodeLine(e)) return;
         if (keepStyledLine(e)) return;
