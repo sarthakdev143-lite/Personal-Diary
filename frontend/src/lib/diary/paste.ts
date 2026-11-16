@@ -317,7 +317,7 @@ export function pictureInlineBackspace(input: {
     afterPicture: boolean;
     following: boolean;
 }): PictureInlineBackspace {
-    if (input.altKey || input.ctrlKey || input.metaKey) return "pass";
+    if (input.altKey) return "pass";
     if (input.key !== "Backspace" || !input.collapsed || !input.afterPicture) return "pass";
     return input.following ? "name" : "remove";
 }

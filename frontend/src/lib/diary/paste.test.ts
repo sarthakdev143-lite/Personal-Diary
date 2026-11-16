@@ -587,7 +587,11 @@ describe("entry paste", () => {
         assert.equal(pictureInlineBackspace({ key: "Backspace", collapsed: true, afterPicture: false, following: false }), "pass");
         assert.equal(pictureInlineBackspace({ key: "Backspace", collapsed: false, afterPicture: true, following: false }), "pass");
         assert.equal(pictureInlineBackspace({ key: "Delete", ...beside, following: false }), "pass");
-        assert.equal(pictureInlineBackspace({ key: "Backspace", ctrlKey: true, ...beside, following: false }), "pass");
+        assert.equal(pictureInlineBackspace({ key: "Backspace", ctrlKey: true, ...beside, following: true }), "name");
+        assert.equal(pictureInlineBackspace({ key: "Backspace", metaKey: true, ...beside, following: true }), "name");
+        assert.equal(pictureInlineBackspace({ key: "Backspace", ctrlKey: true, ...beside, following: false }), "remove");
+        assert.equal(pictureInlineBackspace({ key: "Backspace", metaKey: true, ...beside, following: false }), "remove");
+        assert.equal(pictureInlineBackspace({ key: "Backspace", altKey: true, ...beside, following: true }), "pass");
         assert.equal(pictureBackspaceFollows({ inline: false, gap: true, writingFollows: true }), true);
         assert.equal(pictureBackspaceFollows({ inline: false, gap: true, writingFollows: false }), false);
         assert.equal(pictureBackspaceFollows({ inline: true, gap: false, writingFollows: true }), true);
