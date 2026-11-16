@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { Toaster } from "@/components/ui/toaster"
+import { loginWaitingMessage } from "@/lib/diary/login"
 import Image from "next/image"
 
 export default function LoginPage() {
@@ -48,8 +49,13 @@ export default function LoginPage() {
         }
     }
 
-    if (status !== "unauthenticated") {
-        return <div className="min-h-screen bg-zinc-950" />
+    const waiting = loginWaitingMessage(status)
+    if (waiting) {
+        return (
+            <div className="relative z-10 flex min-h-screen items-center justify-center bg-zinc-950 px-6 text-center">
+                <p className="text-lg text-zinc-300" role="status">{waiting}</p>
+            </div>
+        )
     }
 
     return (
