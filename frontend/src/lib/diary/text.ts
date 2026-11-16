@@ -1689,6 +1689,12 @@ export function codeBackLine(input: { back: boolean }): CodeBackLine {
     return input.back ? "line" : "pass";
 }
 
+export type CodeBackBreak = "line" | "pass";
+
+export function codeBackBreak(input: { broken: boolean }): CodeBackBreak {
+    return input.broken ? "line" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
