@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { MAX_DATA_IMAGE_LENGTH, MAX_IMAGE_BYTES } from "./constants";
-import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureForwardDelete, pictureGapDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalJoin, pictureRemovalSpace, pictureRemovalHost, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureInlineBackspace, pictureBackspaceFollows, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, pictureCutText, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureListContinue, pictureItemCaret, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "./paste";
+import { codePasteHtml, decideEntryDrop, decideEntryPaste, captionBreakText, captionUndoCaret, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureBehindLine, pictureForwardDelete, pictureGapDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalJoin, pictureRemovalSpace, pictureRemovalHost, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureUnderLine, pictureInlineBackspace, pictureBackspaceFollows, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, pictureCutText, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureListContinue, pictureItemCaret, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, pictureListSpace, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "./paste";
 
 describe("entry paste", () => {
     it("names a file that is not a supported image", () => {
@@ -277,7 +277,7 @@ describe("entry paste", () => {
     });
 
     it("keeps the writing after a picture on the next line when the name continues", () => {
-        assert.equal(pictureNameContinue({ next: "text" }), "apart");
+        assert.equal(pictureNameContinue({ next: "text" }), "under");
         assert.equal(pictureNameContinue({ next: "none" }), "paragraph");
         assert.equal(pictureNameContinue({ next: "block" }), "paragraph");
         assert.equal(pictureNameContinue({ next: "picture" }), "break");
@@ -538,9 +538,21 @@ describe("entry paste", () => {
 
     it("opens a paragraph under a picture when a block follows inside a quote", () => {
         assert.equal(pictureBreakLine({ next: "block" }), "paragraph");
-        assert.equal(pictureBreakLine({ next: "text" }), "apart");
+        assert.equal(pictureBreakLine({ next: "text" }), "under");
+        assert.equal(pictureBreakLine({ next: "text", side: "after" }), "under");
+        assert.equal(pictureBreakLine({ next: "text", side: "before" }), "apart");
         assert.equal(pictureBreakLine({ next: "picture" }), "break");
         assert.equal(pictureBreakLine({ next: "none" }), "break");
+    });
+
+    it("closes the blank line under a picture inside a quote", () => {
+        const onMark = { collapsed: true, onMark: true };
+        assert.equal(pictureUnderLine({ key: "Backspace", ...onMark }), "close");
+        assert.equal(pictureUnderLine({ key: "Delete", ...onMark }), "close");
+        assert.equal(pictureUnderLine({ key: "Backspace", collapsed: true, onMark: false }), "pass");
+        assert.equal(pictureUnderLine({ key: "Backspace", collapsed: false, onMark: true }), "pass");
+        assert.equal(pictureUnderLine({ key: "Backspace", ctrlKey: true, ...onMark }), "pass");
+        assert.equal(pictureUnderLine({ key: "Enter", ...onMark }), "pass");
     });
 
     it("keeps the word after a picture in the line out of the picture name", () => {

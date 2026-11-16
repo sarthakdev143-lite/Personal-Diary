@@ -230,12 +230,27 @@ export function pictureAfterEnter(input: {
     return input.next === "empty" ? "into" : "line";
 }
 
-export type PictureBreakLine = "paragraph" | "apart" | "break";
+export type PictureBreakLine = "paragraph" | "apart" | "under" | "break";
 
-export function pictureBreakLine(input: { next: "block" | "text" | "picture" | "none" }): PictureBreakLine {
+export function pictureBreakLine(input: { next: "block" | "text" | "picture" | "none"; side?: "before" | "after" }): PictureBreakLine {
     if (input.next === "block") return "paragraph";
-    if (input.next === "text") return "apart";
+    if (input.next === "text") return input.side === "before" ? "apart" : "under";
     return "break";
+}
+
+export type PictureUnderLine = "close" | "pass";
+
+export function pictureUnderLine(input: {
+    key: string;
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    collapsed: boolean;
+    onMark: boolean;
+}): PictureUnderLine {
+    if (input.altKey || input.ctrlKey || input.metaKey || !input.collapsed || !input.onMark) return "pass";
+    if (input.key === "Backspace" || input.key === "Delete") return "close";
+    return "pass";
 }
 
 export type PictureInlineBackspace = "name" | "remove" | "pass";
@@ -499,11 +514,11 @@ export function pictureNameEnter(input: {
     return input.collapsed ? "continue" : "replace";
 }
 
-export type PictureNameContinue = "paragraph" | "apart" | "break";
+export type PictureNameContinue = "paragraph" | "under" | "break";
 
 export function pictureNameContinue(input: { next: "block" | "text" | "picture" | "none" }): PictureNameContinue {
     if (input.next === "block" || input.next === "none") return "paragraph";
-    if (input.next === "text") return "apart";
+    if (input.next === "text") return "under";
     return "break";
 }
 
