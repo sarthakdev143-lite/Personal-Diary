@@ -1695,6 +1695,12 @@ export function codeListBack(input: { item: boolean }): CodeListBack {
     return input.item ? "line" : "pass";
 }
 
+export type CodeQuoteBack = "line" | "pass";
+
+export function codeQuoteBack(input: { quote: boolean }): CodeQuoteBack {
+    return input.quote ? "line" : "pass";
+}
+
 export type CodeBackBreak = "line" | "pass";
 
 export function codeBackBreak(input: { broken: boolean }): CodeBackBreak {
