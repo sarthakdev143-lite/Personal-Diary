@@ -1569,6 +1569,12 @@ export function codePriorItem(input: { item: boolean }): CodePriorItem {
     return input.item ? "pull" : "pass";
 }
 
+export type CodeHostItem = "pull" | "pass";
+
+export function codeHostItem(input: { host: boolean }): CodeHostItem {
+    return input.host ? "pull" : "pass";
+}
+
 export function codePullUndoCaret(offset: number | null): number | null {
     if (offset === null || !Number.isFinite(offset) || offset < 0) return null;
     return Math.floor(offset);
