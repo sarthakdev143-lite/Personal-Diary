@@ -2656,6 +2656,10 @@ export function wordCount(html: string): number {
     return text ? text.split(/\s+/).filter(Boolean).length : 0;
 }
 
+export function countLabel(count: number, singular: string): string {
+    return `${count} ${count === 1 ? singular : `${singular}s`}`;
+}
+
 export function formatDiaryDate(value: string): string {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "Unknown date";
