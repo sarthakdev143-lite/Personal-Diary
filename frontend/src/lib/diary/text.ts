@@ -1629,6 +1629,12 @@ export function codeQuoteShell(input: { blank: boolean }): CodeQuoteShell {
     return input.blank ? "close" : "keep";
 }
 
+export type CodeQuoteLead = "code" | "pass";
+
+export function codeQuoteLead(input: { leading: boolean }): CodeQuoteLead {
+    return input.leading ? "code" : "pass";
+}
+
 export function codePullUndoCaret(offset: number | null): number | null {
     if (offset === null || !Number.isFinite(offset) || offset < 0) return null;
     return Math.floor(offset);
