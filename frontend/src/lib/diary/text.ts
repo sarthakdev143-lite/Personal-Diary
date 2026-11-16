@@ -431,7 +431,7 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
             while (joiningMark(from - 1)) from -= 1;
             let to = index + 1;
             while (joiningMark(to)) to += 1;
-            if ((to - from < 2 && text[from] !== "\u2026") || !word(to)) return undefined;
+            if (to - from < 2 && text[from] !== "\u2026") return undefined;
             const openForClose = (place: number) => {
                 const piece = text[place];
                 for (const [open, close] of pairs) {
@@ -471,12 +471,47 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
                 }
                 left = cursor;
             }
+            const closeForOpen = (place: number) => {
+                const piece = text[place];
+                for (const [open, close] of pairs) {
+                    if (open === piece) return close;
+                }
+                return undefined;
+            };
             let right = to;
-            while (word(right)) right += 1;
+            if (word(to)) {
+                while (word(right)) right += 1;
+            } else {
+                const closes: string[] = [];
+                let cursor = to;
+                while (closeForOpen(cursor) !== undefined) {
+                    closes.push(closeForOpen(cursor) as string);
+                    cursor += 1;
+                }
+                if (closes.length === 0) return undefined;
+                if (leadingSign(cursor)) cursor += 1;
+                if (!word(cursor)) return undefined;
+                while (word(cursor)) cursor += 1;
+                while (wordSuffix(cursor)) cursor += 1;
+                for (let index = closes.length - 1; index >= 0; index -= 1) {
+                    if (text[cursor] !== closes[index]) return undefined;
+                    cursor += 1;
+                }
+                right = cursor;
+            }
             return { from, to, left, right };
         };
         let run = joiningRun(markStart) ?? joiningRun(markEnd - 1);
-        if (!run && word(markStart) && joiningMark(markStart - 1)) run = joiningRun(markStart - 1);
+        if (!run) {
+            for (let index = markStart; index < markEnd && !run; index += 1) {
+                if (joiningMark(index)) run = joiningRun(index);
+            }
+        }
+        if (!run) {
+            let probe = markStart - 1;
+            while (probe >= 0 && !joiningMark(probe) && !word(probe)) probe -= 1;
+            if (joiningMark(probe)) run = joiningRun(probe);
+        }
         if (run && markStart >= run.left && markEnd <= run.right && markEnd > run.from && markStart < run.right) {
             if (markEnd <= run.to && (markStart < run.from || markEnd < run.to)) {
                 start = run.left;
@@ -487,10 +522,13 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
             } else if (markStart >= run.from && markStart < run.to) {
                 start = run.from;
                 end = run.right;
-            } else if (markStart === run.to && markEnd > run.to) {
+            } else if (markStart >= run.to && markStart < run.right && markEnd > run.to) {
                 let boundary = markStart;
                 while (word(boundary)) boundary += 1;
-                if (markEnd >= boundary) start = run.from;
+                if (markEnd >= boundary) {
+                    start = run.from;
+                    if (end < run.right) end = run.right;
+                }
             }
         }
         if (apostrophe(start - 1) && apostrophe(end) && word(start) && !word(start - 2) && !word(end + 1)) {
@@ -872,7 +910,8 @@ export function wordDeleteGap(text: string, start: number, end: number): "before
     if (widened.start < start && word(text[widened.start - 1])) return "before";
     if (widened.end > end && word(text[widened.start - 1]) && (widened.end >= text.length || space(text[widened.end]))) return "before";
     if (widened.end > end && widened.start === start && (text[start] === "." || text[start] === "!" || text[start] === "?" || text[start] === "\u2026") && (widened.end >= text.length || space(text[widened.end]))) return "before";
-    if (widened.start < start && (widened.start === 0 || space(text[widened.start - 1])) && word(text[widened.end]) && (text[widened.end - 1] === "." || text[widened.end - 1] === "!" || text[widened.end - 1] === "?" || text[widened.end - 1] === "\u2026")) return "after";
+    const opener = (piece: string | undefined) => piece === "(" || piece === "[" || piece === "{" || piece === "\"" || piece === "\u201c" || piece === "\u2018" || piece === "\u00ab";
+    if (widened.start < start && (widened.start === 0 || space(text[widened.start - 1])) && (word(text[widened.end]) || opener(text[widened.end])) && (text[widened.end - 1] === "." || text[widened.end - 1] === "!" || text[widened.end - 1] === "?" || text[widened.end - 1] === "\u2026")) return "after";
     const digit = (piece: string | undefined) => Boolean(piece && /\p{N}/u.test(piece));
     const joiner = (index: number) => {
         const piece = text[index];

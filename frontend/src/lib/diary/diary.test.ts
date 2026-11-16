@@ -1694,6 +1694,29 @@ describe("code block", () => {
         assert.deepEqual(wordDeleteSpan("See C++ rain", 5, 7), { start: 4, end: 8 });
     });
 
+    it("keeps a joining mark run before a wrapped word with one word", () => {
+        assert.deepEqual(wordDeleteSpan("See (Harbor)...(Bay)", 12, 16), { start: 12, end: 20 });
+        assert.equal(wordDeleteGap("See (Harbor)...(Bay)", 12, 16), "before");
+        assert.deepEqual(wordDeleteSpan("See (Harbor)...(Bay)", 13, 16), { start: 12, end: 20 });
+        assert.deepEqual(wordDeleteSpan("See (Harbor)...(Bay)", 14, 16), { start: 12, end: 20 });
+        assert.deepEqual(wordDeleteSpan("See (Harbor)...(Bay)", 15, 16), { start: 12, end: 20 });
+        assert.deepEqual(wordDeleteSpan("See (Harbor)...(Bay)", 16, 19), { start: 12, end: 20 });
+        assert.deepEqual(wordDeleteSpan("See (Harbor)...(Bay)", 16, 17), { start: 16, end: 17 });
+        assert.deepEqual(wordDeleteSpan("See (Harbor)...(Bay)", 11, 15), { start: 4, end: 15 });
+        assert.equal(wordDeleteGap("See (Harbor)...(Bay)", 11, 15), "after");
+        assert.deepEqual(wordDeleteSpan("See (Harbor)...(Bay)", 11, 16), { start: 3, end: 20 });
+        assert.deepEqual(wordDeleteSpan('See Harbor..."Bay"', 10, 14), { start: 10, end: 18 });
+        assert.equal(wordDeleteGap('See Harbor..."Bay"', 10, 14), "before");
+        assert.deepEqual(wordDeleteSpan('See Harbor..."Bay"', 11, 14), { start: 10, end: 18 });
+        assert.deepEqual(wordDeleteSpan('See Harbor..."Bay"', 12, 14), { start: 10, end: 18 });
+        assert.deepEqual(wordDeleteSpan('See Harbor..."Bay"', 13, 14), { start: 10, end: 18 });
+        assert.deepEqual(wordDeleteSpan('See Harbor..."Bay"', 14, 17), { start: 10, end: 18 });
+        assert.deepEqual(wordDeleteSpan('See Harbor..."Bay"', 14, 15), { start: 14, end: 15 });
+        assert.deepEqual(wordDeleteSpan('See Harbor..."Bay"', 4, 10), { start: 4, end: 13 });
+        assert.deepEqual(wordDeleteSpan('See Harbor... "Bay"', 10, 13), { start: 4, end: 14 });
+        assert.deepEqual(wordDeleteSpan("See (Harbor)... (Bay)", 12, 15), { start: 4, end: 16 });
+    });
+
     it("keeps a plus at the end of a word with that word", () => {
         assert.deepEqual(wordDeleteSpan("See (C++) rain", 4, 5), { start: 4, end: 10 });
         assert.equal(wordDeleteGap("See (C++) rain", 4, 5), "after");
