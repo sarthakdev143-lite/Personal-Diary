@@ -1,7 +1,7 @@
 export const DIARY_THEMES = [
-    { name: "Leather 1", textureUrl: "/textures/leather-texture.jpg" },
-    { name: "Leather 2", textureUrl: "/textures/leather-bound.webp" },
-    { name: "Wooden Garage Door", textureUrl: "/textures/wooden_garage_door.webp" },
+    { name: "Worn leather", textureUrl: "/textures/leather-texture.jpg" },
+    { name: "Tan leather", textureUrl: "/textures/leather-bound.webp" },
+    { name: "Studded wood", textureUrl: "/textures/wooden_garage_door.webp" },
 ] as const;
 
 export const DEFAULT_DIARY_THEME = DIARY_THEMES[0].textureUrl;
@@ -23,4 +23,8 @@ export function isAllowedTheme(theme: string): boolean {
 
 export function coverForTheme(theme: string | null | undefined) {
     return DIARY_THEMES.find((item) => item.textureUrl === theme) ?? null;
+}
+
+export function coverPreviewImage(textureUrl: string): string {
+    return `url("${textureUrl.replace(/["\\]/g, "")}")`;
 }
