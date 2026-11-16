@@ -1653,6 +1653,12 @@ export function codeDivNest(input: { nest: boolean }): CodeDivNest {
     return input.nest ? "line" : "pass";
 }
 
+export type CodeDivDeep = "line" | "pass";
+
+export function codeDivDeep(input: { deep: boolean }): CodeDivDeep {
+    return input.deep ? "line" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
