@@ -1701,6 +1701,12 @@ export function codeQuoteBack(input: { quote: boolean }): CodeQuoteBack {
     return input.quote ? "line" : "pass";
 }
 
+export type CodeDivBack = "line" | "pass";
+
+export function codeDivBack(input: { line: boolean }): CodeDivBack {
+    return input.line ? "line" : "pass";
+}
+
 export type CodeBackBreak = "line" | "pass";
 
 export function codeBackBreak(input: { broken: boolean }): CodeBackBreak {
