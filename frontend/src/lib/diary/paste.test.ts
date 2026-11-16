@@ -639,14 +639,19 @@ describe("entry paste", () => {
         assert.equal(pictureForwardDelete({ key: "Delete", ...atPicture, next: "none" }), "pass");
         assert.equal(pictureForwardDelete({ key: "Delete", collapsed: true, afterPicture: false, next: "writing" }), "pass");
         assert.equal(pictureForwardDelete({ key: "Backspace", ...atPicture }), "pass");
-        assert.equal(pictureForwardDelete({ key: "Delete", ctrlKey: true, ...atPicture }), "pass");
+        assert.equal(pictureForwardDelete({ key: "Delete", ctrlKey: true, ...atPicture }), "into");
+        assert.equal(pictureForwardDelete({ key: "Delete", metaKey: true, ...atPicture }), "into");
+        assert.equal(pictureForwardDelete({ key: "Delete", ctrlKey: true, ...atPicture, next: "none" }), "pass");
+        assert.equal(pictureForwardDelete({ key: "Delete", altKey: true, ...atPicture }), "pass");
         const gap = { collapsed: true, gap: true, next: "writing" as const };
         assert.equal(pictureGapDelete({ key: "Delete", ...gap }), "into");
         assert.equal(pictureGapDelete({ key: "Delete", ...gap, next: "empty" }), "pass");
         assert.equal(pictureGapDelete({ key: "Delete", ...gap, next: "none" }), "pass");
         assert.equal(pictureGapDelete({ key: "Delete", collapsed: true, gap: false, next: "writing" }), "pass");
         assert.equal(pictureGapDelete({ key: "Backspace", ...gap }), "pass");
-        assert.equal(pictureGapDelete({ key: "Delete", ctrlKey: true, ...gap }), "pass");
+        assert.equal(pictureGapDelete({ key: "Delete", ctrlKey: true, ...gap }), "into");
+        assert.equal(pictureGapDelete({ key: "Delete", metaKey: true, ...gap }), "into");
+        assert.equal(pictureGapDelete({ key: "Delete", altKey: true, ...gap }), "pass");
     });
 
     it("removes a selected picture together with its name", () => {
