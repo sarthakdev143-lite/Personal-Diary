@@ -282,7 +282,7 @@ export function pictureUnderLine(input: {
     collapsed: boolean;
     onMark: boolean;
 }): PictureUnderLine {
-    if (input.altKey || input.ctrlKey || input.metaKey || !input.collapsed || !input.onMark) return "pass";
+    if (input.altKey || !input.collapsed || !input.onMark) return "pass";
     if (input.key === "Backspace" || input.key === "Delete") return "close";
     return "pass";
 }

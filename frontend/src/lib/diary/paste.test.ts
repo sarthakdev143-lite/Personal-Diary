@@ -576,7 +576,11 @@ describe("entry paste", () => {
         assert.equal(pictureUnderLine({ key: "Delete", ...onMark }), "close");
         assert.equal(pictureUnderLine({ key: "Backspace", collapsed: true, onMark: false }), "pass");
         assert.equal(pictureUnderLine({ key: "Backspace", collapsed: false, onMark: true }), "pass");
-        assert.equal(pictureUnderLine({ key: "Backspace", ctrlKey: true, ...onMark }), "pass");
+        assert.equal(pictureUnderLine({ key: "Backspace", ctrlKey: true, ...onMark }), "close");
+        assert.equal(pictureUnderLine({ key: "Delete", ctrlKey: true, ...onMark }), "close");
+        assert.equal(pictureUnderLine({ key: "Backspace", metaKey: true, ...onMark }), "close");
+        assert.equal(pictureUnderLine({ key: "Backspace", altKey: true, ...onMark }), "pass");
+        assert.equal(pictureUnderLine({ key: "Delete", ctrlKey: true, collapsed: true, onMark: false }), "pass");
         assert.equal(pictureUnderLine({ key: "Enter", ...onMark }), "pass");
     });
 
