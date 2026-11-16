@@ -1532,6 +1532,12 @@ export function codeListNest(input: { nested: boolean }): CodeListNest {
     return input.nested ? "keep" : "drop";
 }
 
+export type CodePastItem = "out" | "stay";
+
+export function codePastItem(input: { host: "item" | "list" | "other" }): CodePastItem {
+    return input.host === "other" ? "stay" : "out";
+}
+
 export function codePullUndoCaret(offset: number | null): number | null {
     if (offset === null || !Number.isFinite(offset) || offset < 0) return null;
     return Math.floor(offset);
