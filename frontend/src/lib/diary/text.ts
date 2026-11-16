@@ -1563,6 +1563,12 @@ export function codeLead(input: { words: boolean }): CodeLead {
     return input.words ? "pull" : "pass";
 }
 
+export type CodeForwardLead = "pull" | "pass";
+
+export function codeForwardLead(input: { words: boolean }): CodeForwardLead {
+    return input.words ? "pull" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
