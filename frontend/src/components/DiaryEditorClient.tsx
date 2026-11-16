@@ -18,7 +18,7 @@ import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, ima
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
 import { commandKeyLabel, saveEntryShortcut } from "@/lib/diary/shortcut";
-import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codeForwardJoin, codeAhead, codeListNest, codePastItem, codePictureWords, codePullUndoCaret, codeTail, codeLead, codeForwardLead, codeMarkTail, codeTailBack, codeBlockTail, codeQuoteEnd, codeListEnd, codeNextItem, codeNestedItem, codeHeadingEnd, codeHeadingForward, codeDivForward, codeDivLine, codeDivHost, codeDivRest, codeDivNest, codeDivDeep, codeDivSide, codePriorItem, codeHostItem, codeBreakLead, codeDeepHost, codeListLead, codeBeside, codeInside, codeAfterHost, codeShellLead, codeEdgeLead, codePictureLead, codeTableLead, codeTableHost, codeListHost, codePictureHost, codeDividerHost, codeQuoteHost, codeDividerLead, codeDivLead, codeQuoteShell, codeQuoteLead, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, dropCaretMarker, caretMarkBeside, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, quoteLineEdge, quoteJoinTarget, quotePictureJoin, quoteTrailingLeave, quoteListTail, quoteAfterList, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, listReachBlock, pictureCodeList, pictureTableList, pictureStyle, pictureStyleHold, pictureStyleSeat, pictureLineItalic, pictureLinkField, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
+import { calendarDate, emptyEntryListMessage, entryFindCountLabel, entriesWithRestored, entryCardQuery, entryFindKeyAction, entryInMonth, entryInstant, entryLayerEscape, entryLinkUrl, entryFindMonths, entrySelectionAction, entryToOpenForFilter, entryToOpenWhenHidden, entryToShowAfterDelete, codeLineKey, codeLeaveRemoval, codePullKey, codeForwardJoin, codeAhead, codeListNest, codePastItem, codePictureWords, codePullUndoCaret, codeTail, codeLead, codeForwardLead, codeMarkTail, codeTailBack, codeBlockTail, codeQuoteEnd, codeListEnd, codeNextItem, codeNestedItem, codeHeadingEnd, codeHeadingForward, codeDivForward, codeDivLine, codeDivHost, codeDivRest, codeDivNest, codeDivDeep, codeDivSide, codeDivList, codePriorItem, codeHostItem, codeBreakLead, codeDeepHost, codeListLead, codeBeside, codeInside, codeAfterHost, codeShellLead, codeEdgeLead, codePictureLead, codeTableLead, codeTableHost, codeListHost, codePictureHost, codeDividerHost, codeQuoteHost, codeDividerLead, codeDivLead, codeQuoteShell, codeQuoteLead, dateHeadingKey, dateFormatReach, dateArrow, dateCaretLeave, dateLeaveTarget, dateLineTyping, freshDateLineMarkup, datePaste, dateSelectionKey, dateFieldAfterEdit, dateRetitleAction, entryUndoBody, leadingDateLabel, entryWritingText, dropCaretMarker, caretMarkBeside, formatEntryLong, formatDiaryDate, freshEntryHtml, blankUndoCaret, joinUndoCaret, boundarySpaceCut, codeGap, dividerCaret, hasEntryContent, headingEnterKey, headingSplitUndo, splitSpace, plainGaps, plainMarkSpaces, plainSpacesAfterMarks, styleEdgeCut, styleShortcut, styleUndoCaret, formatUndoCommand, replacedSelectionUndo, dragSelectionUndo, pasteSelectionUndo, selectionCutUndo, selectionDeleteUndo, selectionEnterUndo, selectionTypeUndo, styledLine, wordDeleteSpan, wordDeleteGap, cutRemoval, wordGapInsert, wordGapKey, wordGapSpace, stickyUndo, stickyTyped, typedRedo, styledLineUndoCaret, styledPunctuation, styledSpace, joinGap, joinNeedsSpace, lineJoinKey, quoteLineEdge, quoteJoinTarget, quotePictureJoin, quoteTrailingLeave, quoteListTail, quoteAfterList, breakJoinKey, breakUndoMark, listCommand, listUndoCaret, listEdgeKey, listIndentKey, listLeaveKey, nestedListJoinKey, nestedEnterKey, nestedListLeave, listHeading, listHeadingPicture, pictureListChange, pictureListReach, listReachBlock, pictureCodeList, pictureTableList, pictureStyle, pictureStyleHold, pictureStyleSeat, pictureLineItalic, pictureLinkField, listHeadingAcross, listBlock, listLineSpace, listBlockPlace, pictureBlockEnds, pictureItemSpan, listBlockNumbers, listLeavePlace, listEnterKey, orderedItemNumber, quoteEnterKey, quoteLeaveKey, quoteCoveredBlocks, quoteCoveredReach, quoteBreakBlock, quoteTouchedBlocks, quoteListPortion, quoteListPlan, breakHeadingAcross, writingHeadingAcross, quotedListLift, quoteListAgain, quotedListJoinValue, keptListNumber, listLineLeaves, quoteToggle, italicInQuote, linkUnderline, linkUnderlineShown, linkUnderlineKey, deletedStrike, deletedStrikeShown, deletedStrikeKey, typedQuoteUndoCaret, quoteItalicKey, styleStartType, linkEdgeType, sameEditingPage, savedRedo, undoButton, monthForSavedEntry, retitleEntryDate, showOpenEntry, wordCount } from "@/lib/diary/text";import { normalizeDescription, normalizeTitle } from "@/lib/diary/validation";
 
 type Diary = { _id: string; title: string; description: string; theme: string; pinned?: boolean; createdAt: string; updatedAt: string; };
 type Entry = { _id: string; diaryId: string; content: string; plainText?: string; createdAt: string; updatedAt: string; };
@@ -4239,30 +4239,7 @@ function writingAfterCode(pre: HTMLElement): HTMLElement | null {
         if (sibling.querySelector("img, figure") && !pictureWords(sibling)) return null;
         return sibling;
     }
-    if (sibling.tagName === "UL" || sibling.tagName === "OL") {
-        const item = [...sibling.children].find((child) => child instanceof HTMLElement && child.tagName === "LI");
-        if (!(item instanceof HTMLElement)) return null;
-        if (item.querySelector("img, figure") && !pictureWords(item)) return null;
-        const nested = itemCode(item);
-        if (nested) return nested;
-        if (item.querySelector("pre")) return null;
-        return item;
-    }
-    if (sibling.tagName === "BLOCKQUOTE") {
-        const first = sibling.firstElementChild;
-        if (first instanceof HTMLPreElement && codeAhead({ code: true, wordsBefore: false }) === "code") return first;
-        const line = firstQuoteLine(sibling);
-        if (!(line instanceof HTMLElement) || !/^(P|H1|H2|H3|LI)$/.test(line.tagName)) return null;
-        if (line.tagName === "LI") {
-            if (line.querySelector("img, figure") && !pictureWords(line)) return null;
-            const nested = itemCode(line);
-            if (nested) return nested;
-            if (line.querySelector("pre")) return null;
-        }
-        if (line.querySelector("table, pre, hr")) return null;
-        if (!plainCodeLine(line) && !pictureWords(line)) return null;
-        return line;
-    }
+    if (sibling.tagName === "UL" || sibling.tagName === "OL" || sibling.tagName === "BLOCKQUOTE") return hostedBlockLine(sibling);
     const plain = plainDivWriting(sibling);
     if (plain) return plain;
     if (sibling.tagName === "PRE") return sibling;
@@ -4288,12 +4265,48 @@ function hostedPlainBlock(block: HTMLElement): HTMLElement | null {
     return null;
 }
 
+function hostedBlockLine(host: HTMLElement): HTMLElement | null {
+    if (host.tagName === "UL" || host.tagName === "OL") {
+        const item = [...host.children].find((child) => child instanceof HTMLElement && child.tagName === "LI");
+        if (!(item instanceof HTMLElement)) return null;
+        if (item.querySelector("img, figure") && !pictureWords(item)) return null;
+        const nested = itemCode(item);
+        if (nested) return nested;
+        if (item.querySelector("pre")) return null;
+        return item;
+    }
+    if (host.tagName === "BLOCKQUOTE") {
+        const first = host.firstElementChild;
+        if (first instanceof HTMLPreElement && codeAhead({ code: true, wordsBefore: false }) === "code") return first;
+        const line = firstQuoteLine(host);
+        if (!(line instanceof HTMLElement) || !/^(P|H1|H2|H3|LI)$/.test(line.tagName)) return null;
+        if (line.tagName === "LI") {
+            if (line.querySelector("img, figure") && !pictureWords(line)) return null;
+            const nested = itemCode(line);
+            if (nested) return nested;
+            if (line.querySelector("pre")) return null;
+        }
+        if (line.querySelector("table, pre, hr")) return null;
+        if (!plainCodeLine(line) && !pictureWords(line)) return null;
+        return line;
+    }
+    return null;
+}
+
 function plainDivWriting(block: HTMLElement): HTMLElement | null {
     if (block.tagName !== "DIV" || block.getAttribute("contenteditable") === "true" || codeDivLine({ block: true }) !== "line") return null;
     const blocks = [...block.children].filter((child): child is HTMLElement => child instanceof HTMLElement && /^(P|H1|H2|H3|DIV|UL|OL|PRE|BLOCKQUOTE|TABLE|HR|FIGURE|LI)$/.test(child.tagName));
     if (blocks.length > 1) {
         const first = blocks[0];
-        if (first.tagName === "DIV" && first.getAttribute("contenteditable") !== "true" && codeDivSide({ side: true }) === "line") return plainDivWriting(first);
+        if (first.tagName === "DIV" && first.getAttribute("contenteditable") !== "true" && codeDivSide({ side: true }) === "line") {
+            const writing = plainDivWriting(first);
+            if (writing) return writing;
+            if (codeDivList({ list: true }) === "line") {
+                const hosted = hostedPlainBlock(first);
+                const line = hosted ? hostedBlockLine(hosted) : null;
+                if (line) return line;
+            }
+        }
         if (!/^(P|H1|H2|H3)$/.test(first.tagName) || codeDivRest({ rest: true }) !== "line") return null;
         if (first.querySelector("table, pre, ul, ol, hr, blockquote")) return null;
         if (first.querySelector("img, figure") && !pictureWords(first)) return null;
