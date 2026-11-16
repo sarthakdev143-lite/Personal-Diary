@@ -553,10 +553,15 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
             const signed = signedEnd(start + 1);
             let cursor = start + 1;
             let covered = false;
-            if (signed !== undefined && text[signed] === expectedClose) {
-                cursor = signed;
-                covered = true;
-            } else {
+            if (signed !== undefined) {
+                let afterSigned = signed;
+                while (held(afterSigned)) afterSigned += 1;
+                if (text[afterSigned] === expectedClose) {
+                    cursor = afterSigned;
+                    covered = true;
+                }
+            }
+            if (!covered) {
                 while (cursor < text.length && (word(cursor) || (apostrophe(cursor) && word(cursor + 1)))) cursor += 1;
                 const mark = trailingMark(cursor) ? plusSuffix(cursor) : undefined;
                 if (mark && mark.wordStart === start + 1) {
@@ -607,6 +612,19 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
                 let probe = start - 1;
                 while (probe >= 0 && !space(probe) && text[probe] !== opener) probe -= 1;
                 if (text[probe] === opener && !word(probe - 1) && (signedEnd(probe + 1) === start + 1 || wrappedWord(probe + 1, start))) {
+                    start = probe;
+                    if (end < cursor + 1) end = cursor + 1;
+                    while (held(end)) end += 1;
+                }
+            }
+        } else if (held(start)) {
+            let cursor = start;
+            while (held(cursor)) cursor += 1;
+            const opener = closing(cursor);
+            if (opener !== undefined && end > cursor && (end === cursor + 1 || marksOnly(cursor + 1, end))) {
+                let probe = start - 1;
+                while (probe >= 0 && !space(probe) && text[probe] !== opener) probe -= 1;
+                if (text[probe] === opener && !word(probe - 1) && signedEnd(probe + 1) === start) {
                     start = probe;
                     if (end < cursor + 1) end = cursor + 1;
                     while (held(end)) end += 1;
