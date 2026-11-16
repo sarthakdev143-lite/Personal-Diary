@@ -1830,6 +1830,12 @@ export function codeNextBlock(input: { block: boolean }): CodeNextBlock {
     return input.block ? "words" : "pass";
 }
 
+export type CodeBreakLine = "line" | "pass";
+
+export function codeBreakLine(input: { broken: boolean }): CodeBreakLine {
+    return input.broken ? "line" : "pass";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
