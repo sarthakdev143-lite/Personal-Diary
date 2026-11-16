@@ -472,8 +472,32 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
                 while (held(end)) end += 1;
             }
         }
+        const signedEnd = (from: number): number | undefined => {
+            if (!LEADING_WORD_MARKS.has(text[from] ?? "")) return undefined;
+            let cursor = from + 1;
+            if (text[cursor] === "." && digit(cursor + 1)) {
+                cursor += 1;
+                while (digit(cursor)) cursor += 1;
+                return cursor;
+            }
+            if (!word(cursor)) return undefined;
+            const number = digit(cursor);
+            while (word(cursor)) cursor += 1;
+            if (number) {
+                while (digit(cursor - 1) && text[cursor] === "," && digit(cursor + 1)) {
+                    cursor += 2;
+                    while (digit(cursor)) cursor += 1;
+                }
+                if (digit(cursor - 1) && text[cursor] === "." && digit(cursor + 1)) {
+                    cursor += 2;
+                    while (digit(cursor)) cursor += 1;
+                }
+            }
+            return cursor;
+        };
         const closer = text[end];
-        if (closer !== undefined && pairs.get(text[start - 1] ?? "") === closer && word(start)) {
+        const opensSigned = LEADING_WORD_MARKS.has(text[start] ?? "") && signedEnd(start) === end;
+        if (closer !== undefined && pairs.get(text[start - 1] ?? "") === closer && (word(start) || opensSigned)) {
             start -= 1;
             end += 1;
         }
@@ -512,9 +536,12 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
         };
         const expectedClose = opening(start);
         if (expectedClose !== undefined && !word(start - 1)) {
-            let cursor = start + 1;
-            while (cursor < text.length && (word(cursor) || (apostrophe(cursor) && word(cursor + 1)))) cursor += 1;
-            if (text[cursor] === expectedClose && wrappedWord(start + 1, cursor)) {
+            const signed = signedEnd(start + 1);
+            let cursor = signed !== undefined && text[signed] === expectedClose ? signed : start + 1;
+            if (cursor === start + 1) {
+                while (cursor < text.length && (word(cursor) || (apostrophe(cursor) && word(cursor + 1)))) cursor += 1;
+            }
+            if (text[cursor] === expectedClose && (cursor === signed || wrappedWord(start + 1, cursor))) {
                 const after = cursor + 1;
                 if (end <= after || marksOnly(after, end)) {
                     if (end < after) end = after;
@@ -529,6 +556,13 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
             if (text[cursor] === expectedOpen && wrappedWord(cursor + 1, start) && !word(cursor - 1)) {
                 start = cursor;
                 while (held(end)) end += 1;
+            } else {
+                let probe = start - 1;
+                while (probe >= 0 && !space(probe) && text[probe] !== expectedOpen) probe -= 1;
+                if (text[probe] === expectedOpen && !word(probe - 1) && signedEnd(probe + 1) === start) {
+                    start = probe;
+                    while (held(end)) end += 1;
+                }
             }
         }
     }
