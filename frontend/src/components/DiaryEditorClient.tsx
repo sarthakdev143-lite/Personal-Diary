@@ -13,7 +13,7 @@ import { entryShareMarkdown } from "@/lib/diary/export";
 import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
-import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, type EntryDraft } from "@/lib/diary/draft";
+import { clearEntryDraft, entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, storeEntryDraft, type EntryDraft } from "@/lib/diary/draft";
 import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureNameMove, pictureNameBack, pictureBehindLine, pictureListTail, pictureLineHost, pictureQuoteShell, pictureForwardDelete, pictureGapDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureUnderLine, pictureLineJoin, pictureJoinCaret, picturePieceJoin, pictureInlineBackspace, pictureBackspaceFollows, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, pictureCutText, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureListContinue, pictureItemCaret, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
 import { entryListStep } from "@/lib/diary/keys";
@@ -8704,9 +8704,14 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     }, [isDirty]);
 
     const wroteDraft = useRef(false);
+    const forgetDraft = useRef(false);
 
     useEffect(() => {
         if (isLoading) return;
+        if (!storeEntryDraft(forgetDraft.current, isDirty)) {
+            if (!isDirty) forgetDraft.current = false;
+            else return;
+        }
         if (keptDraft && !isDirty) return;
         const key = entryDraftKey(diaryId);
         try {
@@ -8803,6 +8808,13 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     };
 
     const confirmDiscard = () => {
+        forgetDraft.current = true;
+        wroteDraft.current = false;
+        try {
+            clearEntryDraft(window.sessionStorage, diaryId);
+        } catch {
+            // The page can still leave when storage is unavailable.
+        }
         const run = pendingDiscard;
         setPendingDiscard(null);
         run?.();

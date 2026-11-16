@@ -11,6 +11,14 @@ export function entryDraftKey(diaryId: string): string {
     return `personal-diary-draft:${diaryId}`;
 }
 
+export function clearEntryDraft(storage: { removeItem(key: string): void }, diaryId: string): void {
+    storage.removeItem(entryDraftKey(diaryId));
+}
+
+export function storeEntryDraft(discarding: boolean, dirty: boolean): boolean {
+    return dirty && !discarding;
+}
+
 export function entryDraftRecord(input: {
     diaryId: string;
     entryId: string | null;

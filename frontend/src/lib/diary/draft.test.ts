@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget } from "./draft";
+import { clearEntryDraft, entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, storeEntryDraft } from "./draft";
 
 describe("unsaved writing", () => {
     it("keeps unsaved writing for this diary and offers it until the saved entry matches", () => {
@@ -53,5 +53,28 @@ describe("unsaved writing", () => {
         assert.equal(readEntryDraft("not json"), null);
         assert.equal(readEntryDraft(null), null);
         assert.equal(offerEntryDraft(null, []), false);
+    });
+
+    it("forgets writing after a confirmed discard", () => {
+        const kept = new Map<string, string>();
+        const storage = {
+            getItem(key: string) { return kept.get(key) ?? null; },
+            setItem(key: string, value: string) { kept.set(key, value); },
+            removeItem(key: string) { kept.delete(key); },
+        };
+        const record = entryDraftRecord({
+            diaryId: "diary1",
+            entryId: null,
+            content: "<h2>Monday, November 16, 2026</h2><p>H</p>",
+            baseline: "<h2>Monday, November 16, 2026</h2><p><br></p>",
+            entryDate: "2026-11-16",
+            savedDate: "2026-11-16",
+        });
+        storage.setItem(entryDraftKey("diary1"), record ?? "");
+        clearEntryDraft(storage, "diary1");
+        assert.equal(readEntryDraft(storage.getItem(entryDraftKey("diary1"))), null);
+        assert.equal(storeEntryDraft(true, true), false);
+        assert.equal(storeEntryDraft(false, true), true);
+        assert.equal(storeEntryDraft(false, false), false);
     });
 });
