@@ -229,8 +229,13 @@ describe("blank entry", () => {
         assert.equal(dateSelectionKey({ ...selected, key: "Delete", writingSelected: false }), "leave");
         assert.equal(dateSelectionKey({ ...selected, key: "Backspace", collapsed: true }), "pass");
         assert.equal(dateSelectionKey({ ...selected, key: "Backspace", touchesDate: false }), "pass");
-        assert.equal(dateSelectionKey({ ...selected, key: "Backspace", ctrlKey: true }), "pass");
-        assert.equal(dateSelectionKey({ ...selected, key: "Backspace", metaKey: true }), "pass");
+        assert.equal(dateSelectionKey({ ...selected, key: "Backspace", ctrlKey: true }), "clear");
+        assert.equal(dateSelectionKey({ ...selected, key: "Delete", ctrlKey: true }), "clear");
+        assert.equal(dateSelectionKey({ ...selected, key: "Backspace", metaKey: true }), "clear");
+        assert.equal(dateSelectionKey({ ...selected, key: "Delete", metaKey: true }), "clear");
+        assert.equal(dateSelectionKey({ ...selected, key: "Backspace", ctrlKey: true, writingSelected: false }), "leave");
+        assert.equal(dateSelectionKey({ ...selected, key: "Backspace", altKey: true }), "pass");
+        assert.equal(dateSelectionKey({ ...selected, key: "Delete", altKey: true }), "pass");
         assert.equal(dateSelectionKey({ ...selected, key: "S" }), "type");
         assert.equal(dateSelectionKey({ ...selected, key: "S", writingSelected: false }), "type");
         assert.equal(dateSelectionKey({ ...selected, key: "Enter" }), "type");
