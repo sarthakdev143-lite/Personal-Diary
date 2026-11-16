@@ -1780,6 +1780,20 @@ export function codeShellTable(input: { table: boolean; words: boolean }): CodeS
     return input.words ? "words" : "stay";
 }
 
+export type CodeShellDivider = "words" | "stay" | "pass";
+
+export function codeShellDivider(input: { divider: boolean; words: boolean }): CodeShellDivider {
+    if (!input.divider) return "pass";
+    return input.words ? "words" : "stay";
+}
+
+export type CodeShellCode = "line" | "words" | "pass";
+
+export function codeShellCode(input: { code: boolean; words: boolean }): CodeShellCode {
+    if (!input.code) return "pass";
+    return input.words ? "words" : "line";
+}
+
 export type CodePriorItem = "pull" | "pass";
 
 export function codePriorItem(input: { item: boolean }): CodePriorItem {
