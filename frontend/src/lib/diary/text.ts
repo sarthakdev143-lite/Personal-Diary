@@ -1278,7 +1278,7 @@ export function nestedListJoinKey(input: {
     atNestedStart: boolean;
     atParentEnd: boolean;
 }): NestedListJoin {
-    if (input.shiftKey || input.altKey || input.ctrlKey || input.metaKey || !input.collapsed) return "pass";
+    if (input.shiftKey || input.altKey || !input.collapsed) return "pass";
     if (input.key === "Backspace" && input.atNestedStart) return "join";
     if (input.key === "Delete" && input.atParentEnd) return "join";
     return "pass";
