@@ -766,6 +766,12 @@ export function joinGap(previous: string, next: string): { trimPrevious: number;
     };
 }
 
+export type BlockBesideJoin = "line" | "pass";
+
+export function blockBesideJoin(input: { beside: "quote" | "list" | "none" }): BlockBesideJoin {
+    return input.beside === "none" ? "pass" : "line";
+}
+
 export type BreakJoinSpace = "tight" | "pass";
 
 export function breakJoinSpace(input: { afterBreak: boolean }): BreakJoinSpace {
