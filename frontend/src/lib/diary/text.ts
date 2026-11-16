@@ -473,7 +473,9 @@ export function wordDeleteSpan(text: string, start: number, end: number): { star
             if ((touchesPlus || entireWord || markAfter) && (end <= limit || tail === end)) {
                 start = paired ? suffix.wordStart - 1 : suffix.wordStart;
                 end = limit;
-                while (held(end)) end += 1;
+                const joined = afterJoiner(end);
+                if (joined !== undefined) end = joined;
+                else while (held(end)) end += 1;
             }
         }
         const signedEnd = (from: number): number | undefined => {
