@@ -1562,6 +1562,21 @@ describe("code block", () => {
         assert.deepEqual(wordDeleteSpan("See ((harbor bay)). rain", 16, 19), { start: 16, end: 19 });
     });
 
+    it("keeps an ellipsis before a space with that word", () => {
+        assert.deepEqual(wordDeleteSpan("See Harbor... rain", 4, 11), { start: 4, end: 14 });
+        assert.equal(wordDeleteGap("See Harbor... rain", 4, 11), "after");
+        assert.deepEqual(wordDeleteSpan("See Harbor... rain", 10, 12), { start: 4, end: 14 });
+        assert.deepEqual(wordDeleteSpan("See Harbor... rain", 10, 13), { start: 4, end: 14 });
+        assert.deepEqual(wordDeleteSpan("See Harbor... rain", 11, 13), { start: 4, end: 14 });
+        assert.deepEqual(wordDeleteSpan("See Harbor... rain", 12, 13), { start: 4, end: 14 });
+        assert.deepEqual(wordDeleteSpan("See Harbor.. rain", 4, 11), { start: 4, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See Harbor.. rain", 10, 12), { start: 4, end: 13 });
+        assert.deepEqual(wordDeleteSpan("See (Harbor)... rain", 12, 15), { start: 4, end: 16 });
+        assert.deepEqual(wordDeleteSpan("See ((Harbor))... rain", 14, 17), { start: 4, end: 18 });
+        assert.deepEqual(wordDeleteSpan("See ((Harbor))... rain", 15, 17), { start: 4, end: 18 });
+        assert.deepEqual(wordDeleteSpan("See wait...then rain", 8, 11), { start: 8, end: 15 });
+    });
+
     it("keeps a plus at the end of a word with that word", () => {
         assert.deepEqual(wordDeleteSpan("See (C++) rain", 4, 5), { start: 4, end: 10 });
         assert.equal(wordDeleteGap("See (C++) rain", 4, 5), "after");
