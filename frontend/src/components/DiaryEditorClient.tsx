@@ -12916,9 +12916,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     display:inline-flex;align-items:center;justify-content:center;
                 }
                 .de-details-actions .de-save-btn{padding:6px 14px;font-size:13px;letter-spacing:0.08em;}
-                .de-kbd-pair{display:inline-flex;align-items:center;gap:12px;}
+                .de-kbd-pair,.de-foot-pair{display:inline-flex;align-items:center;gap:12px;}
+                .de-foot-rule{width:1px;height:10px;background:#2a2520;flex-shrink:0;}
                 .de-mono-clip{overflow:hidden;min-width:0;flex:1 1 auto;padding:4px 0;margin:-4px 0;}
-                /* A shortcut follows a one-pixel rule and a 12px gap. Shift the row by that 13px so a rule that starts a wrapped line is clipped, while the counts keep the same left edge. */
+                /* A count follows a one-pixel rule and a 12px gap. The rule travels with those words. Shift the row by that 13px so a rule that starts a wrapped line is clipped, while the words keep the same left edge. */
                 .de-footer .de-mono{
                     display:flex;align-items:center;flex-wrap:wrap;gap:12px;
                     width:calc(100% + 13px);margin-left:-13px;
@@ -13582,27 +13583,31 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                     </label>
                                 )}
                                 <span>{countLabel(wc, "word")}</span>
-                                <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
-                                <span>{countLabel(entryWritingText(htmlContent).length, "char")}</span>
+                                <span className="de-foot-pair">
+                                    <span className="de-foot-rule" aria-hidden="true" />
+                                    <span>{countLabel(entryWritingText(htmlContent).length, "char")}</span>
+                                </span>
                                 {mode !== "view" && (
                                     <span className="de-kbd-pair">
-                                        <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
+                                        <span className="de-foot-rule" aria-hidden="true" />
                                         <span ref={saveHintRef} className="de-kbd-hint">ctrl+s to save</span>
                                     </span>
                                 )}
                                 {mode === "view" && (
                                     <>
-                                        <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
-                                        <span style={{ fontStyle: "italic" }}>read only</span>
+                                        <span className="de-foot-pair">
+                                            <span className="de-foot-rule" aria-hidden="true" />
+                                            <span style={{ fontStyle: "italic" }}>read only</span>
+                                        </span>
                                         {entries.length > 0 && (
                                             <span className="de-kbd-pair">
-                                                <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
+                                                <span className="de-foot-rule" aria-hidden="true" />
                                                 <span className="de-kbd-hint">/ to find</span>
                                             </span>
                                         )}
                                         {visibleEntries.length > 1 && (
                                             <span className="de-kbd-pair">
-                                                <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
+                                                <span className="de-foot-rule" aria-hidden="true" />
                                                 <span className="de-kbd-hint">↑↓ entries</span>
                                             </span>
                                         )}
