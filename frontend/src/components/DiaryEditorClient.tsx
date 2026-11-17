@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { toastClearance } from "@/lib/diary/toast-page";
 import { Toaster } from "@/components/ui/toaster";
 import { ToastAction } from "@/components/ui/toast";
 import { MatchedText } from "@/components/MatchedText";
@@ -7665,6 +7666,8 @@ function pastePictureNameLines(caption: HTMLElement, text: string) {
     });
 }
 
+const diaryToastPlace = "top-auto flex-col bottom-[var(--diary-footer,_96px)] sm:bottom-[var(--diary-footer,_96px)]";
+
 const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
     const router = useRouter();
     const { toast } = useToast();
@@ -12483,11 +12486,28 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         mark?.scrollIntoView({ block: "nearest" });
     }, [isLoading, entryOnScreen, mode, htmlContent, entryQuery, matchAt]);
 
+    useLayoutEffect(() => {
+        const root = document.documentElement;
+        const apply = () => {
+            const tops = [...document.querySelectorAll(".de-footer, .de-discard")].map((node) => node.getBoundingClientRect().top);
+            root.style.setProperty("--diary-footer", `${toastClearance(window.innerHeight, tops)}px`);
+        };
+        apply();
+        const observer = new ResizeObserver(apply);
+        document.querySelectorAll(".de-footer, .de-discard").forEach((node) => observer.observe(node));
+        window.addEventListener("resize", apply);
+        return () => {
+            observer.disconnect();
+            window.removeEventListener("resize", apply);
+            root.style.removeProperty("--diary-footer");
+        };
+    }, [isLoading, error, entryOnScreen, mode, confirmDelete, pendingDiscard, keptDraft]);
+
     if (isLoading) return (
         <div style={{ position: "fixed", inset: 0, zIndex: 10, background: "#0d0b09", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid #4a4030", borderTopColor: "#c4a882", animation: "spin 1s linear infinite" }} />
             <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-            <Toaster viewportClassName="bottom-24 top-auto flex-col sm:bottom-16" />
+            <Toaster viewportClassName={diaryToastPlace} />
         </div>
     );
 
@@ -12504,7 +12524,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 >
                     Back to your diaries
                 </Link>
-                <Toaster viewportClassName="bottom-24 top-auto flex-col sm:bottom-16" />
+                <Toaster viewportClassName={diaryToastPlace} />
             </div>
         );
     }
@@ -13660,7 +13680,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 onChange={handleImageUpload}
             />
 
-            <Toaster viewportClassName="bottom-24 top-auto flex-col sm:bottom-16" />
+            <Toaster viewportClassName={diaryToastPlace} />
         </>
     );
 };
