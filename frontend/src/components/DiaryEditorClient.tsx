@@ -13261,7 +13261,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
                     {/* LEFT */}
                     <aside className="de-left">
-                        <div className="de-mono" style={{ padding: "16px 16px 10px", fontSize: 9, letterSpacing: "0.35em", textTransform: "uppercase", color: "#a79f93" }}>
+                        <div className="de-mono" style={{ padding: "16px 16px 10px", fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase", color: "#a79f93" }}>
                             Past Entries
                         </div>
                         {entries.length > 0 && (
