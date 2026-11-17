@@ -85,7 +85,7 @@ const Navbar = () => {
         <header className="fixed z-30 w-full mt-8">
             <nav className="flex justify-between mx-auto w-[95%] xs:w-11/12 relative items-center" ref={dropdownRef}>
                 {pathName !== "/" && (
-                    <Button asChild size="icon" className="mr-4 h-12 w-12 rounded-full border border-white/40 bg-zinc-700 text-zinc-50 shadow-md hover:bg-zinc-600">
+                    <Button asChild size="icon" className="mr-4 h-12 w-12 rounded-full border border-white/40 bg-zinc-700 text-zinc-50 shadow-md hover:bg-zinc-600 max-[374px]:mr-2 max-[374px]:h-10 max-[374px]:w-10">
                         <Link href="/" aria-label="Back to home">
                             <ArrowLeft aria-hidden="true" className="h-5 w-5" />
                         </Link>
@@ -101,7 +101,7 @@ const Navbar = () => {
                         variant="ghost"
                         aria-expanded={menuOpen}
                         aria-label={menu.settings ? "Diary settings" : "Account"}
-                        className="border border-zinc-700 bg-zinc-900 py-5 text-white transition-colors duration-500 ease-in-out hover:bg-zinc-800 hover:text-white"
+                        className="border border-zinc-700 bg-zinc-900 py-5 text-white transition-colors duration-500 ease-in-out hover:bg-zinc-800 hover:text-white max-[374px]:px-2.5"
                     >
                         {menuOpen ? <X size={16}/> : <Menu size={16}/>}
                     </Button>
