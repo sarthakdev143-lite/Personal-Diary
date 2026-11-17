@@ -13391,16 +13391,16 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                         className={`de-entry-card de-fade${active ? " active" : ""}`}
                                         style={{ animationDelay: `${i * 25}ms` }}
                                     >
-                                        <div className="de-mono" style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6, gap: 4 }}>
-                                            <span style={{ fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: active ? "#d5c3a6" : "#9b9286" }}>
+                                        <div className="de-mono" style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6, gap: 8 }}>
+                                            <span style={{ fontSize: 13, letterSpacing: "0.06em", textTransform: "uppercase", color: active ? "#d5c3a6" : "#a79f93", whiteSpace: "nowrap" }}>
                                                 {fmtShort(entry.createdAt)}
                                             </span>
-                                            <span style={{ fontSize: 9, color: "#9b9286", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+                                            <span style={{ fontSize: 13, color: "#a79f93", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2, whiteSpace: "nowrap" }}>
                                                 {clock.time ? <span><MatchedText text={clock.time} query={entryQuery} /></span> : null}
                                                 {clock.edited ? <span><MatchedText text="edited" query={entryQuery} /></span> : null}
                                             </span>
                                         </div>
-                                        <p style={{ fontFamily: "'Lora',Georgia,serif", fontStyle: "italic", fontSize: 12, lineHeight: 1.65, color: active ? "#e0d6c8" : "#bfb6aa", margin: 0, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>
+                                        <p style={{ fontFamily: "'Lora',Georgia,serif", fontStyle: "italic", fontSize: 16, lineHeight: 1.55, color: active ? "#e0d6c8" : "#bfb6aa", margin: 0, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>
                                             {preview ? <MatchedText text={preview} query={entryQuery} /> : "—"}
                                         </p>
                                     </button>
