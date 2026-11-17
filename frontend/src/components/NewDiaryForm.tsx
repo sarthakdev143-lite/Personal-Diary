@@ -148,56 +148,58 @@ const NewDiaryForm = ({
                 id="form-parent"
                 inert={!formActive || isFullScreen}
                 aria-hidden={!formActive || isFullScreen}
-                className={`fixed bottom-0 left-1/2 z-50 w-full max-w-[95%] -translate-x-1/2 rounded-3xl border border-white/10 bg-zinc-950 p-3 text-zinc-100 shadow-2xl transition-[transform,opacity] duration-500 ease-out xs:max-w-[29rem] ${formActive ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none translate-y-full scale-75 opacity-0"}`}
+                className={`fixed bottom-4 left-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-full max-w-[95%] -translate-x-1/2 flex-col overflow-hidden rounded-3xl border border-white/10 bg-zinc-950 p-3 text-zinc-100 shadow-2xl transition-[transform,opacity] duration-500 ease-out xs:max-w-[29rem] ${formActive ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none translate-y-[calc(100%+1rem)] scale-75 opacity-0"}`}
             >
                 <button
                     type="button"
                     aria-label="Close new diary"
                     onClick={() => setFormActive(false)}
-                    className="absolute top-6 right-6 text-2xl text-zinc-300"
+                    className="absolute top-6 right-6 z-10 text-2xl text-zinc-300"
                 >
                     <RiCloseCircleFill size={23} />
                 </button>
-                <div id="content" className="w-full max-h-[80vh] overflow-y-auto p-4">
-                    <h2 className="text-2xl font-bold mb-6">New Diary</h2>
-                    <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-                        <div>
-                            <label htmlFor="diary-title" className="block text-lg mb-2">Title</label>
-                            <input
-                                id="diary-title"
-                                type="text"
-                                name="title"
-                                value={formData.title}
-                                onChange={handleChange}
-                                maxLength={TITLE_MAX}
-                                aria-invalid={titleNote?.tone === "error"}
-                                aria-describedby={titleNote ? "diary-title-note" : undefined}
-                                className="w-full rounded-lg border border-white/15 bg-zinc-900 p-2 px-3 tracking-wide text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/70"
-                                placeholder="Enter your diary's name..."
-                            />
-                            {titleNote && (
-                                <p id="diary-title-note" className={`mt-1 text-sm ${titleNote.tone === "error" ? "text-red-300" : "text-zinc-400"}`}>
-                                    {titleNote.text}
-                                </p>
-                            )}
-                        </div>
-                        <div>
-                            <label htmlFor="diary-description" className="block text-lg mb-2">Description</label>
-                            <textarea
-                                id="diary-description"
-                                name="description"
-                                value={formData.description}
-                                onChange={handleChange}
-                                maxLength={DESCRIPTION_MAX}
-                                className="max-h-40 min-h-16 w-full rounded-lg border border-white/15 bg-zinc-900 p-2 px-3 tracking-wide text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/70"
-                                placeholder="What is this diary for?"
-                                rows={4}
-                            />
+                <div id="content" className="flex min-h-0 w-full flex-col p-4">
+                    <h2 className="mb-6 shrink-0 text-2xl font-bold">New Diary</h2>
+                    <form className="flex min-h-0 flex-col gap-4" onSubmit={handleSubmit}>
+                        <div className="flex min-h-0 flex-col gap-4 overflow-y-auto">
+                            <div>
+                                <label htmlFor="diary-title" className="block text-lg mb-2">Title</label>
+                                <input
+                                    id="diary-title"
+                                    type="text"
+                                    name="title"
+                                    value={formData.title}
+                                    onChange={handleChange}
+                                    maxLength={TITLE_MAX}
+                                    aria-invalid={titleNote?.tone === "error"}
+                                    aria-describedby={titleNote ? "diary-title-note" : undefined}
+                                    className="w-full rounded-lg border border-white/15 bg-zinc-900 p-2 px-3 tracking-wide text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/70"
+                                    placeholder="Enter your diary's name..."
+                                />
+                                {titleNote && (
+                                    <p id="diary-title-note" className={`mt-1 text-sm ${titleNote.tone === "error" ? "text-red-300" : "text-zinc-400"}`}>
+                                        {titleNote.text}
+                                    </p>
+                                )}
+                            </div>
+                            <div>
+                                <label htmlFor="diary-description" className="block text-lg mb-2">Description</label>
+                                <textarea
+                                    id="diary-description"
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleChange}
+                                    maxLength={DESCRIPTION_MAX}
+                                    className="max-h-40 min-h-16 w-full rounded-lg border border-white/15 bg-zinc-900 p-2 px-3 tracking-wide text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/70"
+                                    placeholder="What is this diary for?"
+                                    rows={4}
+                                />
+                            </div>
                         </div>
                         <Button
                             type="submit"
                             disabled={trimmedTitle.length < 3}
-                            className="mx-auto mt-4 w-fit border border-zinc-200 bg-zinc-100 px-11 py-5 text-base tracking-wider text-zinc-950 hover:bg-white disabled:cursor-not-allowed disabled:border-zinc-700 disabled:bg-zinc-800 disabled:text-zinc-400 disabled:opacity-100"
+                            className="mx-auto mt-4 w-fit shrink-0 border border-zinc-200 bg-zinc-100 px-11 py-5 text-base tracking-wider text-zinc-950 hover:bg-white disabled:cursor-not-allowed disabled:border-zinc-700 disabled:bg-zinc-800 disabled:text-zinc-400 disabled:opacity-100"
                         >
                             Next
                         </Button>
