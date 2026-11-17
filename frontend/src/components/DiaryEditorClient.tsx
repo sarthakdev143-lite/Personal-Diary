@@ -115,9 +115,9 @@ const TOOLBAR: ToolButton[][] = [
         { icon: "—", title: "Divider", html: "<hr/><p><br></p>", kind: "divider" },
     ],
     [
-        { icon: "🖼", title: "Insert image", kind: "image" },
+        { icon: "Pic", title: "Insert image", kind: "image" },
         { icon: "</>", title: "Code block", kind: "code" },
-        { icon: "🔗", title: "Insert link", kind: "link", format: "link" },
+        { icon: "Link", title: "Insert link", kind: "link", format: "link" },
     ],
     [
         { icon: "↩", title: "Undo", command: "undo" },
