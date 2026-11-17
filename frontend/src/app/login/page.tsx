@@ -94,11 +94,8 @@ export default function LoginPage() {
                         Continue with GitHub
                     </Button>
                 </div>
-                <p className="mx-auto mt-6 max-w-sm text-sm text-zinc-400">
-                    Google and GitHub are the ways to sign in.
-                </p>
-                <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-400">
-                    Entries are saved to your account.
+                <p className="mx-auto mt-6 max-w-sm text-balance text-sm text-zinc-400">
+                    Entries stay with the account you sign in with.
                 </p>
             </div>
         </div>
