@@ -199,7 +199,7 @@ const NewDiaryForm = ({
                         <Button
                             type="submit"
                             disabled={trimmedTitle.length < 3}
-                            className="mx-auto mt-4 w-fit shrink-0 border border-zinc-200 bg-zinc-100 px-11 py-5 text-base tracking-wider text-zinc-950 hover:bg-white disabled:cursor-not-allowed disabled:border-zinc-700 disabled:bg-zinc-800 disabled:text-zinc-400 disabled:opacity-100"
+                            className="mx-auto mt-4 w-fit shrink-0 rounded-full border border-zinc-200 bg-zinc-100 px-11 py-5 text-base tracking-wider text-zinc-950 hover:bg-white disabled:cursor-not-allowed disabled:border-zinc-700 disabled:bg-zinc-800 disabled:text-zinc-400 disabled:opacity-100"
                         >
                             Next
                         </Button>
@@ -282,7 +282,7 @@ const NewDiaryForm = ({
                     <Button
                         onClick={handleFinishForm}
                         disabled={isSubmitting}
-                        className="shrink-0 border border-zinc-200 bg-zinc-100 px-11 py-5 text-base tracking-wider text-zinc-950 hover:bg-white disabled:cursor-not-allowed disabled:border-zinc-700 disabled:bg-zinc-800 disabled:text-zinc-400 disabled:opacity-100"
+                        className="shrink-0 rounded-full border border-zinc-200 bg-zinc-100 px-11 py-5 text-base tracking-wider text-zinc-950 hover:bg-white disabled:cursor-not-allowed disabled:border-zinc-700 disabled:bg-zinc-800 disabled:text-zinc-400 disabled:opacity-100"
                     >
                         {isSubmitting ? "Creating..." : "Create Diary"}
                     </Button>
