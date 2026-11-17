@@ -13050,14 +13050,14 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 {diary?.title || "Untitled"}
                             </h1>
                             {diary?.description && (
-                                <p className="de-mono" style={{ fontSize: 13, color: "#8f8679", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: 0 }}>
+                                <p className="de-mono" style={{ fontSize: 13, color: "#a79f93", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: 0 }}>
                                     {diary.description}
                                 </p>
                             )}
                         </div>
                     </div>
                     <div className="de-header-actions">
-                        <span className="de-entry-count de-mono" style={{ fontSize: 13, color: "#8f8679", letterSpacing: "0.06em" }}>
+                        <span className="de-entry-count de-mono" style={{ fontSize: 13, color: "#a79f93", letterSpacing: "0.06em" }}>
                             {entries.length} {entries.length === 1 ? "entry" : "entries"}
                         </span>
                         <div className="de-header-buttons">
@@ -13524,7 +13524,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         <div className="de-footer">
                             {entryOnScreen && (
                             <>
-                            <div className="de-mono" style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 13, color: "#8f8679", letterSpacing: "0.04em", flexWrap: "wrap" }}>
+                            <div className="de-mono" style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 13, color: "#a79f93", letterSpacing: "0.04em", flexWrap: "wrap" }}>
                                 {mode !== "view" && (
                                     <label className="de-date">
                                         Date
@@ -13550,7 +13550,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 {mode === "view" && (
                                     <>
                                         <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
-                                        <span style={{ color: "#9b8b78", fontStyle: "italic" }}>read only</span>
+                                        <span style={{ fontStyle: "italic" }}>read only</span>
                                         {entries.length > 0 && (
                                             <span className="de-kbd-pair">
                                                 <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
