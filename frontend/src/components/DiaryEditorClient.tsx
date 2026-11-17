@@ -13057,7 +13057,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         </div>
                     </div>
                     <div className="de-header-actions">
-                        <span className="de-entry-count de-mono" style={{ fontSize: 10, color: "#8f8679", letterSpacing: "0.15em" }}>
+                        <span className="de-entry-count de-mono" style={{ fontSize: 13, color: "#8f8679", letterSpacing: "0.06em" }}>
                             {entries.length} {entries.length === 1 ? "entry" : "entries"}
                         </span>
                         <div className="de-header-buttons">
