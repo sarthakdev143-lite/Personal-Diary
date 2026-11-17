@@ -12500,7 +12500,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 <p className="mt-3 max-w-sm text-base text-zinc-400">{missing.detail}</p>
                 <Link
                     href={backHref}
-                    className="mt-8 rounded-full bg-zinc-100 px-5 py-2.5 text-sm font-medium text-zinc-950 hover:bg-white"
+                    className="mt-8 inline-flex min-h-11 items-center rounded-full bg-zinc-100 px-5 text-sm font-medium text-zinc-950 hover:bg-white focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70"
                 >
                     Back to your diaries
                 </Link>
