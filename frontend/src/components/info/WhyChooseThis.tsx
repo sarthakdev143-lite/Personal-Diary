@@ -12,7 +12,7 @@ const features = [
     { icon: PaintBucket, title: "Cover themes", description: "Pick a cover when you create a diary, and change it later." },
     { icon: Search, title: "Search", description: "Find a diary from its title, description, or the words in an entry. Narrow one diary to a month." },
     { icon: Clock, title: "Your history", description: "Past entries stay in the diary. Download a JSON backup and import it back into your account." },
-    { icon: Code2, title: "Open source", description: "The project is public. You can read how it works and run it yourself.", href: openSourceHref() },
+    { icon: Code2, title: "Open source", description: "The project is public. You can read the source and run it yourself.", href: openSourceHref() },
 ];
 
 interface FeatureCardProps {
@@ -22,7 +22,7 @@ interface FeatureCardProps {
     href?: string;
 }
 
-const sourcePhrase = "read how it works";
+const sourcePhrase = "the source";
 
 const FeatureCard = ({ icon: Icon, title, description, href }: FeatureCardProps) => {
     const phraseAt = href ? description.indexOf(sourcePhrase) : -1;
@@ -36,7 +36,7 @@ const FeatureCard = ({ icon: Icon, title, description, href }: FeatureCardProps)
                 {href && phraseAt >= 0 ? (
                     <>
                         {description.slice(0, phraseAt)}
-                        <a href={href} className="text-white underline decoration-white/80 underline-offset-4 hover:decoration-white focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70" target="_blank" rel="noreferrer">{sourcePhrase}</a>
+                        <a href={href} className="inline-block py-3.5 -my-3.5 text-white underline decoration-white/80 underline-offset-4 hover:decoration-white focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70" target="_blank" rel="noreferrer">{sourcePhrase}</a>
                         {description.slice(phraseAt + sourcePhrase.length)}
                     </>
                 ) : description}
