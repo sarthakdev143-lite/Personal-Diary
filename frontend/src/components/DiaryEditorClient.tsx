@@ -12910,7 +12910,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 .de-date input{
                     font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.04em;
                     text-transform:none;color:#ede5d8;background:#0d0b09;
-                    border:1px solid #2a2520;border-radius:3px;padding:4px 6px;color-scheme:dark;
+                    border:1px solid #2a2520;border-radius:3px;padding:0 8px;color-scheme:dark;
+                    box-sizing:border-box;height:44px;
                 }
                 .de-date input:focus{outline:none;border-color:#6a5a48;}
                 .de-viewing-badge{
