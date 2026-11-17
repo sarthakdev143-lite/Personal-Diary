@@ -13329,7 +13329,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                         {entries.length > 0 && (
                                             <>
                                                 <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
-                                                <span className="de-kbd-hint">/ find</span>
+                                                <span className="de-kbd-hint">/ to find</span>
                                             </>
                                         )}
                                         {visibleEntries.length > 1 && (
