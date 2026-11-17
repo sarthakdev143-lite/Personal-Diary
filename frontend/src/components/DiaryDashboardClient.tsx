@@ -235,7 +235,7 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
                         <p id="diary-find-count" className="mt-2 text-sm tracking-wide text-zinc-400" role="status">{findCountLabel}</p>
                     )}
                 </div>
-                <div id="diaries" className="mx-auto flex h-auto w-full max-w-[85%] flex-wrap gap-5 max-sm:justify-center">
+                <div id="diaries" className="mx-auto flex h-auto w-full flex-wrap gap-5 max-sm:justify-center xs:max-w-[85%]">
                     <Diaries query={debouncedQuery} typedQuery={query} refetchTrigger={refetchTrigger} paused={newDiaryFormActive || isFullScreen} onMatchCount={setMatchCount} />
                     <Button
                         onClick={() => setNewDiaryFormActive(true)}

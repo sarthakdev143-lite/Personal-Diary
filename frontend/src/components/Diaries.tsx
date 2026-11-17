@@ -318,7 +318,7 @@ const Diaries = ({ query = "", typedQuery = query, refetchTrigger = 0, paused = 
                                 </p>
                                 ) : null}
                             </div>
-                            <p className="text-xs tracking-wide text-zinc-400">
+                            <p className="truncate text-xs tracking-wide text-zinc-400">
                                 {diaryCardWhen({
                                     query,
                                     matchEntry: diary.matchEntry,
