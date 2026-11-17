@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import { useDiary } from "@/context/DiaryContext";
 import { useDiaryScene } from "@/context/useDiaryScene";
 import { disposeThreeObject, useSetupScene } from "@/hooks/diary3d/useSetupScene";
+import { webgl2Available } from "@/lib/diary/webgl";
 
 interface Diary3DProps {
     selectedTexture: string | null;
@@ -48,6 +49,11 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
         const mountElement = mountRef.current;
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        if (!webgl2Available()) {
+            setBookShown(false);
+            setBookReady(false);
+            return;
+        }
         let renderer: THREE.WebGLRenderer;
         try {
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });

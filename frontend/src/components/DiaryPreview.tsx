@@ -4,6 +4,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 import { disposeThreeObject, useSetupScene } from "@/hooks/diary3d/useSetupScene";
 import { coverPreviewImage } from "@/lib/diary/constants";
+import { webgl2Available } from "@/lib/diary/webgl";
 
 interface DiaryPreviewProps {
     selectedTexture: string;
@@ -41,6 +42,13 @@ const DiaryPreview: React.FC<DiaryPreviewProps> = ({ selectedTexture }) => {
         camera.lookAt(0, 0, 0);
         cameraRef.current = camera;
 
+        if (!webgl2Available()) {
+            webglFailedRef.current = true;
+            mountElement.style.backgroundImage = coverPreviewImage(textureRef.current);
+            mountElement.style.backgroundSize = "cover";
+            mountElement.style.backgroundPosition = "center";
+            return;
+        }
         let renderer: THREE.WebGLRenderer;
         try {
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
