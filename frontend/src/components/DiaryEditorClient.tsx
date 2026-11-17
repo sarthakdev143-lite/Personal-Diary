@@ -13002,12 +13002,15 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     box-sizing:border-box;height:44px;
                 }
                 .de-viewing-badge{
+                    align-self:flex-end;flex-shrink:0;
+                    margin:12px 20px 0;max-width:calc(100% - 40px);
                     font-family:'JetBrains Mono',monospace;
-                    font-size:9px;letter-spacing:0.22em;text-transform:uppercase;
+                    font-size:13px;letter-spacing:0.08em;text-transform:uppercase;
                     color:#c4a882;border:1px solid #4a3a28;
-                    padding:3px 10px;border-radius:2px;background:#0d0b09;
-                    position:absolute;top:14px;right:20px;z-index:5;pointer-events:none;
+                    padding:6px 12px;border-radius:2px;background:#0d0b09;
+                    pointer-events:none;
                 }
+                .de-right:has(.de-viewing-badge) #de-editor{padding-top:28px;}
 
                 .de-fade{animation:defade 0.25s ease forwards;opacity:0;}
                 @keyframes defade{to{opacity:1;transform:translateY(0);}from{opacity:0;transform:translateY(3px);}}
