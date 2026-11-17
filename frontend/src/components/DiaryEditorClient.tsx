@@ -12514,12 +12514,21 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 /* Toolbar */
                 .de-toolbar{
                     flex-shrink:0;
-                    display:flex;align-items:center;gap:2px;flex-wrap:wrap;
                     padding:6px 16px;
                     background:#111009;
                     border-bottom:1px solid #1e1c18;
                 }
-                .de-toolbar-sep{width:1px;height:18px;background:#2a2520;margin:0 4px;flex-shrink:0;}
+                .de-toolbar-clip{overflow:hidden;}
+                /* Each group starts with a divider. The row is shifted left so a divider that begins a line is clipped, and the icons on every line share one left edge. */
+                .de-toolbar-row{
+                    display:flex;align-items:center;flex-wrap:wrap;
+                    width:calc(100% + 9px);margin-left:-9px;row-gap:2px;
+                }
+                .de-toolbar-group{display:flex;align-items:center;gap:1px;}
+                .de-toolbar-group::before{
+                    content:"";width:1px;height:18px;margin:0 4px;flex-shrink:0;
+                    background:#2a2520;
+                }
                 .de-link{
                     flex-shrink:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
                     padding:8px 16px;background:#14110e;border-bottom:1px solid #1e1c18;
@@ -13029,9 +13038,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 {/* TOOLBAR — hidden while reading a saved entry */}
                 {mode !== "view" && (
                     <div className="de-toolbar">
+                        <div className="de-toolbar-clip">
+                        <div className="de-toolbar-row">
                         {TOOLBAR.map((group, gi) => (
-                            <div key={gi} style={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                {gi > 0 && <div className="de-toolbar-sep" />}
+                            <div key={gi} className="de-toolbar-group">
                                 {group.map((btn) => {
                                     const active = btn.format ? activeFormats.has(btn.format) : false;
                                     return (
@@ -13051,6 +13061,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 })}
                             </div>
                         ))}
+                        </div>
+                        </div>
                     </div>
                 )}
 
