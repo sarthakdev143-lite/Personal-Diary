@@ -12816,6 +12816,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     padding:8px 28px;background:#1a1210;border-top:1px solid #3a2a24;
                     font-family:'Lora',Georgia,serif;font-size:14px;color:#e7b2a4;
                 }
+                .de-discard-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+                .de-discard .de-ghost-btn,
+                .de-discard .de-danger-btn{
+                    box-sizing:border-box;min-height:44px;
+                    display:inline-flex;align-items:center;justify-content:center;
+                }
 
                 /* Buttons */
                 .de-save-btn{
@@ -13483,23 +13489,27 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         {keptDraft && !pendingDiscard && (
                             <div className="de-discard" role="group" aria-labelledby="kept-draft">
                                 <p id="kept-draft" style={{ margin: 0 }}>Unsaved writing was kept.</p>
-                                <button type="button" className="de-ghost-btn" onClick={restoreKeptDraft}>restore</button>
-                                <button type="button" className="de-danger-btn" onClick={discardKeptDraft}>discard</button>
+                                <div className="de-discard-actions">
+                                    <button type="button" className="de-ghost-btn" onClick={restoreKeptDraft}>restore</button>
+                                    <button type="button" className="de-danger-btn" onClick={discardKeptDraft}>discard</button>
+                                </div>
                             </div>
                         )}
 
                         {pendingDiscard && (
                             <div className="de-discard" role="group" aria-labelledby="discard-prompt">
                                 <p id="discard-prompt" style={{ margin: 0 }}>Discard unsaved changes?</p>
-                                <button
-                                    ref={discardButtonRef}
-                                    type="button"
-                                    className="de-danger-btn"
-                                    onClick={confirmDiscard}
-                                >
-                                    discard
-                                </button>
-                                <button type="button" className="de-ghost-btn" onClick={() => setPendingDiscard(null)}>keep editing</button>
+                                <div className="de-discard-actions">
+                                    <button
+                                        ref={discardButtonRef}
+                                        type="button"
+                                        className="de-danger-btn"
+                                        onClick={confirmDiscard}
+                                    >
+                                        discard
+                                    </button>
+                                    <button type="button" className="de-ghost-btn" onClick={() => setPendingDiscard(null)}>keep editing</button>
+                                </div>
                             </div>
                         )}
 
