@@ -64,7 +64,7 @@ export default function LoginPage() {
             <div className="w-full max-w-sm">
                 <h1 className="text-4xl font-bold italic text-white">Sign in</h1>
                 <p className="mx-auto mt-2 max-w-sm text-balance text-lg text-zinc-300">
-                    Sign in with Google or GitHub to open your diaries.
+                    Open your diaries with Google or GitHub.
                 </p>
                 <div className="mt-6 flex flex-col gap-3">
                     <Button
