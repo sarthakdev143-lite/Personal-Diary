@@ -12149,6 +12149,19 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         setHtmlContent(editor.innerHTML);
     };
 
+    const revealTool = (button: HTMLButtonElement) => {
+        const clip = button.closest(".de-toolbar-clip");
+        if (!(clip instanceof HTMLElement) || clip.scrollWidth <= clip.clientWidth) return;
+        const fade = 28;
+        const buttonBox = button.getBoundingClientRect();
+        const clipBox = clip.getBoundingClientRect();
+        if (buttonBox.right > clipBox.right - fade) {
+            clip.scrollLeft += buttonBox.right - (clipBox.right - fade);
+        } else if (buttonBox.left < clipBox.left) {
+            clip.scrollLeft -= clipBox.left - buttonBox.left;
+        }
+    };
+
     const runTool = (tool: ToolButton) => {
         const editorForTool = editorRef.current;
         const toolSelection = window.getSelection();
@@ -12890,7 +12903,19 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     .de-root-details .de-body{flex:1 0 auto;}
                     .de-root-details .de-left{max-height:220px;}
                     .de-root-details .de-right{min-height:420px;}
+                    .de-root-writing:not(.de-root-details) #de-editor{padding-bottom:16px;}
                     .de-kbd-hint,.de-kbd-pair{display:none;}
+                }
+                @media (max-width:720px) and (max-height:720px){
+                    .de-root-writing .de-toolbar{padding-top:4px;padding-bottom:4px;}
+                    .de-root-writing .de-toolbar-clip{
+                        overflow-x:auto;overflow-y:hidden;scrollbar-width:none;
+                        -webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 28px),transparent);
+                        mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 28px),transparent);
+                    }
+                    .de-root-writing .de-toolbar-clip::-webkit-scrollbar{display:none;}
+                    .de-root-writing .de-toolbar-row{flex-wrap:nowrap;width:max-content;margin-left:0;padding-right:28px;}
+                    .de-root-writing .de-toolbar-group:first-child::before{display:none;}
                 }
                 @media (max-width:319px){
                     .de-header{padding-left:10px;padding-right:10px;}
@@ -12970,7 +12995,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 @keyframes defade{to{opacity:1;transform:translateY(0);}from{opacity:0;transform:translateY(3px);}}
             `}</style>
 
-            <div className={`de-root${detailsOpen ? " de-root-details" : ""}`} onKeyDown={handleKeyDown}>
+            <div className={`de-root${detailsOpen ? " de-root-details" : ""}${mode !== "view" ? " de-root-writing" : ""}`} onKeyDown={handleKeyDown}>
 
                 {/* HEADER */}
                 <header className="de-header">
@@ -13129,6 +13154,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                         aria-label={btn.title}
                                         {...(btn.format ? { "aria-pressed": active } : {})}
                                         className={`de-tbtn${active ? " on" : ""}`}
+                                        onFocus={event => revealTool(event.currentTarget)}
                                         onMouseDown={e => e.preventDefault()}
                                     >
                                         {btn.icon}
