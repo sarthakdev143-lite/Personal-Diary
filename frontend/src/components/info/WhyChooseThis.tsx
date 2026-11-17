@@ -32,7 +32,7 @@ const FeatureCard = ({ icon: Icon, title, description, href }: FeatureCardProps)
                 <Icon width={35} height={35} className="text-white/90" />
             </div>
             <h3 className="font-semibold text-lg">{title}</h3>
-            <p className="text-[0.9rem] tracking-wider text-white/60 mt-1">
+            <p className="mt-1 text-balance text-[0.9rem] tracking-wider text-white/60">
                 {href && phraseAt >= 0 ? (
                     <>
                         {description.slice(0, phraseAt)}
@@ -68,7 +68,7 @@ const WhyChooseThis = () => {
             <h2 className="text-4xl font-bold italic text-white/80 max-[379px]:text-[1.75rem]">
                 Why Choose This?
             </h2>
-            <p className="text-lg text-white/60 mt-2 max-w-2xl">
+            <p className="mx-auto mt-2 max-w-2xl text-balance text-lg text-white/60">
                 Turn your reflections into a daily habit in your own private journal.
             </p>
 
