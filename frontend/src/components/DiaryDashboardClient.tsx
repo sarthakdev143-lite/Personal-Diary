@@ -198,8 +198,13 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
                         aria-label="Search diaries and notes"
                         aria-describedby={findCountLabel ? "diary-find-count" : undefined}
                         maxLength={80}
-                        className={`rounded-xl border border-white/15 bg-zinc-900 p-6 py-[1.65rem] text-lg text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/50 ${searchHintVisible(query) ? "md:pr-24" : "pr-6"}`}
+                        className={`rounded-xl border border-white/15 bg-zinc-900 p-6 py-[1.65rem] text-lg text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/50 max-[380px]:placeholder:text-transparent ${searchHintVisible(query) ? "md:pr-24" : "pr-6"}`}
                     />
+                    {!query && (
+                        <span aria-hidden="true" className="pointer-events-none absolute left-6 top-1/2 hidden max-w-[calc(100%-3rem)] -translate-y-1/2 truncate text-lg text-zinc-500 max-[380px]:block">
+                            Search diaries...
+                        </span>
+                    )}
                     {searchHintVisible(query) && (
                     <div id="keyboard-key" className="absolute right-6 top-1/2 flex -translate-y-1/2 gap-1 max-md:hidden">
                         <span ref={searchKeyRef} className="rounded-md bg-zinc-700/70 px-[0.4rem] font-mono text-base text-zinc-400/90">ctrl</span>
