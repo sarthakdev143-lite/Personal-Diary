@@ -12790,6 +12790,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     .de-footer-actions{gap:6px;}
                     .de-discard{padding:8px 14px;}
                     .de-save-btn,.de-footer-actions{margin-left:auto;}
+                    .de-details .de-save-btn{margin-left:0;}
+                    .de-root-details{overflow-y:auto;}
+                    .de-root-details .de-header{position:sticky;top:0;z-index:6;}
+                    .de-root-details .de-body{flex:1 0 auto;}
+                    .de-root-details .de-left{max-height:220px;}
+                    .de-root-details .de-right{min-height:420px;}
                     .de-kbd-hint{display:none;}
                 }
 
@@ -12824,7 +12830,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 @keyframes defade{to{opacity:1;transform:translateY(0);}from{opacity:0;transform:translateY(3px);}}
             `}</style>
 
-            <div className="de-root" onKeyDown={handleKeyDown}>
+            <div className={`de-root${detailsOpen ? " de-root-details" : ""}`} onKeyDown={handleKeyDown}>
 
                 {/* HEADER */}
                 <header className="de-header">
