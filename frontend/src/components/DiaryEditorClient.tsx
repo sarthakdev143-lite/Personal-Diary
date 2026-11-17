@@ -13,6 +13,7 @@ import { entryShareMarkdown, diaryDownloadLabel } from "@/lib/diary/export";
 import { appliedPin, pinFailureMessage } from "@/lib/diary/pin";
 import { codeBlockHtml } from "@/lib/diary/markup";
 import { takeImportNotice } from "@/lib/diary/import";
+import { diaryOpenError } from "@/lib/diary/view";
 import { clearEntryDraft, entryDraftKey, entryDraftRecord, offerEntryDraft, readEntryDraft, restoredDraftTarget, storeEntryDraft, type EntryDraft } from "@/lib/diary/draft";
 import { captionUndoCaret, codePasteHtml, decideEntryDrop, decideEntryPaste, imageAltText, imageFileIssue, imageHtml, lineAfterPictureKey, pictureNameMove, pictureNameBack, pictureBehindLine, pictureListTail, pictureLineHost, pictureQuoteShell, pictureForwardDelete, pictureGapDelete, pictureAheadDelete, pictureAheadReach, pictureRemovalCaret, pictureRemovalRoute, pictureRemovalHost, pictureRemovalSpace, pictureInlineEnter, pictureEdgeOffset, pictureBlockEnter, pictureAfterEnter, pictureBreakLine, pictureUnderLine, pictureLineJoin, pictureJoinCaret, picturePieceJoin, pictureInlineBackspace, pictureBackspaceFollows, pictureBoundsKey, pictureNameClear, pictureNameLine, pictureTypedPlace, pictureLetterAfter, pictureLetterBefore, pictureCutWords, pictureCutText, picturePasteWords, pastedPictureLine, pastedPictureLines, pictureNameEnter, pictureNameContinue, pictureHeadingContinue, pictureListContinue, pictureItemCaret, pictureHeadingBefore, pictureNameSelection, pictureNameWord, pictureWordEdge, pictureNamePaste, pictureNameAlt, pictureCopy, picturePaste, pictureNameBoundary, pictureCaptionKey, pictureCaptionJoin, pictureClick, pictureFormat, pictureInsert, datePicture, pictureMoveKey, pictureCaretNeighbor, pictureBesideTarget, pictureSelectionMark, pictureUndo, selectedPictureKey, selectedPictureEnter } from "@/lib/diary/paste";
 import { diaryReturnAddress, diaryReturnQuery, entryCardClock, entryCardPreview, entryFindAddress, entryFromAddress, entryListQueryAddress, entryMatchCursor, entryMatchesListQuery, entryMonthAddress, entryPageAddress, entryShareAddress, openedDiaryQuery, openedEntryMonth, textRunHits } from "@/lib/diary/search";
@@ -12466,13 +12467,23 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         </div>
     );
 
-    if (error) return (
-        <div style={{ position: "fixed", inset: 0, zIndex: 10, background: "#0d0b09", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
-            <p style={{ fontFamily: "Georgia,serif", color: "#a09080", fontSize: 14 }}>{error}</p>
-            <button onClick={() => router.push(diaryReturnAddress(diaryReturnQuery(window.location.search), ""))} style={{ fontFamily: "monospace", color: "#8a7860", fontSize: 11, letterSpacing: "0.2em", textTransform: "uppercase", borderBottom: "1px solid #5a4a38", background: "none", cursor: "pointer" }}>← return</button>
-            <Toaster viewportClassName="bottom-24 top-auto flex-col sm:bottom-16" />
-        </div>
-    );
+    if (error) {
+        const missing = diaryOpenError(error);
+        const backHref = diaryReturnAddress(diaryReturnQuery(window.location.search), "");
+        return (
+            <div className="fixed inset-0 z-10 flex flex-col items-center justify-center bg-zinc-950 px-6 text-center">
+                <h1 className="text-2xl font-semibold text-zinc-100">{missing.title}</h1>
+                <p className="mt-3 max-w-sm text-base text-zinc-400">{missing.detail}</p>
+                <Link
+                    href={backHref}
+                    className="mt-8 rounded-full bg-zinc-100 px-5 py-2.5 text-sm font-medium text-zinc-950 hover:bg-white"
+                >
+                    Back to your diaries
+                </Link>
+                <Toaster viewportClassName="bottom-24 top-auto flex-col sm:bottom-16" />
+            </div>
+        );
+    }
 
     return (
         <>
