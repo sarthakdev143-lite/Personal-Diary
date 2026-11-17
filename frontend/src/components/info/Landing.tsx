@@ -26,7 +26,7 @@ const Landing = () => {
             <div className="mt-6 flex w-full flex-wrap items-center justify-center gap-2 max-[462px]:[&>*]:w-full">
                 {startReady ? (
                     <Button
-                        className="pointer-events-auto rounded-md bg-white text-base font-semibold text-zinc-950 hover:bg-zinc-200"
+                        className="pointer-events-auto rounded-full bg-white text-base font-semibold text-zinc-950 hover:bg-zinc-200"
                         size={'lg'}
                         asChild
                     >
@@ -36,7 +36,7 @@ const Landing = () => {
                     </Button>
                 ) : (
                     <Button
-                        className="pointer-events-auto rounded-md bg-white text-base font-semibold text-zinc-950"
+                        className="pointer-events-auto rounded-full bg-white text-base font-semibold text-zinc-950"
                         size={'lg'}
                         disabled
                     >
@@ -44,7 +44,7 @@ const Landing = () => {
                     </Button>
                 )}
                 <Button
-                    className="pointer-events-auto rounded-md border border-white/70 bg-transparent text-base font-semibold text-white hover:bg-white/10"
+                    className="pointer-events-auto rounded-full border border-white/70 bg-transparent text-base font-semibold text-white hover:bg-white/10"
                     size={'lg'}
                     asChild
                 >
