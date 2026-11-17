@@ -12789,7 +12789,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 #de-editor figcaption{
                     font-family:'JetBrains Mono',monospace;
                     font-style:normal;
-                    font-size:12px;
+                    font-size:13px;
                     line-height:1.4;
                     letter-spacing:0.04em;
                     color:#a79f93;
