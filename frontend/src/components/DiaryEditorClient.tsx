@@ -13145,7 +13145,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             </button>
                             {confirmDelete === "diary" ? (
                                 <>
-                                    <span>Delete this diary and every entry?</span>
+                                    <span style={{ fontSize: 14, lineHeight: 1.4, color: "#e7b2a4" }}>Delete this diary and every entry?</span>
                                     <button type="button" className="de-danger-btn" onClick={() => void handleDeleteDiary()} disabled={isSavingDiary}>
                                         delete diary
                                     </button>
