@@ -12506,6 +12506,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 .de-header-actions{
                     display:flex;align-items:center;gap:12px;flex-shrink:0;
                 }
+                .de-header-buttons{display:flex;align-items:center;gap:12px;}
 
                 /* Toolbar */
                 .de-toolbar{
@@ -12776,8 +12777,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 .de-details-actions{grid-column:1 / -1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;color:#a79f93;font-size:12px;}
                 @media (max-width:720px){
                     .de-details{grid-template-columns:1fr;}
-                    .de-header{flex-wrap:wrap;align-items:flex-start;gap:10px;padding:10px 14px;}
-                    .de-header-actions{width:100%;justify-content:flex-start;flex-wrap:wrap;gap:8px;}
+                    .de-header{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 14px;}
+                    .de-header-title{min-width:0;}
+                    .de-header-actions{display:contents;}
+                    .de-header-buttons{grid-column:1 / -1;gap:8px;flex-wrap:wrap;}
+                    .de-entry-count{justify-self:end;align-self:center;}
                     .de-ghost-btn,.de-danger-btn{padding:6px 10px;letter-spacing:0.12em;}
                     .de-body{flex-direction:column;}
                     .de-left{
@@ -12790,6 +12794,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     .de-footer-actions{gap:6px;}
                     .de-discard{padding:8px 14px;}
                     .de-save-btn,.de-footer-actions{margin-left:auto;}
+                    .de-footer-actions{width:100%;margin-left:0;justify-content:flex-start;}
                     .de-details .de-save-btn{margin-left:0;}
                     .de-root-details{overflow-y:auto;}
                     .de-root-details .de-header{position:sticky;top:0;z-index:6;}
@@ -12834,7 +12839,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
                 {/* HEADER */}
                 <header className="de-header">
-                    <div style={{ display: "flex", alignItems: "center", gap: 18, minWidth: 0 }}>
+                    <div className="de-header-title" style={{ display: "flex", alignItems: "center", gap: 18, minWidth: 0 }}>
                         <Link
                             href={diaryReturnAddress(entryQuery, listQuery)}
                             className="de-back"
@@ -12868,16 +12873,18 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         </div>
                     </div>
                     <div className="de-header-actions">
-                        <span className="de-mono" style={{ fontSize: 10, color: "#8f8679", letterSpacing: "0.15em" }}>
+                        <span className="de-entry-count de-mono" style={{ fontSize: 10, color: "#8f8679", letterSpacing: "0.15em" }}>
                             {entries.length} {entries.length === 1 ? "entry" : "entries"}
                         </span>
-                        <button type="button" onClick={() => void downloadExport("md")} className="de-ghost-btn" disabled={isExporting !== null}>
-                            {diaryDownloadLabel("md", isExporting === "md")}
-                        </button>
-                        <button type="button" onClick={() => setDetailsOpen((open) => !open)} className="de-ghost-btn">
-                            {detailsOpen ? "close details" : "details"}
-                        </button>
-                        <button type="button" onClick={handleNewEntry} className="de-ghost-btn">+ new entry</button>
+                        <div className="de-header-buttons">
+                            <button type="button" onClick={() => void downloadExport("md")} className="de-ghost-btn" disabled={isExporting !== null}>
+                                {diaryDownloadLabel("md", isExporting === "md")}
+                            </button>
+                            <button type="button" onClick={() => setDetailsOpen((open) => !open)} className="de-ghost-btn">
+                                {detailsOpen ? "close details" : "details"}
+                            </button>
+                            <button type="button" onClick={handleNewEntry} className="de-ghost-btn">+ new entry</button>
+                        </div>
                     </div>
                 </header>
 
