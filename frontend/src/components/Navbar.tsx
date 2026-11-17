@@ -8,7 +8,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AuthButton } from "./AuthButton";
 import { signOut, useSession } from "next-auth/react";
-import { headerSignOutQuery, homeMenu } from "@/lib/diary/home";
+import { accountMenuEscape, headerSignOutQuery, homeMenu } from "@/lib/diary/home";
 
 const Switch = ({
     checked,
@@ -76,6 +76,28 @@ const Navbar = () => {
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [isDiaryDetailPage]);
+
+    useEffect(() => {
+        if (!menuOpen) return;
+        const onKey = (event: KeyboardEvent) => {
+            const theme = document.getElementById("theme-selection");
+            const form = document.getElementById("form-parent");
+            if (!accountMenuEscape({
+                key: event.key,
+                altKey: event.altKey,
+                ctrlKey: event.ctrlKey,
+                metaKey: event.metaKey,
+                menuOpen: true,
+                formOpen: !!form && !form.hasAttribute("inert"),
+                themeOpen: !!theme && getComputedStyle(theme).display !== "none",
+            })) return;
+            event.preventDefault();
+            event.stopPropagation();
+            setOpenPath(null);
+        };
+        window.addEventListener("keydown", onKey, true);
+        return () => window.removeEventListener("keydown", onKey, true);
+    }, [menuOpen]);
 
     if (isDiaryDetailPage) {
         return null;
