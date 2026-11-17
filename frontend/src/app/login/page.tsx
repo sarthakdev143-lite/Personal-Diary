@@ -3,18 +3,16 @@
 import { useEffect, useState } from "react"
 import { signIn, useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Loader2, LogIn } from "lucide-react"
-import { motion } from "framer-motion"
+import { Loader2 } from "lucide-react"
+import Image from "next/image"
 
 import Google from './Google.png'
 import Github from './Github.png'
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { loginWaitingMessage } from "@/lib/diary/login"
-import Image from "next/image"
 
 export default function LoginPage() {
     const [isLoading, setIsLoading] = useState<{
@@ -58,70 +56,51 @@ export default function LoginPage() {
         )
     }
 
+    const busy = isLoading.google || isLoading.github
+
     return (
-        <div className="flex min-h-screen overflow-hidden items-center justify-center bg-black/25 dark p-4 backdrop-blur-md">
-            <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/10 via-transparent to-purple-500/5 pointer-events-none" />
+        <div className="relative z-10 flex min-h-screen items-center justify-center bg-zinc-950 px-6 text-center">
             <Toaster />
-
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="w-full max-w-md relative z-10"
-            >
-                <Card className="border-border/30 bg-card/80 backdrop-blur-xl shadow-2xl">
-                    <CardHeader className="space-y-1">
-                        <div className="flex justify-center mb-2">
-                            <div className="rounded-full bg-indigo-500/10 p-3 ring-1 ring-indigo-500/20">
-                                <LogIn className="h-6 w-6 text-indigo-400" />
-                            </div>
-                        </div>
-                        <h1 className="text-center text-2xl font-bold leading-none tracking-tight">Welcome!</h1>
-                        <CardDescription className="text-center text-muted-foreground/80">
-                            Sign in with Google or GitHub to open your diaries.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4 pt-2">
-                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                            <Button
-                                variant="outline"
-                                className="relative text-base tracking-[0.02em] py-5 w-full bg-background/50 hover:bg-background/80 border border-border/30 text-foreground"
-                                onClick={() => handleLogin("google")}
-                                disabled={isLoading.google || isLoading.github}
-                            >
-                                {isLoading.google ? (
-                                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                                ) : (
-                                    <Image src={Google} alt="Google" width={20} height={20} className="bg-white rounded-full p-[0.2rem]" />
-                                )}
-                                Continue with Google
-                            </Button>
-                        </motion.div>
-
-                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                            <Button
-                                variant="outline"
-                                className="relative w-full text-base tracking-[0.02em] py-5 bg-background/50 hover:bg-background/80 border border-border/30 text-foreground"
-                                onClick={() => handleLogin("github")}
-                                disabled={isLoading.google || isLoading.github}
-                            >
-                                {isLoading.github ? (
-                                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                                ) : (
-                                    <Image src={Github} alt="Github" width={20} height={20} className="bg-white rounded-full p-[0.2rem]" />
-                                )}
-                                Continue with GitHub
-                            </Button>
-                        </motion.div>
-                    </CardContent>
-                    <CardFooter className="flex flex-col space-y-2">
-                        <p className="text-center text-sm text-muted-foreground/70">
-                            Google and GitHub are the ways to sign in. Entries are saved to your account.
-                        </p>
-                    </CardFooter>
-                </Card>
-            </motion.div>
+            <div className="w-full max-w-sm">
+                <h1 className="text-4xl font-bold italic text-white">Sign in</h1>
+                <p className="mx-auto mt-2 max-w-sm text-balance text-lg text-zinc-300">
+                    Sign in with Google or GitHub to open your diaries.
+                </p>
+                <div className="mt-6 flex flex-col gap-3">
+                    <Button
+                        variant="outline"
+                        className="h-12 w-full rounded-xl border border-white/15 bg-zinc-900 text-base text-zinc-100 hover:border-white/40 hover:bg-zinc-900 hover:text-zinc-100"
+                        onClick={() => handleLogin("google")}
+                        disabled={busy}
+                    >
+                        {isLoading.google ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <Image src={Google} alt="" width={20} height={20} className="rounded-full bg-white p-[0.2rem]" />
+                        )}
+                        Continue with Google
+                    </Button>
+                    <Button
+                        variant="outline"
+                        className="h-12 w-full rounded-xl border border-white/15 bg-zinc-900 text-base text-zinc-100 hover:border-white/40 hover:bg-zinc-900 hover:text-zinc-100"
+                        onClick={() => handleLogin("github")}
+                        disabled={busy}
+                    >
+                        {isLoading.github ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <Image src={Github} alt="" width={20} height={20} className="rounded-full bg-white p-[0.2rem]" />
+                        )}
+                        Continue with GitHub
+                    </Button>
+                </div>
+                <p className="mx-auto mt-6 max-w-sm text-sm text-zinc-400">
+                    Google and GitHub are the ways to sign in.
+                </p>
+                <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-400">
+                    Entries are saved to your account.
+                </p>
+            </div>
         </div>
     )
 }
-

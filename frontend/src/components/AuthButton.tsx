@@ -62,7 +62,7 @@ export function AuthButton({ pathName }: { pathName: string }) {
                         >
                             Sign Out
                         </button>
-                    </div> : showSignIn(status) ? <button
+                    </div> : showSignIn(status, pathName) ? <button
                         onClick={() => handleOperation("signin")}
                         className="bg-zinc-900 border border-zinc-700 px-4 py-[0.3rem] text-zinc-300 hover:bg-zinc-800 transition rounded ml-auto mr-3"
                     >
