@@ -3445,6 +3445,7 @@ describe("entry date", () => {
         assert.equal(emptyEntryListMessage("rain", "2026-02"), "No entries match “rain” in February 2026.");
         assert.equal(emptyEntryListMessage("rain", ""), "No entries match “rain”.");
         assert.equal(emptyEntryListMessage("", "2026-11"), "No entries in November 2026.");
+        assert.equal(emptyEntryListMessage("", ""), "Nothing written yet.");
         assert.equal(entryFindCountLabel(2, "rain"), "2 entries");
         assert.equal(entryFindCountLabel(1, "rain"), "1 entry");
         assert.equal(entryFindCountLabel(0, "rain"), null);

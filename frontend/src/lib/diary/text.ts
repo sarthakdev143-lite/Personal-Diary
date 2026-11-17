@@ -2777,7 +2777,8 @@ export function emptyEntryListMessage(query: string, month: string): string {
     const when = month ? monthLabel(month) : "";
     if (text && when) return `No entries match “${text}” in ${when}.`;
     if (text) return `No entries match “${text}”.`;
-    return `No entries in ${when}.`;
+    if (when) return `No entries in ${when}.`;
+    return "Nothing written yet.";
 }
 
 export function entryFindCountLabel(count: number, query: string): string | null {
