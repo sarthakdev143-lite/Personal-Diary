@@ -12503,6 +12503,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     background:#0f0d0b;
                     border-bottom:1px solid #1e1c18;
                 }
+                .de-header-title{
+                    display:flex;align-items:center;gap:18px;min-width:0;
+                }
                 .de-header-actions{
                     display:flex;align-items:center;gap:12px;flex-shrink:0;
                 }
@@ -12778,7 +12781,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 @media (max-width:720px){
                     .de-details{grid-template-columns:1fr;}
                     .de-header{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 14px;}
-                    .de-header-title{min-width:0;}
+                    .de-header-title{gap:10px;}
                     .de-header-actions{display:contents;}
                     .de-header-buttons{grid-column:1 / -1;gap:8px;flex-wrap:wrap;}
                     .de-entry-count{justify-self:end;align-self:center;}
@@ -12863,7 +12866,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
                 {/* HEADER */}
                 <header className="de-header">
-                    <div className="de-header-title" style={{ display: "flex", alignItems: "center", gap: 18, minWidth: 0 }}>
+                    <div className="de-header-title">
                         <Link
                             href={diaryReturnAddress(entryQuery, listQuery)}
                             className="de-back"
