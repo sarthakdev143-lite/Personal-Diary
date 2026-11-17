@@ -154,7 +154,7 @@ const NewDiaryForm = ({
                     type="button"
                     aria-label="Close new diary"
                     onClick={() => setFormActive(false)}
-                    className="absolute top-4 right-4 z-10 flex h-11 w-11 items-center justify-center text-zinc-300"
+                    className="absolute top-4 right-4 z-10 flex h-11 w-11 items-center justify-center rounded-full text-zinc-300 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70"
                 >
                     <RiCloseCircleFill size={32} />
                 </button>
@@ -216,7 +216,7 @@ const NewDiaryForm = ({
                     type="button"
                     aria-label="Close theme selection"
                     onClick={handleCloseThemeSelection}
-                    className="absolute right-4 top-4 z-[70] flex h-11 w-11 items-center justify-center text-zinc-300"
+                    className="absolute right-4 top-4 z-[70] flex h-11 w-11 items-center justify-center rounded-full text-zinc-300 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70"
                 >
                     <RiCloseCircleFill size={32} />
                 </button>
