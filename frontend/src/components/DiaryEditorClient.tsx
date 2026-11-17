@@ -12672,17 +12672,20 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 }
                 .de-find-count{
                     margin:0 16px 8px;
-                    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.08em;color:#a79f93;
+                    font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.06em;color:#a79f93;
                 }
                 .de-find-nav{
-                    display:flex;align-items:center;gap:8px;margin:0 16px 8px;
-                    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.08em;color:#a79f93;
+                    display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 16px 8px;
+                    font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.06em;color:#a79f93;
                 }
                 .de-find-nav button{
-                    font:inherit;letter-spacing:0.08em;text-transform:lowercase;color:#c4a882;
-                    background:transparent;border:1px solid #3a3020;border-radius:3px;padding:2px 6px;cursor:pointer;
+                    font:inherit;letter-spacing:0.06em;text-transform:lowercase;color:#c4a882;
+                    background:transparent;border:1px solid #3a3020;border-radius:3px;
+                    box-sizing:border-box;min-height:44px;padding:0 12px;cursor:pointer;
+                    display:inline-flex;align-items:center;justify-content:center;
                 }
                 .de-find-nav button:hover{border-color:#c4a882;}
+                .de-find-nav button:focus-visible{outline:1px solid #c4a882;outline-offset:2px;}
                 .de-month{
                     display:block;width:calc(100% - 32px);margin:0 16px 8px;
                     font-family:'Lora',Georgia,serif;font-size:13px;color:#ede5d8;
