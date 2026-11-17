@@ -12762,6 +12762,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     text-transform:none;color:#ede5d8;background:#0d0b09;
                     border:1px solid #2a2520;border-radius:3px;padding:8px 10px;resize:vertical;
                 }
+                .de-details textarea::placeholder{color:#8f8679;}
                 .de-details input[aria-invalid="true"],.de-details textarea[aria-invalid="true"]{border-color:#6a3a32;}
                 .de-covers{grid-column:1 / -1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
                 .de-covers button{
@@ -12902,6 +12903,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             <textarea
                                 id="diary-details-description"
                                 value={diaryDraft.description}
+                                placeholder="What is this diary for?"
                                 maxLength={DESCRIPTION_MAX}
                                 rows={2}
                                 aria-labelledby="diary-details-description-label"
