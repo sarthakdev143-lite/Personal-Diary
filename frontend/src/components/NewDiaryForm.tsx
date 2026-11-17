@@ -242,7 +242,7 @@ const NewDiaryForm = ({
                 </div>
 
                 {/* Theme Selection Panel */}
-                <div className="flex w-full shrink-0 flex-col items-center lg:h-full lg:w-80">
+                <div className="flex w-full shrink-0 flex-col items-center lg:h-full lg:w-80 lg:justify-center">
                     <h2 className="text-2xl font-bold mb-4">Choose a Theme</h2>
                     <div id="themes" className="p-4 grid grid-cols-3 gap-4 justify-center max-w-80 max-h-[48rem] overflow-y-auto my-3">
                         {themes.map((elem, index) => (
