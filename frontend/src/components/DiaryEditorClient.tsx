@@ -12571,7 +12571,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
                 /* Left panel */
                 .de-left{
-                    width:268px;flex-shrink:0;
+                    width:268px;flex-shrink:0;min-width:0;
                     display:flex;flex-direction:column;
                     overflow-y:auto;overflow-x:hidden;
                     background:#0f0d0b;
@@ -12591,6 +12591,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     font-family:'Lora',Georgia,serif;font-size:13px;color:#ede5d8;
                     background:#0d0b09;border:1px solid #2a2520;border-radius:3px;padding:8px 10px;
                 }
+                .de-entry-search::-webkit-search-cancel-button{margin-left:16px;}
                 .de-entry-search:focus,.de-month:focus{outline:none;border-color:#6a5a48;}
                 .de-find-count{
                     margin:0 16px 8px;
@@ -12626,12 +12627,13 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 /* Editor content area */
                 .de-editor-wrap{flex:1;overflow-y:auto;position:relative;}
                 .de-empty-read{
-                    min-height:100%;
+                    min-height:100%;min-width:0;max-width:100%;
                     display:flex;align-items:center;justify-content:center;
                     padding:48px 64px;
                     font-family:'Lora',Georgia,serif;font-style:italic;
                     color:#a79f93;font-size:16px;line-height:1.8;text-align:center;
                 }
+                .de-empty-read span{min-width:0;max-width:100%;overflow-wrap:anywhere;}
                 .de-editor-wrap::-webkit-scrollbar{width:4px;}
                 .de-editor-wrap::-webkit-scrollbar-track{background:transparent;}
                 .de-editor-wrap::-webkit-scrollbar-thumb{background:#2a2520;border-radius:99px;}
@@ -13235,7 +13237,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 </p>
                             </div>
                         ) : visibleEntries.length === 0 ? (
-                            <p style={{ padding: "8px 20px 24px", fontFamily: "'Lora',Georgia,serif", fontStyle: "italic", color: "#a79f93", fontSize: 13, lineHeight: 1.8 }}>
+                            <p style={{ padding: "8px 20px 24px", fontFamily: "'Lora',Georgia,serif", fontStyle: "italic", color: "#a79f93", fontSize: 13, lineHeight: 1.8, overflowWrap: "anywhere", minWidth: 0, maxWidth: "100%" }}>
                                 {emptyEntryListMessage(entryQuery, activeMonth)}
                             </p>
                         ) : (
@@ -13282,7 +13284,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         <div className="de-editor-wrap">
                             {!entryOnScreen && (
                                 <p className="de-empty-read" role="status">
-                                    {emptyEntryListMessage(entryQuery, activeMonth)}
+                                    <span>{emptyEntryListMessage(entryQuery, activeMonth)}</span>
                                 </p>
                             )}
                             <div
