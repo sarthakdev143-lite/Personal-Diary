@@ -173,7 +173,7 @@ const NewDiaryForm = ({
                                     maxLength={TITLE_MAX}
                                     aria-invalid={titleNote?.tone === "error"}
                                     aria-describedby={titleNote ? "diary-title-note" : undefined}
-                                    className="w-full rounded-lg border border-white/15 bg-zinc-900 p-2 px-3 tracking-wide text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/70"
+                                    className="w-full rounded-lg border border-white/15 bg-zinc-900 p-2 px-3 tracking-wide text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-white/70"
                                     placeholder="Enter your diary's name..."
                                 />
                                 {titleNote && (
@@ -190,7 +190,7 @@ const NewDiaryForm = ({
                                     value={formData.description}
                                     onChange={handleChange}
                                     maxLength={DESCRIPTION_MAX}
-                                    className="max-h-40 min-h-16 w-full rounded-lg border border-white/15 bg-zinc-900 p-2 px-3 tracking-wide text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/70"
+                                    className="max-h-40 min-h-16 w-full rounded-lg border border-white/15 bg-zinc-900 p-2 px-3 tracking-wide text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-white/70"
                                     placeholder="What is this diary for?"
                                     rows={4}
                                 />
