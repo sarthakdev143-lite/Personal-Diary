@@ -186,7 +186,7 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
             >
                 <h1 className="sr-only">Your diaries</h1>
                 <div className="sticky top-[16%] mx-auto mb-6 flex w-full max-w-4xl flex-col">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-stretch gap-3">
                     <div className="relative min-w-0 flex-1">
                     <Input
                         ref={searchInputRef}
@@ -216,7 +216,7 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
                         type="button"
                         onClick={() => importInputRef.current?.click()}
                         disabled={isImporting}
-                        className="shrink-0 rounded-xl border border-white/15 bg-zinc-900/80 px-4 py-3 text-base text-zinc-100 hover:border-white/40 disabled:opacity-50"
+                        className="flex shrink-0 items-center rounded-xl border border-white/15 bg-zinc-900/80 px-4 text-base text-zinc-100 hover:border-white/40 disabled:opacity-50"
                     >
                         {isImporting ? "Importing" : "Import"}
                     </button>
