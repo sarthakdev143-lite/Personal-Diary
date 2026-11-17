@@ -69,7 +69,7 @@ const WhyChooseThis = () => {
                 Why Choose This?
             </h2>
             <p className="mx-auto mt-2 max-w-2xl text-balance text-lg text-zinc-300">
-                Turn your reflections into a daily habit in your own private journal.
+                Turn your reflections into a daily habit.
             </p>
 
             <div className="card-parent mt-8 grid w-full max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
