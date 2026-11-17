@@ -12969,7 +12969,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     .de-footer-actions:has(button:nth-child(5)) button:nth-child(4){grid-column:2;}
                     .de-footer-actions:has(button:nth-child(5)) button:nth-child(5){grid-column:3;}
                 }
-                @media (min-width:720px) and (max-width:1099px){
+                /* Keep the reading buttons on one row until they fit beside the counts. */
+                @media (min-width:720px) and (max-width:1159px){
                     .de-footer{flex-wrap:wrap;row-gap:8px;}
                     .de-footer-actions{
                         flex-wrap:nowrap;
