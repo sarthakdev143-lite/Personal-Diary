@@ -210,7 +210,7 @@ const NewDiaryForm = ({
                 id="theme-selection"
                 inert={!isFullScreen}
                 aria-hidden={!isFullScreen}
-                className="fixed inset-0 z-[60] hidden flex-col items-stretch gap-4 overflow-y-auto bg-zinc-950 p-4 text-zinc-100 xl:flex-row xl:items-center xl:overflow-hidden xl:p-6"
+                className="fixed inset-0 z-[60] hidden flex-col items-stretch gap-4 overflow-y-auto bg-zinc-950 p-4 text-zinc-100 lg:flex-row lg:items-center lg:overflow-hidden lg:p-6"
             >
                 <button
                     type="button"
@@ -222,7 +222,7 @@ const NewDiaryForm = ({
                 </button>
                 
                 {/* 3D Preview Area */}
-                <div className="relative h-64 w-full min-w-0 overflow-hidden rounded-lg bg-zinc-900 shadow-lg xl:h-full xl:flex-1">
+                <div className="relative min-h-0 w-full min-w-0 flex-1 overflow-hidden rounded-lg bg-zinc-900 shadow-lg lg:h-full">
                     <div className="absolute top-4 left-4 z-10 bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2">
                         <h3 className="text-lg font-semibold text-white">Preview</h3>
                         <p className="text-sm text-gray-300">{formData.title || "Your Diary"}</p>
@@ -242,7 +242,7 @@ const NewDiaryForm = ({
                 </div>
 
                 {/* Theme Selection Panel */}
-                <div className="flex w-full shrink-0 flex-col items-center xl:h-full xl:w-80">
+                <div className="flex w-full shrink-0 flex-col items-center lg:h-full lg:w-80">
                     <h2 className="text-2xl font-bold mb-4">Choose a Theme</h2>
                     <div id="themes" className="p-4 grid grid-cols-3 gap-4 justify-center max-w-80 max-h-[48rem] overflow-y-auto my-3">
                         {themes.map((elem, index) => (
