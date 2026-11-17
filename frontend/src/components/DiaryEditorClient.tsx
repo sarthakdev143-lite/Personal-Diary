@@ -12804,6 +12804,19 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     .de-root-details .de-right{min-height:420px;}
                     .de-kbd-hint{display:none;}
                 }
+                @media (min-width:721px) and (max-width:1099px){
+                    .de-footer{flex-wrap:wrap;row-gap:8px;}
+                    .de-footer-actions{
+                        flex-wrap:nowrap;
+                        flex-shrink:0;
+                        width:100%;
+                        margin-left:0;
+                        justify-content:flex-end;
+                        gap:4px;
+                    }
+                    .de-footer-actions .de-ghost-btn,
+                    .de-footer-actions .de-danger-btn{padding-left:8px;padding-right:8px;flex-shrink:0;}
+                }
                 @media (max-width:460px){
                     .de-details-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
                     .de-details-actions .de-field-error,
