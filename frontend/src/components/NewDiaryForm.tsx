@@ -53,17 +53,6 @@ const NewDiaryForm = ({
     }, [formActive, isFullScreen]);
 
     useGSAP(() => {
-        gsap.to("#form-parent", {
-            duration: 0.5,
-            ease: "power2.out",
-            x: "-50%",
-            y: formActive ? "0%" : "100%",
-            scale: formActive ? 1 : 0.75,
-            opacity: formActive ? 1 : 0,
-        });
-    }, [formActive]);
-
-    useGSAP(() => {
         if (isFullScreen) {
             gsap.to("#theme-selection", {
                 duration: 0.5,
@@ -159,8 +148,7 @@ const NewDiaryForm = ({
                 id="form-parent"
                 inert={!formActive || isFullScreen}
                 aria-hidden={!formActive || isFullScreen}
-                className="fixed bottom-0 left-1/2 z-50 w-full max-w-[95%] rounded-3xl border border-white/10 bg-zinc-950 p-3 text-zinc-100 shadow-2xl xs:max-w-[29rem]"
-                style={{ transform: "translate(-50%, 100%)", opacity: 0 }}
+                className={`fixed bottom-0 left-1/2 z-50 w-full max-w-[95%] -translate-x-1/2 rounded-3xl border border-white/10 bg-zinc-950 p-3 text-zinc-100 shadow-2xl transition-[transform,opacity] duration-500 ease-out xs:max-w-[29rem] ${formActive ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none translate-y-full scale-75 opacity-0"}`}
             >
                 <button
                     type="button"
