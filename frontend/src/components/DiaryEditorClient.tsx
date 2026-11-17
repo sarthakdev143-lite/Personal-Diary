@@ -12612,13 +12612,23 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     background:transparent;cursor:pointer;
                     transition:background 0.12s,border-left-color 0.12s;
                 }
+                .de-entry-search-wrap{position:relative;width:calc(100% - 32px);margin:0 16px 8px;}
                 .de-entry-search{
-                    display:block;width:calc(100% - 32px);margin:0 16px 8px;
+                    display:block;width:100%;margin:0;
                     font-family:'Lora',Georgia,serif;font-size:13px;color:#ede5d8;
                     background:#0d0b09;border:1px solid #2a2520;border-radius:3px;
                     box-sizing:border-box;height:44px;padding:0 10px;
                 }
-                .de-entry-search::-webkit-search-cancel-button{margin-left:16px;}
+                .de-entry-search.de-entry-search-filled{padding-right:44px;}
+                .de-entry-search::-webkit-search-cancel-button{display:none;}
+                .de-entry-clear{
+                    position:absolute;top:0;right:0;width:44px;height:44px;
+                    display:flex;align-items:center;justify-content:center;
+                    border:none;background:transparent;color:#c4a882;
+                    font-size:22px;line-height:1;cursor:pointer;
+                }
+                .de-entry-clear:hover{color:#ede5d8;}
+                .de-entry-clear:focus-visible{outline:1px solid #c4a882;outline-offset:-2px;}
                 .de-entry-search:focus,.de-month:focus{outline:none;border-color:#6a5a48;}
                 .de-find-count{
                     margin:0 16px 8px;
@@ -13197,9 +13207,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                             Past Entries
                         </div>
                         {entries.length > 0 && (
+                            <div className="de-entry-search-wrap">
                             <input
                                 ref={entrySearchRef}
-                                className="de-entry-search"
+                                className={`de-entry-search${entryQuery ? " de-entry-search-filled" : ""}`}
                                 type="search"
                                 spellCheck={false}
                                 autoCorrect="off"
@@ -13233,6 +13244,20 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                     setMatchAt((current) => entryMatchCursor(matchCount, current, event.shiftKey ? "previous" : "next"));
                                 }}
                             />
+                            {entryQuery && (
+                                <button
+                                    type="button"
+                                    className="de-entry-clear"
+                                    aria-label="Clear search"
+                                    onClick={() => {
+                                        setEntryQuery("");
+                                        entrySearchRef.current?.focus();
+                                    }}
+                                >
+                                    <span aria-hidden="true">×</span>
+                                </button>
+                            )}
+                            </div>
                         )}
                         {findCountLabel && (
                             <p id="entry-find-count" className="de-find-count" role="status">{findCountLabel}</p>
