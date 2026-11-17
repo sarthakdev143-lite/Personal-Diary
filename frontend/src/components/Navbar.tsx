@@ -109,7 +109,7 @@ const Navbar = () => {
                 )}
 
                 {menuOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-56 rounded-md bg-zinc-900 shadow-lg selection:bg-slate-700">
+                    <div className="absolute top-full right-0 mt-2 w-56 rounded-2xl border border-white/10 bg-zinc-900 shadow-lg selection:bg-slate-700">
                         {menu.settings && (
                             <>
                                 <div className="border-b border-gray-700 px-4 py-2 text-base font-semibold text-white">Settings</div>
