@@ -186,7 +186,7 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
             >
                 <h1 className="sr-only">Your diaries</h1>
                 {/* The account menu hangs under the header through 479px, so the search starts below it. */}
-                <div className="sticky top-[16%] mx-auto mb-6 flex w-full max-w-4xl flex-col max-[479px]:top-40">
+                <div className="sticky top-[16%] z-20 mx-auto mb-2 flex w-full max-w-4xl flex-col bg-zinc-950 pb-4 pt-2 max-[479px]:top-40">
                     <div className="flex items-stretch gap-3">
                     <div className="relative min-w-0 flex-1">
                     <Input
