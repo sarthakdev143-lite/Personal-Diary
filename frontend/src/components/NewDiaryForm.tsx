@@ -223,9 +223,9 @@ const NewDiaryForm = ({
                 
                 {/* 3D Preview Area */}
                 <div className="relative min-h-0 w-full min-w-0 flex-1 overflow-hidden rounded-lg bg-zinc-900 shadow-lg lg:h-full">
-                    <div className="absolute top-4 left-4 z-10 bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2">
+                    <div className="absolute top-4 left-4 z-10 max-w-[calc(100%-4.5rem)] bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2">
                         <h3 className="text-lg font-semibold text-white">Preview</h3>
-                        <p className="text-sm text-gray-300">{formData.title || "Your Diary"}</p>
+                        <p className="text-sm text-gray-300 [overflow-wrap:anywhere]">{formData.title || "Your Diary"}</p>
                     </div>
                     
                     {isFullScreen && selectedTexture && (
