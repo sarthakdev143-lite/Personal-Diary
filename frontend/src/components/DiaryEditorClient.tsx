@@ -12993,6 +12993,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     .de-root-details .de-header-buttons{display:grid;grid-template-columns:1fr 1fr;width:100%;}
                     .de-root-details .de-header-buttons button:last-child:nth-child(3){grid-column:1 / -1;}
                 }
+                /* The longest cover name needs the swatch row. Below 340px the full swatches push it onto its own line. */
+                @media (max-width:339px){
+                    .de-covers{flex-wrap:nowrap;gap:6px;}
+                    .de-covers button{width:46px;height:64px;}
+                    .de-cover-name{white-space:nowrap;}
+                }
                 /* Five reading actions wrap as three, then two. The last two share the row. */
                 @media (max-width:460px){
                     .de-footer-actions:has(button:nth-child(5)){
