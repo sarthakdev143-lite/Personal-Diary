@@ -261,16 +261,16 @@ const Diaries = ({ query = "", typedQuery = query, refetchTrigger = 0, paused = 
 
     if (!diaries.length && query) {
         return (
-            <p className="flex h-full w-full items-center rounded-xl border border-white/10 bg-zinc-600/10 p-6 text-base text-zinc-300" role="status">
-                <span className="min-w-0">No diaries match “{query}”.</span>
+            <p className="flex h-full min-w-0 w-full items-center rounded-xl border border-white/10 bg-zinc-600/10 p-6 text-base text-zinc-300 [overflow-wrap:anywhere]" role="status">
+                <span className="min-w-0 [overflow-wrap:anywhere]">No diaries match “{query}”.</span>
             </p>
         );
     }
 
     if (!diaries.length) {
         return (
-            <p className="flex h-full w-full items-center rounded-xl border border-white/10 bg-zinc-600/10 p-6 text-base text-zinc-300" role="status">
-                <span className="min-w-0">{emptyDiaryListMessage()}</span>
+            <p className="flex h-full min-w-0 w-full items-center rounded-xl border border-white/10 bg-zinc-600/10 p-6 text-base text-zinc-300 [overflow-wrap:anywhere]" role="status">
+                <span className="min-w-0 [overflow-wrap:anywhere]">{emptyDiaryListMessage()}</span>
             </p>
         );
     }
