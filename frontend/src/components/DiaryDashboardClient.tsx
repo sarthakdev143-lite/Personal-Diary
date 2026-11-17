@@ -225,8 +225,8 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
                     )}
                     {searchHintVisible(query) && (
                     <div id="keyboard-key" className="absolute right-6 top-1/2 flex -translate-y-1/2 gap-1 max-md:hidden">
-                        <span ref={searchKeyRef} className="rounded-md bg-zinc-700/70 px-[0.4rem] font-mono text-base text-zinc-400/90">ctrl</span>
-                        <span className="rounded-md bg-zinc-700/70 px-[0.4rem] font-mono text-base text-zinc-400/90">I</span>
+                        <span ref={searchKeyRef} className="rounded-md bg-zinc-700/70 px-[0.4rem] font-mono text-base text-zinc-100">ctrl</span>
+                        <span className="rounded-md bg-zinc-700/70 px-[0.4rem] font-mono text-base text-zinc-100">I</span>
                     </div>
                     )}
                     </div>
