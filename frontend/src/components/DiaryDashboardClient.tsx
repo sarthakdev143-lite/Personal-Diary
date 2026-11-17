@@ -182,10 +182,11 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
             <div
                 id="info-parent"
                 ref={infoParentRef}
-                className="relative flex min-h-screen w-full flex-col bg-zinc-950 px-4 pt-32 text-base text-zinc-100 max-xs:px-3"
+                className="relative flex min-h-screen w-full flex-col bg-zinc-950 px-4 pt-32 text-base text-zinc-100 max-xs:px-3 max-[479px]:pt-40"
             >
                 <h1 className="sr-only">Your diaries</h1>
-                <div className="sticky top-[16%] mx-auto mb-6 flex w-full max-w-4xl flex-col">
+                {/* The account menu hangs under the header through 479px, so the search starts below it. */}
+                <div className="sticky top-[16%] mx-auto mb-6 flex w-full max-w-4xl flex-col max-[479px]:top-40">
                     <div className="flex items-stretch gap-3">
                     <div className="relative min-w-0 flex-1">
                     <Input
