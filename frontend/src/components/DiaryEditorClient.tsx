@@ -12988,6 +12988,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     .de-header-buttons{gap:6px;flex-wrap:wrap;}
                     .de-header-buttons .de-ghost-btn{padding:6px 5px;letter-spacing:0.05em;}
                 }
+                /* Close details is wider than details. Below 400px the third action wraps, so it fills that row. */
+                @media (max-width:399px){
+                    .de-root-details .de-header-buttons{display:grid;grid-template-columns:1fr 1fr;width:100%;}
+                    .de-root-details .de-header-buttons button:last-child:nth-child(3){grid-column:1 / -1;}
+                }
                 /* Five reading actions wrap as three, then two. The last two share the row. */
                 @media (max-width:460px){
                     .de-footer-actions:has(button:nth-child(5)){
