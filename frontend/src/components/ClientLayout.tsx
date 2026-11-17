@@ -22,7 +22,7 @@ const ClientLayout: React.FC<ClientLayoutProps> = ({ children }) => {
             {pathname !== '/' && (
                 <div className="fixed w-full h-screen z-0">
                     <div id="caption" className="w-full h-screen absolute top-0 left-0 z-0">
-                        <div aria-hidden="true" className="text-[27vw] text-white uppercase absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-0 select-none">
+                        <div aria-hidden="true" className="absolute left-1/2 top-1/2 z-0 hidden -translate-x-1/2 -translate-y-1/2 transform select-none text-[27vw] uppercase text-white min-[1000px]:block">
                             diary
                         </div>
                     </div>
