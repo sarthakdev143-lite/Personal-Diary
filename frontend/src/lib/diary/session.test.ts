@@ -8,5 +8,7 @@ describe("session sign in", () => {
         assert.equal(showSignIn("loading"), false);
         assert.equal(showSignIn("authenticated"), false);
         assert.equal(showSignIn("unauthenticated"), true);
+        assert.equal(showSignIn("unauthenticated", "/"), true);
+        assert.equal(showSignIn("unauthenticated", "/login"), false);
     });
 });
