@@ -12817,7 +12817,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 }
                 .de-save-btn:hover:not(:disabled){background:#c4a882;color:#0d0b09;border-color:#c4a882;}
                 .de-save-btn:active:not(:disabled){transform:scale(0.97);}
-                .de-save-btn:disabled{opacity:0.2;cursor:not-allowed;}
+                .de-save-btn:disabled{color:#8f8679;border-color:#3a362e;cursor:not-allowed;}
                 .de-ghost-btn{
                     font-family:'JetBrains Mono',monospace;
                     font-size:9px;letter-spacing:0.22em;text-transform:uppercase;
@@ -13581,7 +13581,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                     )}
                                     <button type="button" onClick={handleSave} disabled={!canSave || isSaving} className="de-save-btn">
                                         {isSaving
-                                            ? <><span style={{ width: 10, height: 10, borderRadius: "50%", border: "1px solid #c4a882", borderTopColor: "transparent", animation: "spin 1s linear infinite", display: "inline-block" }} />saving</>
+                                            ? <><span style={{ width: 10, height: 10, borderRadius: "50%", border: "1px solid currentColor", borderTopColor: "transparent", animation: "spin 1s linear infinite", display: "inline-block" }} />saving</>
                                             : mode === "edit" ? "update entry" : "save entry"
                                         }
                                     </button>
