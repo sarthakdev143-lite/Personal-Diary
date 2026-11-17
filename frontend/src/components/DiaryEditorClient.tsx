@@ -12798,7 +12798,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 #de-editor img.de-selected{outline:1px solid #c4a882;outline-offset:3px;}
 
                 /* Read-only overlay */
-                #de-editor[contenteditable="false"]{opacity:0.75;cursor:default;}
+                #de-editor[contenteditable="false"]{cursor:default;}
 
                 /* Footer */
                 .de-footer{
