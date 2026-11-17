@@ -12842,6 +12842,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     .de-details-actions .de-danger-btn{
                         display:flex;width:100%;align-items:center;justify-content:center;
                     }
+                    .de-details-actions .de-save-btn{
+                        padding:6px 10px;letter-spacing:0.12em;font-size:9px;white-space:nowrap;
+                    }
                 }
 
                 /* Back link */
