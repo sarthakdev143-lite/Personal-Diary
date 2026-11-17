@@ -185,7 +185,7 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
                 className="relative flex min-h-screen w-full flex-col bg-zinc-950 px-4 pt-32 text-base text-zinc-100 max-xs:px-3"
             >
                 <h1 className="sr-only">Your diaries</h1>
-                <div className="sticky top-[16%] mx-auto mb-6 flex w-full flex-col xs:w-[80%] md:w-[55%]">
+                <div className="sticky top-[16%] mx-auto mb-6 flex w-full flex-col sm:w-[80%] lg:w-[55%]">
                     <div className="flex items-center gap-3">
                     <div className="relative min-w-0 flex-1">
                     <Input
