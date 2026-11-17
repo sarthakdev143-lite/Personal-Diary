@@ -193,6 +193,9 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
                         ref={searchInputRef}
                         id="diary-search"
                         type="search"
+                        spellCheck={false}
+                        autoCorrect="off"
+                        autoCapitalize="off"
                         value={query}
                         onChange={(event) => setQuery(event.target.value)}
                         placeholder="Search diaries and notes..."

@@ -13162,6 +13162,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 ref={entrySearchRef}
                                 className="de-entry-search"
                                 type="search"
+                                spellCheck={false}
+                                autoCorrect="off"
+                                autoCapitalize="off"
                                 value={entryQuery}
                                 onChange={(event) => {
                                     const query = event.target.value;
