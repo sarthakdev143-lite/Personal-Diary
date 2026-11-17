@@ -15,7 +15,7 @@ const Landing = () => {
             className="flex w-full flex-col items-center justify-center select-none"
             style={{ textShadow: "0px 4px 12px rgba(0,0,0,0.2)" }}
         >
-            <h1 className="text-center text-4xl font-bold italic text-white max-xxs:text-3xl">
+            <h1 className="text-center text-4xl font-bold italic text-white max-[319px]:text-3xl">
                 <span className="block text-balance">Your Private Digital Diary.</span>
                 <span className="block text-balance">Safe, Secure, and Serene</span>
             </h1>
