@@ -69,7 +69,7 @@ export default function LoginPage() {
                 <div className="mt-6 flex flex-col gap-3">
                     <Button
                         variant="outline"
-                        className="h-12 w-full rounded-xl border border-white/15 bg-zinc-900 text-base text-zinc-100 hover:border-white/40 hover:bg-zinc-900 hover:text-zinc-100"
+                        className="h-12 w-full rounded-full border border-white/15 bg-zinc-900 text-base text-zinc-100 hover:border-white/40 hover:bg-zinc-900 hover:text-zinc-100"
                         onClick={() => handleLogin("google")}
                         disabled={busy}
                     >
@@ -82,7 +82,7 @@ export default function LoginPage() {
                     </Button>
                     <Button
                         variant="outline"
-                        className="h-12 w-full rounded-xl border border-white/15 bg-zinc-900 text-base text-zinc-100 hover:border-white/40 hover:bg-zinc-900 hover:text-zinc-100"
+                        className="h-12 w-full rounded-full border border-white/15 bg-zinc-900 text-base text-zinc-100 hover:border-white/40 hover:bg-zinc-900 hover:text-zinc-100"
                         onClick={() => handleLogin("github")}
                         disabled={busy}
                     >
