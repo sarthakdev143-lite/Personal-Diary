@@ -12927,6 +12927,14 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     .de-root-writing:not(.de-root-details) #de-editor{padding-bottom:16px;}
                     .de-kbd-hint,.de-kbd-pair{display:none;}
                 }
+                /* "Close details" is wider than "details", so the name keeps its own row until the single row can hold it. */
+                @media (max-width:779px){
+                    .de-root-details .de-header{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 14px;}
+                    .de-root-details .de-header-title{gap:10px;}
+                    .de-root-details .de-header-actions{display:contents;}
+                    .de-root-details .de-header-buttons{grid-column:1 / -1;gap:8px;flex-wrap:wrap;}
+                    .de-root-details .de-entry-count{justify-self:end;align-self:center;}
+                }
                 @media (max-width:720px) and (max-height:720px){
                     .de-root-writing .de-toolbar{padding-top:4px;padding-bottom:4px;}
                     .de-root-writing .de-toolbar-clip{
