@@ -16,9 +16,8 @@ const Landing = () => {
             style={{ textShadow: "0px 4px 12px rgba(0,0,0,0.2)" }}
         >
             <h1 className="text-center text-4xl font-bold italic text-white max-xxs:text-3xl">
-                Your Private Digital Diary.
-                <br />
-                Safe, Secure, and Serene
+                <span className="block text-balance">Your Private Digital Diary.</span>
+                <span className="block text-balance">Safe, Secure, and Serene</span>
             </h1>
             <p className="mx-auto mt-2 max-w-sm text-center text-lg text-zinc-300 max-xxs:text-base">
                 Scribble your thoughts, ideas, and todos in a clean and minimal interface.
