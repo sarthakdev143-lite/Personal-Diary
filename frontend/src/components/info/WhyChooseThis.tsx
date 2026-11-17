@@ -36,7 +36,7 @@ const FeatureCard = ({ icon: Icon, title, description, href }: FeatureCardProps)
                 {href && phraseAt >= 0 ? (
                     <>
                         {description.slice(0, phraseAt)}
-                        <a href={href} className="underline decoration-white/40 underline-offset-4 hover:text-white focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70" target="_blank" rel="noreferrer">{sourcePhrase}</a>
+                        <a href={href} className="text-white underline decoration-white/80 underline-offset-4 hover:decoration-white focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70" target="_blank" rel="noreferrer">{sourcePhrase}</a>
                         {description.slice(phraseAt + sourcePhrase.length)}
                     </>
                 ) : description}
