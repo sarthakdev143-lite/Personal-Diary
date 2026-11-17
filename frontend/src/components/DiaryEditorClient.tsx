@@ -13298,7 +13298,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                             <span style={{ fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: active ? "#d5c3a6" : "#9b9286" }}>
                                                 {fmtShort(entry.createdAt)}
                                             </span>
-                                            <span style={{ fontSize: 9, color: "#7d746a", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+                                            <span style={{ fontSize: 9, color: "#9b9286", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
                                                 {clock.time ? <span><MatchedText text={clock.time} query={entryQuery} /></span> : null}
                                                 {clock.edited ? <span><MatchedText text="edited" query={entryQuery} /></span> : null}
                                             </span>
