@@ -27,7 +27,7 @@ const sourcePhrase = "read how it works";
 const FeatureCard = ({ icon: Icon, title, description, href }: FeatureCardProps) => {
     const phraseAt = href ? description.indexOf(sourcePhrase) : -1;
     return (
-        <div className="feature-card p-6 rounded-xl bg-white/5 shadow-lg flex flex-col items-center text-white/80 max-w-xs group border border-white/10 hover:border-white/30 transition-[border]">
+        <div className="feature-card flex w-full flex-col items-center rounded-xl border border-white/10 bg-white/5 p-6 text-white/80 shadow-lg transition-[border] group hover:border-white/30">
             <div className="p-3 rounded-lg bg-white/10 mb-3 group-hover:bg-white/15 transition-[border] border border-white/10 group-hover:border-white/30">
                 <Icon width={35} height={35} className="text-white/90" />
             </div>
@@ -72,7 +72,7 @@ const WhyChooseThis = () => {
                 Turn your reflections into a daily habit in your own private journal.
             </p>
 
-            <div className="card-parent mt-8 flex flex-wrap justify-center gap-6 w-full max-w-5xl">
+            <div className="card-parent mt-8 grid w-full max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {features.map((feature, index) => (
                     <FeatureCard key={index} {...feature} />
                 ))}
