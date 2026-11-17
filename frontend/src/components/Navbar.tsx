@@ -108,7 +108,7 @@ const Navbar = () => {
             <div aria-hidden="true" className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-zinc-950 from-75% to-transparent" />
             <nav className="pointer-events-auto relative z-10 mx-auto flex w-[95%] items-center justify-between xs:w-11/12" ref={dropdownRef}>
                 {pathName !== "/" && (
-                    <Button asChild size="icon" className="mr-4 h-12 w-12 rounded-full border border-white/40 bg-zinc-700 text-zinc-50 shadow-md hover:bg-zinc-600 max-[374px]:mr-2 max-[374px]:h-10 max-[374px]:w-10">
+                    <Button asChild size="icon" className="mr-4 h-12 w-12 rounded-full border border-white/40 bg-zinc-700 text-zinc-50 shadow-md hover:bg-zinc-600 max-[374px]:mr-2 max-[374px]:h-11 max-[374px]:w-11">
                         <Link href="/" aria-label="Back to home">
                             <ArrowLeft aria-hidden="true" className="h-5 w-5" />
                         </Link>
@@ -124,7 +124,7 @@ const Navbar = () => {
                         size="icon"
                         aria-expanded={menuOpen}
                         aria-label={menu.settings ? "Diary settings" : "Account"}
-                        className="h-12 w-12 shrink-0 rounded-full border border-white/40 bg-zinc-700 text-zinc-50 shadow-md hover:bg-zinc-600 hover:text-zinc-50 max-[374px]:h-10 max-[374px]:w-10"
+                        className="h-12 w-12 shrink-0 rounded-full border border-white/40 bg-zinc-700 text-zinc-50 shadow-md hover:bg-zinc-600 hover:text-zinc-50 max-[374px]:h-11 max-[374px]:w-11"
                     >
                         {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                     </Button>
