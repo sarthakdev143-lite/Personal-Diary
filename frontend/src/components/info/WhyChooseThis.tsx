@@ -64,7 +64,8 @@ const WhyChooseThis = () => {
     }, []);
 
     return (
-        <section id="features" className="relative z-10 flex min-h-screen w-full flex-col items-center justify-center bg-zinc-950 px-6 py-24 text-center max-sm:pb-32">
+        <section id="features" className="relative z-10 flex min-h-screen w-full flex-col items-center justify-center bg-zinc-950 px-6 py-24 text-center max-sm:pb-32 max-[479px]:pt-40">
+            {/* The phone account menu hangs under the header, so the heading starts below it. */}
             <h2 className="text-4xl font-bold italic text-white max-[379px]:text-[1.75rem]">
                 Why Choose This?
             </h2>
