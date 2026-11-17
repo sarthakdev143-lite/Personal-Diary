@@ -129,11 +129,12 @@ const Navbar = () => {
                             </>
                         )}
                         {menu.account && (
-                            <div className={`${menu.settings ? "border-t border-gray-700" : ""} px-4 py-3`}>
+                            <div className={`${menu.settings ? "border-t border-gray-700" : ""} px-3 py-1`}>
                                 <Button
                                     variant="destructive"
+                                    size="sm"
                                     onClick={() => signOut({ callbackUrl: "/" })}
-                                    className="mt-2 w-full rounded px-4 py-[0.3rem] text-center text-white"
+                                    className="w-full text-sm text-white"
                                 >
                                     Sign Out
                                 </Button>
