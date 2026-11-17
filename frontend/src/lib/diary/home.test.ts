@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { homeMenu } from "./home";
+import { accountMenuEscape, homeMenu } from "./home";
 
 const wide = { narrow: false, signedIn: true };
 const phone = { narrow: true, signedIn: true };
@@ -38,5 +38,17 @@ describe("home menu", () => {
             settings: false,
             account: false,
         });
+    });
+
+    it("closes the account menu on Escape unless a diary sheet is open", () => {
+        const open = { key: "Escape", altKey: false, ctrlKey: false, metaKey: false, menuOpen: true, formOpen: false, themeOpen: false };
+        assert.equal(accountMenuEscape(open), true);
+        assert.equal(accountMenuEscape({ ...open, menuOpen: false }), false);
+        assert.equal(accountMenuEscape({ ...open, formOpen: true }), false);
+        assert.equal(accountMenuEscape({ ...open, themeOpen: true }), false);
+        assert.equal(accountMenuEscape({ ...open, key: "Enter" }), false);
+        assert.equal(accountMenuEscape({ ...open, ctrlKey: true }), false);
+        assert.equal(accountMenuEscape({ ...open, metaKey: true }), false);
+        assert.equal(accountMenuEscape({ ...open, altKey: true }), false);
     });
 });
