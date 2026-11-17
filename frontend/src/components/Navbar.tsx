@@ -8,7 +8,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AuthButton } from "./AuthButton";
 import { signOut, useSession } from "next-auth/react";
-import { homeMenu } from "@/lib/diary/home";
+import { headerSignOutQuery, homeMenu } from "@/lib/diary/home";
 
 const Switch = ({
     checked,
@@ -53,10 +53,11 @@ const Navbar = () => {
 
     useEffect(() => {
         if (isDiaryDetailPage) return;
-        const checkScreenSize = () => setIsMobile(window.innerWidth < 400);
+        const query = window.matchMedia(headerSignOutQuery);
+        const checkScreenSize = () => setIsMobile(query.matches);
         checkScreenSize();
-        window.addEventListener("resize", checkScreenSize);
-        return () => window.removeEventListener("resize", checkScreenSize);
+        query.addEventListener("change", checkScreenSize);
+        return () => query.removeEventListener("change", checkScreenSize);
     }, [isDiaryDetailPage]);
 
     const handleToggle = (type: "rotation" | "reset") => {

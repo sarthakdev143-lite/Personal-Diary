@@ -55,9 +55,10 @@ export function AuthButton({ pathName }: { pathName: string }) {
                             </div>
                         </Link>
 
+                        {/* Same cutoff as headerSignOutQuery, so the email stays whole. */}
                         <button
                             onClick={() => handleOperation("signout")}
-                            className="max-xs:hidden shrink-0 rounded bg-red-500 px-4 py-[0.3rem] text-white"
+                            className="max-[479px]:hidden shrink-0 rounded bg-red-500 px-4 py-[0.3rem] text-white"
                         >
                             Sign Out
                         </button>
