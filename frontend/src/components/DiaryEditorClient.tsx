@@ -12778,6 +12778,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 .de-cover-name{font-family:'Lora',Georgia,serif;font-size:14px;letter-spacing:0;text-transform:none;color:#ede5d8;}
                 .de-cover-mark{width:28px;height:36px;object-fit:cover;border-radius:2px;border:1px solid #3a362e;flex-shrink:0;}
                 .de-details-actions{grid-column:1 / -1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;color:#a79f93;font-size:12px;}
+                .de-kbd-pair{display:inline-flex;align-items:center;gap:12px;}
                 @media (max-width:720px){
                     .de-details{grid-template-columns:1fr;}
                     .de-header{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 14px;}
@@ -12805,7 +12806,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     .de-root-details .de-body{flex:1 0 auto;}
                     .de-root-details .de-left{max-height:220px;}
                     .de-root-details .de-right{min-height:420px;}
-                    .de-kbd-hint{display:none;}
+                    .de-kbd-hint,.de-kbd-pair{display:none;}
                 }
                 @media (max-width:319px){
                     .de-header-title{gap:8px;}
@@ -13375,26 +13376,26 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
                                 <span>{countLabel(entryWritingText(htmlContent).length, "char")}</span>
                                 {mode !== "view" && (
-                                    <>
+                                    <span className="de-kbd-pair">
                                         <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
                                         <span ref={saveHintRef} className="de-kbd-hint">ctrl+s to save</span>
-                                    </>
+                                    </span>
                                 )}
                                 {mode === "view" && (
                                     <>
                                         <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
                                         <span style={{ color: "#9b8b78", fontStyle: "italic" }}>read only</span>
                                         {entries.length > 0 && (
-                                            <>
+                                            <span className="de-kbd-pair">
                                                 <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
                                                 <span className="de-kbd-hint">/ to find</span>
-                                            </>
+                                            </span>
                                         )}
                                         {visibleEntries.length > 1 && (
-                                            <>
+                                            <span className="de-kbd-pair">
                                                 <span style={{ width: 1, height: 10, background: "#2a2520", display: "inline-block" }} />
                                                 <span className="de-kbd-hint">↑↓ entries</span>
-                                            </>
+                                            </span>
                                         )}
                                     </>
                                 )}
