@@ -180,8 +180,8 @@ const Diary3D: React.FC<Diary3DProps> = ({ selectedTexture }) => {
     return pathName === "/" ? (
         <div className="fixed inset-0 z-0 bg-zinc-950">
             <div id="caption" className="absolute left-0 top-0 h-screen w-full z-0">
-                {/* 335px is the size at the narrowest wide window. Growing it with the window lets the middle letters slide out from behind the card. */}
-                <div aria-hidden="true" className="absolute left-1/2 top-1/2 z-0 hidden select-none -translate-x-1/2 -translate-y-1/2 text-[335px] uppercase text-white min-[1240px]:block">
+                {/* 310px tucks I, A, and R behind the home card. 312px lets the R show beside it. */}
+                <div aria-hidden="true" className="absolute left-1/2 top-1/2 z-0 hidden select-none -translate-x-1/2 -translate-y-1/2 text-[310px] uppercase text-white min-[1240px]:block">
                     diary
                 </div>
             </div>
