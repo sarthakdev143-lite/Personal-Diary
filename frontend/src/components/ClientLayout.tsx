@@ -22,7 +22,8 @@ const ClientLayout: React.FC<ClientLayoutProps> = ({ children }) => {
             {pathname !== '/' && (
                 <div className="fixed w-full h-screen z-0">
                     <div id="caption" className="w-full h-screen absolute top-0 left-0 z-0">
-                        <div aria-hidden="true" className="absolute left-1/2 top-1/2 z-0 hidden -translate-x-1/2 -translate-y-1/2 transform select-none text-[335px] uppercase text-white min-[1240px]:block">
+                        {/* Match the home word. 310px keeps the middle letters behind the home card. */}
+                        <div aria-hidden="true" className="absolute left-1/2 top-1/2 z-0 hidden -translate-x-1/2 -translate-y-1/2 transform select-none text-[310px] uppercase text-white min-[1240px]:block">
                             diary
                         </div>
                     </div>
