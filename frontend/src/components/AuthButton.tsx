@@ -58,13 +58,13 @@ export function AuthButton({ pathName }: { pathName: string }) {
                         {/* Same cutoff as headerSignOutQuery, so the email stays whole. */}
                         <button
                             onClick={() => handleOperation("signout")}
-                            className="max-[479px]:hidden shrink-0 rounded bg-red-500 px-4 py-[0.3rem] text-white"
+                            className="flex h-[49px] shrink-0 items-center rounded-full bg-zinc-800 px-5 text-sm text-red-200 transition hover:bg-zinc-900 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70 max-[479px]:hidden"
                         >
                             Sign Out
                         </button>
                     </div> : showSignIn(status, pathName) ? <button
                         onClick={() => handleOperation("signin")}
-                        className="bg-zinc-900 border border-zinc-700 px-4 py-[0.3rem] text-zinc-300 hover:bg-zinc-800 transition rounded ml-auto mr-3"
+                        className="ml-auto mr-3 flex h-12 items-center rounded-full border border-white/15 bg-zinc-900 px-5 text-sm text-zinc-100 transition hover:bg-zinc-800 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70"
                     >
                         Sign in
                     </button> : null
