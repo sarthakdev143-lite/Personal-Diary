@@ -12897,6 +12897,14 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 }
                 .de-details-actions .de-save-btn{padding:6px 14px;font-size:13px;letter-spacing:0.08em;}
                 .de-kbd-pair{display:inline-flex;align-items:center;gap:12px;}
+                .de-mono-clip{overflow:hidden;min-width:0;flex:1 1 auto;padding:4px 0;margin:-4px 0;}
+                /* A shortcut follows a one-pixel rule and a 12px gap. Shift the row by that 13px so a rule that starts a wrapped line is clipped, while the counts keep the same left edge. */
+                .de-footer .de-mono{
+                    display:flex;align-items:center;flex-wrap:wrap;gap:12px;
+                    width:calc(100% + 13px);margin-left:-13px;
+                    font-size:13px;color:#a79f93;letter-spacing:0.04em;
+                }
+                .de-footer .de-mono::before{content:"";width:1px;height:0;flex-shrink:0;}
                 @media (max-width:720px){
                     .de-details{grid-template-columns:1fr;}
                     .de-header{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 14px;}
@@ -13538,7 +13546,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         <div className="de-footer">
                             {entryOnScreen && (
                             <>
-                            <div className="de-mono" style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 13, color: "#a79f93", letterSpacing: "0.04em", flexWrap: "wrap" }}>
+                            <div className="de-mono-clip">
+                            <div className="de-mono">
                                 {mode !== "view" && (
                                     <label className="de-date">
                                         Date
@@ -13579,6 +13588,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                         )}
                                     </>
                                 )}
+                            </div>
                             </div>
 
                             {mode === "view" ? (
