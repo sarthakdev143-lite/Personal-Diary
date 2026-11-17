@@ -237,7 +237,7 @@ const Diaries = ({ query = "", typedQuery = query, refetchTrigger = 0, paused = 
                 {Array.from({ length: SKELETON_COUNT }).map((_, index) => (
                     <div
                         key={`diary-skeleton-${index}`}
-                        className="h-36 w-full max-w-xs animate-pulse rounded-xl bg-zinc-700/30"
+                        className="h-36 w-full animate-pulse rounded-xl bg-zinc-700/30"
                     />
                 ))}
             </>
@@ -246,7 +246,7 @@ const Diaries = ({ query = "", typedQuery = query, refetchTrigger = 0, paused = 
 
     if (error) {
         return (
-            <div className="flex h-36 w-full max-w-xs flex-col justify-between rounded-xl border border-red-400/30 bg-red-950/20 p-6 text-white/80">
+            <div className="flex h-full min-h-36 w-full flex-col justify-between rounded-xl border border-red-400/30 bg-red-950/20 p-6 text-white/80">
                 <p className="text-sm leading-6">{error}</p>
                 <button
                     type="button"
@@ -261,7 +261,7 @@ const Diaries = ({ query = "", typedQuery = query, refetchTrigger = 0, paused = 
 
     if (!diaries.length && query) {
         return (
-            <p className="w-full max-w-xs rounded-xl border border-white/10 bg-zinc-600/10 p-6 text-base text-zinc-300" role="status">
+            <p className="w-full rounded-xl border border-white/10 bg-zinc-600/10 p-6 text-base text-zinc-300" role="status">
                 No diaries match “{query}”.
             </p>
         );
@@ -269,7 +269,7 @@ const Diaries = ({ query = "", typedQuery = query, refetchTrigger = 0, paused = 
 
     if (!diaries.length) {
         return (
-            <p className="w-full max-w-xs rounded-xl border border-white/10 bg-zinc-600/10 p-6 text-base text-zinc-300" role="status">
+            <p className="w-full rounded-xl border border-white/10 bg-zinc-600/10 p-6 text-base text-zinc-300" role="status">
                 {emptyDiaryListMessage()}
             </p>
         );
@@ -283,7 +283,7 @@ const Diaries = ({ query = "", typedQuery = query, refetchTrigger = 0, paused = 
                 return (
                 <article
                     key={diary._id}
-                    className="flex min-h-36 w-full max-w-xs overflow-hidden rounded-xl border border-white/10 bg-zinc-600/10 text-white/80 shadow-lg"
+                    className="flex min-h-36 w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-600/10 text-white/80 shadow-lg"
                 >
                     <Link
                         href={diaryMatchPath(diary._id, query ? diary.matchEntry : null, query)}

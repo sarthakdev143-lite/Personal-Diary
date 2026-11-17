@@ -185,7 +185,7 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
                 className="relative flex min-h-screen w-full flex-col bg-zinc-950 px-4 pt-32 text-base text-zinc-100 max-xs:px-3"
             >
                 <h1 className="sr-only">Your diaries</h1>
-                <div className="sticky top-[16%] mx-auto mb-6 flex w-full flex-col sm:max-w-[85%]">
+                <div className="sticky top-[16%] mx-auto mb-6 flex w-full max-w-4xl flex-col">
                     <div className="flex items-center gap-3">
                     <div className="relative min-w-0 flex-1">
                     <Input
@@ -235,12 +235,12 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
                         <p id="diary-find-count" className="mt-2 text-sm tracking-wide text-zinc-400" role="status">{findCountLabel}</p>
                     )}
                 </div>
-                <div id="diaries" className="mx-auto flex h-auto w-full flex-wrap gap-5 max-sm:justify-center sm:max-w-[85%]">
+                <div id="diaries" className="mx-auto grid w-full max-w-4xl grid-cols-1 gap-5 sm:grid-cols-2">
                     <Diaries query={debouncedQuery} typedQuery={query} refetchTrigger={refetchTrigger} paused={newDiaryFormActive || isFullScreen} onMatchCount={setMatchCount} />
                     <Button
                         onClick={() => setNewDiaryFormActive(true)}
                         id="add-new-diary"
-                        className="group h-36 w-full max-w-xs flex-col items-center rounded-xl border border-white/15 bg-zinc-900 p-6 text-zinc-100 shadow-lg transition-[border] hover:border-white/40"
+                        className="group h-full min-h-36 w-full flex-col items-center rounded-xl border border-white/15 bg-zinc-900 p-6 text-zinc-100 shadow-lg transition-[border] hover:border-white/40"
                     >
                         <div className="mb-3 rounded-lg border border-white/10 bg-white/10 p-3 transition-[border] group-hover:border-white/30 group-hover:bg-white/15">
                             <RiAddCircleLine size={20} />
