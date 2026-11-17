@@ -13571,7 +13571,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 <div className="de-footer-actions">
                                     {confirmDelete === "entry" ? (
                                         <>
-                                            <span className="de-mono" style={{ fontSize: 13, color: "#c4a882" }}>Delete this entry?</span>
+                                            <span style={{ fontSize: 14, lineHeight: 1.4, color: "#e7b2a4" }}>Delete this entry?</span>
                                             <button type="button" className="de-danger-btn" onClick={() => void handleDeleteEntry()} disabled={isSaving}>delete</button>
                                             <button type="button" className="de-ghost-btn" onClick={() => setConfirmDelete(null)}>cancel</button>
                                         </>
