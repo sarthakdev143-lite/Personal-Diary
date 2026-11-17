@@ -242,10 +242,10 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
                         id="add-new-diary"
                         className="group h-full min-h-36 w-full flex-col items-center rounded-xl border border-white/15 bg-zinc-900 p-6 text-zinc-100 shadow-lg transition-[border] hover:border-white/40"
                     >
-                        <div className="mb-3 rounded-lg border border-white/10 bg-white/10 p-3 transition-[border] group-hover:border-white/30 group-hover:bg-white/15">
+                        <div aria-hidden="true" className="mb-3 rounded-lg border border-white/10 bg-white/10 p-3 transition-[border] group-hover:border-white/30 group-hover:bg-white/15">
                             <RiAddCircleLine size={20} />
                         </div>
-                        <h2 className="text-lg font-medium">+ Add New Diary</h2>
+                        <h2 className="text-lg font-medium">Add New Diary</h2>
                     </Button>
                 </div>
             </div>
