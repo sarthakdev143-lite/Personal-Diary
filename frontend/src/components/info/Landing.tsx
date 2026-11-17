@@ -20,7 +20,7 @@ const Landing = () => {
                 <br />
                 Safe, Secure, and Serene
             </h1>
-            <p className="mt-2 text-center text-lg text-zinc-300 max-xxs:text-base">
+            <p className="mx-auto mt-2 max-w-sm text-center text-lg text-zinc-300 max-xxs:text-base">
                 Scribble your thoughts, ideas, and todos in a clean and minimal interface.
             </p>
 
