@@ -120,8 +120,8 @@ const TOOLBAR: ToolButton[][] = [
         { icon: "🔗", title: "Insert link", kind: "link", format: "link" },
     ],
     [
-        { icon: "⟵", title: "Undo", command: "undo" },
-        { icon: "⟶", title: "Redo", command: "redo" },
+        { icon: "↩", title: "Undo", command: "undo" },
+        { icon: "↪", title: "Redo", command: "redo" },
     ],
 ];
 
