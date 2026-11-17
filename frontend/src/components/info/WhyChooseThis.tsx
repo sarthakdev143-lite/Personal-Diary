@@ -31,7 +31,7 @@ const FeatureCard = ({ icon: Icon, title, description, href }: FeatureCardProps)
             <div className="p-3 rounded-lg bg-white/10 mb-3 group-hover:bg-white/15 transition-[border] border border-white/10 group-hover:border-white/30">
                 <Icon width={35} height={35} className="text-white/90" />
             </div>
-            <h3 className="font-semibold text-lg">{title}</h3>
+            <h3 className="text-lg font-semibold text-white">{title}</h3>
             <p className="mt-1 text-balance text-[0.9rem] tracking-wider text-white/80">
                 {href && phraseAt >= 0 ? (
                     <>
@@ -65,7 +65,7 @@ const WhyChooseThis = () => {
 
     return (
         <section id="features" className="relative z-10 flex min-h-screen w-full flex-col items-center justify-center bg-zinc-950 px-6 py-24 text-center max-sm:pb-32">
-            <h2 className="text-4xl font-bold italic text-white/80 max-[379px]:text-[1.75rem]">
+            <h2 className="text-4xl font-bold italic text-white max-[379px]:text-[1.75rem]">
                 Why Choose This?
             </h2>
             <p className="mx-auto mt-2 max-w-2xl text-balance text-lg text-zinc-300">
