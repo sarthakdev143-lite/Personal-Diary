@@ -13024,7 +13024,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     .de-footer-actions .de-ghost-btn,
                     .de-footer-actions .de-danger-btn{padding-left:8px;padding-right:8px;flex-shrink:0;}
                 }
-                @media (max-width:460px){
+                /* Four details actions stay in two pairs until the row is wide enough for Unpin as well as Pin. */
+                @media (max-width:530px){
                     .de-details-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
                     .de-details-actions .de-field-error,
                     .de-details-actions > span{grid-column:1 / -1;}
