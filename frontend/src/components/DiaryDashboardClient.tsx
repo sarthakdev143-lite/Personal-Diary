@@ -220,7 +220,7 @@ const DiaryDashboardClient = ({ initialQuery = "" }: { initialQuery?: string }) 
                         type="button"
                         onClick={() => importInputRef.current?.click()}
                         disabled={isImporting}
-                        className="flex shrink-0 items-center rounded-xl border border-white/15 bg-zinc-900/80 px-4 text-base text-zinc-100 hover:border-white/40 disabled:opacity-50"
+                        className="flex shrink-0 items-center rounded-xl border border-white/15 bg-zinc-900/80 px-4 text-base text-zinc-100 hover:border-white/40 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70 disabled:opacity-50"
                     >
                         {isImporting ? "Importing" : "Import"}
                     </button>

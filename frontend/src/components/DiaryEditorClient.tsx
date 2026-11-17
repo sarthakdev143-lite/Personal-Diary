@@ -12626,6 +12626,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 .de-entry-card:hover{background:#131109;}
                 .de-entry-card.active{background:#161208;border-left-color:#c4a882;}
                 .de-entry-card:focus-visible{outline:1px solid #c4a882;outline-offset:-2px;}
+                .de-back:focus-visible,
+                .de-ghost-btn:focus-visible,
+                .de-danger-btn:focus-visible,
+                .de-save-btn:focus-visible,
+                .de-tbtn:focus-visible,
+                .de-covers button:focus-visible{outline:1px solid #c4a882;outline-offset:2px;}
                 .de-entry-card mark{background:#4a3b24;color:#f4ead8;padding:0 2px;border-radius:2px;font-style:inherit;}
 
                 /* Right panel */
