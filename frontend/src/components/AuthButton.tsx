@@ -36,14 +36,14 @@ export function AuthButton({ pathName }: { pathName: string }) {
                         <Link
                             href="/diary"
                             aria-label={session.user?.name ? `Your diaries, ${session.user.name}` : "Your diaries"}
-                            className={`flex min-w-0 items-center gap-3 rounded-full bg-zinc-800 py-0.5 pr-3.5 transition hover:bg-zinc-900 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70 max-[374px]:gap-2 max-[374px]:pr-2.5 ${pathName === "/info" ? "max-xxs:ml-auto" : ""}`}
+                            className={`flex min-w-0 items-center gap-3 rounded-full bg-zinc-800 py-0.5 pr-3.5 transition hover:bg-zinc-900 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70 max-[374px]:gap-1 max-[374px]:pr-2.5 ${pathName === "/info" ? "max-xxs:ml-auto" : ""}`}
                         >
                             <Image
                                 src={profileImage}
                                 alt=""
                                 width={45}
                                 height={45}
-                                className="h-[45px] w-[45px] shrink-0 rounded-full max-[374px]:h-9 max-[374px]:w-9"
+                                className="h-[45px] w-[45px] shrink-0 rounded-full max-[374px]:h-8 max-[374px]:w-8"
                             />
                             <div className="flex min-w-0 flex-col">
                                 <span className="truncate text-base capitalize text-zinc-100">{session.user?.name}</span>
