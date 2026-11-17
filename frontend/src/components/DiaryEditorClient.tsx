@@ -12809,7 +12809,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     .de-kbd-hint,.de-kbd-pair{display:none;}
                 }
                 @media (max-width:319px){
-                    .de-header-title{gap:8px;}
+                    .de-header{padding-left:10px;padding-right:10px;}
+                    .de-header-title{gap:6px;}
+                }
+                @media (max-width:340px){
+                    .de-header-buttons{gap:6px;flex-wrap:nowrap;}
+                    .de-header-buttons .de-ghost-btn{padding:6px 5px;letter-spacing:0.05em;}
                 }
                 @media (max-width:370px){
                     .de-footer-actions:has(button:nth-child(5)){
