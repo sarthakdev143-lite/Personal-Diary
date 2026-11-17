@@ -9165,7 +9165,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
         const address = entryShareAddress(window.location.origin, diaryId, selectedEntryId);
         try {
             await navigator.clipboard.writeText(address);
-            toast({ title: "Link copied", description: address });
+            toast({ title: "Link copied" });
         } catch {
             toast({ title: "Copy this link", description: address });
         }
