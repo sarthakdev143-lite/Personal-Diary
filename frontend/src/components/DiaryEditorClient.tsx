@@ -12887,6 +12887,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     font-family:'JetBrains Mono',monospace;
                     font-size:10px;letter-spacing:0.25em;text-transform:uppercase;
                     color:#9b9286;text-decoration:none;transition:color 0.15s;flex-shrink:0;
+                    display:inline-flex;align-items:center;
+                    padding:14px 8px;margin:-14px -8px;
                 }
                 .de-back:hover{color:#e0d6c8;}
 
