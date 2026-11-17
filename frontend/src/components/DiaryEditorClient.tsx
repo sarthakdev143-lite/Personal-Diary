@@ -12573,8 +12573,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     padding:8px 16px;background:#14110e;border-bottom:1px solid #1e1c18;
                 }
                 .de-link label{
-                    font-family:'JetBrains Mono',monospace;font-size:9px;
-                    letter-spacing:0.18em;text-transform:uppercase;color:#a79f93;
+                    font-family:'JetBrains Mono',monospace;font-size:13px;
+                    letter-spacing:0.08em;text-transform:uppercase;color:#a79f93;
                 }
                 .de-link input{
                     flex:1;min-width:160px;font-family:'Lora',Georgia,serif;font-size:14px;
@@ -12865,8 +12865,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 }
                 .de-details label{
                     display:flex;flex-direction:column;gap:6px;
-                    font-family:'JetBrains Mono',monospace;font-size:9px;
-                    letter-spacing:0.18em;text-transform:uppercase;color:#a79f93;
+                    font-family:'JetBrains Mono',monospace;font-size:13px;
+                    letter-spacing:0.08em;text-transform:uppercase;color:#a79f93;
                 }
                 .de-details input,.de-details textarea{
                     font-family:'Lora',Georgia,serif;font-size:14px;letter-spacing:0;
@@ -12992,11 +12992,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
 
                 .de-date{
                     display:flex;align-items:center;gap:8px;
-                    font-family:'JetBrains Mono',monospace;font-size:9px;
-                    letter-spacing:0.16em;text-transform:uppercase;color:#a79f93;
+                    font-family:'JetBrains Mono',monospace;font-size:13px;
+                    letter-spacing:0.08em;text-transform:uppercase;color:#a79f93;
                 }
                 .de-date input{
-                    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.04em;
+                    font-family:'JetBrains Mono',monospace;font-size:14px;letter-spacing:0.04em;
                     text-transform:none;color:#ede5d8;background:#0d0b09;
                     border:1px solid #2a2520;border-radius:3px;padding:0 8px;color-scheme:dark;
                     box-sizing:border-box;height:44px;
