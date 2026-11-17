@@ -283,7 +283,7 @@ const Diaries = ({ query = "", typedQuery = query, refetchTrigger = 0, paused = 
                 return (
                 <article
                     key={diary._id}
-                    className="flex min-h-36 w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-600/10 text-white/80 shadow-lg"
+                    className="relative flex min-h-36 w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-600/10 text-white/80 shadow-lg"
                 >
                     <Link
                         href={diaryMatchPath(diary._id, query ? diary.matchEntry : null, query)}
@@ -305,11 +305,13 @@ const Diaries = ({ query = "", typedQuery = query, refetchTrigger = 0, paused = 
                         )}
                         <div className="flex min-w-0 flex-1 flex-col justify-between p-4">
                             <div className="space-y-2 overflow-hidden">
-                                <h2 className="truncate text-lg font-medium text-white">
+                                <div className="flex min-h-11 items-center pr-20">
+                                <h2 className="min-w-0 truncate text-lg font-medium text-white">
                                     {query
                                         ? <MatchedText text={titleCardText(diary.title, query)} query={query} className="rounded-sm bg-amber-950/80 px-0.5 text-amber-100" />
                                         : diary.title}
                                 </h2>
+                                </div>
                                 {(query ? diary.match || diary.description : diary.description) ? (
                                 <p className="line-clamp-2 text-sm leading-6 text-zinc-300">
                                     {query
@@ -318,7 +320,7 @@ const Diaries = ({ query = "", typedQuery = query, refetchTrigger = 0, paused = 
                                 </p>
                                 ) : null}
                             </div>
-                            <p className="truncate text-xs tracking-wide text-zinc-400">
+                            <p className="mt-2 truncate text-xs tracking-wide text-zinc-400">
                                 {diaryCardWhen({
                                     query,
                                     matchEntry: diary.matchEntry,
@@ -330,14 +332,14 @@ const Diaries = ({ query = "", typedQuery = query, refetchTrigger = 0, paused = 
                             </p>
                         </div>
                     </Link>
-                    <div className="mb-4 mr-4 flex shrink-0 flex-col items-end gap-1 self-end">
+                    <div className="absolute right-4 top-4 z-10 flex flex-col items-end gap-1">
                         <button
                             type="button"
                             onClick={() => void togglePin(diary)}
                             disabled={pinningId === diary._id}
                             aria-pressed={pinned}
                             aria-label={`${pinned ? "Unpin" : "Pin"} ${diary.title}`}
-                            className={`relative shrink-0 rounded-full border px-1.5 py-0.5 text-xs tracking-wide after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70 disabled:opacity-50 ${pinned ? "border-white/50 bg-white/10 text-white" : "border-white/20 text-zinc-200 hover:border-white/40 hover:text-white"}`}
+                            className={`flex min-h-11 shrink-0 items-center rounded-full border px-3 text-sm tracking-wide focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70 disabled:opacity-50 ${pinned ? "border-white/50 bg-white/10 text-white" : "border-white/20 text-zinc-200 hover:border-white/40 hover:text-white"}`}
                         >
                             {pinned ? "Unpin" : "Pin"}
                         </button>
