@@ -106,7 +106,7 @@ const TOOLBAR: ToolButton[][] = [
         { icon: "B", title: "Bold (Ctrl+B)", command: "bold", format: "bold" },
         { icon: "I", title: "Italic (Ctrl+I)", command: "italic", format: "italic" },
         { icon: "U", title: "Underline (Ctrl+U)", command: "underline", format: "underline" },
-        { icon: "S̶", title: "Strikethrough", command: "strikeThrough", format: "strikethrough" },
+        { icon: "S", title: "Strikethrough", command: "strikeThrough", format: "strikethrough" },
     ],
     [
         { icon: "≡", title: "Bullet list", command: "insertUnorderedList", format: "ul" },
@@ -12613,6 +12613,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     text-align:center;
                     line-height:1;
                 }
+                .de-strike{text-decoration:line-through;text-decoration-thickness:1.5px;}
                 .de-tbtn:hover{color:#d4c8b4;background:#1e1c18;border-color:#2a2520;}
                 .de-tbtn.on{color:#c4a882;background:#2a2010;border-color:#3a3020;}
 
@@ -13168,7 +13169,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                         onFocus={event => revealTool(event.currentTarget)}
                                         onMouseDown={e => e.preventDefault()}
                                     >
-                                        {btn.icon}
+                                        {btn.format === "strikethrough" ? <span className="de-strike">S</span> : btn.icon}
                                     </button>
                                     );
                                 })}
