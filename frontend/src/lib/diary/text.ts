@@ -2939,6 +2939,17 @@ export function entryToShowOnOpen<T extends { createdAt: string }>(entries: read
     return chosen;
 }
 
+export function composeCancelTarget<T extends { _id: string; createdAt: string }>(
+    entries: readonly T[],
+    returnId: string | null,
+): T | null {
+    if (returnId) {
+        const chosen = entries.find((entry) => entry._id === returnId);
+        if (chosen) return chosen;
+    }
+    return entryToShowOnOpen(entries);
+}
+
 export function entryToOpenWhenHidden<T extends { _id: string; createdAt: string }>(
     visible: readonly T[],
     currentId: string | null,
