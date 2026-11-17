@@ -82,8 +82,9 @@ const Navbar = () => {
     }
 
     return (
-        <header className="fixed z-30 w-full mt-8">
-            <nav className="flex justify-between mx-auto w-[95%] xs:w-11/12 relative items-center" ref={dropdownRef}>
+        <header className="pointer-events-none fixed inset-x-0 top-0 z-30 pt-8">
+            <div aria-hidden="true" className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-zinc-950 from-75% to-transparent" />
+            <nav className="pointer-events-auto relative z-10 mx-auto flex w-[95%] items-center justify-between xs:w-11/12" ref={dropdownRef}>
                 {pathName !== "/" && (
                     <Button asChild size="icon" className="mr-4 h-12 w-12 rounded-full border border-white/40 bg-zinc-700 text-zinc-50 shadow-md hover:bg-zinc-600 max-[374px]:mr-2 max-[374px]:h-10 max-[374px]:w-10">
                         <Link href="/" aria-label="Back to home">
