@@ -12554,7 +12554,13 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 }
                 .de-link input{
                     flex:1;min-width:160px;font-family:'Lora',Georgia,serif;font-size:14px;
-                    color:#ede5d8;background:#0d0b09;border:1px solid #2a2520;border-radius:3px;padding:6px 10px;
+                    color:#ede5d8;background:#0d0b09;border:1px solid #2a2520;border-radius:3px;
+                    box-sizing:border-box;height:44px;padding:0 10px;
+                }
+                .de-link .de-save-btn,
+                .de-link .de-ghost-btn{
+                    box-sizing:border-box;min-height:44px;
+                    display:inline-flex;align-items:center;justify-content:center;
                 }
                 .de-link input[aria-invalid="true"]{border-color:#6a3a32;}
                 .de-link-error{
@@ -12604,7 +12610,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 .de-entry-search{
                     display:block;width:calc(100% - 32px);margin:0 16px 8px;
                     font-family:'Lora',Georgia,serif;font-size:13px;color:#ede5d8;
-                    background:#0d0b09;border:1px solid #2a2520;border-radius:3px;padding:8px 10px;
+                    background:#0d0b09;border:1px solid #2a2520;border-radius:3px;
+                    box-sizing:border-box;height:44px;padding:0 10px;
                 }
                 .de-entry-search::-webkit-search-cancel-button{margin-left:16px;}
                 .de-entry-search:focus,.de-month:focus{outline:none;border-color:#6a5a48;}
@@ -12624,7 +12631,8 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 .de-month{
                     display:block;width:calc(100% - 32px);margin:0 16px 8px;
                     font-family:'Lora',Georgia,serif;font-size:13px;color:#ede5d8;
-                    background:#0d0b09;border:1px solid #2a2520;border-radius:3px;padding:8px 10px;
+                    background:#0d0b09;border:1px solid #2a2520;border-radius:3px;
+                    box-sizing:border-box;height:44px;padding:0 10px;
                     color-scheme:dark;
                 }
                 .de-entry-card:hover{background:#131109;}
@@ -12804,6 +12812,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     text-transform:none;color:#ede5d8;background:#0d0b09;
                     border:1px solid #2a2520;border-radius:3px;padding:8px 10px;resize:vertical;
                 }
+                .de-details input{box-sizing:border-box;height:44px;padding:0 10px;}
                 .de-details textarea::placeholder{color:#8f8679;}
                 .de-details input[aria-invalid="true"],.de-details textarea[aria-invalid="true"]{border-color:#6a3a32;}
                 .de-covers{grid-column:1 / -1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
