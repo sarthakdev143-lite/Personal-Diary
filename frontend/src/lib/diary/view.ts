@@ -8,6 +8,19 @@ export function emptyDiaryListMessage(): string {
     return "No diaries yet. Add one, or import a backup.";
 }
 
+export function diaryOpenError(error: string): { title: string; detail: string } {
+    if (error === "Diary not found" || error === "Invalid diary id") {
+        return {
+            title: "This diary is not here",
+            detail: "That address does not open one of your diaries.",
+        };
+    }
+    return {
+        title: "This diary could not be opened",
+        detail: "Go back to your diaries and try again.",
+    };
+}
+
 export function diaryListView<T>(input: {
     status: "loading" | "authenticated" | "unauthenticated";
     result: DiaryListResult<T> | null;

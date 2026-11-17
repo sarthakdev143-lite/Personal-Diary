@@ -1,11 +1,23 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { diaryEnterChoice, diaryFieldReady, diaryListView, diaryMatchCount, diaryPendingOpen, emptyDiaryListMessage } from "./view";
+import { diaryEnterChoice, diaryFieldReady, diaryListView, diaryMatchCount, diaryOpenError, diaryPendingOpen, emptyDiaryListMessage } from "./view";
 
 describe("diary list while a search loads", () => {
     it("explains an empty shelf", () => {
         assert.equal(emptyDiaryListMessage(), "No diaries yet. Add one, or import a backup.");
+    });
+
+    it("explains a diary that cannot be opened", () => {
+        assert.deepEqual(diaryOpenError("Diary not found"), {
+            title: "This diary is not here",
+            detail: "That address does not open one of your diaries.",
+        });
+        assert.deepEqual(diaryOpenError("Invalid diary id"), diaryOpenError("Diary not found"));
+        assert.deepEqual(diaryOpenError("Failed to fetch diary"), {
+            title: "This diary could not be opened",
+            detail: "Go back to your diaries and try again.",
+        });
     });
 
     const rain = { key: "auth:rain:0:0", diaries: [{ _id: "window" }], error: null };
