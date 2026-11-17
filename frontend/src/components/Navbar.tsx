@@ -99,12 +99,12 @@ const Navbar = () => {
                 {menu.open && (
                     <Button
                         onClick={() => setOpenPath(menuOpen ? null : pathName)}
-                        variant="ghost"
+                        size="icon"
                         aria-expanded={menuOpen}
                         aria-label={menu.settings ? "Diary settings" : "Account"}
-                        className="border border-zinc-700 bg-zinc-900 py-5 text-white transition-colors duration-500 ease-in-out hover:bg-zinc-800 hover:text-white max-[374px]:px-2.5"
+                        className="h-12 w-12 shrink-0 rounded-full border border-white/40 bg-zinc-700 text-zinc-50 shadow-md hover:bg-zinc-600 hover:text-zinc-50 max-[374px]:h-10 max-[374px]:w-10"
                     >
-                        {menuOpen ? <X size={16}/> : <Menu size={16}/>}
+                        {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                     </Button>
                 )}
 
