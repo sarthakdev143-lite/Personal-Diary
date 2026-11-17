@@ -113,5 +113,18 @@ body {
     align-items: center;
     align-items: safe center;
   }
+
+  /* A short phone pins the home card under the header. The account menu hangs past that, so the card starts lower and keeps its buttons on screen. */
+  @media (max-width: 900px) and (max-height: 740px) {
+    .hero-screen {
+      padding-top: 9rem;
+      padding-bottom: 4rem;
+    }
+
+    .hero-card {
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+    }
+  }
 }
  
