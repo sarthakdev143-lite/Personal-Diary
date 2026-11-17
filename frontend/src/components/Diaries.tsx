@@ -337,7 +337,7 @@ const Diaries = ({ query = "", typedQuery = query, refetchTrigger = 0, paused = 
                             disabled={pinningId === diary._id}
                             aria-pressed={pinned}
                             aria-label={`${pinned ? "Unpin" : "Pin"} ${diary.title}`}
-                            className={`shrink-0 rounded-full border px-1.5 py-0.5 text-xs tracking-wide focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70 disabled:opacity-50 ${pinned ? "border-white/50 bg-white/10 text-white" : "border-white/20 text-zinc-200 hover:border-white/40 hover:text-white"}`}
+                            className={`relative shrink-0 rounded-full border px-1.5 py-0.5 text-xs tracking-wide after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-white/70 disabled:opacity-50 ${pinned ? "border-white/50 bg-white/10 text-white" : "border-white/20 text-zinc-200 hover:border-white/40 hover:text-white"}`}
                         >
                             {pinned ? "Unpin" : "Pin"}
                         </button>
