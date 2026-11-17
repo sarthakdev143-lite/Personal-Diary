@@ -12988,15 +12988,16 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     .de-header-buttons{gap:6px;flex-wrap:wrap;}
                     .de-header-buttons .de-ghost-btn{padding:6px 5px;letter-spacing:0.05em;}
                 }
+                /* Five reading actions wrap as three, then two. The last two share the row. */
                 @media (max-width:460px){
                     .de-footer-actions:has(button:nth-child(5)){
                         display:grid;
-                        grid-template-columns:repeat(3,minmax(0,1fr));
+                        grid-template-columns:repeat(6,minmax(0,1fr));
                         gap:4px;
                         width:100%;
                     }
-                    .de-footer-actions:has(button:nth-child(5)) button:nth-child(4){grid-column:2;}
-                    .de-footer-actions:has(button:nth-child(5)) button:nth-child(5){grid-column:3;}
+                    .de-footer-actions:has(button:nth-child(5)) button:nth-child(-n+3){grid-column:span 2;}
+                    .de-footer-actions:has(button:nth-child(5)) button:nth-child(n+4){grid-column:span 3;}
                 }
                 /* Keep the reading buttons on one row until they fit beside the counts. */
                 @media (min-width:720px) and (max-width:1159px){
