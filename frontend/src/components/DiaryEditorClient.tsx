@@ -12740,7 +12740,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 #de-editor[data-write-hint]:empty::before,
                 #de-editor[data-write-hint] > p:first-of-type::before{
                     content:var(--write-hint);
-                    color:#9b9286;
+                    color:#a79f93;
                     font-style:italic;
                     pointer-events:none;
                 }
@@ -12877,7 +12877,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     border:1px solid #2a2520;border-radius:3px;padding:8px 10px;resize:vertical;
                 }
                 .de-details input{box-sizing:border-box;height:44px;padding:0 10px;}
-                .de-details textarea::placeholder{color:#8f8679;}
+                .de-details textarea::placeholder{color:#a79f93;}
                 .de-details input[aria-invalid="true"],.de-details textarea[aria-invalid="true"]{border-color:#6a3a32;}
                 .de-covers{grid-column:1 / -1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
                 .de-covers button{
