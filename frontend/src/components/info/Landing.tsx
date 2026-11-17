@@ -20,7 +20,7 @@ const Landing = () => {
                 <span className="block text-balance">Safe, Secure, and Serene</span>
             </h1>
             <p className="mx-auto mt-2 max-w-sm text-balance text-center text-lg text-zinc-300 max-xxs:text-base">
-                Scribble your thoughts, ideas, and todos in a clean and minimal interface.
+                Scribble your thoughts and ideas in a clean and minimal interface.
             </p>
 
             <div className="mt-6 flex w-full flex-wrap items-center justify-center gap-2 max-[462px]:[&>*]:w-full">
