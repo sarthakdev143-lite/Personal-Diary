@@ -13421,10 +13421,6 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                     Nothing written yet.
                                 </p>
                             </div>
-                        ) : visibleEntries.length === 0 ? (
-                            <p style={{ padding: "8px 20px 24px", fontFamily: "'Lora',Georgia,serif", fontStyle: "italic", color: "#a79f93", fontSize: 13, lineHeight: 1.8, overflowWrap: "anywhere", minWidth: 0, maxWidth: "100%" }}>
-                                {emptyEntryListMessage(entryQuery, activeMonth)}
-                            </p>
                         ) : (
                             visibleEntries.map((entry, i) => {
                                 const active = selectedEntryId === entry._id;
@@ -13467,7 +13463,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         )}
 
                         <div className="de-editor-wrap">
-                            {!entryOnScreen && (
+                            {!entryOnScreen && entries.length > 0 && (
                                 <p className="de-empty-read" role="status">
                                     <span>{emptyEntryListMessage(entryQuery, activeMonth)}</span>
                                 </p>
