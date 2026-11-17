@@ -12739,6 +12739,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     border-top:1px solid #1a1814;
                 }
                 .de-footer-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
+                .de-footer-actions .de-ghost-btn,
+                .de-footer-actions .de-danger-btn,
+                .de-footer-actions .de-save-btn{
+                    box-sizing:border-box;min-height:44px;
+                    display:inline-flex;align-items:center;justify-content:center;
+                }
                 .de-discard{
                     flex-shrink:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
                     padding:8px 28px;background:#1a1210;border-top:1px solid #3a2a24;
