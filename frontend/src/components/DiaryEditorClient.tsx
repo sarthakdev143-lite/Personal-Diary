@@ -12827,7 +12827,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 /* Buttons */
                 .de-save-btn{
                     font-family:'JetBrains Mono',monospace;
-                    font-size:10px;letter-spacing:0.2em;text-transform:uppercase;
+                    font-size:13px;letter-spacing:0.08em;text-transform:uppercase;
                     color:#c4a882;border:1px solid #4a3a28;
                     padding:7px 22px;border-radius:2px;background:transparent;
                     cursor:pointer;transition:all 0.18s;
@@ -12838,7 +12838,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 .de-save-btn:disabled{color:#8f8679;border-color:#3a362e;cursor:not-allowed;}
                 .de-ghost-btn{
                     font-family:'JetBrains Mono',monospace;
-                    font-size:9px;letter-spacing:0.22em;text-transform:uppercase;
+                    font-size:13px;letter-spacing:0.06em;text-transform:uppercase;
                     color:#a79f93;border:1px solid #3a362e;
                     padding:6px 14px;border-radius:2px;background:transparent;
                     cursor:pointer;transition:all 0.15s;white-space:nowrap;
@@ -12847,7 +12847,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 .de-ghost-btn:disabled{opacity:0.4;cursor:not-allowed;}
                 .de-danger-btn{
                     font-family:'JetBrains Mono',monospace;
-                    font-size:9px;letter-spacing:0.18em;text-transform:uppercase;
+                    font-size:13px;letter-spacing:0.06em;text-transform:uppercase;
                     color:#e7b2a4;border:1px solid #6a3a32;
                     padding:6px 14px;border-radius:2px;background:transparent;
                     cursor:pointer;white-space:nowrap;
@@ -12892,7 +12892,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     box-sizing:border-box;min-height:44px;
                     display:inline-flex;align-items:center;justify-content:center;
                 }
-                .de-details-actions .de-save-btn{padding:6px 14px;font-size:9px;letter-spacing:0.18em;}
+                .de-details-actions .de-save-btn{padding:6px 14px;font-size:13px;letter-spacing:0.08em;}
                 .de-kbd-pair{display:inline-flex;align-items:center;gap:12px;}
                 @media (max-width:720px){
                     .de-details{grid-template-columns:1fr;}
@@ -12901,7 +12901,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     .de-header-actions{display:contents;}
                     .de-header-buttons{grid-column:1 / -1;gap:8px;flex-wrap:wrap;}
                     .de-entry-count{justify-self:end;align-self:center;}
-                    .de-ghost-btn,.de-danger-btn{padding:6px 10px;letter-spacing:0.12em;}
+                    .de-ghost-btn,.de-danger-btn{padding:6px 10px;letter-spacing:0.06em;}
                     .de-body{flex-direction:column;}
                     .de-left{
                         width:100%;max-height:min(280px,36vh);flex-shrink:0;
@@ -12940,10 +12940,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     .de-header-title{gap:6px;}
                 }
                 @media (max-width:340px){
-                    .de-header-buttons{gap:6px;flex-wrap:nowrap;}
+                    .de-header-buttons{gap:6px;flex-wrap:wrap;}
                     .de-header-buttons .de-ghost-btn{padding:6px 5px;letter-spacing:0.05em;}
                 }
-                @media (max-width:370px){
+                @media (max-width:460px){
                     .de-footer-actions:has(button:nth-child(5)){
                         display:grid;
                         grid-template-columns:repeat(3,minmax(0,1fr));
@@ -12976,14 +12976,14 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         display:flex;width:100%;align-items:center;justify-content:center;
                     }
                     .de-details-actions .de-save-btn{
-                        padding:6px 10px;letter-spacing:0.12em;font-size:9px;white-space:nowrap;
+                        padding:6px 10px;letter-spacing:0.08em;font-size:13px;white-space:nowrap;
                     }
                 }
 
                 /* Back link */
                 .de-back{
                     font-family:'JetBrains Mono',monospace;
-                    font-size:10px;letter-spacing:0.25em;text-transform:uppercase;
+                    font-size:13px;letter-spacing:0.08em;text-transform:uppercase;
                     color:#9b9286;text-decoration:none;transition:color 0.15s;flex-shrink:0;
                     display:inline-flex;align-items:center;
                     padding:14px 8px;margin:-14px -8px;
@@ -13518,7 +13518,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                         <div className="de-footer">
                             {entryOnScreen && (
                             <>
-                            <div className="de-mono" style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 10, color: "#8f8679", letterSpacing: "0.1em", flexWrap: "wrap" }}>
+                            <div className="de-mono" style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 13, color: "#8f8679", letterSpacing: "0.04em", flexWrap: "wrap" }}>
                                 {mode !== "view" && (
                                     <label className="de-date">
                                         Date
@@ -13565,7 +13565,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 <div className="de-footer-actions">
                                     {confirmDelete === "entry" ? (
                                         <>
-                                            <span className="de-mono" style={{ fontSize: 10, color: "#c4a882" }}>Delete this entry?</span>
+                                            <span className="de-mono" style={{ fontSize: 13, color: "#c4a882" }}>Delete this entry?</span>
                                             <button type="button" className="de-danger-btn" onClick={() => void handleDeleteEntry()} disabled={isSaving}>delete</button>
                                             <button type="button" className="de-ghost-btn" onClick={() => setConfirmDelete(null)}>cancel</button>
                                         </>
