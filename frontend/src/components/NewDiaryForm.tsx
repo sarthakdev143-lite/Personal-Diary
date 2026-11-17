@@ -282,8 +282,7 @@ const NewDiaryForm = ({
                     <Button
                         onClick={handleFinishForm}
                         disabled={isSubmitting}
-                        className="px-11 py-5 border border-zinc-600 
-                            bg-zinc-700 hover:bg-zinc-600 tracking-wider text-base"
+                        className="shrink-0 border border-zinc-200 bg-zinc-100 px-11 py-5 text-base tracking-wider text-zinc-950 hover:bg-white disabled:cursor-not-allowed disabled:border-zinc-700 disabled:bg-zinc-800 disabled:text-zinc-400 disabled:opacity-100"
                     >
                         {isSubmitting ? "Creating..." : "Create Diary"}
                     </Button>
