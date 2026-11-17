@@ -12942,6 +12942,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     .de-header{padding-left:10px;padding-right:10px;}
                     .de-header-title{gap:6px;}
                 }
+                /* Details make the page scroll. A scrollbar narrows this row, so the name keeps the tighter spacing. */
+                @media (max-width:420px){
+                    .de-root-details .de-header{padding-left:10px;padding-right:10px;}
+                    .de-root-details .de-header-title{gap:6px;}
+                }
                 @media (max-width:340px){
                     .de-header-buttons{gap:6px;flex-wrap:wrap;}
                     .de-header-buttons .de-ghost-btn{padding:6px 5px;letter-spacing:0.05em;}
