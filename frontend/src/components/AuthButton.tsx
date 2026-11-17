@@ -32,18 +32,18 @@ export function AuthButton({ pathName }: { pathName: string }) {
         <>
             {
                 session ?
-                    <div className="mr-3 flex min-w-0 flex-1 items-center justify-between gap-3">
+                    <div className="mr-3 flex min-w-0 flex-1 items-center justify-between gap-3 max-[374px]:mr-2">
                         <Link
                             href="/diary"
                             aria-label={session.user?.name ? `Your diaries, ${session.user.name}` : "Your diaries"}
-                            className={`flex min-w-0 items-center gap-3 rounded-full bg-zinc-800 py-0.5 pr-3.5 transition hover:bg-zinc-900 ${pathName === "/info" ? "max-xxs:ml-auto" : ""}`}
+                            className={`flex min-w-0 items-center gap-3 rounded-full bg-zinc-800 py-0.5 pr-3.5 transition hover:bg-zinc-900 max-[374px]:gap-2 max-[374px]:pr-2.5 ${pathName === "/info" ? "max-xxs:ml-auto" : ""}`}
                         >
                             <Image
                                 src={profileImage}
                                 alt=""
                                 width={45}
                                 height={45}
-                                className="shrink-0 rounded-full"
+                                className="h-[45px] w-[45px] shrink-0 rounded-full max-[374px]:h-9 max-[374px]:w-9"
                             />
                             <div className="flex min-w-0 flex-col">
                                 <span className="truncate text-base capitalize text-zinc-100">{session.user?.name}</span>
