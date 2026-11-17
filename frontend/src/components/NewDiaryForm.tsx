@@ -154,9 +154,9 @@ const NewDiaryForm = ({
                     type="button"
                     aria-label="Close new diary"
                     onClick={() => setFormActive(false)}
-                    className="absolute top-6 right-6 z-10 text-2xl text-zinc-300"
+                    className="absolute top-4 right-4 z-10 flex h-11 w-11 items-center justify-center text-zinc-300"
                 >
-                    <RiCloseCircleFill size={23} />
+                    <RiCloseCircleFill size={32} />
                 </button>
                 <div id="content" className="flex min-h-0 w-full flex-col p-4">
                     <h2 className="mb-6 shrink-0 text-2xl font-bold">New Diary</h2>
@@ -216,14 +216,14 @@ const NewDiaryForm = ({
                     type="button"
                     aria-label="Close theme selection"
                     onClick={handleCloseThemeSelection}
-                    className="absolute right-6 top-6 z-[70] text-2xl text-zinc-300"
+                    className="absolute right-4 top-4 z-[70] flex h-11 w-11 items-center justify-center text-zinc-300"
                 >
-                    <RiCloseCircleFill size={23} />
+                    <RiCloseCircleFill size={32} />
                 </button>
                 
                 {/* 3D Preview Area */}
                 <div className="relative min-h-0 w-full min-w-0 flex-1 overflow-hidden rounded-lg bg-zinc-900 shadow-lg lg:h-full">
-                    <div className="absolute top-4 left-4 z-10 max-w-[calc(100%-4.5rem)] bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2">
+                    <div className="absolute top-4 left-4 z-10 max-w-[calc(100%-5.5rem)] bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2">
                         <h3 className="text-lg font-semibold text-white">Preview</h3>
                         <p className="text-sm text-gray-300 [overflow-wrap:anywhere]">{formData.title || "Your Diary"}</p>
                     </div>
