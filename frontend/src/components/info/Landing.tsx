@@ -19,7 +19,7 @@ const Landing = () => {
                 <span className="block text-balance">Your Private Digital Diary.</span>
                 <span className="block text-balance">Safe, Secure, and Serene</span>
             </h1>
-            <p className="mx-auto mt-2 max-w-sm text-center text-lg text-zinc-300 max-xxs:text-base">
+            <p className="mx-auto mt-2 max-w-sm text-balance text-center text-lg text-zinc-300 max-xxs:text-base">
                 Scribble your thoughts, ideas, and todos in a clean and minimal interface.
             </p>
 
