@@ -13050,7 +13050,7 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                                 {diary?.title || "Untitled"}
                             </h1>
                             {diary?.description && (
-                                <p className="de-mono" style={{ fontSize: 10, color: "#8f8679", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "0.04em" }}>
+                                <p className="de-mono" style={{ fontSize: 13, color: "#8f8679", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: 0 }}>
                                     {diary.description}
                                 </p>
                             )}
