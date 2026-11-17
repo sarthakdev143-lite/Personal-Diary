@@ -12521,6 +12521,10 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     display:flex;align-items:center;gap:12px;flex-shrink:0;
                 }
                 .de-header-buttons{display:flex;align-items:center;gap:12px;}
+                .de-header-buttons .de-ghost-btn{
+                    box-sizing:border-box;min-height:44px;
+                    display:inline-flex;align-items:center;justify-content:center;
+                }
 
                 /* Toolbar */
                 .de-toolbar{
