@@ -12816,6 +12816,12 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 .de-cover-name{font-family:'Lora',Georgia,serif;font-size:14px;letter-spacing:0;text-transform:none;color:#ede5d8;}
                 .de-cover-mark{width:28px;height:36px;object-fit:cover;border-radius:2px;border:1px solid #3a362e;flex-shrink:0;}
                 .de-details-actions{grid-column:1 / -1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;color:#a79f93;font-size:12px;}
+                .de-details-actions .de-save-btn,
+                .de-details-actions .de-ghost-btn,
+                .de-details-actions .de-danger-btn{
+                    box-sizing:border-box;min-height:44px;
+                    display:inline-flex;align-items:center;justify-content:center;
+                }
                 .de-details-actions .de-save-btn{padding:6px 14px;font-size:9px;letter-spacing:0.18em;}
                 .de-kbd-pair{display:inline-flex;align-items:center;gap:12px;}
                 @media (max-width:720px){
