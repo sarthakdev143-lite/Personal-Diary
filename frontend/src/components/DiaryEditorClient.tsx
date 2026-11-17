@@ -12537,11 +12537,11 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 /* Each group starts with a divider. The row is shifted left so a divider that begins a line is clipped, and the icons on every line share one left edge. */
                 .de-toolbar-row{
                     display:flex;align-items:center;flex-wrap:wrap;
-                    width:calc(100% + 9px);margin-left:-9px;row-gap:2px;
+                    width:calc(100% + 9px);margin-left:-9px;row-gap:6px;
                 }
-                .de-toolbar-group{display:flex;align-items:center;gap:1px;}
+                .de-toolbar-group{display:flex;align-items:center;gap:4px;}
                 .de-toolbar-group::before{
-                    content:"";width:1px;height:18px;margin:0 4px;flex-shrink:0;
+                    content:"";width:1px;height:22px;margin:0 4px;flex-shrink:0;
                     background:#2a2520;
                 }
                 .de-link{
@@ -12572,17 +12572,22 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 }
                 .de-tbtn{
                     font-family:'JetBrains Mono',monospace;
-                    font-size:11px;
+                    font-size:13px;
                     color:#a79f93;
                     background:transparent;
                     border:1px solid transparent;
                     border-radius:3px;
-                    padding:3px 7px;
+                    padding:0 8px;
                     cursor:pointer;
                     transition:all 0.15s;
-                    min-width:28px;
+                    box-sizing:border-box;
+                    min-width:44px;
+                    min-height:44px;
+                    display:inline-flex;
+                    align-items:center;
+                    justify-content:center;
                     text-align:center;
-                    line-height:1.4;
+                    line-height:1;
                 }
                 .de-tbtn:hover{color:#d4c8b4;background:#1e1c18;border-color:#2a2520;}
                 .de-tbtn.on{color:#c4a882;background:#2a2010;border-color:#3a3020;}
