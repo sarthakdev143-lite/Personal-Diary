@@ -12807,6 +12807,9 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     .de-root-details .de-right{min-height:420px;}
                     .de-kbd-hint{display:none;}
                 }
+                @media (max-width:319px){
+                    .de-header-title{gap:8px;}
+                }
                 @media (max-width:370px){
                     .de-footer-actions:has(button:nth-child(5)){
                         display:grid;
