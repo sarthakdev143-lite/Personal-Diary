@@ -12629,7 +12629,22 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                 }
                 .de-entry-clear:hover{color:#ede5d8;}
                 .de-entry-clear:focus-visible{outline:1px solid #c4a882;outline-offset:-2px;}
-                .de-entry-search:focus,.de-month:focus{outline:none;border-color:#6a5a48;}
+                .de-entry-search:focus-visible,
+                .de-month:focus-visible,
+                .de-date input:focus-visible,
+                .de-details input:focus-visible,
+                .de-details textarea:focus-visible,
+                .de-link input:focus-visible{
+                    outline:1px solid #c4a882;
+                    outline-offset:2px;
+                    border-color:#c4a882;
+                }
+                .de-link input[aria-invalid="true"]:focus-visible,
+                .de-details input[aria-invalid="true"]:focus-visible,
+                .de-details textarea[aria-invalid="true"]:focus-visible{
+                    border-color:#6a3a32;
+                    outline-color:#e7b2a4;
+                }
                 .de-find-count{
                     margin:0 16px 8px;
                     font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.08em;color:#a79f93;
@@ -12943,7 +12958,6 @@ const DiaryEditorClient = ({ diaryId }: { diaryId: string }) => {
                     border:1px solid #2a2520;border-radius:3px;padding:0 8px;color-scheme:dark;
                     box-sizing:border-box;height:44px;
                 }
-                .de-date input:focus{outline:none;border-color:#6a5a48;}
                 .de-viewing-badge{
                     font-family:'JetBrains Mono',monospace;
                     font-size:9px;letter-spacing:0.22em;text-transform:uppercase;
