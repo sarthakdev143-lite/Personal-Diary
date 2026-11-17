@@ -132,10 +132,10 @@ const Navbar = () => {
                         {menu.account && (
                             <div className={`${menu.settings ? "border-t border-gray-700" : ""} px-3 py-1`}>
                                 <Button
-                                    variant="destructive"
+                                    variant="ghost"
                                     size="sm"
                                     onClick={() => signOut({ callbackUrl: "/" })}
-                                    className="w-full text-sm text-white"
+                                    className="h-8 w-full rounded-full bg-zinc-800 text-sm text-red-200 hover:bg-zinc-950 hover:text-red-100"
                                 >
                                     Sign Out
                                 </Button>
